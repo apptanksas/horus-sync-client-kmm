@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
+    //alias(libs.plugins.kotlinxSerialization)
+    kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
 }
 
@@ -36,10 +38,14 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.serialization)
+            implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.content.negotiation)
+            implementation(libs.ktor.client.serialization.json)
         }
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
+            implementation(libs.test.kotlin)
+            implementation(libs.test.ktor)
         }
     }
 }
