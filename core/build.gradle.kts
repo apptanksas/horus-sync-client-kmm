@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
+    id("maven-publish")
 }
 
 kotlin {
@@ -11,6 +12,9 @@ kotlin {
                 jvmTarget = "1.8"
             }
         }
+
+         // Publish android variants
+        // publishLibraryVariants("release", "debug")
     }
     iosX64()
     iosArm64()
@@ -48,3 +52,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
+
+group = "com.apptank.horus.client"
+version = "0.0.0"

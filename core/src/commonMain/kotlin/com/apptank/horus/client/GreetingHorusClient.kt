@@ -1,6 +1,6 @@
 package com.apptank.horus.client
 
-class Greeting {
+class GreetingHorusClient {
     private val platform: Platform = getPlatform()
 
     fun greet(): String {
