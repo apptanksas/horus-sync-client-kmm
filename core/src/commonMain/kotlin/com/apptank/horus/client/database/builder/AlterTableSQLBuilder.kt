@@ -1,5 +1,6 @@
-package com.apptank.horus.client.migration.database.builder
+package com.apptank.horus.client.database.builder
 
+import com.apptank.horus.client.migration.database.convertToSQL
 import com.apptank.horus.client.migration.domain.Attribute
 
 

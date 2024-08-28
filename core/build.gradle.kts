@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlin.crypto)
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)

@@ -1,10 +1,11 @@
 [versions]
 agp = "8.2.2"
 kotlin = "2.0.20"
-kotlinxSerialization = "1.6.0"
+kotlinxSerialization = "1.7.2"
 ktor = "2.3.2"
 sqldelight = "2.0.2"
 kotlinxDateTime = "0.2.1"
+kotlinCrypto = "0.5.1"
 
 [libraries]
 
@@ -23,6 +24,7 @@ sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", ver
 sqldelight-driver-ios = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 # Utils
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDateTime" }
+kotlin-crypto = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlinCrypto" }
 
 # Tests
 test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

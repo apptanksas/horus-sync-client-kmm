@@ -1,8 +1,8 @@
 package com.apptank.horus.client.database
 
-import com.apptank.horus.client.base.utils.DateTime
 import com.apptank.horus.client.domain.EntityAttribute
 import com.apptank.horus.client.extensions.notContains
+import kotlinx.datetime.LocalDateTime
 
 /**
  * Base class representing an action to be performed on a database table.
@@ -108,8 +108,8 @@ data class EntityRecord(
     val id: String,
     val userId: Int,
     val hash: String,
-    val createdAt: DateTime,
-    val updatedAt: DateTime,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime,
     private val attributes: Map<String, Any>
 ) {
     fun getInt(attr: String): Int {

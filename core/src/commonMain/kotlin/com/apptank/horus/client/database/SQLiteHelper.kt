@@ -7,7 +7,7 @@ import com.apptank.horus.client.extensions.getRequireString
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.rawQuery
-import com.apptank.horus.client.extensions.use
+import com.apptank.horus.client.extensions.handle
 
 abstract class SQLiteHelper(
     protected val driver: SqlDriver,
@@ -22,9 +22,9 @@ abstract class SQLiteHelper(
 
         val tables = mutableListOf<String>()
 
-        this.driver.use {
+        this.driver.handle {
             // Query tables
-            val result: List<String> = it.rawQuery(
+            val result: List<String> = rawQuery(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ) { cursor -> cursor.getString(0) }
 
@@ -43,8 +43,8 @@ abstract class SQLiteHelper(
         }
         val query = "PRAGMA table_info($tableName);" // Query columns
 
-        return driver.use {
-            it.rawQuery(query) { cursor ->
+        return driver.handle {
+            rawQuery(query) { cursor ->
                 Column(
                     cursor.getRequireInt(0),
                     cursor.getRequireString(1),

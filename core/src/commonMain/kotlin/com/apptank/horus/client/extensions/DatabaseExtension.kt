@@ -5,6 +5,7 @@ import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.config.BOOL_FALSE
 import com.apptank.horus.client.config.BOOL_TRUE
+import kotlinx.serialization.json.Json
 
 
 /**
@@ -67,13 +68,22 @@ fun <T> SqlDriver.rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
     }, 0).value
 }
 
-inline fun <R> SqlDriver.use(block: (SqlDriver) -> R): R {
+fun SqlDriver.execute(query: String) {
+    execute(null, query, 0)
+}
+
+
+inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
     return block(this)
 }
 
 
 fun SqlCursor.getRequireInt(index: Int): Int {
     return this.getLong(index)?.toInt() ?: throw IllegalStateException("Index $index not found")
+}
+
+fun SqlCursor.getRequireLong(index: Int): Long {
+    return this.getLong(index) ?: throw IllegalStateException("Index $index not found")
 }
 
 fun SqlCursor.getRequireString(index: Int): String {
@@ -88,5 +98,33 @@ fun SqlCursor.getRequireBoolean(index: Int): Boolean {
     return this.getBoolean(index) ?: throw IllegalStateException("Index $index not found")
 }
 
+private val decoder = Json { ignoreUnknownKeys = true }
+fun SqlCursor.getStringAndConvertToMap(attributeName: String): Map<String, Any> {
+    return decoder.decodeFromString<Map<String, Any>>(this.getValue(attributeName))
+}
 
+
+fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {
+    val columns = values.keys.joinToString(", ")
+    val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
+    val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
+    executeInsertOrThrow(query)
+}
+
+fun SqlDriver.update(table: String, values: Map<String, Any>, where: String): Long {
+    val setValues =
+        values.entries.joinToString(", ") { (key, value) -> "$key = ${value.prepareSQLValueAsString()}" }
+    val query = "UPDATE $table SET $setValues WHERE $where;"
+    return executeUpdate(query)
+}
+
+private fun SqlDriver.executeInsertOrThrow(query: String) {
+    if (execute(null, query, 0).value == 0L) {
+        throw IllegalStateException("Insertion failed")
+    }
+}
+
+private fun SqlDriver.executeUpdate(query: String): Long {
+    return execute(null, query, 0).value
+}
 

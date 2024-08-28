@@ -1,6 +1,6 @@
 package com.apptank.horus.client.migration.database
 
-import com.apptank.horus.client.migration.database.builder.CreateTableSQLBuilder
+import com.apptank.horus.client.database.builder.CreateTableSQLBuilder
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.filterRelations
 

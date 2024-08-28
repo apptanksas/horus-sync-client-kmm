@@ -4,8 +4,8 @@ import com.apptank.horus.client.migration.domain.Attribute
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.filterRelations
 import com.apptank.horus.client.migration.domain.getLastVersion
-import com.apptank.horus.client.migration.database.builder.AlterTableSQLBuilder
-import com.apptank.horus.client.migration.database.builder.CreateTableSQLBuilder
+import com.apptank.horus.client.database.builder.AlterTableSQLBuilder
+import com.apptank.horus.client.database.builder.CreateTableSQLBuilder
 import com.apptank.horus.client.migration.domain.findByName
 
 /**

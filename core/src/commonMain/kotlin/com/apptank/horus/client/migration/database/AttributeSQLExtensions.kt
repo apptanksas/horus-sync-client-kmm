@@ -1,4 +1,4 @@
-package com.apptank.horus.client.migration.database.builder
+package com.apptank.horus.client.migration.database
 
 import com.apptank.horus.client.migration.domain.Attribute
 import com.apptank.horus.client.migration.domain.AttributeType

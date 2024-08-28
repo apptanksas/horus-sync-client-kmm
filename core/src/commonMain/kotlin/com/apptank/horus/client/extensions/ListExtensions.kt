@@ -10,3 +10,15 @@ infix fun <T> List<T>.prepend(e: T): List<T> {
         addAll(this@prepend)
     }
 }
+
+fun<E> MutableList<E>.removeIf(filter: (E) -> Boolean): Boolean {
+    val it = iterator()
+    var removed = false
+    while (it.hasNext()) {
+        if (filter(it.next())) {
+            it.remove()
+            removed = true
+        }
+    }
+    return removed
+}
