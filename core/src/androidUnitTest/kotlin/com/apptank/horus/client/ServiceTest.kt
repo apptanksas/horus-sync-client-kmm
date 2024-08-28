@@ -1,10 +1,12 @@
 package com.apptank.horus.client
 
+import com.apptank.horus.client.base.network.HttpHeader
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import org.junit.Assert
 
 abstract class ServiceTest {
     companion object {
@@ -13,7 +15,11 @@ abstract class ServiceTest {
 
 
     fun createMockResponse(content: String, status: HttpStatusCode = HttpStatusCode.OK) =
-        MockEngine { _ ->
+        MockEngine { request ->
+
+            // Validate headers request
+            //Assert.assertNotNull(request.headers[HttpHeader.AUTHORIZATION])
+
             respond(
                 content = content,
                 status = status,

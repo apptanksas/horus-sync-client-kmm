@@ -1,9 +1,9 @@
-package com.apptank.horus.client.migration
+package com.apptank.horus.client.migration.network.service
 
 import com.apptank.horus.client.MOCK_RESPONSE_GET_MIGRATION
 import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
-import com.apptank.horus.client.migration.service.MigrationService
+import com.apptank.horus.client.migration.network.service.MigrationService
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert

@@ -1,9 +1,8 @@
-package com.apptank.horus.client.migration.service
+package com.apptank.horus.client.migration.network.service
 
 import com.apptank.horus.client.base.DataResult
-import com.apptank.horus.client.migration.service.dto.EntitySchemeDTO
-import com.apptank.horus.client.network.BaseService
-import com.apptank.horus.client.network.IMigrationService
+import com.apptank.horus.client.migration.network.dto.EntitySchemeDTO
+import com.apptank.horus.client.base.network.BaseService
 import io.ktor.client.engine.HttpClientEngine
 class MigrationService(
     engine: HttpClientEngine,

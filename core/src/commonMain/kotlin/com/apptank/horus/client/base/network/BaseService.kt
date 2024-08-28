@@ -1,4 +1,4 @@
-package com.apptank.horus.client.network
+package com.apptank.horus.client.base.network
 
 import com.apptank.horus.client.base.DataResult
 import io.ktor.client.HttpClient

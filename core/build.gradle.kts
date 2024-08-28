@@ -42,10 +42,22 @@ kotlin {
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.content.negotiation)
             implementation(libs.ktor.client.serialization.json)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
+            implementation(libs.test.sqldelight)
+        }
+        // Android dependencies
+        androidMain.dependencies {
+            implementation(libs.sqldelight.driver.android)
+        }
+        // IOS dependencies
+        iosMain.dependencies {
+            implementation(libs.sqldelight.driver.ios)
         }
     }
 }
