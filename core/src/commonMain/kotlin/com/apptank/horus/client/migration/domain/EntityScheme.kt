@@ -65,3 +65,19 @@ fun List<Attribute>.filterRelations(): List<Attribute> {
         ).contains(it.type)
     }
 }
+
+fun List<EntityScheme>.findByName(entityName: String): EntityScheme? {
+
+    this.forEach {
+
+        it.entitiesRelated.findByName(entityName)?.let {
+            return it
+        }
+
+        if (it.name == entityName) {
+            return it
+        }
+    }
+
+    return null
+}

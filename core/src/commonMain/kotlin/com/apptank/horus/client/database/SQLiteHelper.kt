@@ -1,6 +1,9 @@
 package com.apptank.horus.client.database
 
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.extensions.getRequireBoolean
+import com.apptank.horus.client.extensions.getRequireInt
+import com.apptank.horus.client.extensions.getRequireString
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.rawQuery
@@ -33,20 +36,24 @@ abstract class SQLiteHelper(
         }
     }
 
-   /* fun getColumnNames(tableName: String): List<String> {
+    fun getColumns(tableName: String): List<Column> {
 
         if (CACHE_COLUMN_NAMES[databaseName]?.contains(tableName) == true) {
             return CACHE_COLUMN_NAMES[databaseName]?.get(tableName) ?: emptyList()
         }
+        val query = "PRAGMA table_info($tableName);" // Query columns
 
-        driver.use { it ->
-            it.query(tableName, null, null, null, null, null, null).use { cursor ->
-                return cursor.columnNames.toList().also {
-                    CACHE_COLUMN_NAMES[databaseName]?.set(tableName, it)
-                }
+        return driver.use {
+            it.rawQuery(query) { cursor ->
+                Column(
+                    cursor.getRequireInt(0),
+                    cursor.getRequireString(1),
+                    cursor.getRequireString(2),
+                    cursor.getRequireBoolean(3),
+                )
             }
         }
-    }*/
+    }
 
 
     /**
@@ -75,11 +82,11 @@ abstract class SQLiteHelper(
     companion object {
         private val TABLES_SYSTEM = listOf("android_metadata", "sqlite_sequence")
         private var CACHE_TABLES = mutableMapOf<String, List<String>>()
-        private var CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<String>>>()
+        private var CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<Column>>>()
 
         fun flushCache() {
-            CACHE_TABLES = mutableMapOf<String, List<String>>()
-            CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<String>>>()
+            CACHE_TABLES = mutableMapOf()
+            CACHE_COLUMN_NAMES = mutableMapOf()
         }
     }
 

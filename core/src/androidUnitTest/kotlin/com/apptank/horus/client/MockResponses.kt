@@ -641,7 +641,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
 """
 
 // 7 Entities
-const val DATA_MIGRATION_VERSION_1 = """
+const val DATA_MIGRATION_VERSION_1 ="""
     [
   {
     "entity": "farms",
@@ -675,12 +675,6 @@ const val DATA_MIGRATION_VERSION_1 = """
         "name": "sync_updated_at",
         "version": 1,
         "type": "timestamp",
-        "nullable": false
-      },
-      {
-        "name": "name",
-        "version": 2,
-        "type": "string",
         "nullable": false
       },
       {
@@ -736,49 +730,6 @@ const val DATA_MIGRATION_VERSION_1 = """
         "type": "relation_one_of_many",
         "nullable": false,
         "related": [
-          {
-            "entity": "farms_metadata",
-            "type": "editable",
-            "attributes": [
-              {
-                "name": "id",
-                "version": 1,
-                "type": "primary_key_string",
-                "nullable": false
-              },
-              {
-                "name": "sync_owner_id",
-                "version": 1,
-                "type": "string",
-                "nullable": false
-              },
-              {
-                "name": "sync_hash",
-                "version": 1,
-                "type": "string",
-                "nullable": false
-              },
-              {
-                "name": "sync_created_at",
-                "version": 1,
-                "type": "timestamp",
-                "nullable": false
-              },
-              {
-                "name": "sync_updated_at",
-                "version": 1,
-                "type": "timestamp",
-                "nullable": false
-              },
-              {
-                "name": "farm_id",
-                "version": 1,
-                "type": "uuid",
-                "nullable": false
-              }
-            ],
-            "current_version": 1
-          },
           {
             "entity": "lots",
             "type": "editable",
@@ -1154,55 +1105,6 @@ const val DATA_MIGRATION_VERSION_2 = """
         "type": "relation_one_of_many",
         "nullable": false,
         "related": [
-          {
-            "entity": "farms_metadata",
-            "type": "editable",
-            "attributes": [
-              {
-                "name": "id",
-                "version": 1,
-                "type": "primary_key_string",
-                "nullable": false
-              },
-              {
-                "name": "sync_owner_id",
-                "version": 1,
-                "type": "string",
-                "nullable": false
-              },
-              {
-                "name": "sync_hash",
-                "version": 1,
-                "type": "string",
-                "nullable": false
-              },
-              {
-                "name": "sync_created_at",
-                "version": 1,
-                "type": "timestamp",
-                "nullable": false
-              },
-              {
-                "name": "sync_updated_at",
-                "version": 1,
-                "type": "timestamp",
-                "nullable": false
-              },
-              {
-                "name": "farm_id",
-                "version": 1,
-                "type": "uuid",
-                "nullable": false
-              },
-              {
-                "name": "name",
-                "version": 2,
-                "type": "string",
-                "nullable": false
-              }
-            ],
-            "current_version": 2
-          },
           {
             "entity": "lots",
             "type": "editable",
@@ -1621,43 +1523,43 @@ const val DATA_MIGRATION_VERSION_3 = """
             "attributes": [
               {
                 "name": "id",
-                "version": 1,
+                "version": 3,
                 "type": "primary_key_string",
                 "nullable": false
               },
               {
                 "name": "sync_owner_id",
-                "version": 1,
+                "version": 3,
                 "type": "string",
                 "nullable": false
               },
               {
                 "name": "sync_hash",
-                "version": 1,
+                "version": 3,
                 "type": "string",
                 "nullable": false
               },
               {
                 "name": "sync_created_at",
-                "version": 1,
+                "version": 3,
                 "type": "timestamp",
                 "nullable": false
               },
               {
                 "name": "sync_updated_at",
-                "version": 1,
+                "version": 3,
                 "type": "timestamp",
                 "nullable": false
               },
               {
                 "name": "farm_id",
-                "version": 1,
+                "version": 3,
                 "type": "uuid",
                 "nullable": false
               },
               {
                 "name": "name",
-                "version": 2,
+                "version": 3,
                 "type": "string",
                 "nullable": false
               },

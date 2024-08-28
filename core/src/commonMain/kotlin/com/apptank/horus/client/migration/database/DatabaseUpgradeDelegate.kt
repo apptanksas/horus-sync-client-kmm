@@ -5,6 +5,8 @@ import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.filterRelations
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.apptank.horus.client.migration.database.builder.AlterTableSQLBuilder
+import com.apptank.horus.client.migration.database.builder.CreateTableSQLBuilder
+import com.apptank.horus.client.migration.domain.findByName
 
 /**
  * Class responsible for handling database upgrades based on provided entity schemes.
@@ -18,6 +20,10 @@ class DatabaseUpgradeDelegate(
     // Structure: <VersionNumber -> <EntityName -> List Attributes>>
     private val versionMapAttributes = mutableMapOf<Long, Map<String, List<Attribute>>>()
 
+    // Map to store entities for each version of the database schema.
+    // Structure: <VersionNumber -> List Entities>
+    private val versionMapEntities = mutableMapOf<Long, List<String>>()
+
     /**
      * Perform migration from oldVersion to currentVersion.
      * @param oldVersion The old version of the database schema.
@@ -30,7 +36,25 @@ class DatabaseUpgradeDelegate(
 
         // Migrate attributes for each version incrementally.
         for (version: Long in (oldVersion + 1)..currentVersion) {
+
+            val newTablesAdded = mutableListOf<String>()
+
+            // Create new tables (If apply)
+            versionMapEntities[version]?.forEach {
+                schemes.findByName(it)?.let {
+                    onExecuteSql(createCreateSQLTable(it))
+                    newTablesAdded.add(it.name)
+                }
+            }
+
+            // Create new attributes
             versionMapAttributes[version]?.forEach { (entityName, attrs) ->
+
+                // Validate if is a new entity then must not add attributes
+                if (newTablesAdded.contains(entityName)) {
+                    return@forEach
+                }
+
                 attrs.forEach { attribute ->
                     val sqlSentence =
                         AlterTableSQLBuilder().setTableName(entityName).setAttribute(attribute)
@@ -53,6 +77,7 @@ class DatabaseUpgradeDelegate(
         // Generate map for each version.
         for (version in startVersion..lastVersion) {
             versionMapAttributes[version] = schemes.mapEntityAttributesVersion(version)
+            versionMapEntities[version] = schemes.mapEntitiesByVersion(version)
         }
     }
 
@@ -84,10 +109,48 @@ class DatabaseUpgradeDelegate(
                 }
             }
 
+
             mapEntityAttributes[entityName] = attributes
         }
 
         return mapEntityAttributes
+    }
+
+
+    private fun List<EntityScheme>.mapEntitiesByVersion(versionSearch: Long): List<String> {
+
+        val entities = mutableListOf<String>()
+
+        this.forEach {
+            // Map entities for related entities recursively.
+            it.entitiesRelated.mapEntitiesByVersion(versionSearch).forEach { entityName ->
+                entities.add(entityName)
+            }
+
+            var entryVersion = Int.MAX_VALUE.toLong()
+
+            it.attributes.forEach {
+                if (entryVersion > it.version) {
+                    entryVersion = it.version
+                }
+            }
+
+            if (entryVersion == versionSearch) {
+                entities.add(it.name)
+            }
+        }
+
+        return entities
+    }
+
+    private fun createCreateSQLTable(scheme: EntityScheme): String {
+        return CreateTableSQLBuilder().apply {
+            setTableName(scheme.name)
+            // Filter attribute types and add them to the table creation statement.
+            scheme.attributes.filterRelations().forEach {
+                addAttribute(it)
+            }
+        }.build()
     }
 
 }

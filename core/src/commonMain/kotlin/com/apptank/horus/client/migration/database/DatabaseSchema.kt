@@ -17,6 +17,7 @@ class DatabaseSchema(
         databaseCreatorDelegate.createTables {
             driver.execute(null, it, 0)
         }
+        flushCache()
         return QueryResult.Value(Unit)
     }
 
@@ -29,6 +30,7 @@ class DatabaseSchema(
         databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
             driver.execute(null, it, 0)
         }
+        flushCache()
         return QueryResult.Value(Unit)
     }
 

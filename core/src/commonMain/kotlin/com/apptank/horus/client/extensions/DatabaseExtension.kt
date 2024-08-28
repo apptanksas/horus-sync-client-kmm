@@ -31,12 +31,12 @@ internal fun Any.prepareSQLValueAsString(): String {
  */
 fun <T : Any> SqlCursor.getValue(attribute: String): T {
     TODO("Not yet implemented")
-   /* return when (getType(getIndex(attribute))) {
-        Cursor.FIELD_TYPE_STRING -> getString(getIndex(attribute)) as T
-        Cursor.FIELD_TYPE_INTEGER -> getLong(getIndex(attribute)) as T
-        Cursor.FIELD_TYPE_FLOAT -> getDouble(getIndex(attribute)) as T
-        else -> throw IllegalStateException("Attribute [$attribute] error field!")
-    } */
+    /* return when (getType(getIndex(attribute))) {
+         Cursor.FIELD_TYPE_STRING -> getString(getIndex(attribute)) as T
+         Cursor.FIELD_TYPE_INTEGER -> getLong(getIndex(attribute)) as T
+         Cursor.FIELD_TYPE_FLOAT -> getDouble(getIndex(attribute)) as T
+         else -> throw IllegalStateException("Attribute [$attribute] error field!")
+     } */
 }
 
 /**
@@ -67,10 +67,26 @@ fun <T> SqlDriver.rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
     }, 0).value
 }
 
-fun SqlDriver.use(block: (SqlDriver) -> Unit) {
-    block(this)
+inline fun <R> SqlDriver.use(block: (SqlDriver) -> R): R {
+    return block(this)
 }
 
+
+fun SqlCursor.getRequireInt(index: Int): Int {
+    return this.getLong(index)?.toInt() ?: throw IllegalStateException("Index $index not found")
+}
+
+fun SqlCursor.getRequireString(index: Int): String {
+    return this.getString(index) ?: throw IllegalStateException("Index $index not found")
+}
+
+fun SqlCursor.getRequireDouble(index: Int): Double {
+    return this.getDouble(index) ?: throw IllegalStateException("Index $index not found")
+}
+
+fun SqlCursor.getRequireBoolean(index: Int): Boolean {
+    return this.getBoolean(index) ?: throw IllegalStateException("Index $index not found")
+}
 
 
 

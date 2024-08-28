@@ -38,7 +38,7 @@ class CreateTableSQLBuilder {
      */
     fun build(): String {
         tableName ?: throw IllegalArgumentException("TableName is missing")
-        return "CREATE TABLE $tableName (" + attributes.joinToString(", ") { it.convertToSQL() } + ")"
+        return "CREATE TABLE IF NOT EXISTS $tableName (" + attributes.joinToString(", ") { it.convertToSQL() } + ")"
     }
 
 }
