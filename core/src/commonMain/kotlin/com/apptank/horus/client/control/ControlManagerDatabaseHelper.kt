@@ -3,6 +3,7 @@ package com.apptank.horus.client.control
 
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.database.Cursor
 import com.apptank.horus.client.database.DBColumnValue
 import com.apptank.horus.client.database.SQLiteHelper
 import com.apptank.horus.client.database.WhereCondition
@@ -15,8 +16,6 @@ import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.eventbus.Event
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
-import com.apptank.horus.client.extensions.getValue
-import com.apptank.horus.client.extensions.getStringAndConvertToMap
 import com.apptank.horus.client.utils.SystemTime
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -117,6 +116,26 @@ class ControlManagerDatabaseHelper(
         emitEntityDeleted(entity, id.value)
     }
 
+
+    /**
+     * Get pending actions from the queue
+     *
+     * @return List of pending actions
+     */
+    fun getPendingActions(): List<SyncAction> {
+        driver.handle {
+            val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
+                .where(
+                    WhereCondition(
+                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
+                        "="
+                    )
+                ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
+
+            return queryResult(sqlSentence) { createSyncActionFromCursor(it) }
+        }
+    }
+
     /**
      * Update the status of the actions as completed
      */
@@ -134,24 +153,6 @@ class ControlManagerDatabaseHelper(
         }
     }
 
-    /**
-     * Get pending actions from the queue
-     *
-     * @return List of pending actions
-     */
-    fun getPendingActions(): List<SyncAction> {
-        driver.handle {
-            val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
-                .where(
-                    WhereCondition(
-                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
-                        "="
-                    )
-                ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
-
-            return rawQuery(sqlSentence) { createSyncActionFromCursor(it) }
-        }
-    }
 
     /**
      * Get the last action completed
@@ -168,7 +169,7 @@ class ControlManagerDatabaseHelper(
                     )
                 ).orderBy(QueueActionsTable.ATTR_ID).limit(1).build()
 
-            return rawQuery(sentenceSql) { createSyncActionFromCursor(it) }.firstOrNull()
+            return queryResult(sentenceSql) { createSyncActionFromCursor(it) }.firstOrNull()
         }
     }
 
@@ -188,7 +189,7 @@ class ControlManagerDatabaseHelper(
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
-            return rawQuery(sqlSentence) { createSyncActionFromCursor(it) }
+            return queryResult(sqlSentence) { createSyncActionFromCursor(it) }
         }
     }
 
@@ -198,14 +199,14 @@ class ControlManagerDatabaseHelper(
     }
 
 
-    private fun createSyncActionFromCursor(cursor: SqlCursor): SyncAction {
+    private fun createSyncActionFromCursor(cursor: Cursor): SyncAction {
         return SyncAction(
             cursor.getValue("id"),
-            SyncActionType.fromId(cursor.getValue<Int>("action_type")),
-            cursor.getValue<String>("entity"),
-            SyncActionStatus.fromId(cursor.getValue<Int>("status")),
+            SyncActionType.fromId(cursor.getValue("action_type")),
+            cursor.getValue("entity"),
+            SyncActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
-            Instant.fromEpochSeconds(cursor.getValue<Long>("datetime"))
+            Instant.fromEpochSeconds(cursor.getValue("datetime"))
                 .toLocalDateTime(TimeZone.UTC)
         )
     }

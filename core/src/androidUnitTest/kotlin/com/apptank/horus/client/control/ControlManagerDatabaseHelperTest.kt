@@ -194,4 +194,26 @@ class ControlManagerDatabaseHelperTest : TestCase() {
         ).value
         Assert.assertEquals(entity, result)
     }
+
+    @Test
+    fun getPendingActions(){
+        // Given
+        val entity = "entity123"
+        val attributes = listOf(
+            EntityAttribute("id", "1"),
+            EntityAttribute("name", "name")
+        )
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+
+        // When
+        val pendingActions = controlManagerDatabaseHelper.getPendingActions()
+
+        // Then
+        Assert.assertEquals(1, pendingActions.size)
+        Assert.assertEquals(entity, pendingActions.first().entity)
+        Assert.assertEquals(SyncActionType.INSERT, pendingActions.first().action)
+        Assert.assertEquals(attributes.associate { it.name to it.value }, pendingActions.first().data)
+        Assert.assertEquals(SyncActionStatus.PENDING, pendingActions.first().status)
+    }
 }

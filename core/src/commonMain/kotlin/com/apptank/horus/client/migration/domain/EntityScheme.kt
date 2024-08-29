@@ -2,10 +2,16 @@ package com.apptank.horus.client.migration.domain
 
 data class EntityScheme(
     val name: String,
+    val type : EntityType,
     val attributes: List<Attribute>,
     val currentVersion: Long,
     val entitiesRelated: List<EntityScheme>
 )
+
+enum class EntityType {
+    EDITABLE,
+    LOOKUP
+}
 
 data class Attribute(
     val name: String,

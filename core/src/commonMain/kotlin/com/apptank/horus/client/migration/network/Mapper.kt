@@ -3,6 +3,7 @@ package com.apptank.horus.client.migration.network
 import com.apptank.horus.client.migration.domain.Attribute
 import com.apptank.horus.client.migration.domain.AttributeType
 import com.apptank.horus.client.migration.domain.EntityScheme
+import com.apptank.horus.client.migration.domain.EntityType
 import com.apptank.horus.client.migration.exception.InvalidDataSchemeException
 import com.apptank.horus.client.migration.network.dto.AttributeDTO
 import com.apptank.horus.client.migration.network.dto.EntitySchemeDTO
@@ -10,6 +11,7 @@ import com.apptank.horus.client.migration.network.dto.EntitySchemeDTO
 fun EntitySchemeDTO.toScheme(): EntityScheme {
     return EntityScheme(
         this.entity ?: throw InvalidDataSchemeException(),
+        EntityType.valueOf(this.type ?: EntityType.EDITABLE.name),
         this.attributes?.map { it.toScheme() } ?: listOf(),
         this.currentVersion ?: 1,
         this.getRelated().map { it.toScheme() }

@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.extensions.getRequireBoolean
+import com.apptank.horus.client.extensions.getRequireDouble
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireString
 import com.apptank.horus.client.extensions.notContains
@@ -70,12 +71,14 @@ abstract class SQLiteHelper(
         }, 0).value
     }
 
-    protected fun <T> queryResult(query: String, mapper: (SqlCursor) -> T?): List<T> {
+    protected fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
+
+        val tableName = getTableName(query)
 
         return driver.executeQuery(null, query, {
             val resultList = mutableListOf<T>()
-            while (it.next().value) {
-                mapper(it)?.let { item ->
+            buildCursorValues(tableName, it).forEach { cursor ->
+                mapper(cursor)?.let { item ->
                     resultList.add(item)
                 }
             }
@@ -104,8 +107,33 @@ abstract class SQLiteHelper(
         }
     }
 
-    private fun getTableName(statement: String): String? {
-        val regex = "INSERT INTO (\\w+)".toRegex()
+    private fun buildCursorValues(tableName: String, cursor: SqlCursor): List<Cursor> {
+
+        val columns = getColumns(tableName)
+        val cursors = mutableListOf<Cursor>()
+        var index = 0
+        while (cursor.next().value) {
+
+            val cursorValues = mutableListOf<CursorValue<*>>()
+
+            columns.forEach { column ->
+                cursorValues.add(
+                    when (column.type) {
+                        "INTEGER" -> CursorValue(cursor.getRequireInt(column.position), column)
+                        "TEXT" -> CursorValue(cursor.getRequireString(column.position), column)
+                        "REAL" -> CursorValue(cursor.getRequireDouble(column.position), column)
+                        else -> throw IllegalArgumentException("Invalid column type")
+                    }
+                )
+            }
+            cursors.add(Cursor(index, tableName, cursorValues))
+            index++
+        }
+        return cursors
+    }
+
+    private fun getTableName(statement: String): String {
+        val regex = "SELECT .+ FROM (\\w+)".toRegex()
         val matchResult = regex.find(statement)
         val (tableName) = matchResult?.destructured
             ?: throw IllegalArgumentException("Invalid statement")
