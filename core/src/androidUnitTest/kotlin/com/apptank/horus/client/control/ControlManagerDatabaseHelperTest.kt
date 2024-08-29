@@ -196,7 +196,7 @@ class ControlManagerDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getPendingActions(){
+    fun getPendingActionsIsSuccess(){
         // Given
         val entity = "entity123"
         val attributes = listOf(
@@ -215,5 +215,76 @@ class ControlManagerDatabaseHelperTest : TestCase() {
         Assert.assertEquals(SyncActionType.INSERT, pendingActions.first().action)
         Assert.assertEquals(attributes.associate { it.name to it.value }, pendingActions.first().data)
         Assert.assertEquals(SyncActionStatus.PENDING, pendingActions.first().status)
+    }
+
+    @Test
+    fun completeActionsIsSuccess(){
+        // Given
+        val entity = "e9827733"
+        val attributes = listOf(
+            EntityAttribute("id", "1"),
+            EntityAttribute("name", "name")
+        )
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+        val pendingActions = controlManagerDatabaseHelper.getPendingActions()
+
+        // When
+        controlManagerDatabaseHelper.completeActions(pendingActions.map { it.id })
+
+        // Then
+        val result = driver.executeQuery(
+            null,
+            "SELECT ${QueueActionsTable.ATTR_STATUS} FROM ${QueueActionsTable.TABLE_NAME} WHERE id = ${pendingActions.first().id}",
+            {
+                QueryResult.Value(it.getString(0))
+            },
+            0
+        ).value
+
+        Assert.assertEquals(SyncActionStatus.COMPLETED.id, result?.toInt())
+    }
+
+    @Test
+    fun getLastActionCompleted(){
+        // Given
+        val entity = "e9827733"
+        val attributes = listOf(
+            EntityAttribute("id", "1"),
+            EntityAttribute("name", "name")
+        )
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+
+        val pendingActions = controlManagerDatabaseHelper.getPendingActions()
+        controlManagerDatabaseHelper.completeActions(pendingActions.map { it.id })
+
+        // When
+        val lastActionCompleted = controlManagerDatabaseHelper.getLastActionCompleted()
+
+        // Then
+        Assert.assertEquals(pendingActions.last().id, lastActionCompleted?.id)
+    }
+
+    @Test
+    fun getCompletedActionsAfterDatetime(){
+        // Given
+        val entity = "e9827733"
+        val attributes = listOf(
+            EntityAttribute("id", "1"),
+            EntityAttribute("name", "name")
+        )
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+
+        val pendingActions = controlManagerDatabaseHelper.getPendingActions()
+        controlManagerDatabaseHelper.completeActions(pendingActions.map { it.id })
+
+        // When
+        val completedActions = controlManagerDatabaseHelper.getCompletedActionsAfterDatetime(0)
+
+        // Then
+        Assert.assertEquals(2, completedActions.size)
     }
 }
