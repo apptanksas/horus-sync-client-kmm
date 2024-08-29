@@ -1,12 +1,13 @@
 package com.apptank.horus.client.database
 
+import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.extensions.getRequireBoolean
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireString
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
-import com.apptank.horus.client.extensions.rawQuery
 import com.apptank.horus.client.extensions.handle
 
 abstract class SQLiteHelper(
@@ -53,6 +54,66 @@ abstract class SQLiteHelper(
                 )
             }
         }
+    }
+
+
+    protected fun <T> rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
+
+        return driver.executeQuery(null, query, {
+            val resultList = mutableListOf<T>()
+            while (it.next().value) {
+                mapper(it)?.let { item ->
+                    resultList.add(item)
+                }
+            }
+            QueryResult.Value(resultList)
+        }, 0).value
+    }
+
+    protected fun <T> queryResult(query: String, mapper: (SqlCursor) -> T?): List<T> {
+
+        return driver.executeQuery(null, query, {
+            val resultList = mutableListOf<T>()
+            while (it.next().value) {
+                mapper(it)?.let { item ->
+                    resultList.add(item)
+                }
+            }
+            QueryResult.Value(resultList)
+        }, 0).value
+    }
+
+
+    protected fun insertOrThrow(table: String, values: Map<String, Any>) {
+        val columns = values.keys.joinToString(", ")
+        val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
+        val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
+        executeInsertOrThrow(query)
+    }
+
+    protected fun update(table: String, values: Map<String, Any>, where: String): Long {
+        val setValues =
+            values.entries.joinToString(", ") { (key, value) -> "$key = ${value.prepareSQLValueAsString()}" }
+        val query = "UPDATE $table SET $setValues WHERE $where;"
+        return executeUpdate(query)
+    }
+
+    private fun executeInsertOrThrow(query: String) {
+        if (driver.execute(null, query, 0).value == 0L) {
+            throw IllegalStateException("Insertion failed")
+        }
+    }
+
+    private fun getTableName(statement: String): String? {
+        val regex = "INSERT INTO (\\w+)".toRegex()
+        val matchResult = regex.find(statement)
+        val (tableName) = matchResult?.destructured
+            ?: throw IllegalArgumentException("Invalid statement")
+        return tableName
+    }
+
+    private fun executeUpdate(query: String): Long {
+        return driver.execute(null, query, 0).value
     }
 
 

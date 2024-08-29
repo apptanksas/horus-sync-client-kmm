@@ -12,14 +12,11 @@ import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireLong
 import com.apptank.horus.client.extensions.handle
-import com.apptank.horus.client.extensions.rawQuery
 import com.apptank.horus.client.eventbus.Event
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.extensions.getValue
-import com.apptank.horus.client.extensions.insertOrThrow
 import com.apptank.horus.client.extensions.getStringAndConvertToMap
-import com.apptank.horus.client.extensions.update
 import com.apptank.horus.client.utils.SystemTime
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -30,43 +27,38 @@ import kotlinx.serialization.json.Json
 /**
  * Maneja datos asociados al control interno de la sincronización
  */
-abstract class InternalManageDatabaseHelper(
+class ControlManagerDatabaseHelper(
     databaseName: String,
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName) {
 
     fun onCreate() {
         driver.handle {
-            execute(SYNC_CONTROL_SQL_CREATE_TABLE)
-            execute(QUEUE_ACTIONS_SQL_CREATE_TABLE)
+            execute(SyncControlTable.SQL_CREATE_TABLE)
+            execute(QueueActionsTable.SQL_CREATE_TABLE)
         }
     }
 
     fun isStatusCompleted(type: SyncOperationType): Boolean {
         driver.handle {
             return rawQuery(
-                "SELECT EXISTS(SELECT 1 FROM $SYNC_CONTROL_TABLE_NAME WHERE type = ? LIMIT 1)"
-            ) { it.getRequireInt(0) == 1 }.isNotEmpty()
+                "SELECT EXISTS(SELECT 1 FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${type.id} AND " +
+                        "${SyncControlTable.ATTR_STATUS} = ${ControlStatus.COMPLETED.id} LIMIT 1)"
+            ) { it.getRequireInt(0) == 1 }.any { it }
         }
     }
 
     fun getLastDatetimeCheckpoint(): Long {
         driver.handle {
             return rawQuery(
-                "SELECT datetime FROM $SYNC_CONTROL_TABLE_NAME WHERE type = ? ORDER BY id DESC LIMIT 1"
+                "SELECT ${SyncControlTable.ATTR_DATETIME} FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${SyncOperationType.CHECKPOINT.id} ORDER BY ${SyncControlTable.ATTR_ID} DESC LIMIT 1"
             ) { it.getRequireLong(0) }.firstOrNull() ?: 0L
         }
     }
 
     fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus) {
         driver.handle {
-            insertOrThrow(
-                SYNC_CONTROL_TABLE_NAME, mapOf(
-                    "type" to type.id,
-                    "status" to status.id,
-                    "datetime" to SystemTime.getCurrentTimestamp()
-                )
-            )
+            insertOrThrow(SyncControlTable.TABLE_NAME, SyncControlTable.mapToCreate(type, status))
         }
     }
 
@@ -74,12 +66,16 @@ abstract class InternalManageDatabaseHelper(
         entity: String,
         attributes: List<EntityAttribute<*>>
     ) {
+        validateIfEntityExists(entity)
 
-        // TODO("Validate if entity exists")
-        // TODO("Validate insertion")
-        val dataJSON = Json.encodeToString(attributes.associate { it.name to it.value })
-        addAction(entity, SyncActionType.INSERT, dataJSON)
-        emitEntityCreated(entity, attributes.first { it.name == "id" }.value as String)
+        addAction(
+            entity,
+            SyncActionType.INSERT,
+            attributes.associate { it.name to it.value.toString() })
+        emitEntityCreated(
+            entity,
+            attributes.first { it.name == QueueActionsTable.ATTR_ID }.value as String
+        )
     }
 
 
@@ -95,9 +91,14 @@ abstract class InternalManageDatabaseHelper(
         id: EntityAttribute<String>,
         attributes: List<EntityAttribute<*>>
     ) {
-        // TODO("Validate if entity exists")
-        val dataJSON = Json.encodeToString(mapOf("id" to id.value, "attributes" to attributes.associate { it.name to it.value }))
-        addAction(entity, SyncActionType.UPDATE, dataJSON)
+        validateIfEntityExists(entity)
+        addAction(
+            entity,
+            SyncActionType.UPDATE,
+            mapOf(
+                "id" to id.value,
+                "attributes" to attributes.associate { it.name to it.value.toString() })
+        )
         emitEntityUpdated(entity, id.value)
     }
 
@@ -111,10 +112,8 @@ abstract class InternalManageDatabaseHelper(
         entity: String,
         id: EntityAttribute<String>
     ) {
-
-        // TODO("Validate if entity exists")
-        val dataJSON = Json.encodeToString(mapOf("id" to id.value))
-        addAction(entity, SyncActionType.DELETE, dataJSON)
+        validateIfEntityExists(entity)
+        addAction(entity, SyncActionType.DELETE, mapOf("id" to id.value))
         emitEntityDeleted(entity, id.value)
     }
 
@@ -124,10 +123,14 @@ abstract class InternalManageDatabaseHelper(
     fun completeActions(actionIds: List<Int>): Boolean {
         driver.handle {
             val values = mapOf<String, Any>(
-                "status" to SyncActionStatus.COMPLETED.id
+                QueueActionsTable.ATTR_STATUS to SyncActionStatus.COMPLETED.id
             )
-            val whereClause = "id IN (${actionIds.joinToString(",")})"
-            return update(QUEUE_ACTIONS_TABLE_NAME, values, whereClause) == actionIds.size.toLong()
+            val whereClause = "${QueueActionsTable.ATTR_ID} IN (${actionIds.joinToString(",")})"
+            return update(
+                QueueActionsTable.TABLE_NAME,
+                values,
+                whereClause
+            ) == actionIds.size.toLong()
         }
     }
 
@@ -138,13 +141,13 @@ abstract class InternalManageDatabaseHelper(
      */
     fun getPendingActions(): List<SyncAction> {
         driver.handle {
-            val sqlSentence = SimpleQueryBuilder(QUEUE_ACTIONS_TABLE_NAME)
+            val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue("status", SyncActionStatus.PENDING.id),
+                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
                         "="
                     )
-                ).orderBy("datetime").build()
+                ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
             return rawQuery(sqlSentence) { createSyncActionFromCursor(it) }
         }
@@ -157,13 +160,13 @@ abstract class InternalManageDatabaseHelper(
      */
     fun getLastActionCompleted(): SyncAction? {
         driver.handle {
-            val sentenceSql = SimpleQueryBuilder(QUEUE_ACTIONS_TABLE_NAME)
+            val sentenceSql = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue("status", SyncActionStatus.COMPLETED.id),
+                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
                         "="
                     )
-                ).orderBy("id").limit(1).build()
+                ).orderBy(QueueActionsTable.ATTR_ID).limit(1).build()
 
             return rawQuery(sentenceSql) { createSyncActionFromCursor(it) }.firstOrNull()
         }
@@ -172,26 +175,26 @@ abstract class InternalManageDatabaseHelper(
 
     fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction> {
         driver.handle {
-            val sqlSentence = SimpleQueryBuilder(QUEUE_ACTIONS_TABLE_NAME)
+            val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue("datetime", datetime), ">"
+                        DBColumnValue(QueueActionsTable.ATTR_DATETIME, datetime), ">"
                     )
                 )
                 .where(
                     WhereCondition(
-                        DBColumnValue("status", SyncActionStatus.COMPLETED.id),
+                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
                         "="
                     )
-                ).orderBy("datetime").build()
+                ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
             return rawQuery(sqlSentence) { createSyncActionFromCursor(it) }
         }
     }
 
 
-    fun getEntityNames(): List<String> {
-        return getTablesNames().filterNot { it == SYNC_CONTROL_TABLE_NAME || it == QUEUE_ACTIONS_TABLE_NAME }
+    private fun getEntityNames(): List<String> {
+        return getTablesNames().filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
 
@@ -210,20 +213,21 @@ abstract class InternalManageDatabaseHelper(
     private fun addAction(
         entity: String,
         actionType: SyncActionType,
-        dataJSON: String
+        dataJSON: Map<String, Any?>
     ) {
         driver.handle {
             insertOrThrow(
-                QUEUE_ACTIONS_TABLE_NAME, mapOf(
-                    "action_type" to actionType.id,
-                    "entity" to entity,
-                    "data" to dataJSON,
-                    "status" to SyncActionStatus.PENDING.id,
-                    "datetime" to SystemTime.getCurrentTimestamp()
-                )
+                QueueActionsTable.TABLE_NAME,
+                QueueActionsTable.mapToCreate(actionType, entity, dataJSON)
             )
         }
         emitEventActionCreated()
+    }
+
+    private fun validateIfEntityExists(entity: String) {
+        getEntityNames().find { it == entity } ?: run {
+            throw IllegalArgumentException("Entity $entity does not exist")
+        }
     }
 
     private fun emitEventActionCreated() {
@@ -240,24 +244,5 @@ abstract class InternalManageDatabaseHelper(
 
     private fun emitEntityDeleted(entity: String, id: String) {
         EventBus.post(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
-    }
-
-    private companion object {
-        const val SYNC_CONTROL_TABLE_NAME = "sync_control"
-        const val SYNC_CONTROL_SQL_CREATE_TABLE =
-            "CREATE TABLE IF NOT EXISTS $SYNC_CONTROL_TABLE_NAME (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "type INTEGER," +
-                    "status INTEGER," +
-                    "datetime INTEGER)"
-        const val QUEUE_ACTIONS_TABLE_NAME = "queue_actions"
-        const val QUEUE_ACTIONS_SQL_CREATE_TABLE =
-            "CREATE TABLE IF NOT EXISTS $QUEUE_ACTIONS_TABLE_NAME (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "action_type INTEGER," +
-                    "entity TEXT," +
-                    "data TEXT," +
-                    "status INTEGER," +
-                    "datetime INTEGER)"
     }
 }

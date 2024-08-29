@@ -1,8 +1,19 @@
 package com.apptank.horus.client.database
 
-class Column(
+data class Column(
     val position: Int,
     val name: String,
     val type: String,
     val nullable: Boolean,
+)
+
+
+data class Cursor(
+    val index: Int,
+    val columns: List<Column>
+)
+
+data class CursorValue<T>(
+    val value: T,
+    val column: Column
 )
