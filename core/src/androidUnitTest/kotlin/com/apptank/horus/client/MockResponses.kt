@@ -640,7 +640,144 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
 ]
 """
 
-// 7 Entities
+const val MOCK_RESPONSE_GET_DATA = """
+    [
+    {
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "89424a4c2efa23f3b6a0caa03bfdcf66dd3d6d31c0559c8c286f82fcd3798f6d",
+            "sync_created_at": 1725044885,
+            "sync_updated_at": 1725044885,
+            "measure": "w",
+            "unit": "kg",
+            "value": 10
+        }
+    },
+    {
+        "entity": "farms",
+        "data": {
+            "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "e3d47ef233c70cc1819b8cf63818d7f79c3dc8d54d90c8241b76eae67be7254d",
+            "sync_created_at": 1725051913,
+            "sync_updated_at": 1725051913,
+            "name": "Finca Los Alpinos",
+            "destination": "1",
+            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "measure_milk": "L",
+            "measure_weight": "kg",
+            "type": "1",
+            "_metadata": [],
+            "_lots": [],
+            "_animals": [
+                {
+                    "entity": "animals",
+                    "data": {
+                        "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+                        "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+                        "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
+                        "sync_created_at": 1725051913,
+                        "sync_updated_at": 1725051913,
+                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "name": "Camila",
+                        "code": "9012345",
+                        "gender": "f",
+                        "type": "1",
+                        "purpose": "2",
+                        "sale_status": "0",
+                        "stage": "4",
+                        "reproductive_status": "1",
+                        "health_status": "1",
+                        "inside": 1,
+                        "_deaths": [],
+                        "_facts": [],
+                        "_favorites": [],
+                        "_images": [],
+                        "_weights": [],
+                        "_inseminations": [],
+                        "_treatments": [],
+                        "_alerts": [],
+                        "_pregnantChecks": [],
+                        "_abortions": [],
+                        "_breed": [],
+                        "_mastitis": [],
+                        "_milking": []
+                    }
+                }
+            ],
+            "_irons": [],
+            "_milkSales": []
+        }
+    }
+]
+"""
+
+const val MOCK_RESPONSE_GET_DATA_ENTITY = """
+    [
+    {
+        "entity": "farms",
+        "data": {
+            "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "e3d47ef233c70cc1819b8cf63818d7f79c3dc8d54d90c8241b76eae67be7254d",
+            "sync_created_at": 1725051913,
+            "sync_updated_at": 1725051913,
+            "name": "Finca Los Alpinos",
+            "destination": "1",
+            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "measure_milk": "L",
+            "measure_weight": "kg",
+            "type": "1",
+            "_metadata": [],
+            "_lots": [],
+            "_animals": [
+                {
+                    "entity": "animals",
+                    "data": {
+                        "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+                        "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+                        "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
+                        "sync_created_at": 1725051913,
+                        "sync_updated_at": 1725051913,
+                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "name": "Camila",
+                        "code": "9012345",
+                        "gender": "f",
+                        "type": "1",
+                        "purpose": "2",
+                        "sale_status": "0",
+                        "stage": "4",
+                        "reproductive_status": "1",
+                        "health_status": "1",
+                        "inside": 1,
+                        "_deaths": [],
+                        "_facts": [],
+                        "_favorites": [],
+                        "_images": [],
+                        "_weights": [],
+                        "_inseminations": [],
+                        "_treatments": [],
+                        "_alerts": [],
+                        "_pregnantChecks": [],
+                        "_abortions": [],
+                        "_breed": [],
+                        "_mastitis": [],
+                        "_milking": []
+                    }
+                }
+            ],
+            "_irons": [],
+            "_milkSales": []
+        }
+    }
+]
+"""
+
+// 6 Entities
 const val DATA_MIGRATION_VERSION_1 ="""
     [
   {

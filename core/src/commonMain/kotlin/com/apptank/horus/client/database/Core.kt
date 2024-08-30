@@ -17,7 +17,6 @@ data class Cursor(
     val table: String,
     val values: List<CursorValue<*>>
 ) {
-
     fun <T> getValue(attribute: String): T {
         return values.first { it.column.name == attribute }.value as T
     }

@@ -2,6 +2,7 @@ package com.apptank.horus.client.control
 
 
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.base.MapAttributes
 import com.apptank.horus.client.database.Cursor
 import com.apptank.horus.client.database.DBColumnValue
 import com.apptank.horus.client.database.SQLiteHelper
@@ -209,7 +210,7 @@ class ControlManagerDatabaseHelper(
     private fun addAction(
         entity: String,
         actionType: SyncActionType,
-        dataJSON: Map<String, Any?>
+        dataJSON: MapAttributes
     ) {
         driver.handle {
             insertOrThrow(

@@ -31,10 +31,6 @@ inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
     return block(this)
 }
 
-inline fun <R> SqlDriver.handleTransaction(block: SqlDriver.() -> R): R {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-}
-
 fun SqlCursor.getRequireInt(index: Int): Int {
     return this.getLong(index)?.toInt() ?: throw IllegalStateException("Index $index not found")
 }

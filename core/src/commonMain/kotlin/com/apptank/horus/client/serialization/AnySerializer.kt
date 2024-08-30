@@ -1,5 +1,6 @@
 package com.apptank.horus.client.serialization
 
+import com.apptank.horus.client.base.MapAttributes
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -19,10 +20,16 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.modules.serializersModuleOf
 
-object AnySerializer : KSerializer<Any> {
+internal object AnySerializer : KSerializer<Any> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Any")
+
+    private val decoderJSON = Json {
+        ignoreUnknownKeys = true
+        serializersModule = serializersModuleOf(Any::class, AnySerializer)
+    }
 
     override fun serialize(encoder: Encoder, value: Any) {
         val jsonEncoder = encoder as? JsonEncoder
@@ -48,6 +55,8 @@ object AnySerializer : KSerializer<Any> {
                 jsonElement.booleanOrNull != null -> jsonElement.boolean
                 else -> throw SerializationException("Unknown primitive type")
             }
+            is JsonArray -> decoderJSON.decodeFromString<List<MapAttributes>>(jsonElement.toString())
+            is JsonObject -> decoderJSON.decodeFromString<MapAttributes>(jsonElement.toString())
             else -> throw SerializationException("Unsupported JsonElement type")
         }
     }

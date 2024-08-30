@@ -11,7 +11,7 @@ infix fun <T> List<T>.prepend(e: T): List<T> {
     }
 }
 
-fun<E> MutableList<E>.removeIf(filter: (E) -> Boolean): Boolean {
+fun <E> MutableList<E>.removeIf(filter: (E) -> Boolean): Boolean {
     val it = iterator()
     var removed = false
     while (it.hasNext()) {
@@ -22,3 +22,4 @@ fun<E> MutableList<E>.removeIf(filter: (E) -> Boolean): Boolean {
     }
     return removed
 }
+

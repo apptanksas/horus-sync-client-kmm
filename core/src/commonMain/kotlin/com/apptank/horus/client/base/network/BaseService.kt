@@ -21,6 +21,22 @@ abstract class BaseService(
         }
     }
 
+    protected fun generateUrl(
+        baseUrl: String,
+        path: String,
+        queryParams: Map<String, String>
+    ): String {
+        var url = "$baseUrl/$path"
+        if (queryParams.isNotEmpty()) {
+            url += "?"
+            queryParams.forEach { (key, value) ->
+                url += "$key=$value&"
+            }
+            url = url.dropLast(1)
+        }
+        return url
+    }
+
     protected suspend fun <T : Any> get(
         url: String,
         onResponse: (response: String) -> T
@@ -35,9 +51,11 @@ abstract class BaseService(
             val responseParsed: T = onResponse(response.bodyAsText())
             DataResult.Success(responseParsed)
         }.getOrElse {
+            it.printStackTrace()
             DataResult.Failure(it)
         }
     }
+
     protected inline fun <reified R : Any> String.serialize() =
         decoderJson.decodeFromString<R>(this)
 }
