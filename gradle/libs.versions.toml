@@ -4,7 +4,7 @@ kotlin = "2.0.20"
 kotlinxSerialization = "1.7.2"
 ktor = "2.3.2"
 sqldelight = "2.0.2"
-kotlinxDateTime = "0.2.1"
+kotlinxDateTime = "0.6.1"
 kotlinCrypto = "0.5.1"
 
 [libraries]

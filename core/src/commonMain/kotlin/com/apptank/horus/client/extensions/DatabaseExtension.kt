@@ -1,12 +1,9 @@
 package com.apptank.horus.client.extensions
 
-import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.config.BOOL_FALSE
 import com.apptank.horus.client.config.BOOL_TRUE
-import kotlinx.serialization.json.Json
-
 
 /**
  * Prepares a value as a string for SQL operations.
@@ -14,7 +11,10 @@ import kotlinx.serialization.json.Json
  * @param value The value to be prepared.
  * @return The string representation of the value.
  */
-internal fun Any.prepareSQLValueAsString(): String {
+internal fun Any?.prepareSQLValueAsString(): String {
+
+    if(this == null) return "NULL"
+
     return when (val value = this) {
         is String -> "'$value'"
         is Boolean -> if (value) BOOL_TRUE else BOOL_FALSE
@@ -29,6 +29,10 @@ fun SqlDriver.execute(query: String) {
 
 inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
     return block(this)
+}
+
+inline fun <R> SqlDriver.handleTransaction(block: SqlDriver.() -> R): R {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 }
 
 fun SqlCursor.getRequireInt(index: Int): Int {

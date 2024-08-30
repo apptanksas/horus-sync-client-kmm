@@ -1,7 +1,6 @@
 package com.apptank.horus.client.control
 
 
-import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.database.Cursor
 import com.apptank.horus.client.database.DBColumnValue
@@ -16,13 +15,9 @@ import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.eventbus.Event
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
-import com.apptank.horus.client.utils.SystemTime
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-
 /**
  * Maneja datos asociados al control interno de la sincronización
  */

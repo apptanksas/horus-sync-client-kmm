@@ -32,7 +32,7 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithSimpleWhereAnd() {
-        val expected = "SELECT * FROM animal WHERE id > 120 AND date = \"2023\""
+        val expected = "SELECT * FROM animal WHERE id > 120 AND date = '2023'"
         val builder = SimpleQueryBuilder("animal")
 
         builder.where(
@@ -57,7 +57,7 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithWhereAndJoinOr() {
-        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = \"2023\") " +
+        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = '2023') " +
                 "OR (is_male = 1 AND age < 10)"
         val builder = SimpleQueryBuilder("animal")
 
@@ -98,7 +98,7 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithWhereAndJoinOrGrouped() {
-        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = \"2023\") " +
+        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = '2023') " +
                 "AND (is_male = 1 OR age < 10)"
         val builder = SimpleQueryBuilder("animal")
 

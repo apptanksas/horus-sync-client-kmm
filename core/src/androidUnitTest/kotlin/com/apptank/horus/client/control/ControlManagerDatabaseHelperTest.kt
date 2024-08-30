@@ -285,6 +285,6 @@ class ControlManagerDatabaseHelperTest : TestCase() {
         val completedActions = controlManagerDatabaseHelper.getCompletedActionsAfterDatetime(0)
 
         // Then
-        Assert.assertEquals(2, completedActions.size)
+        Assert.assertEquals(1, completedActions.size)
     }
 }

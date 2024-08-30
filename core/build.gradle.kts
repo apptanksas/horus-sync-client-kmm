@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
+    id("app.cash.sqldelight") version "2.0.2"
 }
 
 kotlin {
@@ -49,11 +50,11 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
-            implementation(libs.test.sqldelight)
         }
         // Android dependencies
         androidMain.dependencies {
             implementation(libs.sqldelight.driver.android)
+            implementation(libs.test.sqldelight)
         }
         // IOS dependencies
         iosMain.dependencies {
@@ -76,3 +77,12 @@ android {
 
 group = "com.apptank.horus.client"
 version = "0.0.0"
+
+
+sqldelight {
+    databases {
+        create("HorusDatabase") {
+            packageName.set("horus")
+        }
+    }
+}

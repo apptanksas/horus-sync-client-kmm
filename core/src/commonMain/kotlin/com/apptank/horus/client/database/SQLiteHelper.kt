@@ -87,18 +87,23 @@ abstract class SQLiteHelper(
     }
 
 
-    protected fun insertOrThrow(table: String, values: Map<String, Any>) {
+    protected fun insertOrThrow(table: String, values: Map<String, Any?>) {
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
         val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
         executeInsertOrThrow(query)
     }
 
-    protected fun update(table: String, values: Map<String, Any>, where: String): Long {
+    protected fun update(table: String, values: Map<String, Any?>, where: String): Long {
         val setValues =
-            values.entries.joinToString(", ") { (key, value) -> "$key = ${value.prepareSQLValueAsString()}" }
+            values.entries.joinToString(", ") { (key, value) -> "$key = ${value?.prepareSQLValueAsString()}" }
         val query = "UPDATE $table SET $setValues WHERE $where;"
         return executeUpdate(query)
+    }
+
+    protected fun delete(table: String, where: String): Long {
+        val query = "DELETE FROM $table WHERE $where;"
+        return executeDelete(query)
     }
 
     private fun executeInsertOrThrow(query: String) {
@@ -144,6 +149,10 @@ abstract class SQLiteHelper(
         return driver.execute(null, query, 0).value
     }
 
+    private fun executeDelete(query: String): Long {
+        return driver.execute(null, query, 0).value
+    }
+
 
     /**
      * Builds a SQL WHERE clause from conditions and an operator.
@@ -152,26 +161,25 @@ abstract class SQLiteHelper(
      * @param operator The logical operator to combine conditions (AND/OR).
      * @return A pair consisting of the WHERE clause and the list of arguments.
      */
-    protected fun buildEvaluation(
+    protected fun buildWhereEvaluation(
         conditions: List<WhereCondition>,
         operator: Operator
-    ): Pair<String, List<String>> {
-        return Pair(
-            conditions.joinToString(
-                operator.name,
-                transform = { " ${it.columnValue.column} ${it.comparator} ? " }
-            ).trim(),
-            conditions.map {
-                it.columnValue.value.prepareSQLValueAsString()
-                    .replace("\"", "")
-            }
-        )
+    ): String {
+        return conditions.joinToString(
+            operator.name,
+            transform = { " ${it.columnValue.column} ${it.comparator} ${it.columnValue.value.prepareSQLValueAsString()} " }
+        ).trim()
+    }
+
+    protected fun List<DBColumnValue>.prepareMap(): Map<String, Any?> {
+        return associate { it.column to it.value }
     }
 
     companion object {
         private val TABLES_SYSTEM = listOf("android_metadata", "sqlite_sequence")
         private var CACHE_TABLES = mutableMapOf<String, List<String>>()
-        private var CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<Column>>>()
+        private var CACHE_COLUMN_NAMES =
+            mutableMapOf<String, MutableMap<String, List<Column>>>()
 
         fun flushCache() {
             CACHE_TABLES = mutableMapOf()
