@@ -10,6 +10,8 @@ import com.apptank.horus.client.extensions.getRequireString
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
+import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.log
 
 abstract class SQLiteHelper(
     protected val driver: SqlDriver,
@@ -91,6 +93,7 @@ abstract class SQLiteHelper(
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
         val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
+        info("Insert query: $query")
         executeInsertOrThrow(query)
     }
 
@@ -98,11 +101,13 @@ abstract class SQLiteHelper(
         val setValues =
             values.entries.joinToString(", ") { (key, value) -> "$key = ${value?.prepareSQLValueAsString()}" }
         val query = "UPDATE $table SET $setValues WHERE $where;"
+        info("Update query: $query")
         return executeUpdate(query)
     }
 
     protected fun delete(table: String, where: String): Long {
         val query = "DELETE FROM $table WHERE $where;"
+        info("Delete query: $query")
         return executeDelete(query)
     }
 

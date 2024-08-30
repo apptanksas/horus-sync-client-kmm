@@ -79,26 +79,6 @@ class OperationDatabaseHelper(
         }
 
     /**
-     * Updates a record in a specified table based on conditions.
-     *
-     * @param table The name of the table.
-     * @param values The list of column-value pairs to be updated.
-     * @param conditions The list of conditions for the update.
-     * @param operator The logical operator to combine conditions (AND/OR).
-     * @return The result of the update operation.
-     */
-    fun updateRecord(
-        table: String,
-        values: List<DBColumnValue>,
-        conditions: List<WhereCondition>,
-        operator: Operator = Operator.AND
-    ): OperationResult {
-        driver.handle {
-            return executeUpdate(table, values, conditions, operator)
-        }
-    }
-
-    /**
      * Updates multiple records in the database within a transaction.
      *
      * @param records A list of records to be updated.
@@ -119,24 +99,6 @@ class OperationDatabaseHelper(
             }
             postOperation()
         }
-
-    /**
-     * Deletes records from a specified table based on conditions.
-     *
-     * @param table The name of the table.
-     * @param conditions The list of conditions for deletion.
-     * @param operator The logical operator to combine conditions (AND/OR).
-     * @return The result of the operation.
-     */
-    fun deleteRecord(
-        table: String,
-        conditions: List<WhereCondition>,
-        operator: Operator = Operator.AND
-    ): OperationResult {
-        driver.handle {
-            return executeDelete(table, conditions, operator)
-        }
-    }
 
     /**
      * Deletes multiple records from the database within a transaction.
