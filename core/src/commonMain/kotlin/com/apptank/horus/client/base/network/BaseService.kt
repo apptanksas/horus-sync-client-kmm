@@ -1,14 +1,13 @@
 package com.apptank.horus.client.base.network
 
 import com.apptank.horus.client.base.DataResult
-import com.apptank.horus.client.base.MapAttributes
-import com.apptank.horus.client.base.encodeToJSON
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -16,7 +15,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 abstract class BaseService(
-    engine: HttpClientEngine
+    engine: HttpClientEngine,
+    private val baseUrl: String
 ) {
     val decoderJson = Json { ignoreUnknownKeys = true }
     protected val client = HttpClient(engine) {
@@ -25,60 +25,47 @@ abstract class BaseService(
         }
     }
 
-    protected fun generateUrl(
-        baseUrl: String,
-        path: String,
-        queryParams: Map<String, String>
-    ): String {
-        var url = "$baseUrl/$path"
-        if (queryParams.isNotEmpty()) {
-            url += "?"
-            queryParams.forEach { (key, value) ->
-                url += "$key=$value&"
-            }
-            url = url.dropLast(1)
-        }
-        return url
-    }
-
     protected suspend fun <T : Any> get(
-        url: String,
+        path: String,
+        queryParams: Map<String, String> = emptyMap(),
         onResponse: (response: String) -> T
     ): DataResult<T> {
-        return kotlin.runCatching {
-            val response = client.get(url) {
+        return handleResponse(
+            response = client.get(buildUrl(path)) {
                 contentType(ContentType.Application.Json)
-            }
-            if (response.status.value == 401 || response.status.value == 403) {
-                return DataResult.NotAuthorized(Exception("Unauthorized"))
-            }
-            val responseParsed: T = onResponse(response.bodyAsText())
-            DataResult.Success(responseParsed)
-        }.getOrElse {
-            it.printStackTrace()
-            DataResult.Failure(it)
-        }.also {
-            client.close()
-        }
+                url {
+                    queryParams.forEach { (key, value) ->
+                        parameters.append(key, value)
+                    }
+                }
+            }, onResponse
+        )
     }
 
     protected suspend fun <T : Any> post(
-        url: String,
+        path: String,
         data: Any,
         onResponse: (response: String) -> T
     ): DataResult<T> {
+        return handleResponse(client.post(buildUrl(path)) {
+            contentType(ContentType.Application.Json)
+            setBody(data)
+        }, onResponse)
+    }
+
+    private suspend fun <T : Any> handleResponse(
+        response: HttpResponse,
+        onResponse: (response: String) -> T
+    ): DataResult<T> {
         return kotlin.runCatching {
-            val response = client.post(url) {
-                contentType(ContentType.Application.Json)
-                setBody(data)
-            }
+
             if (response.status.value == 401 || response.status.value == 403) {
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
             }
 
             val responseText = response.bodyAsText()
 
-            if(responseText.isBlank()) {
+            if (responseText.isBlank()) {
                 return DataResult.Success(Unit as T)
             }
 
@@ -90,6 +77,10 @@ abstract class BaseService(
         }.also {
             client.close()
         }
+    }
+
+    private fun buildUrl(path: String): String {
+        return "$baseUrl/$path"
     }
 
     protected inline fun <reified R : Any> String.serialize() =

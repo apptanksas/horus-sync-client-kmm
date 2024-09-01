@@ -14,25 +14,25 @@ import io.ktor.client.engine.HttpClientEngine
 
 class SynchronizationService(
     engine: HttpClientEngine,
-    private val baseUrl: String
-) : BaseService(engine), ISynchronizationService {
+    baseUrl: String
+) : BaseService(engine, baseUrl), ISynchronizationService {
     override suspend fun getData(): DataResult<List<EntityResponse>> {
-        return get("$baseUrl/data") { it.serialize() }
+        return get("data") { it.serialize() }
     }
 
     override suspend fun getDataEntity(
         entity: String,
         ids: List<String>
     ): DataResult<List<EntityResponse>> {
-        val url = generateUrl(
-            baseUrl, "data/${entity.lowercase()}",
+        "data/${entity.lowercase()}"
+        return get(
+            "data/${entity.lowercase()}",
             mapOf("ids" to ids.joinToString(","))
-        )
-        return get(url) { it.serialize() }
+        ) { it.serialize() }
     }
 
     override suspend fun postQueue(actions: List<SyncActionRequest>): DataResult<Unit> {
-        return post("$baseUrl/queue/actions", actions) { it.serialize() }
+        return post("queue/actions", actions) { it.serialize() }
     }
 
     override suspend fun getQueueData(
