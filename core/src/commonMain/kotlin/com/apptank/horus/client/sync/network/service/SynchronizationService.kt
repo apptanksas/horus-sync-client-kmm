@@ -32,7 +32,7 @@ class SynchronizationService(
     }
 
     override suspend fun postQueue(actions: List<SyncActionRequest>): DataResult<Unit> {
-        TODO("Not yet implemented")
+        return post("$baseUrl/queue/actions", actions) { it.serialize() }
     }
 
     override suspend fun getQueueData(

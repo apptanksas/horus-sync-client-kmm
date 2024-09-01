@@ -38,7 +38,7 @@ internal object AnySerializer : KSerializer<Any> {
             is String -> JsonPrimitive(value)
             is Int -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
-            is Map<*, *> -> JsonPrimitive(Json.encodeToString(value as Map<String, @Serializable(with = AnySerializer::class) Any?>))
+            is Map<*, *> -> JsonPrimitive(Json.encodeToString(value as MapAttributes))
             else -> throw SerializationException("Unsupported type")
         }
         jsonEncoder.encodeJsonElement(jsonElement)

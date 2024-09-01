@@ -2,6 +2,9 @@ package com.apptank.horus.client
 
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 import java.util.UUID
 import kotlin.random.Random
 
@@ -31,5 +34,9 @@ abstract class TestCase {
 
     protected fun uuid(): String {
         return UUID.randomUUID().toString()
+    }
+
+    protected fun timestamp(): Long {
+        return Clock.System.now().toEpochMilliseconds() / 1000
     }
 }

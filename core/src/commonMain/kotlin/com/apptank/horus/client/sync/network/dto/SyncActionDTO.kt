@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 /**
  * Request model for a sync action
  */
+@Serializable
 data class SyncActionRequest(
     private val action: String,
     private val entity: String,
