@@ -3,7 +3,7 @@ package com.apptank.horus.client.database
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
-import com.apptank.horus.client.base.MapAttributes
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.extensions.getRequireBoolean
 import com.apptank.horus.client.extensions.getRequireDouble
 import com.apptank.horus.client.extensions.getRequireInt
@@ -12,7 +12,6 @@ import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
-import com.apptank.horus.client.extensions.log
 
 abstract class SQLiteHelper(
     protected val driver: SqlDriver,
@@ -90,7 +89,7 @@ abstract class SQLiteHelper(
     }
 
 
-    protected fun insertOrThrow(table: String, values: MapAttributes) {
+    protected fun insertOrThrow(table: String, values: DataMap) {
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
         val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
@@ -98,7 +97,7 @@ abstract class SQLiteHelper(
         executeInsertOrThrow(query)
     }
 
-    protected fun update(table: String, values: MapAttributes, where: String): Long {
+    protected fun update(table: String, values: DataMap, where: String): Long {
         val setValues =
             values.entries.joinToString(", ") { (key, value) -> "$key = ${value?.prepareSQLValueAsString()}" }
         val query = "UPDATE $table SET $setValues WHERE $where;"
@@ -177,7 +176,7 @@ abstract class SQLiteHelper(
         ).trim()
     }
 
-    protected fun List<DBColumnValue>.prepareMap(): MapAttributes {
+    protected fun List<DBColumnValue>.prepareMap(): DataMap {
         return associate { it.column to it.value }
     }
 

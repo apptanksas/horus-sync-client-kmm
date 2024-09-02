@@ -1,6 +1,6 @@
 package com.apptank.horus.client.database
 
-import com.apptank.horus.client.base.MapAttributes
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.serialization.AnySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
@@ -22,9 +22,9 @@ data class Cursor(
         return values.first { it.column.name == attribute }.value as T
     }
 
-    fun getStringAndConvertToMap(attributeName: String): MapAttributes {
+    fun getStringAndConvertToMap(attributeName: String): DataMap {
         val value = getValue<String>(attributeName)
-        return decoder.decodeFromString<MapAttributes>(value)
+        return decoder.decodeFromString<DataMap>(value)
     }
 
     private companion object {

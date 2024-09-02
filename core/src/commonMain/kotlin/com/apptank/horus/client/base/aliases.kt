@@ -5,12 +5,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-internal typealias MapAttributes = Map<String, @Serializable(with = AnySerializer::class) Any?>
+internal typealias DataMap = Map<String, @Serializable(with = AnySerializer::class) Any?>
 
-fun MapAttributes.encodeToJSON(): String {
+fun DataMap.encodeToJSON(): String {
     return Json.encodeToString(this)
 }
 
-fun String.decodeToMapAttributes(): MapAttributes {
+fun String.decodeToMapAttributes(): DataMap {
     return Json.decodeFromString(this)
 }

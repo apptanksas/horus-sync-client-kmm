@@ -12,7 +12,6 @@ import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.fold
 import com.apptank.horus.client.control.SyncActionType
-import com.apptank.horus.client.hashing.SyncHasher
 import com.apptank.horus.client.sync.network.dto.EntityHash
 import com.apptank.horus.client.sync.network.dto.SyncActionRequest
 import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
@@ -47,6 +46,20 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.fail("Error")
             }
         )
+        assertRequestMissingQueryParam("after")
+    }
+
+    @Test
+    fun getDataAfterIsSuccess() = runBlocking {
+        // Given
+        val timestampAfter = timestamp()
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getData(timestampAfter)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", timestampAfter.toString())
     }
 
     @Test
@@ -77,6 +90,8 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.fail("Error")
             }
         )
+        assertRequestMissingQueryParam("after")
+        assertRequestMissingQueryParam("ids")
     }
 
     @Test
@@ -86,10 +101,25 @@ class SynchronizationServiceTest : ServiceTest() {
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
-        val response = service.getDataEntity("farms", ids)
+        val response = service.getDataEntity("farms", ids = ids)
         // Then
         assert(response is DataResult.Success)
         assertRequestContainsQueryParam("ids", ids.joinToString(","))
+        assertRequestMissingQueryParam("after")
+    }
+
+    @Test
+    fun getDataEntityAfterIsSuccess() = runBlocking {
+        // Given
+        val timestampAfter = timestamp()
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getDataEntity("farms", timestampAfter)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", timestampAfter.toString())
+        assertRequestMissingQueryParam("ids")
     }
 
     @Test

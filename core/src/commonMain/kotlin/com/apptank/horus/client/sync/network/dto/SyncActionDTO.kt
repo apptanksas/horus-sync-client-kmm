@@ -1,6 +1,6 @@
 package com.apptank.horus.client.sync.network.dto
 
-import com.apptank.horus.client.base.MapAttributes
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.control.SyncAction
 import com.apptank.horus.client.control.SyncActionStatus
 import com.apptank.horus.client.control.SyncActionType
@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 data class SyncActionRequest(
     private val action: String,
     private val entity: String,
-    private val data: MapAttributes,
+    private val data: DataMap,
     private val datetime: Long
 )
 
@@ -40,7 +40,7 @@ fun SyncAction.toRequest(): SyncActionRequest {
 data class SyncActionResponse(
     val action: String? = null,
     val entity: String? = null,
-    val data: MapAttributes? = null,
+    val data: DataMap? = null,
     @SerialName("actioned_at") val actionedAt: Long? = null,
     @SerialName("synced_at") val syncedAt: Long? = null
 )

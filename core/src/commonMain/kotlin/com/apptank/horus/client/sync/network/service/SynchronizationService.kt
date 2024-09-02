@@ -16,18 +16,29 @@ class SynchronizationService(
     engine: HttpClientEngine,
     baseUrl: String
 ) : BaseService(engine, baseUrl), ISynchronizationService {
-    override suspend fun getData(): DataResult<List<EntityResponse>> {
-        return get("data") { it.serialize() }
+    override suspend fun getData(timestampAfter: Long?): DataResult<List<EntityResponse>> {
+
+        val queryParams = mutableMapOf<String, String>()
+        timestampAfter?.let { queryParams["after"] = it.toString() }
+
+        return get("data", queryParams) { it.serialize() }
     }
 
     override suspend fun getDataEntity(
         entity: String,
+        afterUpdatedAt: Long?,
         ids: List<String>
     ): DataResult<List<EntityResponse>> {
-        return get(
-            "data/${entity.lowercase()}",
-            mapOf("ids" to ids.joinToString(","))
-        ) { it.serialize() }
+
+        val queryParams = mutableMapOf<String, String>()
+
+        afterUpdatedAt?.let { queryParams["after"] = it.toString() }
+
+        if (ids.isNotEmpty()) {
+            queryParams["ids"] = ids.joinToString(",")
+        }
+
+        return get("data/${entity.lowercase()}", queryParams) { it.serialize() }
     }
 
     override suspend fun postQueueActions(actions: List<SyncActionRequest>): DataResult<Unit> {

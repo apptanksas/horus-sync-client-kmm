@@ -11,10 +11,11 @@ import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
 import com.apptank.horus.client.sync.network.dto.ValidateHashingResponse
 
 interface ISynchronizationService {
-    suspend fun getData(): DataResult<List<EntityResponse>>
+    suspend fun getData(timestampAfter: Long? = null): DataResult<List<EntityResponse>>
 
     suspend fun getDataEntity(
         entity: String,
+        afterUpdatedAt: Long? = null,
         ids: List<String> = emptyList()
     ): DataResult<List<EntityResponse>>
 

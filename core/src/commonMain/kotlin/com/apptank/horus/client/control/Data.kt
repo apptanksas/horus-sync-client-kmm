@@ -1,6 +1,6 @@
 package com.apptank.horus.client.control
 
-import com.apptank.horus.client.base.MapAttributes
+import com.apptank.horus.client.base.DataMap
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -48,7 +48,7 @@ data class SyncAction(
     val action: SyncActionType,
     val entity: String,
     val status: SyncActionStatus,
-    val data: MapAttributes,
+    val data: DataMap,
     val datetime: LocalDateTime
 ) {
 

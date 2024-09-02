@@ -1,8 +1,7 @@
 package com.apptank.horus.client.serialization
 
-import com.apptank.horus.client.base.MapAttributes
+import com.apptank.horus.client.base.DataMap
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -38,7 +37,7 @@ internal object AnySerializer : KSerializer<Any> {
             is String -> JsonPrimitive(value)
             is Int -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
-            is Map<*, *> -> JsonPrimitive(Json.encodeToString(value as MapAttributes))
+            is Map<*, *> -> JsonPrimitive(Json.encodeToString(value as DataMap))
             else -> throw SerializationException("Unsupported type")
         }
         jsonEncoder.encodeJsonElement(jsonElement)
@@ -55,8 +54,8 @@ internal object AnySerializer : KSerializer<Any> {
                 jsonElement.booleanOrNull != null -> jsonElement.boolean
                 else -> throw SerializationException("Unknown primitive type")
             }
-            is JsonArray -> decoderJSON.decodeFromString<List<MapAttributes>>(jsonElement.toString())
-            is JsonObject -> decoderJSON.decodeFromString<MapAttributes>(jsonElement.toString())
+            is JsonArray -> decoderJSON.decodeFromString<List<DataMap>>(jsonElement.toString())
+            is JsonObject -> decoderJSON.decodeFromString<DataMap>(jsonElement.toString())
             else -> throw SerializationException("Unsupported JsonElement type")
         }
     }
