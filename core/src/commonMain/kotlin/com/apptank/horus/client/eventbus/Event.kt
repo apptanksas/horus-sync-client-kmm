@@ -1,6 +1,6 @@
 package com.apptank.horus.client.eventbus
 
-data class Event(val data: MutableMap<String, Any>? = null)
+data class Event(val data: Map<String, Any>? = null)
 
 enum class EventType {
     SYNC_READY,

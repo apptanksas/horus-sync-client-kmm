@@ -1,12 +1,11 @@
 package com.apptank.horus.client.sync.manager
 
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.coFold
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncAction
 import com.apptank.horus.client.control.SyncActionType
-import com.apptank.horus.client.control.SyncControlDatabaseHelper
+import com.apptank.horus.client.eventbus.Event
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.extensions.info
@@ -27,7 +26,8 @@ class RemoteSynchronizatorManager(
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
     private val event: EventBus,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val maxAttempts: Int = 3
 ) {
 
     init {
@@ -58,8 +58,17 @@ class RemoteSynchronizatorManager(
                     updateActionsAsCompleted(pendingActions)
                 },
                 onFailure = {
-                    logException("Error trying to sync actions", it)
+                    logException("Error trying to sync actions")
+                    event.post(
+                        EventType.SYNC_PUSH_FAILED,
+                        Event(mapOf<String, Any>("exception" to it))
+                    )
                 })
+        }.invokeOnCompletion {
+            it?.let {
+                logException("Error trying to sync actions", it)
+                event.post(EventType.SYNC_PUSH_FAILED, Event(mapOf<String, Any>("exception" to it)))
+            }
         }
     }
 
@@ -80,7 +89,7 @@ class RemoteSynchronizatorManager(
         event.post(EventType.SYNC_PUSH_FAILED)
     }
 
-    private suspend fun attemptOperation(maxAttempts: Int = 3, callback: () -> Boolean): Boolean {
+    private suspend fun attemptOperation(callback: () -> Boolean): Boolean {
         var attempts = 0
         var isSuccess = false
         do {
@@ -95,7 +104,6 @@ class RemoteSynchronizatorManager(
     }
 
     private suspend fun <T> attemptOperationResult(
-        maxAttempts: Int = 3,
         callback: suspend () -> DataResult<T>
     ): DataResult<T> {
         var attempts = 0
