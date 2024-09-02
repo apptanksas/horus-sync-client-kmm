@@ -18,16 +18,16 @@ interface ISynchronizationService {
         ids: List<String> = emptyList()
     ): DataResult<List<EntityResponse>>
 
-    suspend fun postQueue(actions: List<SyncActionRequest>): DataResult<Unit>
+    suspend fun postQueueActions(actions: List<SyncActionRequest>): DataResult<Unit>
 
-    suspend fun getQueueData(
-        timestampAfter: Long,
-        filter: String
+    suspend fun getQueueActions(
+        timestampAfter: Long? = null,
+        exclude: List<Long> = emptyList()
     ): DataResult<List<SyncActionResponse>>
 
     suspend fun postValidateHashing(request: ValidateHashingRequest): DataResult<ValidateHashingResponse>
 
-    suspend fun postValidateData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>>
+    suspend fun postValidateEntitiesData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>>
 
     suspend fun getLastAction(): DataResult<SyncActionResponse>
 

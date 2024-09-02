@@ -4,11 +4,11 @@ import com.apptank.horus.client.base.MapAttributes
 import com.apptank.horus.client.control.SyncAction
 import com.apptank.horus.client.control.SyncActionStatus
 import com.apptank.horus.client.control.SyncActionType
-import com.apptank.horus.client.serialization.AnySerializer
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 
@@ -40,9 +40,9 @@ fun SyncAction.toRequest(): SyncActionRequest {
 data class SyncActionResponse(
     val action: String? = null,
     val entity: String? = null,
-    val data: Map<String, @Serializable(with = AnySerializer::class) Any?>? = null,
-    val datetimeAction: Int? = null,
-    val datetimeSync: Int? = null
+    val data: MapAttributes? = null,
+    @SerialName("actioned_at") val actionedAt: Long? = null,
+    @SerialName("synced_at") val syncedAt: Long? = null
 )
 
 fun SyncActionResponse.toDomain(): SyncAction {
@@ -52,7 +52,7 @@ fun SyncActionResponse.toDomain(): SyncAction {
         entity = entity ?: throw IllegalArgumentException("Entity is null"),
         status = SyncActionStatus.COMPLETED,
         data = data ?: mapOf(),
-        datetime = datetimeAction?.toLong()?.let {
+        datetime = actionedAt?.toLong()?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
         } ?: throw IllegalArgumentException("DatetimeAction is null")
     )

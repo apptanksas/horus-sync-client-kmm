@@ -3,6 +3,7 @@ package com.apptank.horus.client.migration.network.service
 import com.apptank.horus.client.MOCK_RESPONSE_GET_MIGRATION
 import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
+import com.apptank.horus.client.base.fold
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
@@ -18,6 +19,21 @@ class MigrationServiceTest : ServiceTest() {
         val response = apiClient.getMigration()
 
         Assert.assertTrue(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals(3, it.size)
+                it.forEach {
+                    Assert.assertNotNull(it.entity)
+                    Assert.assertFalse(it.attributes?.isEmpty() ?: true)
+                    Assert.assertNotNull(it.type)
+                    Assert.assertNotNull(it.currentVersion)
+                }
+                Assert.assertTrue(it.get(1).getRelated().isNotEmpty())
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
     }
 
     @Test

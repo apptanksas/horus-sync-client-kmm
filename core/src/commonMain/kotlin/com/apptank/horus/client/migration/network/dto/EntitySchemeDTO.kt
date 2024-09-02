@@ -1,5 +1,6 @@
 package com.apptank.horus.client.migration.network.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -7,7 +8,7 @@ data class EntitySchemeDTO(
     val entity: String? = null,
     val type: String? = null,
     val attributes: List<AttributeDTO>? = null,
-    val currentVersion: Long? = null
+    @SerialName("current_version") val currentVersion: Long? = null
 ) {
     fun getRelated(): List<EntitySchemeDTO> {
         val output = mutableListOf<EntitySchemeDTO>()

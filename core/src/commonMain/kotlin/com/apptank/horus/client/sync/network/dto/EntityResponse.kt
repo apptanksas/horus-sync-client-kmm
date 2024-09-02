@@ -1,6 +1,7 @@
 package com.apptank.horus.client.sync.network.dto
 
 
+import com.apptank.horus.client.base.MapAttributes
 import com.apptank.horus.client.domain.EntityAttribute
 import com.apptank.horus.client.domain.EntityDataRelations
 import com.apptank.horus.client.serialization.AnySerializer
@@ -15,7 +16,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class EntityResponse(
     var entity: String? = null,
-    var data: Map<String, @Serializable(with = AnySerializer::class) Any?>? = null
+    var data: MapAttributes? = null
 )
 
 /**

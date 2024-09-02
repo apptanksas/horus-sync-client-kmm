@@ -1,9 +1,11 @@
 package com.apptank.horus.client.sync.network.dto
 
+import com.apptank.horus.client.base.MapAttributes
 import kotlinx.serialization.Serializable
 
+@Serializable
 data class ValidateHashingRequest(
-    val data: MutableMap<String, Any>,
+    val data: MapAttributes,
     val hash: String
 )
 

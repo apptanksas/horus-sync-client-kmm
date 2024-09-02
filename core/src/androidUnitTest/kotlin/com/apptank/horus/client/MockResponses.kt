@@ -777,6 +777,140 @@ const val MOCK_RESPONSE_GET_DATA_ENTITY = """
 ]
 """
 
+const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
+    [
+    {
+        "action": "INSERT",
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
+            "unit": "kg",
+            "value": 10,
+            "measure": "w"
+        },
+        "actioned_at": 1725037164,
+        "synced_at": 1725044885
+    },
+    {
+        "action": "INSERT",
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4",
+            "unit": "kg",
+            "value": 10,
+            "measure": "w"
+        },
+        "actioned_at": 1725037000,
+        "synced_at": 1725048331
+    },
+    {
+        "action": "UPDATE",
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4",
+            "attributes": {
+                "unit": "kg",
+                "value": 20,
+                "measure": "w"
+            }
+        },
+        "actioned_at": 1725037064,
+        "synced_at": 1725048331
+    },
+    {
+        "action": "DELETE",
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4"
+        },
+        "actioned_at": 1725037164,
+        "synced_at": 1725048331
+    },
+    {
+        "action": "INSERT",
+        "entity": "farms",
+        "data": {
+            "id": "ea5c701b-5439-47b4-adcf-b91802bec259",
+            "name": "Finca Los Alpinos",
+            "type": 1,
+            "destination": 1,
+            "measure_milk": "L",
+            "mv_area_total": "0e83bf78-0e91-4c9d-88c7-d760d3dd8ef8",
+            "measure_weight": "kg",
+            "mv_area_cow_farming": "568c3ceb-c323-4b43-8269-c9104bff8431"
+        },
+        "actioned_at": 1725037000,
+        "synced_at": 1725048957
+    },
+    {
+        "action": "INSERT",
+        "entity": "farms",
+        "data": {
+            "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "name": "Finca Los Alpinos",
+            "type": 1,
+            "destination": 1,
+            "measure_milk": "L",
+            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "measure_weight": "kg",
+            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90"
+        },
+        "actioned_at": 1725037000,
+        "synced_at": 1725051913
+    },
+    {
+        "action": "INSERT",
+        "entity": "animals",
+        "data": {
+            "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+            "code": "9012345",
+            "name": "Camila",
+            "type": 1,
+            "stage": 4,
+            "gender": "f",
+            "inside": true,
+            "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "purpose": 2,
+            "sale_status": "0",
+            "health_status": 1,
+            "branding_iron_id": null,
+            "reproductive_status": 1
+        },
+        "actioned_at": 1725037001,
+        "synced_at": 1725051913
+    }
+]
+"""
+
+const val MOCK_RESPONSE_POST_VALIDATE_DATA = """
+    [
+    {
+        "entity": "farms",
+        "hash": {
+            "expected": "86f90952b15a4c31dd1fcebbda7d807611e304eb45793b91f1d27db2024d210f",
+            "obtained": "86f90952b15a4c31dd1fcebbda7d807611e304eb45793b91f1d27db2024d210f",
+            "matched": true
+        }
+    },
+    {
+        "entity": "animals",
+        "hash": {
+            "expected": "6f2488fa2911ca67861dcc5d1549874d8bf9c76f37cb5c1bfad5c7b5f52550c8",
+            "obtained": "5467ab59e695c4c470c3c3d2912aca5530087b2286878f7e74e725163468f94f",
+            "matched": false
+        }
+    }
+]
+"""
+
+const val MOCK_RESPONSE_POST_VALIDATE_HASHING = """
+    {
+    "expected": "4168cbdb0ca6923e633bf61e795c61b0c74908334d71191afb223cad7c91bf64",
+    "obtained": "4168cbdb0ca6923e633bf61e795c61b0c74908334d71191afb223cad7c91bf64",
+    "matched": true
+}
+"""
+
 // 6 Entities
 const val DATA_MIGRATION_VERSION_1 ="""
     [

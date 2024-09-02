@@ -3,6 +3,7 @@ package com.apptank.horus.client.sync.network.dto
 import kotlinx.serialization.Serializable
 
 
+@Serializable
 data class EntityHash(
     val entity: String,
     val hash: String
@@ -11,12 +12,12 @@ data class EntityHash(
 @Serializable
 data class EntityHashResponse(
     var entity: String? = null,
-    var hashValidation: HashValidation? = null
+    var hash: HashValidation? = null
 )
 
 @Serializable
 data class HashValidation(
-    var received: String? = null,
-    var current: String? = null,
+    var expected: String? = null,
+    var obtained: String? = null,
     var matched: Boolean? = null
 )

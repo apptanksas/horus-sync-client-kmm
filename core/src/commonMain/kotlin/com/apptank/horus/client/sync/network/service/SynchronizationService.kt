@@ -24,30 +24,38 @@ class SynchronizationService(
         entity: String,
         ids: List<String>
     ): DataResult<List<EntityResponse>> {
-        "data/${entity.lowercase()}"
         return get(
             "data/${entity.lowercase()}",
             mapOf("ids" to ids.joinToString(","))
         ) { it.serialize() }
     }
 
-    override suspend fun postQueue(actions: List<SyncActionRequest>): DataResult<Unit> {
+    override suspend fun postQueueActions(actions: List<SyncActionRequest>): DataResult<Unit> {
         return post("queue/actions", actions) { it.serialize() }
     }
 
-    override suspend fun getQueueData(
-        timestampAfter: Long,
-        filter: String
+    override suspend fun getQueueActions(
+        timestampAfter: Long?,
+        exclude: List<Long>
     ): DataResult<List<SyncActionResponse>> {
-        TODO("Not yet implemented")
+
+        val queryParams = mutableMapOf<String, String>()
+
+        timestampAfter?.let { queryParams["after"] = it.toString() }
+
+        if (exclude.isNotEmpty()) {
+            queryParams["exclude"] = exclude.joinToString(",")
+        }
+
+        return get("queue/actions", queryParams) { it.serialize() }
+    }
+
+    override suspend fun postValidateEntitiesData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>> {
+        return post("validate/data", entitiesHash) { it.serialize() }
     }
 
     override suspend fun postValidateHashing(request: ValidateHashingRequest): DataResult<ValidateHashingResponse> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun postValidateData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>> {
-        TODO("Not yet implemented")
+        return post("validate/hashing", request) { it.serialize() }
     }
 
     override suspend fun getLastAction(): DataResult<SyncActionResponse> {

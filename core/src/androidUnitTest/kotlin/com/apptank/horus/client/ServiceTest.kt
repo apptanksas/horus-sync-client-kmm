@@ -49,8 +49,19 @@ abstract class ServiceTest : TestCase() {
         )
     }
 
-    protected fun assertRequestQueryParams(queryParam: String, value: String) {
-        Assert.assertEquals(value, lastRequest.url.parameters[queryParam])
+    protected fun assertRequestContainsQueryParam(queryParam: String, value: String) {
+        Assert.assertEquals(
+            "Query param \"$queryParam\" invalid",
+            value,
+            lastRequest.url.parameters[queryParam].toString()
+        )
+    }
+
+    protected fun assertRequestMissingQueryParam(queryParam: String) {
+        Assert.assertNull(
+            "Query param \"$queryParam\" should not be present",
+            lastRequest.url.parameters[queryParam]
+        )
     }
 
     protected fun assertRequestHeader(header: String, value: String) {
