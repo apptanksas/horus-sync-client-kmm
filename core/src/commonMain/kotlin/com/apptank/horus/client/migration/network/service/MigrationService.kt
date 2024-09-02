@@ -5,7 +5,7 @@ import com.apptank.horus.client.migration.network.dto.EntitySchemeDTO
 import com.apptank.horus.client.base.network.BaseService
 import io.ktor.client.engine.HttpClientEngine
 
-class MigrationService(
+internal class MigrationService(
     engine: HttpClientEngine,
     baseUrl: String
 ) : BaseService(engine, baseUrl), IMigrationService {

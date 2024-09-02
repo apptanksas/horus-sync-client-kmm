@@ -12,7 +12,7 @@ import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
 import com.apptank.horus.client.sync.network.dto.ValidateHashingResponse
 import io.ktor.client.engine.HttpClientEngine
 
-class SynchronizationService(
+internal class SynchronizationService(
     engine: HttpClientEngine,
     baseUrl: String
 ) : BaseService(engine, baseUrl), ISynchronizationService {

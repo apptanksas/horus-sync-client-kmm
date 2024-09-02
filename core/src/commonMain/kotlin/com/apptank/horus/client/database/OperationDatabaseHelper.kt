@@ -7,7 +7,7 @@ import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.log
 import horus.HorusDatabase
 
-class OperationDatabaseHelper(
+internal class OperationDatabaseHelper(
     private val database: HorusDatabase,
     databaseName: String,
     driver: SqlDriver,

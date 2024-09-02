@@ -5,6 +5,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import horus.HorusDatabase
 
@@ -24,7 +25,7 @@ class DatabaseDriverFactory(
     }
 
     override fun retrieveDatabase(): HorusDatabase = HorusDatabase(createDriver())
-    override fun getDatabaseName(): String = "horus_database"
+    override fun getDatabaseName(): String = DATABASE_NAME
 }
 
 actual fun getPlatformDatabaseDriverFactory(): IDatabaseDriverFactory {

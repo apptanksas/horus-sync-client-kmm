@@ -6,7 +6,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import com.apptank.horus.client.database.SQLiteHelper
 
-class DatabaseSchema(
+internal class DatabaseSchema(
     databaseName: String,
     driver: SqlDriver,
     override val version: Long,

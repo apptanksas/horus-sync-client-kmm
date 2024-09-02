@@ -11,10 +11,11 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-abstract class BaseService(
+internal abstract class BaseService(
     engine: HttpClientEngine,
     private val baseUrl: String
 ) {
@@ -61,6 +62,10 @@ abstract class BaseService(
 
             if (response.status.value == 401 || response.status.value == 403) {
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
+            }
+
+            if (!response.status.isSuccess()) {
+                return DataResult.Failure(Exception("Error: ${response.status.value}"))
             }
 
             val responseText = response.bodyAsText()

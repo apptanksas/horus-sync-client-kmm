@@ -22,7 +22,7 @@ import kotlinx.datetime.toLocalDateTime
 /**
  * Maneja datos asociados al control interno de la sincronización
  */
-class SyncControlDatabaseHelper(
+internal class SyncControlDatabaseHelper(
     databaseName: String,
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName), ISyncControlDatabaseHelper {

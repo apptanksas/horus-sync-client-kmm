@@ -3,8 +3,6 @@ package com.apptank.horus.client
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
 import java.util.UUID
 import kotlin.random.Random
 
