@@ -2,9 +2,11 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
+    id ("kotlin-kapt")
     kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
     id("app.cash.sqldelight") version "2.0.2"
+    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
 }
 
 kotlin {
@@ -50,6 +52,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
+            implementation(libs.test.mockative)
         }
         // Android dependencies
         androidMain.dependencies {
@@ -85,4 +88,13 @@ sqldelight {
             packageName.set("horus")
         }
     }
+}
+
+dependencies {
+    // Configuration mockative
+    configurations
+        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
+        .forEach {
+            add(it.name, libs.ksp.mockative)
+        }
 }

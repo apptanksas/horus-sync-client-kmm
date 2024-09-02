@@ -5,7 +5,7 @@ import io.ktor.utils.io.core.toByteArray
 import org.kotlincrypto.hash.sha2.SHA256
 
 
-object SyncHasher {
+object AttributeHasher {
 
     fun generateHash(attributes: List<EntityAttribute<*>>): String {
         val inputString = attributes.sortedBy { it.name }

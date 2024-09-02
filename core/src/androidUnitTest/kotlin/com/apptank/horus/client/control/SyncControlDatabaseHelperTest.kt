@@ -11,15 +11,15 @@ import org.junit.Before
 import org.junit.Test
 
 
-class ControlManagerDatabaseHelperTest : TestCase() {
+class SyncControlDatabaseHelperTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
-    private lateinit var controlManagerDatabaseHelper: ControlManagerDatabaseHelper
+    private lateinit var controlManagerDatabaseHelper: SyncControlDatabaseHelper
 
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        controlManagerDatabaseHelper = ControlManagerDatabaseHelper("database", driver)
+        controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
         controlManagerDatabaseHelper.onCreate()
         SQLiteHelper.flushCache()

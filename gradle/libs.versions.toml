@@ -6,6 +6,7 @@ ktor = "2.3.2"
 sqldelight = "2.0.2"
 kotlinxDateTime = "0.6.1"
 kotlinCrypto = "0.5.1"
+mockative = "2.2.2"
 
 [libraries]
 
@@ -25,14 +26,16 @@ sqldelight-driver-ios = { module = "app.cash.sqldelight:native-driver", version.
 # Utils
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDateTime" }
 kotlin-crypto = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlinCrypto" }
+# KSP
+ksp-mockative = { module = "io.mockative:mockative-processor", version.ref = "mockative" }
 
 # Tests
 test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 test-ktor = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 test-sqldelight = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+test-mockative = { module = "io.mockative:mockative", version.ref = "mockative"}
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
-kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinxSerialization" }

@@ -22,19 +22,19 @@ import kotlinx.datetime.toLocalDateTime
 /**
  * Maneja datos asociados al control interno de la sincronización
  */
-class ControlManagerDatabaseHelper(
+class SyncControlDatabaseHelper(
     databaseName: String,
     driver: SqlDriver,
-) : SQLiteHelper(driver, databaseName) {
+) : SQLiteHelper(driver, databaseName), ISyncControlDatabaseHelper {
 
-    fun onCreate() {
+    override fun onCreate() {
         driver.handle {
             execute(SyncControlTable.SQL_CREATE_TABLE)
             execute(QueueActionsTable.SQL_CREATE_TABLE)
         }
     }
 
-    fun isStatusCompleted(type: SyncOperationType): Boolean {
+    override fun isStatusCompleted(type: SyncOperationType): Boolean {
         driver.handle {
             return rawQuery(
                 "SELECT EXISTS(SELECT 1 FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${type.id} AND " +
@@ -43,7 +43,7 @@ class ControlManagerDatabaseHelper(
         }
     }
 
-    fun getLastDatetimeCheckpoint(): Long {
+    override fun getLastDatetimeCheckpoint(): Long {
         driver.handle {
             return rawQuery(
                 "SELECT ${SyncControlTable.ATTR_DATETIME} FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${SyncOperationType.CHECKPOINT.id} ORDER BY ${SyncControlTable.ATTR_ID} DESC LIMIT 1"
@@ -51,13 +51,13 @@ class ControlManagerDatabaseHelper(
         }
     }
 
-    fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus) {
+    override fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus) {
         driver.handle {
             insertOrThrow(SyncControlTable.TABLE_NAME, SyncControlTable.mapToCreate(type, status))
         }
     }
 
-    fun addActionInsert(
+    override fun addActionInsert(
         entity: String,
         attributes: List<EntityAttribute<*>>
     ) {
@@ -81,7 +81,7 @@ class ControlManagerDatabaseHelper(
      * @param id Entity ID
      * @param attributes List of attributes to update
      */
-    fun addActionUpdate(
+    override fun addActionUpdate(
         entity: String,
         id: EntityAttribute<String>,
         attributes: List<EntityAttribute<*>>
@@ -103,7 +103,7 @@ class ControlManagerDatabaseHelper(
      * @param entity Entity name
      * @param id Entity ID
      */
-    fun addActionDelete(
+    override fun addActionDelete(
         entity: String,
         id: EntityAttribute<String>
     ) {
@@ -118,7 +118,7 @@ class ControlManagerDatabaseHelper(
      *
      * @return List of pending actions
      */
-    fun getPendingActions(): List<SyncAction> {
+    override fun getPendingActions(): List<SyncAction> {
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
@@ -135,7 +135,7 @@ class ControlManagerDatabaseHelper(
     /**
      * Update the status of the actions as completed
      */
-    fun completeActions(actionIds: List<Int>): Boolean {
+    override fun completeActions(actionIds: List<Int>): Boolean {
         driver.handle {
             val values = mapOf<String, Any>(
                 QueueActionsTable.ATTR_STATUS to SyncActionStatus.COMPLETED.id
@@ -155,7 +155,7 @@ class ControlManagerDatabaseHelper(
      *
      * @return Last action completed
      */
-    fun getLastActionCompleted(): SyncAction? {
+    override fun getLastActionCompleted(): SyncAction? {
         driver.handle {
             val sentenceSql = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
@@ -170,7 +170,7 @@ class ControlManagerDatabaseHelper(
     }
 
 
-    fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction> {
+    override fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction> {
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(

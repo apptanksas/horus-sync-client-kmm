@@ -2,7 +2,7 @@ package com.apptank.horus.client.utils
 
 import com.apptank.horus.client.domain.EntityAttribute
 import com.apptank.horus.client.extensions.removeIf
-import com.apptank.horus.client.hashing.SyncHasher
+import com.apptank.horus.client.hashing.AttributeHasher
 
 
 internal object AttributesPreparator {
@@ -37,7 +37,7 @@ internal object AttributesPreparator {
 
         val hash = EntityAttribute(
             "sync_hash",
-            SyncHasher.generateHash(
+            AttributeHasher.generateHash(
                 prepareAttributesForHashing(
                     mutableListOf<EntityAttribute<*>>(id).apply {
                         addAll(attributes)
