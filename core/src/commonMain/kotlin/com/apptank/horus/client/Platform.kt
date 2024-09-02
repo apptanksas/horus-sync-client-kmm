@@ -7,5 +7,3 @@ interface Platform {
 }
 
 expect fun getPlatform(): Platform
-
-expect fun getPlatformDatabaseDriverFactory(): IDatabaseDriverFactory

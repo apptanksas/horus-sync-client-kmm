@@ -27,7 +27,3 @@ class DatabaseDriverFactory(
     override fun retrieveDatabase(): HorusDatabase = HorusDatabase(createDriver())
     override fun getDatabaseName(): String = DATABASE_NAME
 }
-
-actual fun getPlatformDatabaseDriverFactory(): IDatabaseDriverFactory {
-    TODO("Not yet implemented")
-}

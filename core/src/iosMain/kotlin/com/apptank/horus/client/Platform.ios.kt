@@ -7,7 +7,6 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import horus.HorusDatabase
-import platform.UIKit.UIDevice
 
 class IOSPlatform : Platform {
     override val name: String =
@@ -25,8 +24,4 @@ class DatabaseDriverFactory(
 
     override fun retrieveDatabase(): HorusDatabase = HorusDatabase(createDriver())
     override fun getDatabaseName(): String = DATABASE_NAME
-}
-
-actual fun getPlatformDatabaseDriverFactory(): IDatabaseDriverFactory {
-    TODO("Not yet implemented")
 }
