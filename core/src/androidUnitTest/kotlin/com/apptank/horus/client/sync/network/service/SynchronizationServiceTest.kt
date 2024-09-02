@@ -2,7 +2,10 @@ package com.apptank.horus.client.sync.network.service
 
 import com.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import com.apptank.horus.client.MOCK_RESPONSE_GET_DATA_ENTITY
+import com.apptank.horus.client.MOCK_RESPONSE_GET_ENTITY_HASHES
+import com.apptank.horus.client.MOCK_RESPONSE_GET_LAST_QUEUE_ACTION
 import com.apptank.horus.client.MOCK_RESPONSE_GET_QUEUE_ACTIONS
+import com.apptank.horus.client.MOCK_RESPONSE_INTERNAL_SERVER_ERROR
 import com.apptank.horus.client.MOCK_RESPONSE_POST_VALIDATE_DATA
 import com.apptank.horus.client.MOCK_RESPONSE_POST_VALIDATE_HASHING
 import com.apptank.horus.client.ServiceTest
@@ -218,9 +221,27 @@ class SynchronizationServiceTest : ServiceTest() {
     }
 
     @Test
+    fun postValidateEntitiesDataIsFailure() = runBlocking {
+        // Given
+        val entitiesHash = listOf(
+            EntityHash("entity1", "hash1"),
+            EntityHash("entity1", "hash2")
+        )
+        val mockEngine = createMockResponse(
+            MOCK_RESPONSE_INTERNAL_SERVER_ERROR,
+            status = HttpStatusCode.InternalServerError
+        )
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.postValidateEntitiesData(entitiesHash)
+        // Then
+        assert(response is DataResult.Failure)
+    }
+
+    @Test
     fun postValidateHashing() = runBlocking {
         // Given
-        val data = mapOf<String,Any>(
+        val data = mapOf<String, Any>(
             uuid() to uuid(),
             uuid() to uuid()
         )
@@ -243,4 +264,52 @@ class SynchronizationServiceTest : ServiceTest() {
             }
         )
     }
+
+    @Test
+    fun getLastQueueAction() = runBlocking {
+        // Given
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_LAST_QUEUE_ACTION)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getLastQueueAction()
+        // Then
+        assert(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertNotNull(it.action)
+                Assert.assertNotNull(it.entity)
+                Assert.assertNotNull(it.data)
+                Assert.assertFalse(it.data?.isEmpty() ?: true)
+                Assert.assertNotNull(it.actionedAt)
+                Assert.assertNotNull(it.syncedAt)
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
+    }
+
+    @Test
+    fun getEntityHashes() = runBlocking {
+        // Given
+        val entity = "entity123"
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_ENTITY_HASHES)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getEntityHashes(entity)
+        // Then
+        assert(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals(1, it.size)
+                it.forEach {
+                    Assert.assertNotNull(it.id)
+                    Assert.assertNotNull(it.hash)
+                }
+            },
+            onFailure = {
+                Assert.fail("Error")
+            })
+    }
+
 }

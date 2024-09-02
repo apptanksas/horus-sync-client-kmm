@@ -52,7 +52,7 @@ fun SyncActionResponse.toDomain(): SyncAction {
         entity = entity ?: throw IllegalArgumentException("Entity is null"),
         status = SyncActionStatus.COMPLETED,
         data = data ?: mapOf(),
-        datetime = actionedAt?.toLong()?.let {
+        datetime = actionedAt?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
         } ?: throw IllegalArgumentException("DatetimeAction is null")
     )

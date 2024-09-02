@@ -911,6 +911,45 @@ const val MOCK_RESPONSE_POST_VALIDATE_HASHING = """
 }
 """
 
+const val MOCK_RESPONSE_INTERNAL_SERVER_ERROR = """
+ {
+    "message": "Internal server error"
+}
+"""
+
+const val MOCK_RESPONSE_GET_LAST_QUEUE_ACTION = """
+    {
+    "action": "INSERT",
+    "entity": "animals",
+    "data": {
+        "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+        "code": "9012345",
+        "name": "Camila",
+        "type": 1,
+        "stage": 4,
+        "gender": "f",
+        "inside": true,
+        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+        "purpose": 2,
+        "sale_status": "0",
+        "health_status": 1,
+        "branding_iron_id": null,
+        "reproductive_status": 1
+    },
+    "actioned_at": 1725037001,
+    "synced_at": 1725051913
+}
+"""
+
+const val MOCK_RESPONSE_GET_ENTITY_HASHES = """
+    [
+    {
+        "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+        "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83"
+    }
+]
+"""
+
 // 6 Entities
 const val DATA_MIGRATION_VERSION_1 ="""
     [

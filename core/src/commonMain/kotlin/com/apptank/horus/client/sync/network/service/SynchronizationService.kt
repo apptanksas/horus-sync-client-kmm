@@ -58,12 +58,12 @@ class SynchronizationService(
         return post("validate/hashing", request) { it.serialize() }
     }
 
-    override suspend fun getLastAction(): DataResult<SyncActionResponse> {
-        TODO("Not yet implemented")
+    override suspend fun getLastQueueAction(): DataResult<SyncActionResponse> {
+        return get("queue/actions/last") { it.serialize() }
     }
 
     override suspend fun getEntityHashes(entity: String): DataResult<List<EntityIdHashDTO>> {
-        TODO("Not yet implemented")
+        return get("entity/$entity/hashes") { it.serialize() }
     }
 
 }

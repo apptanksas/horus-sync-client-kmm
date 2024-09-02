@@ -29,7 +29,7 @@ interface ISynchronizationService {
 
     suspend fun postValidateEntitiesData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>>
 
-    suspend fun getLastAction(): DataResult<SyncActionResponse>
+    suspend fun getLastQueueAction(): DataResult<SyncActionResponse>
 
     suspend fun getEntityHashes(entity: String): DataResult<List<EntityIdHashDTO>>
 
