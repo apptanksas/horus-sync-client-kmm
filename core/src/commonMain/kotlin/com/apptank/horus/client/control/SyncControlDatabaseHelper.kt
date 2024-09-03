@@ -3,10 +3,10 @@ package com.apptank.horus.client.control
 
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.DataMap
+import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.Cursor
 import com.apptank.horus.client.database.SQLiteHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
-import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.database.SQL
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
@@ -59,7 +59,7 @@ internal class SyncControlDatabaseHelper(
 
     override fun addActionInsert(
         entity: String,
-        attributes: List<EntityAttribute<*>>
+        attributes: List<Horus.Attribute<*>>
     ) {
         validateIfEntityExists(entity)
 
@@ -83,8 +83,8 @@ internal class SyncControlDatabaseHelper(
      */
     override fun addActionUpdate(
         entity: String,
-        id: EntityAttribute<String>,
-        attributes: List<EntityAttribute<*>>
+        id: Horus.Attribute<String>,
+        attributes: List<Horus.Attribute<*>>
     ) {
         validateIfEntityExists(entity)
         addAction(
@@ -105,7 +105,7 @@ internal class SyncControlDatabaseHelper(
      */
     override fun addActionDelete(
         entity: String,
-        id: EntityAttribute<String>
+        id: Horus.Attribute<String>
     ) {
         validateIfEntityExists(entity)
         addAction(entity, SyncActionType.DELETE, mapOf("id" to id.value))

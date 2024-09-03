@@ -1,6 +1,6 @@
 package com.apptank.horus.client.database
 
-import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.Horus
 import kotlin.random.Random
 
 sealed class SQL {
@@ -57,10 +57,10 @@ sealed class SQL {
 }
 
 
-fun EntityAttribute<*>.toDBColumnValue(): SQL.ColumnValue {
+fun Horus.Attribute<*>.toDBColumnValue(): SQL.ColumnValue {
     return SQL.ColumnValue(name, value!!)
 }
 
-fun List<EntityAttribute<*>>.mapToDBColumValue(): List<SQL.ColumnValue> {
+fun List<Horus.Attribute<*>>.mapToDBColumValue(): List<SQL.ColumnValue> {
     return this.map { it.toDBColumnValue() }
 }

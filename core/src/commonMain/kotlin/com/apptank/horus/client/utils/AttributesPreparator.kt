@@ -1,6 +1,6 @@
 package com.apptank.horus.client.utils
 
-import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.hashing.AttributeHasher
 
@@ -10,36 +10,36 @@ internal object AttributesPreparator {
     private val ATTRIBUTES_RESTRICTED =
         listOf("id", "sync_owner_id", "sync_hash", "sync_created_at", "sync_updated_at")
 
-    fun isAttributesNameContainsRestricted(attributes: List<EntityAttribute<*>>): Boolean {
+    fun isAttributesNameContainsRestricted(attributes: List<Horus.Attribute<*>>): Boolean {
         return attributes.find { ATTRIBUTES_RESTRICTED.contains(it.name.lowercase()) } != null
     }
 
     fun appendInsertSyncAttributes(
-        id: EntityAttribute<String>,
-        attributes: List<EntityAttribute<*>>,
+        id: Horus.Attribute<String>,
+        attributes: List<Horus.Attribute<*>>,
         userId: String,
         syncTime: Long = SystemTime.getCurrentTimestamp()
-    ): List<EntityAttribute<*>> {
+    ): List<Horus.Attribute<*>> {
 
         return attributes.toMutableList().apply {
             add(id)
-            add(EntityAttribute("sync_owner_id", userId))
-            add(EntityAttribute("sync_created_at", syncTime))
-            add(EntityAttribute("sync_updated_at", syncTime))
+            add(Horus.Attribute("sync_owner_id", userId))
+            add(Horus.Attribute("sync_created_at", syncTime))
+            add(Horus.Attribute("sync_updated_at", syncTime))
         }.toList()
     }
 
     fun appendHashAndUpdateAttributes(
-        id: EntityAttribute<String>,
-        attributes: List<EntityAttribute<*>>,
+        id: Horus.Attribute<String>,
+        attributes: List<Horus.Attribute<*>>,
         syncTime: Long = SystemTime.getCurrentTimestamp()
-    ): List<EntityAttribute<*>> {
+    ): List<Horus.Attribute<*>> {
 
-        val hash = EntityAttribute(
+        val hash = Horus.Attribute(
             "sync_hash",
             AttributeHasher.generateHash(
                 prepareAttributesForHashing(
-                    mutableListOf<EntityAttribute<*>>(id).apply {
+                    mutableListOf<Horus.Attribute<*>>(id).apply {
                         addAll(attributes)
                     })
             )
@@ -48,11 +48,11 @@ internal object AttributesPreparator {
         return attributes.toMutableList().apply {
             add(hash)
             removeIf { it.name == "sync_updated_at" }
-            add(EntityAttribute("sync_updated_at", syncTime))
+            add(Horus.Attribute("sync_updated_at", syncTime))
         }.toList()
     }
 
-    private fun prepareAttributesForHashing(attributes: List<EntityAttribute<*>>): List<EntityAttribute<*>> {
+    private fun prepareAttributesForHashing(attributes: List<Horus.Attribute<*>>): List<Horus.Attribute<*>> {
         val filterAttributes = ATTRIBUTES_RESTRICTED.toMutableList().apply {
             remove("id")
         }

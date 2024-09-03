@@ -3,8 +3,8 @@ package com.apptank.horus.client.control
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.SQLiteHelper
-import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.execute
 import org.junit.Assert
 import org.junit.Before
@@ -126,8 +126,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "entity123"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
 
@@ -150,8 +150,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "entity123"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
 
@@ -175,8 +175,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "entity123"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
 
@@ -200,8 +200,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "entity123"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -222,8 +222,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -250,8 +250,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -272,8 +272,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(
-            EntityAttribute("id", "1"),
-            EntityAttribute("name", "name")
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)

@@ -1,6 +1,7 @@
 package com.apptank.horus.client.control
 
-import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.Horus
+
 
 interface ISyncControlDatabaseHelper {
     fun onCreate()
@@ -9,7 +10,7 @@ interface ISyncControlDatabaseHelper {
     fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus)
     fun addActionInsert(
         entity: String,
-        attributes: List<EntityAttribute<*>>
+        attributes: List<Horus.Attribute<*>>
     )
 
     /**
@@ -21,8 +22,8 @@ interface ISyncControlDatabaseHelper {
      */
     fun addActionUpdate(
         entity: String,
-        id: EntityAttribute<String>,
-        attributes: List<EntityAttribute<*>>
+        id: Horus.Attribute<String>,
+        attributes: List<Horus.Attribute<*>>
     )
 
     /**
@@ -33,7 +34,7 @@ interface ISyncControlDatabaseHelper {
      */
     fun addActionDelete(
         entity: String,
-        id: EntityAttribute<String>
+        id: Horus.Attribute<String>
     )
 
     /**

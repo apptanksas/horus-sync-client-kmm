@@ -1,6 +1,6 @@
 package com.apptank.horus.client.hashing
 
-import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.Horus
 import org.junit.Assert
 import org.junit.Test
 
@@ -20,10 +20,10 @@ class AttributeHasherTest{
     fun testHashing(){
         // Given
         val attributes = listOf(
-            EntityAttribute("z1", "5a54d7f3-b83b-3193-9bc1-ecff425dee99"),
-            EntityAttribute("age", 76),
-            EntityAttribute("mood", "654711c9-3606-319b-8665-d8c05320833c"),
-            EntityAttribute("date", 1725276225)
+            Horus.Attribute("z1", "5a54d7f3-b83b-3193-9bc1-ecff425dee99"),
+            Horus.Attribute("age", 76),
+            Horus.Attribute("mood", "654711c9-3606-319b-8665-d8c05320833c"),
+            Horus.Attribute("date", 1725276225)
         )
         val hashExpected = "4168cbdb0ca6923e633bf61e795c61b0c74908334d71191afb223cad7c91bf64"
         // When

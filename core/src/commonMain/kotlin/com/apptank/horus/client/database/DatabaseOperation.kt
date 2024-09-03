@@ -1,5 +1,8 @@
 package com.apptank.horus.client.database
 
+import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.extensions.forEachPair
+
 
 /**
  * Base class representing an action to be performed on a database table.
@@ -7,7 +10,7 @@ package com.apptank.horus.client.database
  * @property table The name of the database table.
  */
 
-sealed class DatabaseOperation(open val table: String){
+sealed class DatabaseOperation(open val table: String) {
 
     /**
      * Data class representing an insert action to be performed on a database table.
@@ -47,4 +50,23 @@ sealed class DatabaseOperation(open val table: String){
         val conditions: List<SQL.WhereCondition>,
         val operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ) : DatabaseOperation(table)
+}
+
+
+fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
+
+    val records = mutableListOf<DatabaseOperation.InsertRecord>()
+
+    this.relations?.forEachPair { relation, entities ->
+        entities.forEach {
+            records.addAll(it.toRecordsInsert())
+        }
+    }
+    records.add(
+        DatabaseOperation.InsertRecord(
+            this.name, this.attributes.map {
+                it.toDBColumnValue()
+            }
+        ))
+    return records
 }

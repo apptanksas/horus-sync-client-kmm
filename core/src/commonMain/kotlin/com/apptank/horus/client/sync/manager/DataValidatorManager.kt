@@ -5,14 +5,13 @@ import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ControlStatus
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncOperationType
+import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.database.mapToDBColumValue
-import com.apptank.horus.client.data.EntityAttribute
-import com.apptank.horus.client.data.EntityData
-import com.apptank.horus.client.data.toRecordsInsert
 import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.SQL
+import com.apptank.horus.client.database.toRecordsInsert
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import com.apptank.horus.client.extensions.log
@@ -349,9 +348,9 @@ class DataValidatorManager(
 
     private fun insertData(actionDTO: SyncActionResponse) {
 
-        val id = EntityAttribute("id", actionDTO.data?.get("id") as String)
+        val id = Horus.Attribute("id", actionDTO.data?.get("id") as String)
         val attributes =
-            actionDTO.data.filterNot { it.key == "id" }.map { EntityAttribute(it.key, it.value) }
+            actionDTO.data.filterNot { it.key == "id" }.map { Horus.Attribute(it.key, it.value) }
                 .toList()
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
@@ -386,9 +385,9 @@ class DataValidatorManager(
     private fun updateData(actionDTO: SyncActionResponse) {
         val id = actionDTO.data?.get("id") as String
         val entity = actionDTO.entity
-        val attributes: List<EntityAttribute<*>> =
+        val attributes: List<Horus.Attribute<*>> =
             (actionDTO.data["attributes"] as Map<String, Any>).map {
-                EntityAttribute(
+                Horus.Attribute(
                     it.key,
                     it.value
                 )
@@ -398,7 +397,7 @@ class DataValidatorManager(
 
         val currentData = getEntityById(entity!!, id)
             ?: return log("[SyncValidator] Error getting data to update")
-        val attrId = EntityAttribute("id", id)
+        val attrId = Horus.Attribute("id", id)
 
         val attributesPrepared =
             AttributesPreparator.appendHashAndUpdateAttributes(
@@ -447,7 +446,7 @@ class DataValidatorManager(
         }
     }
 
-    private fun getEntityById(entity: String, id: String): EntityData? {
+    private fun getEntityById(entity: String, id: String): Horus.Entity? {
 
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(
@@ -458,9 +457,9 @@ class DataValidatorManager(
         }
 
         return operationDatabaseHelper.queryRecords(queryBuilder).map {
-            EntityData(
+            Horus.Entity(
                 entity,
-                it.map { EntityAttribute(it.key, it.value) }
+                it.map { Horus.Attribute(it.key, it.value) }
             )
         }?.firstOrNull()
     }

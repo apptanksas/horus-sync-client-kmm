@@ -1,20 +1,20 @@
 package com.apptank.horus.client.hashing
 
-import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.Horus
 import io.ktor.utils.io.core.toByteArray
 import org.kotlincrypto.hash.sha2.SHA256
 
 
 object AttributeHasher {
 
-    fun generateHash(attributes: List<EntityAttribute<*>>): String {
+    fun generateHash(attributes: List<Horus.Attribute<*>>): String {
         val inputString = attributes.sortedBy { it.name }
             .joinToString(separator = "", transform = { it.value.toString() })
         return sha256(inputString)
     }
 
     fun generateHashFromList(data: List<String>): String {
-        return generateHash(data.map { EntityAttribute(it, it) })
+        return generateHash(data.map { Horus.Attribute(it, it) })
     }
 
     private fun sha256(input: String): String {
