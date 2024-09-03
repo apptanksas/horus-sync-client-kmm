@@ -24,6 +24,10 @@ object HorusAuthentication {
         return userAuthentication != null
     }
 
+    internal fun isNotUserAuthenticated(): Boolean {
+        return !isUserAuthenticated()
+    }
+
     internal fun getUserAuthenticatedId(): String? {
         return userAuthentication?.userId
     }
@@ -32,7 +36,8 @@ object HorusAuthentication {
         return userAuthentication?.accessToken
     }
 
-    internal fun getActingAsUserId(): String? {
+    internal fun getActingAsUserId(): String {
         return userAuthentication?.getActingAsUserId()
+            ?: throw IllegalStateException("User is not acting as any user")
     }
 }

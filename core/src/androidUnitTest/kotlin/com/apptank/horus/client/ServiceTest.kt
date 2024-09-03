@@ -1,5 +1,7 @@
 package com.apptank.horus.client
 
+import com.apptank.horus.client.auth.HorusAuthentication
+import com.apptank.horus.client.base.network.HttpHeader
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
@@ -8,6 +10,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import org.junit.Assert
+import org.junit.Before
 
 abstract class ServiceTest : TestCase() {
     companion object {
@@ -17,6 +20,11 @@ abstract class ServiceTest : TestCase() {
     private lateinit var lastRequest: HttpRequestData
     private lateinit var lastRequestBody: ByteArray
 
+    @Before
+    fun setup() {
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+    }
+
     fun createMockResponse(content: String? = null, status: HttpStatusCode = HttpStatusCode.OK) =
         MockEngine { request ->
             lastRequest = request
@@ -24,6 +32,7 @@ abstract class ServiceTest : TestCase() {
             lastRequestBody = request.body.toByteArray()
             validateUrl(request.url.toString())
             validateJsonBody(request.body.toByteArray())
+            validateHeaders()
 
             respond(
                 content = content ?: "",
@@ -65,11 +74,16 @@ abstract class ServiceTest : TestCase() {
     }
 
     protected fun assertRequestHeader(header: String, value: String) {
-        Assert.assertEquals(value, lastRequest.headers[header])
+        Assert.assertEquals("Header $header is invalid!", value, lastRequest.headers[header])
     }
 
     protected fun assertRequestBody(body: String) {
         Assert.assertEquals(body, String(lastRequestBody))
+    }
+
+    private fun validateHeaders() {
+        assertRequestHeader(HttpHeader.ACCEPT, "application/json")
+        assertRequestHeader(HttpHeader.AUTHORIZATION, "Bearer $USER_ACCESS_TOKEN")
     }
 
 

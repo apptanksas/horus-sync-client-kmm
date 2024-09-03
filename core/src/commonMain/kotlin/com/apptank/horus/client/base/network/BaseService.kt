@@ -1,15 +1,21 @@
 package com.apptank.horus.client.base.network
 
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
+import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.append
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -39,6 +45,7 @@ internal abstract class BaseService(
                         parameters.append(key, value)
                     }
                 }
+                setupHeaders(this)
             }, onResponse
         )
     }
@@ -51,6 +58,7 @@ internal abstract class BaseService(
         return handleResponse(client.post(buildUrl(path)) {
             contentType(ContentType.Application.Json)
             setBody(data)
+            setupHeaders(this)
         }, onResponse)
     }
 
@@ -82,6 +90,26 @@ internal abstract class BaseService(
         }.also {
             client.close()
         }
+    }
+
+    private fun setupHeaders(builder: HttpRequestBuilder): HttpRequestBuilder {
+        builder.headers {
+            append(HttpHeader.CONTENT_TYPE, "application/json")
+            append(HttpHeader.ACCEPT, "application/json")
+
+            with(HorusAuthentication) {
+                if (isNotUserAuthenticated()) {
+                    throw UserNotAuthenticatedException()
+                }
+                append(HttpHeader.AUTHORIZATION, "Bearer ${getUserAccessToken()}")
+
+                if (isUserActingAs()) {
+                    append(HttpHeader.USER_ACTING, getActingAsUserId())
+                }
+            }
+
+        }
+        return builder
     }
 
     private fun buildUrl(path: String): String {
