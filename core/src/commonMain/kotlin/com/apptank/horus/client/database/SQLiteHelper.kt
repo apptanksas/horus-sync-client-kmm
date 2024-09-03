@@ -167,8 +167,8 @@ internal abstract class SQLiteHelper(
      * @return A pair consisting of the WHERE clause and the list of arguments.
      */
     protected fun buildWhereEvaluation(
-        conditions: List<WhereCondition>,
-        operator: Operator
+        conditions: List<LocalDatabase.WhereCondition>,
+        operator: LocalDatabase.OperatorComparator
     ): String {
         return conditions.joinToString(
             operator.name,
@@ -176,7 +176,7 @@ internal abstract class SQLiteHelper(
         ).trim()
     }
 
-    protected fun List<DBColumnValue>.prepareMap(): DataMap {
+    protected fun List<LocalDatabase.ColumnValue>.prepareMap(): DataMap {
         return associate { it.column to it.value }
     }
 

@@ -220,8 +220,8 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // When
         val resultInsert = databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.deleteRecord(entityName, listOf(WhereCondition(
-            DBColumnValue("id", uuid),
+        val result = databaseHelper.deleteRecord(entityName, listOf(LocalDatabase.WhereCondition(
+            LocalDatabase.ColumnValue("id", uuid),
             "="
         )))
 
@@ -239,37 +239,37 @@ class OperationDatabaseHelperTest : TestCase() {
     }
 
 
-    private fun createInsertAction(uuid: String, name: String) = RecordInsertData(
+    private fun createInsertAction(uuid: String, name: String) = LocalDatabase.InsertRecord(
         entityName,
         listOf(
-            DBColumnValue("id", uuid),
-            DBColumnValue("name", name)
+            LocalDatabase.ColumnValue("id", uuid),
+            LocalDatabase.ColumnValue("name", name)
         )
     )
 
-    private fun createUpdateAction(uuid: String, name: String) = RecordUpdateData(
+    private fun createUpdateAction(uuid: String, name: String) = LocalDatabase.UpdateRecord(
         entityName,
         listOf(
-            DBColumnValue("name", name)
+            LocalDatabase.ColumnValue("name", name)
         ),
         listOf(
-            WhereCondition(
-                DBColumnValue("id", uuid),
+            LocalDatabase.WhereCondition(
+                LocalDatabase.ColumnValue("id", uuid),
                 "="
             )
         ),
-        Operator.AND
+        LocalDatabase.OperatorComparator.AND
     )
 
-    private fun createDeleteAction(uuid: String) = RecordDeleteData(
+    private fun createDeleteAction(uuid: String) = LocalDatabase.DeleteRecord(
         entityName,
         listOf(
-            WhereCondition(
-                DBColumnValue("id", uuid),
+            LocalDatabase.WhereCondition(
+                LocalDatabase.ColumnValue("id", uuid),
                 "="
             )
         ),
-        Operator.AND
+        LocalDatabase.OperatorComparator.AND
     )
 
 }

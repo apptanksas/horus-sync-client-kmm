@@ -1,8 +1,6 @@
 package com.apptank.horus.client.database.builder
 
-import com.apptank.horus.client.database.DBColumnValue
-import com.apptank.horus.client.database.Operator
-import com.apptank.horus.client.database.WhereCondition
+import com.apptank.horus.client.database.LocalDatabase
 import org.junit.Assert
 import org.junit.Test
 
@@ -36,14 +34,14 @@ class SimpleQueryBuilderTest {
         val builder = SimpleQueryBuilder("animal")
 
         builder.where(
-            WhereCondition(
-                DBColumnValue(
+            LocalDatabase.WhereCondition(
+                LocalDatabase.ColumnValue(
                     "id",
                     120
                 ), ">"
             ),
-            WhereCondition(
-                DBColumnValue(
+            LocalDatabase.WhereCondition(
+                LocalDatabase.ColumnValue(
                     "date",
                     "2023"
                 ), "="
@@ -63,32 +61,32 @@ class SimpleQueryBuilderTest {
 
         builder
             .where(
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "id",
                         120
                     ), ">"
                 ),
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "date",
                         "2023"
                     ), "="
                 )
             ).where(
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "is_male",
                         true
                     ), "="
                 ),
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "age",
                         10
                     ), "<"
                 ),
-                joinOperator = Operator.OR
+                joinOperator = LocalDatabase.OperatorComparator.OR
             )
 
         val result = builder.build()
@@ -104,27 +102,27 @@ class SimpleQueryBuilderTest {
 
         builder
             .where(
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "id",
                         120
                     ), ">"
                 ),
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "date",
                         "2023"
                     ), "="
                 )
             ).whereOr(
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "is_male",
                         true
                     ), "="
                 ),
-                WhereCondition(
-                    DBColumnValue(
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue(
                         "age",
                         10
                     ), "<"

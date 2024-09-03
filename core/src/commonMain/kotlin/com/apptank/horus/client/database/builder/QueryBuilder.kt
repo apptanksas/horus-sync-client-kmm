@@ -1,7 +1,6 @@
 package com.apptank.horus.client.database.builder
 
-import com.apptank.horus.client.database.Operator
-import com.apptank.horus.client.database.WhereCondition
+import com.apptank.horus.client.database.LocalDatabase
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 
 /**
@@ -13,11 +12,11 @@ abstract class QueryBuilder {
     // List to store selected attributes
     protected var attributeSelection = mutableListOf<String>()
     // Map to store where conditions with their corresponding operators
-    private var conditions = mutableMapOf<OperatorKey, Pair<Operator, List<WhereCondition>>>()
+    private var conditions = mutableMapOf<LocalDatabase.OperatorKey, Pair<LocalDatabase.OperatorComparator, List<LocalDatabase.WhereCondition>>>()
     // Variable to store the limit clause
     private var limit: Int? = null
     // Pair to store the order by clause
-    private var orderBy: Pair<String, OrderBy>? = null
+    private var orderBy: Pair<String, LocalDatabase.OrderBy>? = null
 
     /**
      * Adds a where condition with AND operator.
@@ -27,10 +26,10 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     fun where(
-        vararg condition: WhereCondition,
-        joinOperator: Operator = Operator.AND
+        vararg condition: LocalDatabase.WhereCondition,
+        joinOperator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
     ): QueryBuilder {
-        return addWhere(joinOperator, Operator.AND, *condition)
+        return addWhere(joinOperator, LocalDatabase.OperatorComparator.AND, *condition)
     }
 
     /**
@@ -41,10 +40,10 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     fun whereOr(
-        vararg condition: WhereCondition,
-        joinOperator: Operator = Operator.AND
+        vararg condition: LocalDatabase.WhereCondition,
+        joinOperator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
     ): QueryBuilder {
-        return addWhere(joinOperator, Operator.OR, *condition)
+        return addWhere(joinOperator, LocalDatabase.OperatorComparator.OR, *condition)
     }
 
     /**
@@ -76,7 +75,7 @@ abstract class QueryBuilder {
      * @param orderBy the order direction (ASC or DESC).
      * @return the QueryBuilder instance.
      */
-    fun orderBy(column: String, orderBy: OrderBy = OrderBy.DESC): QueryBuilder {
+    fun orderBy(column: String, orderBy: LocalDatabase.OrderBy = LocalDatabase.OrderBy.DESC): QueryBuilder {
         this.orderBy = Pair(column, orderBy)
         return this
     }
@@ -90,11 +89,11 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     private fun addWhere(
-        joinOperator: Operator,
-        operatorCondition: Operator,
-        vararg condition: WhereCondition
+        joinOperator: LocalDatabase.OperatorComparator,
+        operatorCondition: LocalDatabase.OperatorComparator,
+        vararg condition: LocalDatabase.WhereCondition
     ): QueryBuilder {
-        conditions[OperatorKey(joinOperator)] = Pair(operatorCondition, condition.toList())
+        conditions[LocalDatabase.OperatorKey(joinOperator)] = Pair(operatorCondition, condition.toList())
         return this
     }
 

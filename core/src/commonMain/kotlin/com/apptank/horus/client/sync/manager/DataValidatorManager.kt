@@ -5,17 +5,13 @@ import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ControlStatus
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncOperationType
-import com.apptank.horus.client.database.DBColumnValue
 import com.apptank.horus.client.database.IOperationDatabaseHelper
-import com.apptank.horus.client.database.Operator
-import com.apptank.horus.client.database.RecordInsertData
-import com.apptank.horus.client.database.WhereCondition
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.database.mapToDBColumValue
 import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.data.EntityData
 import com.apptank.horus.client.data.toRecordsInsert
-import com.apptank.horus.client.database.RecordUpdateData
+import com.apptank.horus.client.database.LocalDatabase
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import com.apptank.horus.client.extensions.log
@@ -263,8 +259,8 @@ class DataValidatorManager(
                 // Delete ids with corrupted data
                 val result = operationDatabaseHelper.deleteRecord(
                     entity,
-                    ids.map { WhereCondition(DBColumnValue("id", it), "=") },
-                    Operator.OR
+                    ids.map { LocalDatabase.WhereCondition(LocalDatabase.ColumnValue("id", it), "=") },
+                    LocalDatabase.OperatorComparator.OR
                 )
 
                 if (!result.isSuccess) {
@@ -370,7 +366,7 @@ class DataValidatorManager(
         runCatching {
             val result = operationDatabaseHelper.insertTransaction(
                 listOf(
-                    RecordInsertData(
+                    LocalDatabase.InsertRecord(
                         actionDTO.entity!!, attributesPrepared.mapToDBColumValue()
                     )
                 )
@@ -417,9 +413,9 @@ class DataValidatorManager(
         runCatching {
             val result = operationDatabaseHelper.updateRecordTransaction(
                 listOf(
-                    RecordUpdateData(
+                    LocalDatabase.UpdateRecord(
                         entity, attributesPrepared.mapToDBColumValue(),
-                        listOf(WhereCondition(DBColumnValue("id", id), "="))
+                        listOf(LocalDatabase.WhereCondition(LocalDatabase.ColumnValue("id", id), "="))
                     )
                 )
             )
@@ -441,7 +437,7 @@ class DataValidatorManager(
         val id = actionDTO.data?.get("id") as String
         val result = operationDatabaseHelper.deleteRecord(
             actionDTO.entity!!,
-            listOf(WhereCondition(DBColumnValue("id", id), "="))
+            listOf(LocalDatabase.WhereCondition(LocalDatabase.ColumnValue("id", id), "="))
         )
         if (result.isSuccess) {
             log("[SyncValidator] Data deleted successfully. [${actionDTO.data}]")
@@ -454,8 +450,8 @@ class DataValidatorManager(
 
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(
-                WhereCondition(
-                    DBColumnValue("id", id),
+                LocalDatabase.WhereCondition(
+                    LocalDatabase.ColumnValue("id", id),
                     "="
                 )
             )

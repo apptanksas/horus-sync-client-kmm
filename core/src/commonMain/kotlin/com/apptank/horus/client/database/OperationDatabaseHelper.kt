@@ -3,7 +3,6 @@ package com.apptank.horus.client.database
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.database.builder.QueryBuilder
 import com.apptank.horus.client.exception.DatabaseOperationFailureException
-import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.log
 import horus.HorusDatabase
 
@@ -20,11 +19,11 @@ internal class OperationDatabaseHelper(
      * @param actions The list of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun executeOperations(actions: List<ActionDatabase>) = executeTransaction { _ ->
+    override fun executeOperations(actions: List<LocalDatabase.Operation>) = executeTransaction { _ ->
         actions.forEach { action ->
             val operationIsFailure: Boolean = when (action) {
                 // Insert
-                is RecordInsertData -> {
+                is LocalDatabase.InsertRecord -> {
                     insertOrThrow(
                         action.table,
                         action.values.prepareMap()
@@ -32,14 +31,14 @@ internal class OperationDatabaseHelper(
                     false // Insert is always success
                 }
                 // Update
-                is RecordUpdateData -> executeUpdate(
+                is LocalDatabase.UpdateRecord -> executeUpdate(
                     action.table,
                     action.values,
                     action.conditions,
                     action.operator
                 ).isFailure
                 // Delete
-                is RecordDeleteData -> executeDelete(
+                is LocalDatabase.DeleteRecord -> executeDelete(
                     action.table,
                     action.conditions,
                     action.operator
@@ -60,7 +59,7 @@ internal class OperationDatabaseHelper(
      * @param actions The vararg of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun executeOperations(vararg actions: ActionDatabase) =
+    override fun executeOperations(vararg actions: LocalDatabase.Operation) =
         executeOperations(actions.toList())
 
     /**
@@ -69,7 +68,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun insertTransaction(records: List<RecordInsertData>, postOperation: () -> Unit) =
+    override fun insertTransaction(records: List<LocalDatabase.InsertRecord>, postOperation: () -> Unit) =
         executeTransaction { db ->
             records.forEach { item ->
                 val values = item.values.prepareMap()
@@ -86,7 +85,7 @@ internal class OperationDatabaseHelper(
      * @return True if the transaction was successful, false otherwise.
      */
     override fun updateRecordTransaction(
-        records: List<RecordUpdateData>,
+        records: List<LocalDatabase.UpdateRecord>,
         postOperation: () -> Unit
     ) =
         executeTransaction { _ ->
@@ -114,9 +113,9 @@ internal class OperationDatabaseHelper(
      */
     override fun deleteRecord(
         table: String,
-        conditions: List<WhereCondition>,
-        operator: Operator
-    ): OperationResult {
+        conditions: List<LocalDatabase.WhereCondition>,
+        operator: LocalDatabase.OperatorComparator
+    ): LocalDatabase.OperationResult {
         return executeDelete(table, conditions, operator)
     }
 
@@ -127,7 +126,7 @@ internal class OperationDatabaseHelper(
      * @return True if the transaction was successful, false otherwise.
      */
     override fun deleteRecordTransaction(
-        records: List<RecordDeleteData>,
+        records: List<LocalDatabase.DeleteRecord>,
         postOperation: () -> Unit
     ) =
         executeTransaction { _ ->
@@ -189,9 +188,9 @@ internal class OperationDatabaseHelper(
      */
     private fun executeDelete(
         table: String,
-        conditions: List<WhereCondition>,
-        operator: Operator = Operator.AND
-    ): OperationResult {
+        conditions: List<LocalDatabase.WhereCondition>,
+        operator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+    ): LocalDatabase.OperationResult {
 
         if (conditions.isEmpty()) {
             throw IllegalArgumentException("conditions not can be empty")
@@ -199,7 +198,7 @@ internal class OperationDatabaseHelper(
 
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         val result = delete(table, whereEvaluation)
-        return OperationResult(result > 0, result.toInt())
+        return LocalDatabase.OperationResult(result > 0, result.toInt())
     }
 
 
@@ -215,15 +214,15 @@ internal class OperationDatabaseHelper(
      */
     private fun executeUpdate(
         table: String,
-        values: List<DBColumnValue>,
-        conditions: List<WhereCondition>,
-        operator: Operator = Operator.AND
-    ): OperationResult {
+        values: List<LocalDatabase.ColumnValue>,
+        conditions: List<LocalDatabase.WhereCondition>,
+        operator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+    ): LocalDatabase.OperationResult {
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         log("[Update] table: $table Values: $values Conditions: $whereEvaluation")
 
         val result = update(table, values.prepareMap(), whereEvaluation)
-        return OperationResult(result > 0, result.toInt())
+        return LocalDatabase.OperationResult(result > 0, result.toInt())
     }
 
 }

@@ -9,7 +9,7 @@ interface IOperationDatabaseHelper {
      * @param actions The list of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(actions: List<ActionDatabase>): Boolean
+    fun executeOperations(actions: List<LocalDatabase.Operation>): Boolean
 
     /**
      * Executes a variable number of database operations (insert, update, delete) within a transaction.
@@ -17,7 +17,7 @@ interface IOperationDatabaseHelper {
      * @param actions The vararg of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(vararg actions: ActionDatabase): Boolean
+    fun executeOperations(vararg actions: LocalDatabase.Operation): Boolean
 
     /**
      * Inserts multiple records into the database within a transaction.
@@ -25,7 +25,7 @@ interface IOperationDatabaseHelper {
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun insertTransaction(records: List<RecordInsertData>, postOperation: () -> Unit = {}): Boolean
+    fun insertTransaction(records: List<LocalDatabase.InsertRecord>, postOperation: () -> Unit = {}): Boolean
 
     /**
      * Updates multiple records in the database within a transaction.
@@ -34,7 +34,7 @@ interface IOperationDatabaseHelper {
      * @return True if the transaction was successful, false otherwise.
      */
     fun updateRecordTransaction(
-        records: List<RecordUpdateData>,
+        records: List<LocalDatabase.UpdateRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
 
@@ -45,7 +45,7 @@ interface IOperationDatabaseHelper {
      * @return True if the transaction was successful, false otherwise.
      */
     fun deleteRecordTransaction(
-        records: List<RecordDeleteData>,
+        records: List<LocalDatabase.DeleteRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
 
@@ -59,9 +59,9 @@ interface IOperationDatabaseHelper {
      */
     fun deleteRecord(
         table: String,
-        conditions: List<WhereCondition>,
-        operator: Operator = Operator.AND
-    ): OperationResult
+        conditions: List<LocalDatabase.WhereCondition>,
+        operator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+    ): LocalDatabase.OperationResult
 
     /**
      * Executes a query using the provided QueryBuilder and returns the results as a list of maps.

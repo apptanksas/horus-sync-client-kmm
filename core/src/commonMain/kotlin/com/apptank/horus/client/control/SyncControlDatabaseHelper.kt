@@ -4,9 +4,9 @@ package com.apptank.horus.client.control
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.Cursor
-import com.apptank.horus.client.database.DBColumnValue
+import com.apptank.horus.client.database.LocalDatabase.ColumnValue
 import com.apptank.horus.client.database.SQLiteHelper
-import com.apptank.horus.client.database.WhereCondition
+import com.apptank.horus.client.database.LocalDatabase.WhereCondition
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.execute
@@ -123,7 +123,7 @@ internal class SyncControlDatabaseHelper(
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
+                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
                         "="
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
@@ -160,7 +160,7 @@ internal class SyncControlDatabaseHelper(
             val sentenceSql = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
+                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
                         "="
                     )
                 ).orderBy(QueueActionsTable.ATTR_ID).limit(1).build()
@@ -175,12 +175,12 @@ internal class SyncControlDatabaseHelper(
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     WhereCondition(
-                        DBColumnValue(QueueActionsTable.ATTR_DATETIME, datetime), ">"
+                        ColumnValue(QueueActionsTable.ATTR_DATETIME, datetime), ">"
                     )
                 )
                 .where(
                     WhereCondition(
-                        DBColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
+                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
                         "="
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
