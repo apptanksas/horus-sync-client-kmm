@@ -9,7 +9,7 @@ interface IOperationDatabaseHelper {
      * @param actions The list of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(actions: List<LocalDatabase.Operation>): Boolean
+    fun executeOperations(actions: List<DatabaseOperation>): Boolean
 
     /**
      * Executes a variable number of database operations (insert, update, delete) within a transaction.
@@ -17,7 +17,7 @@ interface IOperationDatabaseHelper {
      * @param actions The vararg of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(vararg actions: LocalDatabase.Operation): Boolean
+    fun executeOperations(vararg actions: DatabaseOperation): Boolean
 
     /**
      * Inserts multiple records into the database within a transaction.
@@ -25,7 +25,10 @@ interface IOperationDatabaseHelper {
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun insertTransaction(records: List<LocalDatabase.InsertRecord>, postOperation: () -> Unit = {}): Boolean
+    fun insertTransaction(
+        records: List<DatabaseOperation.InsertRecord>,
+        postOperation: () -> Unit = {}
+    ): Boolean
 
     /**
      * Updates multiple records in the database within a transaction.
@@ -34,7 +37,7 @@ interface IOperationDatabaseHelper {
      * @return True if the transaction was successful, false otherwise.
      */
     fun updateRecordTransaction(
-        records: List<LocalDatabase.UpdateRecord>,
+        records: List<DatabaseOperation.UpdateRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
 
@@ -45,7 +48,7 @@ interface IOperationDatabaseHelper {
      * @return True if the transaction was successful, false otherwise.
      */
     fun deleteRecordTransaction(
-        records: List<LocalDatabase.DeleteRecord>,
+        records: List<DatabaseOperation.DeleteRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
 
@@ -59,8 +62,8 @@ interface IOperationDatabaseHelper {
      */
     fun deleteRecord(
         table: String,
-        conditions: List<LocalDatabase.WhereCondition>,
-        operator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+        conditions: List<SQL.WhereCondition>,
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): LocalDatabase.OperationResult
 
     /**

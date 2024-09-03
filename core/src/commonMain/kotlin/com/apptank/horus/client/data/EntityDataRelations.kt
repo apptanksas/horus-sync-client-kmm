@@ -1,6 +1,6 @@
 package com.apptank.horus.client.data
 
-import com.apptank.horus.client.database.LocalDatabase
+import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.toDBColumnValue
 import com.apptank.horus.client.extensions.forEachPair
 
@@ -15,9 +15,9 @@ data class EntityAttribute<T>(
     val value: T
 )
 
-fun EntityDataRelations.toRecordsInsert(): List<LocalDatabase.InsertRecord> {
+fun EntityDataRelations.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
 
-    val records = mutableListOf<LocalDatabase.InsertRecord>()
+    val records = mutableListOf<DatabaseOperation.InsertRecord>()
 
     this.relations?.forEachPair { relation, entities ->
         entities.forEach {
@@ -25,7 +25,7 @@ fun EntityDataRelations.toRecordsInsert(): List<LocalDatabase.InsertRecord> {
         }
     }
 
-    records.add(LocalDatabase.InsertRecord(
+    records.add(DatabaseOperation.InsertRecord(
         this.name, this.attributes.map {
             it.toDBColumnValue()
         }

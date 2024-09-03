@@ -11,7 +11,7 @@ import org.junit.Test
 import kotlin.random.Random
 
 
-class OperationDatabaseHelperTest : TestCase() {
+class DatabaseOperationHelperTest : TestCase() {
 
     private lateinit var database: HorusDatabase
     private lateinit var driver: JdbcSqliteDriver
@@ -220,9 +220,8 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // When
         val resultInsert = databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.deleteRecord(entityName, listOf(LocalDatabase.WhereCondition(
-            LocalDatabase.ColumnValue("id", uuid),
-            "="
+        val result = databaseHelper.deleteRecord(entityName, listOf(SQL.WhereCondition(
+            SQL.ColumnValue("id", uuid)
         )))
 
         // Then
@@ -239,37 +238,35 @@ class OperationDatabaseHelperTest : TestCase() {
     }
 
 
-    private fun createInsertAction(uuid: String, name: String) = LocalDatabase.InsertRecord(
+    private fun createInsertAction(uuid: String, name: String) = DatabaseOperation.InsertRecord(
         entityName,
         listOf(
-            LocalDatabase.ColumnValue("id", uuid),
-            LocalDatabase.ColumnValue("name", name)
+            SQL.ColumnValue("id", uuid),
+            SQL.ColumnValue("name", name)
         )
     )
 
-    private fun createUpdateAction(uuid: String, name: String) = LocalDatabase.UpdateRecord(
+    private fun createUpdateAction(uuid: String, name: String) = DatabaseOperation.UpdateRecord(
         entityName,
         listOf(
-            LocalDatabase.ColumnValue("name", name)
+            SQL.ColumnValue("name", name)
         ),
         listOf(
-            LocalDatabase.WhereCondition(
-                LocalDatabase.ColumnValue("id", uuid),
-                "="
+            SQL.WhereCondition(
+                SQL.ColumnValue("id", uuid)
             )
         ),
-        LocalDatabase.OperatorComparator.AND
+        SQL.LogicOperator.AND
     )
 
-    private fun createDeleteAction(uuid: String) = LocalDatabase.DeleteRecord(
+    private fun createDeleteAction(uuid: String) = DatabaseOperation.DeleteRecord(
         entityName,
         listOf(
-            LocalDatabase.WhereCondition(
-                LocalDatabase.ColumnValue("id", uuid),
-                "="
+            SQL.WhereCondition(
+                SQL.ColumnValue("id", uuid)
             )
         ),
-        LocalDatabase.OperatorComparator.AND
+        SQL.LogicOperator.AND
     )
 
 }

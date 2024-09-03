@@ -1,6 +1,6 @@
 package com.apptank.horus.client.database.builder
 
-import com.apptank.horus.client.database.LocalDatabase
+import com.apptank.horus.client.database.SQL
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 
 /**
@@ -12,11 +12,11 @@ abstract class QueryBuilder {
     // List to store selected attributes
     protected var attributeSelection = mutableListOf<String>()
     // Map to store where conditions with their corresponding operators
-    private var conditions = mutableMapOf<LocalDatabase.OperatorKey, Pair<LocalDatabase.OperatorComparator, List<LocalDatabase.WhereCondition>>>()
+    private var conditions = mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
     // Variable to store the limit clause
     private var limit: Int? = null
     // Pair to store the order by clause
-    private var orderBy: Pair<String, LocalDatabase.OrderBy>? = null
+    private var orderBy: Pair<String, SQL.OrderBy>? = null
 
     /**
      * Adds a where condition with AND operator.
@@ -26,10 +26,10 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     fun where(
-        vararg condition: LocalDatabase.WhereCondition,
-        joinOperator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+        vararg condition: SQL.WhereCondition,
+        joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): QueryBuilder {
-        return addWhere(joinOperator, LocalDatabase.OperatorComparator.AND, *condition)
+        return addWhere(joinOperator, SQL.LogicOperator.AND, *condition)
     }
 
     /**
@@ -40,10 +40,10 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     fun whereOr(
-        vararg condition: LocalDatabase.WhereCondition,
-        joinOperator: LocalDatabase.OperatorComparator = LocalDatabase.OperatorComparator.AND
+        vararg condition: SQL.WhereCondition,
+        joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): QueryBuilder {
-        return addWhere(joinOperator, LocalDatabase.OperatorComparator.OR, *condition)
+        return addWhere(joinOperator, SQL.LogicOperator.OR, *condition)
     }
 
     /**
@@ -75,7 +75,7 @@ abstract class QueryBuilder {
      * @param orderBy the order direction (ASC or DESC).
      * @return the QueryBuilder instance.
      */
-    fun orderBy(column: String, orderBy: LocalDatabase.OrderBy = LocalDatabase.OrderBy.DESC): QueryBuilder {
+    fun orderBy(column: String, orderBy: SQL.OrderBy = SQL.OrderBy.DESC): QueryBuilder {
         this.orderBy = Pair(column, orderBy)
         return this
     }
@@ -89,11 +89,11 @@ abstract class QueryBuilder {
      * @return the QueryBuilder instance.
      */
     private fun addWhere(
-        joinOperator: LocalDatabase.OperatorComparator,
-        operatorCondition: LocalDatabase.OperatorComparator,
-        vararg condition: LocalDatabase.WhereCondition
+        joinOperator: SQL.LogicOperator,
+        operatorCondition: SQL.LogicOperator,
+        vararg condition: SQL.WhereCondition
     ): QueryBuilder {
-        conditions[LocalDatabase.OperatorKey(joinOperator)] = Pair(operatorCondition, condition.toList())
+        conditions[SQL.OperatorKey(joinOperator)] = Pair(operatorCondition, condition.toList())
         return this
     }
 
@@ -124,7 +124,7 @@ abstract class QueryBuilder {
             var conditionGrouped = if (hasGroups) "(" else ""
 
             conditionGrouped += conditions.second.joinToString(" ${conditions.first.name} ",
-                transform = { "${it.columnValue.column} ${it.comparator} ${it.columnValue.value.prepareSQLValueAsString()}" })
+                transform = { "${it.columnValue.column} ${it.comparator.value} ${it.columnValue.value.prepareSQLValueAsString()}" })
 
             if (hasGroups) {
                 conditionGrouped += ")" // Close group

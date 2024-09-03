@@ -4,11 +4,10 @@ package com.apptank.horus.client.control
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.Cursor
-import com.apptank.horus.client.database.LocalDatabase.ColumnValue
 import com.apptank.horus.client.database.SQLiteHelper
-import com.apptank.horus.client.database.LocalDatabase.WhereCondition
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.database.SQL
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireLong
@@ -19,6 +18,7 @@ import com.apptank.horus.client.eventbus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
 /**
  * Maneja datos asociados al control interno de la sincronización
  */
@@ -122,9 +122,8 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
-                    WhereCondition(
-                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id),
-                        "="
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id)
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
@@ -159,9 +158,11 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
             val sentenceSql = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
-                    WhereCondition(
-                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
-                        "="
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            QueueActionsTable.ATTR_STATUS,
+                            SyncActionStatus.COMPLETED.id
+                        )
                     )
                 ).orderBy(QueueActionsTable.ATTR_ID).limit(1).build()
 
@@ -174,14 +175,17 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
-                    WhereCondition(
-                        ColumnValue(QueueActionsTable.ATTR_DATETIME, datetime), ">"
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(QueueActionsTable.ATTR_DATETIME, datetime),
+                        SQL.Comparator.GREATER_THAN
                     )
                 )
                 .where(
-                    WhereCondition(
-                        ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.COMPLETED.id),
-                        "="
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            QueueActionsTable.ATTR_STATUS,
+                            SyncActionStatus.COMPLETED.id
+                        )
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
