@@ -1,8 +1,6 @@
 package com.apptank.horus.client.sync.network.dto
 
-import com.apptank.horus.client.control.SyncAction
-import com.apptank.horus.client.control.SyncActionStatus
-import com.apptank.horus.client.control.SyncActionType
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -95,7 +93,7 @@ private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<S
 /**
  * Extension function to convert a SyncAction to a SyncActionRequest
  */
-fun SyncAction.toRequest(): SyncDTO.Request.SyncActionRequest {
+fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
     return SyncDTO.Request.SyncActionRequest(
         action = this.action.name,
         entity = this.entity,
@@ -104,12 +102,12 @@ fun SyncAction.toRequest(): SyncDTO.Request.SyncActionRequest {
     )
 }
 
-fun SyncDTO.Response.SyncAction.toDomain(): SyncAction {
-    return SyncAction(
+fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
+    return SyncControl.Action(
         id = 0,
-        action = SyncActionType.valueOf(action!!),
+        action = SyncControl.ActionType.valueOf(action!!),
         entity = entity ?: throw IllegalArgumentException("Entity is null"),
-        status = SyncActionStatus.COMPLETED,
+        status = SyncControl.ActionStatus.COMPLETED,
         data = data ?: mapOf(),
         datetime = actionedAt?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)

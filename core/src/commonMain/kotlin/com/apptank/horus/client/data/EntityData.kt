@@ -26,5 +26,10 @@ sealed class Horus {
         val name: String,
         val value: T
     )
+
+    data class EntityHash(
+        val entity: String,
+        val hash: String
+    )
 }
 

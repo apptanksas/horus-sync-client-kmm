@@ -3,12 +3,9 @@ package com.apptank.horus.client.sync.manager
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
-import com.apptank.horus.client.control.SyncAction
-import com.apptank.horus.client.control.SyncActionStatus
-import com.apptank.horus.client.control.SyncActionType
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import io.mockative.Mock
@@ -23,8 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.Assert
@@ -91,10 +86,10 @@ class RemoteSynchronizatorManagerTest : TestCase() {
 
         // Given
         val actions = generateArray {
-            SyncAction(
-                Random.nextInt(), SyncActionType.INSERT,
+            SyncControl.Action(
+                Random.nextInt(), SyncControl.ActionType.INSERT,
                 "entity",
-                SyncActionStatus.PENDING,
+                SyncControl.ActionStatus.PENDING,
                 emptyMap(), Clock.System.now()
                     .toLocalDateTime(
                         TimeZone.UTC
@@ -127,10 +122,10 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     fun trySynchronizeDataCompleteActionsIsFailure() = runBlocking {
         // Given
         val actions = generateArray {
-            SyncAction(
-                Random.nextInt(), SyncActionType.INSERT,
+            SyncControl.Action(
+                Random.nextInt(), SyncControl.ActionType.INSERT,
                 "entity",
-                SyncActionStatus.PENDING,
+                SyncControl.ActionStatus.PENDING,
                 emptyMap(), Clock.System.now()
                     .toLocalDateTime(
                         TimeZone.UTC
@@ -162,10 +157,10 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     fun trySynchronizeDataCompleteIsSuccess() = runBlocking {
         // Given
         val actions = generateArray {
-            SyncAction(
-                Random.nextInt(), SyncActionType.UPDATE,
+            SyncControl.Action(
+                Random.nextInt(), SyncControl.ActionType.UPDATE,
                 "entity",
-                SyncActionStatus.PENDING,
+                SyncControl.ActionStatus.PENDING,
                 emptyMap(), Clock.System.now()
                     .toLocalDateTime(
                         TimeZone.UTC

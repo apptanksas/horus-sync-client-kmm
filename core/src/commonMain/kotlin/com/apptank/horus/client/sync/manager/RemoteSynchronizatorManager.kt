@@ -3,8 +3,7 @@ package com.apptank.horus.client.sync.manager
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.coFold
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
-import com.apptank.horus.client.control.SyncAction
-import com.apptank.horus.client.control.SyncActionType
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.eventbus.Event
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
@@ -73,12 +72,12 @@ class RemoteSynchronizatorManager(
     }
 
 
-    private suspend fun updateActionsAsCompleted(pendingActions: List<SyncAction>) {
+    private suspend fun updateActionsAsCompleted(pendingActions: List<SyncControl.Action>) {
 
         val actionsId = pendingActions.map { it.id }
-        val countInsertedActions = pendingActions.filter { it.action == SyncActionType.INSERT }.size
-        val countUpdatedActions = pendingActions.filter { it.action == SyncActionType.UPDATE }.size
-        val countDeletedActions = pendingActions.filter { it.action == SyncActionType.DELETE }.size
+        val countInsertedActions = pendingActions.filter { it.action == SyncControl.ActionType.INSERT }.size
+        val countUpdatedActions = pendingActions.filter { it.action == SyncControl.ActionType.UPDATE }.size
+        val countDeletedActions = pendingActions.filter { it.action == SyncControl.ActionType.DELETE }.size
 
         if (attemptOperation { syncControlDatabaseHelper.completeActions(actionsId) }) {
             log("[ActionSync] ${actionsId.size} actions were synced. [Inserts: $countInsertedActions, Updates: $countUpdatedActions, Deletes: $countDeletedActions]")

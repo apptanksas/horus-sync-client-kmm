@@ -41,13 +41,13 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.insertOrThrow(
             SyncControlTable.TABLE_NAME,
             SyncControlTable.mapToCreate(
-                SyncOperationType.INITIAL,
-                ControlStatus.COMPLETED
+                SyncControl.OperationType.INITIAL,
+                SyncControl.Status.COMPLETED
             )
         )
         // When
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncOperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
         // Then
         Assert.assertTrue(isStatusCompleted)
     }
@@ -58,13 +58,13 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.insertOrThrow(
             SyncControlTable.TABLE_NAME,
             SyncControlTable.mapToCreate(
-                SyncOperationType.INITIAL,
-                ControlStatus.FAILED
+                SyncControl.OperationType.INITIAL,
+                SyncControl.Status.FAILED
             )
         )
         // When
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncOperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
         // Then
         Assert.assertFalse(isStatusCompleted)
     }
@@ -76,8 +76,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.insertOrThrow(
             SyncControlTable.TABLE_NAME,
             SyncControlTable.mapToCreate(
-                SyncOperationType.CHECKPOINT,
-                ControlStatus.COMPLETED
+                SyncControl.OperationType.CHECKPOINT,
+                SyncControl.Status.COMPLETED
             ).plus(Pair(SyncControlTable.ATTR_DATETIME, datetime))
         )
         // When
@@ -98,12 +98,12 @@ class SyncControlDatabaseHelperTest : TestCase() {
     fun addSyncTypeStatusWithCheckPointIsSuccess() {
         // When
         controlManagerDatabaseHelper.addSyncTypeStatus(
-            SyncOperationType.CHECKPOINT,
-            ControlStatus.COMPLETED
+            SyncControl.OperationType.CHECKPOINT,
+            SyncControl.Status.COMPLETED
         )
         // Then
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncOperationType.CHECKPOINT)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.CHECKPOINT)
         Assert.assertTrue(isStatusCompleted)
     }
 
@@ -111,12 +111,12 @@ class SyncControlDatabaseHelperTest : TestCase() {
     fun addSyncTypeStatusWithInitialIsSuccess() {
         // When
         controlManagerDatabaseHelper.addSyncTypeStatus(
-            SyncOperationType.INITIAL,
-            ControlStatus.COMPLETED
+            SyncControl.OperationType.INITIAL,
+            SyncControl.Status.COMPLETED
         )
         // Then
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncOperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
         Assert.assertTrue(isStatusCompleted)
     }
 
@@ -212,9 +212,9 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then
         Assert.assertEquals(1, pendingActions.size)
         Assert.assertEquals(entity, pendingActions.first().entity)
-        Assert.assertEquals(SyncActionType.INSERT, pendingActions.first().action)
+        Assert.assertEquals(SyncControl.ActionType.INSERT, pendingActions.first().action)
         Assert.assertEquals(attributes.associate { it.name to it.value }, pendingActions.first().data)
-        Assert.assertEquals(SyncActionStatus.PENDING, pendingActions.first().status)
+        Assert.assertEquals(SyncControl.ActionStatus.PENDING, pendingActions.first().status)
     }
 
     @Test
@@ -242,7 +242,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             0
         ).value
 
-        Assert.assertEquals(SyncActionStatus.COMPLETED.id, result?.toInt())
+        Assert.assertEquals(SyncControl.ActionStatus.COMPLETED.id, result?.toInt())
     }
 
     @Test

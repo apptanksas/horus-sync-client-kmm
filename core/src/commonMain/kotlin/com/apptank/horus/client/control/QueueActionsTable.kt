@@ -26,11 +26,11 @@ object QueueActionsTable {
                 "$ATTR_STATUS INTEGER," +
                 "$ATTR_DATETIME INTEGER)"
 
-    fun mapToCreate(actionType: SyncActionType, entity: String, jsonData: Map<String, @Serializable(with = AnySerializer::class)  Any?>) = mapOf(
+    fun mapToCreate(actionType: SyncControl.ActionType, entity: String, jsonData: Map<String, @Serializable(with = AnySerializer::class)  Any?>) = mapOf(
         ATTR_ACTION_TYPE to actionType.id,
         ATTR_ENTITY to entity,
         ATTR_DATA to Json.encodeToString(jsonData),
-        ATTR_STATUS to SyncActionStatus.PENDING.id,
+        ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
         ATTR_DATETIME to SystemTime.getCurrentTimestamp()
     )
 }

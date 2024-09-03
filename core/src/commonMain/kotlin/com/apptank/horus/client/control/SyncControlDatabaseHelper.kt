@@ -34,11 +34,11 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
-    override fun isStatusCompleted(type: SyncOperationType): Boolean {
+    override fun isStatusCompleted(type: SyncControl.OperationType): Boolean {
         driver.handle {
             return rawQuery(
                 "SELECT EXISTS(SELECT 1 FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${type.id} AND " +
-                        "${SyncControlTable.ATTR_STATUS} = ${ControlStatus.COMPLETED.id} LIMIT 1)"
+                        "${SyncControlTable.ATTR_STATUS} = ${SyncControl.Status.COMPLETED.id} LIMIT 1)"
             ) { it.getRequireInt(0) == 1 }.any { it }
         }
     }
@@ -46,12 +46,12 @@ internal class SyncControlDatabaseHelper(
     override fun getLastDatetimeCheckpoint(): Long {
         driver.handle {
             return rawQuery(
-                "SELECT ${SyncControlTable.ATTR_DATETIME} FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${SyncOperationType.CHECKPOINT.id} ORDER BY ${SyncControlTable.ATTR_ID} DESC LIMIT 1"
+                "SELECT ${SyncControlTable.ATTR_DATETIME} FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${SyncControl.OperationType.CHECKPOINT.id} ORDER BY ${SyncControlTable.ATTR_ID} DESC LIMIT 1"
             ) { it.getRequireLong(0) }.firstOrNull() ?: 0L
         }
     }
 
-    override fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus) {
+    override fun addSyncTypeStatus(type: SyncControl.OperationType, status: SyncControl.Status) {
         driver.handle {
             insertOrThrow(SyncControlTable.TABLE_NAME, SyncControlTable.mapToCreate(type, status))
         }
@@ -65,7 +65,7 @@ internal class SyncControlDatabaseHelper(
 
         addAction(
             entity,
-            SyncActionType.INSERT,
+            SyncControl.ActionType.INSERT,
             attributes.associate { it.name to it.value.toString() })
         emitEntityCreated(
             entity,
@@ -89,7 +89,7 @@ internal class SyncControlDatabaseHelper(
         validateIfEntityExists(entity)
         addAction(
             entity,
-            SyncActionType.UPDATE,
+            SyncControl.ActionType.UPDATE,
             mapOf(
                 "id" to id.value,
                 "attributes" to attributes.associate { it.name to it.value.toString() })
@@ -108,7 +108,7 @@ internal class SyncControlDatabaseHelper(
         id: Horus.Attribute<String>
     ) {
         validateIfEntityExists(entity)
-        addAction(entity, SyncActionType.DELETE, mapOf("id" to id.value))
+        addAction(entity, SyncControl.ActionType.DELETE, mapOf("id" to id.value))
         emitEntityDeleted(entity, id.value)
     }
 
@@ -118,12 +118,12 @@ internal class SyncControlDatabaseHelper(
      *
      * @return List of pending actions
      */
-    override fun getPendingActions(): List<SyncAction> {
+    override fun getPendingActions(): List<SyncControl.Action> {
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     SQL.WhereCondition(
-                        SQL.ColumnValue(QueueActionsTable.ATTR_STATUS, SyncActionStatus.PENDING.id)
+                        SQL.ColumnValue(QueueActionsTable.ATTR_STATUS, SyncControl.ActionStatus.PENDING.id)
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
@@ -137,7 +137,7 @@ internal class SyncControlDatabaseHelper(
     override fun completeActions(actionIds: List<Int>): Boolean {
         driver.handle {
             val values = mapOf<String, Any>(
-                QueueActionsTable.ATTR_STATUS to SyncActionStatus.COMPLETED.id
+                QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.COMPLETED.id
             )
             val whereClause = "${QueueActionsTable.ATTR_ID} IN (${actionIds.joinToString(",")})"
             return update(
@@ -154,14 +154,14 @@ internal class SyncControlDatabaseHelper(
      *
      * @return Last action completed
      */
-    override fun getLastActionCompleted(): SyncAction? {
+    override fun getLastActionCompleted(): SyncControl.Action? {
         driver.handle {
             val sentenceSql = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     SQL.WhereCondition(
                         SQL.ColumnValue(
                             QueueActionsTable.ATTR_STATUS,
-                            SyncActionStatus.COMPLETED.id
+                            SyncControl.ActionStatus.COMPLETED.id
                         )
                     )
                 ).orderBy(QueueActionsTable.ATTR_ID).limit(1).build()
@@ -171,7 +171,7 @@ internal class SyncControlDatabaseHelper(
     }
 
 
-    override fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction> {
+    override fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncControl.Action> {
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
@@ -184,7 +184,7 @@ internal class SyncControlDatabaseHelper(
                     SQL.WhereCondition(
                         SQL.ColumnValue(
                             QueueActionsTable.ATTR_STATUS,
-                            SyncActionStatus.COMPLETED.id
+                            SyncControl.ActionStatus.COMPLETED.id
                         )
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
@@ -198,12 +198,12 @@ internal class SyncControlDatabaseHelper(
         return getTablesNames().filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
-    private fun createSyncActionFromCursor(cursor: Cursor): SyncAction {
-        return SyncAction(
+    private fun createSyncActionFromCursor(cursor: Cursor): SyncControl.Action {
+        return SyncControl.Action(
             cursor.getValue("id"),
-            SyncActionType.fromId(cursor.getValue("action_type")),
+            SyncControl.ActionType.fromId(cursor.getValue("action_type")),
             cursor.getValue("entity"),
-            SyncActionStatus.fromId(cursor.getValue("status")),
+            SyncControl.ActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
             Instant.fromEpochSeconds(cursor.getValue("datetime"))
                 .toLocalDateTime(TimeZone.UTC)
@@ -212,7 +212,7 @@ internal class SyncControlDatabaseHelper(
 
     private fun addAction(
         entity: String,
-        actionType: SyncActionType,
+        actionType: SyncControl.ActionType,
         dataJSON: DataMap
     ) {
         driver.handle {

@@ -11,7 +11,7 @@ import com.apptank.horus.client.MOCK_RESPONSE_POST_VALIDATE_HASHING
 import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.fold
-import com.apptank.horus.client.control.SyncActionType
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
@@ -126,7 +126,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val actions = generateArray {
             SyncDTO.Request.SyncActionRequest(
-                SyncActionType.INSERT.name, "farms", mapOf(
+                SyncControl.ActionType.INSERT.name, "farms", mapOf(
                     "id" to uuid(),
                     "name" to "Farm ${uuid()}"
                 ), timestamp()

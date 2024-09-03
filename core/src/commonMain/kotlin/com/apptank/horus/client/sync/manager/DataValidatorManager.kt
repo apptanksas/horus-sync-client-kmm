@@ -2,17 +2,16 @@ package com.apptank.horus.client.sync.manager
 
 import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
-import com.apptank.horus.client.control.ControlStatus
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
-import com.apptank.horus.client.control.SyncOperationType
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.data.toDTORequest
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.database.mapToDBColumValue
 import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.SQL
 import com.apptank.horus.client.database.toRecordsInsert
-import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.extensions.removeIf
@@ -34,10 +33,8 @@ class DataValidatorManager(
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
-    private val event: EventBus,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-
 
     /**
      * Start the validation process
@@ -59,7 +56,6 @@ class DataValidatorManager(
         CoroutineScope(dispatcher).apply {
             launch {
                 // Stage 1: Validate if there are new data to sync with the server
-
                 if (existsDataToSync()) {
                     log("[SyncValidator] There are new data to sync with the server")
                     synchronizeData()
@@ -67,9 +63,9 @@ class DataValidatorManager(
                 }
 
                 // Stage 2: Validate entity hashes
-
                 val entitiesHashes = getEntityHashes()
                 val entitiesHashesValidated = validateEntityHashes(entitiesHashes)
+
                 // EntityName -> List of corrupted ids
                 val corruptedEntities = mutableMapOf<String, List<String>>()
 
@@ -107,8 +103,7 @@ class DataValidatorManager(
     private suspend fun existsDataToSync(): Boolean {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions =
-            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         val resultActions = synchronizationService.getQueueActions(
             checkpointTimestamp,
@@ -138,9 +133,9 @@ class DataValidatorManager(
      *
      * @return List of entities hashes
      */
-    private fun getEntityHashes(): List<SyncDTO.Request.EntityHash> {
+    private fun getEntityHashes(): List<Horus.EntityHash> {
 
-        val output = mutableListOf<SyncDTO.Request.EntityHash>()
+        val output = mutableListOf<Horus.EntityHash>()
 
         syncControlDatabaseHelper.getEntityNames().forEach { entity ->
             val hashes = mutableListOf<String>()
@@ -154,7 +149,12 @@ class DataValidatorManager(
             }
 
             if (hashes.isNotEmpty()) {
-                output.add(SyncDTO.Request.EntityHash(entity, AttributeHasher.generateHashFromList(hashes)))
+                output.add(
+                    Horus.EntityHash(
+                        entity,
+                        AttributeHasher.generateHashFromList(hashes)
+                    )
+                )
             }
         }
 
@@ -167,8 +167,10 @@ class DataValidatorManager(
      * @param entitiesHashes List of entities hashes
      * @return List of entities with the validation result
      */
-    private suspend fun validateEntityHashes(entitiesHashes: List<SyncDTO.Request.EntityHash>): List<Pair<String, Boolean>> {
-        val result = synchronizationService.postValidateEntitiesData(entitiesHashes)
+    private suspend fun validateEntityHashes(entitiesHashes: List<Horus.EntityHash>): List<Pair<String, Boolean>> {
+
+        val result = synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest())
+
         when (result) {
             is DataResult.Success -> {
                 return result.data.map { Pair(it.entity!!, it.hashingValidation?.matched ?: false) }
@@ -307,8 +309,8 @@ class DataValidatorManager(
                     }
                 }
                 syncControlDatabaseHelper.addSyncTypeStatus(
-                    SyncOperationType.CHECKPOINT,
-                    ControlStatus.COMPLETED
+                    SyncControl.OperationType.CHECKPOINT,
+                    SyncControl.Status.COMPLETED
                 )
                 log("[SyncValidator] Data synchronized successfully")
             }
@@ -317,8 +319,8 @@ class DataValidatorManager(
                 actions.exception.printStackTrace()
                 log("[SyncValidator] Error getting queue data")
                 syncControlDatabaseHelper.addSyncTypeStatus(
-                    SyncOperationType.CHECKPOINT,
-                    ControlStatus.FAILED
+                    SyncControl.OperationType.CHECKPOINT,
+                    SyncControl.Status.FAILED
                 )
             }
 

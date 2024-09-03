@@ -5,9 +5,9 @@ import com.apptank.horus.client.data.Horus
 
 interface ISyncControlDatabaseHelper {
     fun onCreate()
-    fun isStatusCompleted(type: SyncOperationType): Boolean
+    fun isStatusCompleted(type: SyncControl.OperationType): Boolean
     fun getLastDatetimeCheckpoint(): Long
-    fun addSyncTypeStatus(type: SyncOperationType, status: ControlStatus)
+    fun addSyncTypeStatus(type: SyncControl.OperationType, status: SyncControl.Status)
     fun addActionInsert(
         entity: String,
         attributes: List<Horus.Attribute<*>>
@@ -42,7 +42,7 @@ interface ISyncControlDatabaseHelper {
      *
      * @return List of pending actions
      */
-    fun getPendingActions(): List<SyncAction>
+    fun getPendingActions(): List<SyncControl.Action>
 
     /**
      * Update the status of the actions as completed
@@ -54,9 +54,9 @@ interface ISyncControlDatabaseHelper {
      *
      * @return Last action completed
      */
-    fun getLastActionCompleted(): SyncAction?
+    fun getLastActionCompleted(): SyncControl.Action?
 
-    fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction>
+    fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncControl.Action>
 
     fun getEntityNames(): List<String>
 }

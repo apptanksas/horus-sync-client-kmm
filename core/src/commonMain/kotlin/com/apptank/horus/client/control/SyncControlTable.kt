@@ -18,7 +18,7 @@ object SyncControlTable {
                 "$ATTR_STATUS INTEGER," +
                 "$ATTR_DATETIME INTEGER)"
 
-    fun mapToCreate(type: SyncOperationType, status: ControlStatus) = mapOf(
+    fun mapToCreate(type: SyncControl.OperationType, status: SyncControl.Status) = mapOf(
         ATTR_TYPE to type.id,
         ATTR_STATUS to status.id,
         ATTR_DATETIME to SystemTime.getCurrentTimestamp()
