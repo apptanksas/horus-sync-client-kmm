@@ -72,6 +72,7 @@ sealed class SyncDTO {
     }
 
     @Serializable
+    @Deprecated("Create another model")
     data class EntityHash(
         val entity: String,
         val hash: String

@@ -5,10 +5,9 @@ import com.apptank.horus.client.migration.domain.AttributeType
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.EntityType
 import com.apptank.horus.client.migration.exception.InvalidDataSchemeException
-import com.apptank.horus.client.migration.network.dto.AttributeDTO
-import com.apptank.horus.client.migration.network.dto.EntitySchemeDTO
+import com.apptank.horus.client.migration.network.dto.MigrationDTO
 
-fun EntitySchemeDTO.toScheme(): EntityScheme {
+fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
     return EntityScheme(
         this.entity ?: throw InvalidDataSchemeException(),
         EntityType.valueOf(this.type?.uppercase() ?: EntityType.EDITABLE.name.uppercase()),
@@ -19,7 +18,7 @@ fun EntitySchemeDTO.toScheme(): EntityScheme {
 }
 
 
-fun AttributeDTO.toScheme(): Attribute {
+fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
     return Attribute(
         this.name ?: throw InvalidDataSchemeException(),
         this.type.toAttributeType(),
