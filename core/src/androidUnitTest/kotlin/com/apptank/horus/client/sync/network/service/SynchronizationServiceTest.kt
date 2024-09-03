@@ -218,8 +218,8 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postValidateEntitiesData() = runBlocking {
         // Given
         val entitiesHash = listOf(
-            SyncDTO.EntityHash("entity1", "hash1"),
-            SyncDTO.EntityHash("entity1", "hash2")
+            SyncDTO.Request.EntityHash("entity1", "hash1"),
+            SyncDTO.Request.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
         val service = SynchronizationService(mockEngine, BASE_URL)
@@ -235,11 +235,11 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.assertEquals(2, it.size)
                 it.forEach {
                     Assert.assertNotNull(it.entity)
-                    Assert.assertNotNull(it.hash)
-                    Assert.assertNotNull(it.hash)
-                    Assert.assertNotNull(it.hash?.expected)
-                    Assert.assertNotNull(it.hash?.obtained)
-                    Assert.assertNotNull(it.hash?.matched)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation?.expected)
+                    Assert.assertNotNull(it.hashingValidation?.obtained)
+                    Assert.assertNotNull(it.hashingValidation?.matched)
                 }
             },
             onFailure = {
@@ -252,8 +252,8 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postValidateEntitiesDataIsFailure() = runBlocking {
         // Given
         val entitiesHash = listOf(
-            SyncDTO.EntityHash("entity1", "hash1"),
-            SyncDTO.EntityHash("entity1", "hash2")
+            SyncDTO.Request.EntityHash("entity1", "hash1"),
+            SyncDTO.Request.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(
             MOCK_RESPONSE_INTERNAL_SERVER_ERROR,

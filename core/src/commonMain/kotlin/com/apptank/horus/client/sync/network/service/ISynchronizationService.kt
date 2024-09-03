@@ -22,7 +22,7 @@ interface ISynchronizationService {
 
     suspend fun postValidateHashing(request: SyncDTO.Request.ValidateHashingRequest): DataResult<SyncDTO.Response.HashingValidation>
 
-    suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>>
+    suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.Request.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>>
 
     suspend fun getLastQueueAction(): DataResult<SyncDTO.Response.SyncAction>
 

@@ -54,7 +54,7 @@ internal class SynchronizationService(
         return get("queue/actions", queryParams) { it.serialize() }
     }
 
-    override suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>> {
+    override suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.Request.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>> {
         return post("validate/data", entitiesHash) { it.serialize() }
     }
 

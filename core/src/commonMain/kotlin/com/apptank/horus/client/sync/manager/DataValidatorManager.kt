@@ -57,9 +57,7 @@ class DataValidatorManager(
         }
 
         CoroutineScope(dispatcher).apply {
-
             launch {
-
                 // Stage 1: Validate if there are new data to sync with the server
 
                 if (existsDataToSync()) {
@@ -140,9 +138,9 @@ class DataValidatorManager(
      *
      * @return List of entities hashes
      */
-    private fun getEntityHashes(): List<SyncDTO.EntityHash> {
+    private fun getEntityHashes(): List<SyncDTO.Request.EntityHash> {
 
-        val output = mutableListOf<SyncDTO.EntityHash>()
+        val output = mutableListOf<SyncDTO.Request.EntityHash>()
 
         syncControlDatabaseHelper.getEntityNames().forEach { entity ->
             val hashes = mutableListOf<String>()
@@ -156,7 +154,7 @@ class DataValidatorManager(
             }
 
             if (hashes.isNotEmpty()) {
-                output.add(SyncDTO.EntityHash(entity, AttributeHasher.generateHashFromList(hashes)))
+                output.add(SyncDTO.Request.EntityHash(entity, AttributeHasher.generateHashFromList(hashes)))
             }
         }
 
@@ -169,11 +167,11 @@ class DataValidatorManager(
      * @param entitiesHashes List of entities hashes
      * @return List of entities with the validation result
      */
-    private suspend fun validateEntityHashes(entitiesHashes: List<SyncDTO.EntityHash>): List<Pair<String, Boolean>> {
+    private suspend fun validateEntityHashes(entitiesHashes: List<SyncDTO.Request.EntityHash>): List<Pair<String, Boolean>> {
         val result = synchronizationService.postValidateEntitiesData(entitiesHashes)
         when (result) {
             is DataResult.Success -> {
-                return result.data.map { Pair(it.entity!!, it.hash?.matched ?: false) }
+                return result.data.map { Pair(it.entity!!, it.hashingValidation?.matched ?: false) }
             }
 
             is DataResult.Failure -> {

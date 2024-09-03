@@ -27,6 +27,12 @@ sealed class SyncDTO {
             val data: DataMap,
             val hash: String
         )
+
+        @Serializable
+        data class EntityHash(
+            val entity: String,
+            val hash: String
+        )
     }
 
     //----------------------------------------------------------------------------------------------
@@ -37,7 +43,7 @@ sealed class SyncDTO {
         @Serializable
         data class EntityHash(
             var entity: String? = null,
-            var hash: HashingValidation? = null
+            @SerialName("hash") var hashingValidation: HashingValidation? = null
         )
 
         @Serializable
@@ -71,12 +77,6 @@ sealed class SyncDTO {
 
     }
 
-    @Serializable
-    @Deprecated("Create another model")
-    data class EntityHash(
-        val entity: String,
-        val hash: String
-    )
 
 }
 
