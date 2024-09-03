@@ -1,6 +1,6 @@
 package com.apptank.horus.client.control
 
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 
 interface ISyncControlDatabaseHelper {
     fun onCreate()
@@ -54,5 +54,8 @@ interface ISyncControlDatabaseHelper {
      * @return Last action completed
      */
     fun getLastActionCompleted(): SyncAction?
+
     fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncAction>
+
+    fun getEntityNames(): List<String>
 }

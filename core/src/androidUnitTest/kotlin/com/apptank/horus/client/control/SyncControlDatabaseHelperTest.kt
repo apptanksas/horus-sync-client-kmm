@@ -4,7 +4,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.database.SQLiteHelper
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.execute
 import org.junit.Assert
 import org.junit.Before

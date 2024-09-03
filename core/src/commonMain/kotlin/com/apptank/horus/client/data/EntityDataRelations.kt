@@ -1,4 +1,4 @@
-package com.apptank.horus.client.domain
+package com.apptank.horus.client.data
 
 import com.apptank.horus.client.database.RecordInsertData
 import com.apptank.horus.client.database.toDBColumnValue

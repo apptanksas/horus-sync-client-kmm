@@ -1,6 +1,6 @@
 package com.apptank.horus.client.hashing
 
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import io.ktor.utils.io.core.toByteArray
 import org.kotlincrypto.hash.sha2.SHA256
 

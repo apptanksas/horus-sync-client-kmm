@@ -1,6 +1,6 @@
 package com.apptank.horus.client.hashing
 
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import org.junit.Assert
 import org.junit.Test
 

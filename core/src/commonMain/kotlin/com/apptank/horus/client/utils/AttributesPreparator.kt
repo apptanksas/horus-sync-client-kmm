@@ -1,6 +1,6 @@
 package com.apptank.horus.client.utils
 
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.hashing.AttributeHasher
 
@@ -17,7 +17,7 @@ internal object AttributesPreparator {
     fun appendInsertSyncAttributes(
         id: EntityAttribute<String>,
         attributes: List<EntityAttribute<*>>,
-        userId: Int,
+        userId: String,
         syncTime: Long = SystemTime.getCurrentTimestamp()
     ): List<EntityAttribute<*>> {
 

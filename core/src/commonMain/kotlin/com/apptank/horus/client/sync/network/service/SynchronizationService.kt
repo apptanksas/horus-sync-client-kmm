@@ -2,12 +2,11 @@ package com.apptank.horus.client.sync.network.service
 
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.network.BaseService
-import com.apptank.horus.client.sync.network.dto.EntityHash
-import com.apptank.horus.client.sync.network.dto.EntityHashResponse
 import com.apptank.horus.client.sync.network.dto.EntityIdHashDTO
 import com.apptank.horus.client.sync.network.dto.EntityResponse
 import com.apptank.horus.client.sync.network.dto.SyncActionRequest
 import com.apptank.horus.client.sync.network.dto.SyncActionResponse
+import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
 import com.apptank.horus.client.sync.network.dto.ValidateHashingResponse
 import io.ktor.client.engine.HttpClientEngine
@@ -61,7 +60,7 @@ internal class SynchronizationService(
         return get("queue/actions", queryParams) { it.serialize() }
     }
 
-    override suspend fun postValidateEntitiesData(entitiesHash: List<EntityHash>): DataResult<List<EntityHashResponse>> {
+    override suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.EntityHash>): DataResult<List<SyncDTO.EntityHashResponse>> {
         return post("validate/data", entitiesHash) { it.serialize() }
     }
 

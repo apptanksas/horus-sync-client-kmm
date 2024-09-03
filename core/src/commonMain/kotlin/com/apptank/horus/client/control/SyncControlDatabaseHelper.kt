@@ -8,7 +8,7 @@ import com.apptank.horus.client.database.DBColumnValue
 import com.apptank.horus.client.database.SQLiteHelper
 import com.apptank.horus.client.database.WhereCondition
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireLong
@@ -190,10 +190,9 @@ internal class SyncControlDatabaseHelper(
     }
 
 
-    private fun getEntityNames(): List<String> {
+    override fun getEntityNames(): List<String> {
         return getTablesNames().filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
-
 
     private fun createSyncActionFromCursor(cursor: Cursor): SyncAction {
         return SyncAction(

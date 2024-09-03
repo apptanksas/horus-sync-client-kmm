@@ -212,6 +212,32 @@ class OperationDatabaseHelperTest : TestCase() {
         assert(postValidate)
     }
 
+    @Test
+    fun validateDeleteRecord() {
+        // Given
+        val uuid = uuid()
+        val insertAction = createInsertAction(uuid, "dog")
+
+        // When
+        val resultInsert = databaseHelper.executeOperations(insertAction)
+        val result = databaseHelper.deleteRecord(entityName, listOf(WhereCondition(
+            DBColumnValue("id", uuid),
+            "="
+        )))
+
+        // Then
+        assert(resultInsert)
+        assert(result.isSuccess)
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $entityName WHERE id = '$uuid'", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+        Assert.assertEquals(0, count)
+    }
+
 
     private fun createInsertAction(uuid: String, name: String) = RecordInsertData(
         entityName,

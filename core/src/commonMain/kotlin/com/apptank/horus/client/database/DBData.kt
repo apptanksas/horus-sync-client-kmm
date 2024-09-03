@@ -1,8 +1,9 @@
 package com.apptank.horus.client.database
 
-import com.apptank.horus.client.domain.EntityAttribute
+import com.apptank.horus.client.data.EntityAttribute
 import com.apptank.horus.client.extensions.notContains
 import kotlinx.datetime.LocalDateTime
+
 
 /**
  * Base class representing an action to be performed on a database table.

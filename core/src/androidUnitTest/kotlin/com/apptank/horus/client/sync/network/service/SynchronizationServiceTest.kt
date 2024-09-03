@@ -12,8 +12,8 @@ import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.fold
 import com.apptank.horus.client.control.SyncActionType
-import com.apptank.horus.client.sync.network.dto.EntityHash
 import com.apptank.horus.client.sync.network.dto.SyncActionRequest
+import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
@@ -220,8 +220,8 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postValidateEntitiesData() = runBlocking {
         // Given
         val entitiesHash = listOf(
-            EntityHash("entity1", "hash1"),
-            EntityHash("entity1", "hash2")
+            SyncDTO.EntityHash("entity1", "hash1"),
+            SyncDTO.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
         val service = SynchronizationService(mockEngine, BASE_URL)
@@ -254,8 +254,8 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postValidateEntitiesDataIsFailure() = runBlocking {
         // Given
         val entitiesHash = listOf(
-            EntityHash("entity1", "hash1"),
-            EntityHash("entity1", "hash2")
+            SyncDTO.EntityHash("entity1", "hash1"),
+            SyncDTO.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(
             MOCK_RESPONSE_INTERNAL_SERVER_ERROR,

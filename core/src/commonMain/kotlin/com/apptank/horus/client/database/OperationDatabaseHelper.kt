@@ -11,7 +11,7 @@ internal class OperationDatabaseHelper(
     private val database: HorusDatabase,
     databaseName: String,
     driver: SqlDriver,
-) : SQLiteHelper(driver, databaseName) {
+) : SQLiteHelper(driver, databaseName), IOperationDatabaseHelper {
 
 
     /**
@@ -20,7 +20,7 @@ internal class OperationDatabaseHelper(
      * @param actions The list of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(actions: List<ActionDatabase>) = executeTransaction { _ ->
+    override fun executeOperations(actions: List<ActionDatabase>) = executeTransaction { _ ->
         actions.forEach { action ->
             val operationIsFailure: Boolean = when (action) {
                 // Insert
@@ -60,7 +60,8 @@ internal class OperationDatabaseHelper(
      * @param actions The vararg of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(vararg actions: ActionDatabase) = executeOperations(actions.toList())
+    override fun executeOperations(vararg actions: ActionDatabase) =
+        executeOperations(actions.toList())
 
     /**
      * Inserts multiple records into the database within a transaction.
@@ -68,7 +69,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun insertTransaction(records: List<RecordInsertData>, postOperation: () -> Unit = {}) =
+    override fun insertTransaction(records: List<RecordInsertData>, postOperation: () -> Unit) =
         executeTransaction { db ->
             records.forEach { item ->
                 val values = item.values.prepareMap()
@@ -84,7 +85,10 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be updated.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun updateRecordTransaction(records: List<RecordUpdateData>, postOperation: () -> Unit = {}) =
+    override fun updateRecordTransaction(
+        records: List<RecordUpdateData>,
+        postOperation: () -> Unit
+    ) =
         executeTransaction { _ ->
             records.forEach { item ->
                 if (executeUpdate(
@@ -101,12 +105,31 @@ internal class OperationDatabaseHelper(
         }
 
     /**
+     * Deletes records from a specified table based on conditions.
+     *
+     * @param table The name of the table.
+     * @param conditions The list of conditions for deletion.
+     * @param operator The logical operator to combine conditions (AND/OR).
+     * @return The result of the operation.
+     */
+    override fun deleteRecord(
+        table: String,
+        conditions: List<WhereCondition>,
+        operator: Operator
+    ): OperationResult {
+        return executeDelete(table, conditions, operator)
+    }
+
+    /**
      * Deletes multiple records from the database within a transaction.
      *
      * @param records A list of records to be deleted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun deleteRecordTransaction(records: List<RecordDeleteData>, postOperation: () -> Unit = {}) =
+    override fun deleteRecordTransaction(
+        records: List<RecordDeleteData>,
+        postOperation: () -> Unit
+    ) =
         executeTransaction { _ ->
             records.forEach {
                 if (executeDelete(it.table, it.conditions, it.operator).isFailure) {
@@ -123,7 +146,7 @@ internal class OperationDatabaseHelper(
      * @param builder the QueryBuilder used to build the SQL query.
      * @return a list of maps, each representing a record from the query result.
      */
-    fun queryRecords(builder: QueryBuilder): List<Map<String, Any>> {
+    override fun queryRecords(builder: QueryBuilder): List<Map<String, Any>> {
         // Initialize an empty mutable list to store the query results
         val output = mutableListOf<Map<String, Any>>()
         queryResult(builder.build()) { cursor ->

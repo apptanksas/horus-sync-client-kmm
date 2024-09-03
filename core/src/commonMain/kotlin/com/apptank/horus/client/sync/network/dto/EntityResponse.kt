@@ -2,8 +2,8 @@ package com.apptank.horus.client.sync.network.dto
 
 
 import com.apptank.horus.client.base.DataMap
-import com.apptank.horus.client.domain.EntityAttribute
-import com.apptank.horus.client.domain.EntityDataRelations
+import com.apptank.horus.client.data.EntityAttribute
+import com.apptank.horus.client.data.EntityDataRelations
 import kotlinx.serialization.Serializable
 
 /**
