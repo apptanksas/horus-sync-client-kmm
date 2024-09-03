@@ -18,8 +18,6 @@ import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.hashing.AttributeHasher
 import com.apptank.horus.client.interfaces.INetworkValidator
-import com.apptank.horus.client.sync.network.dto.EntityIdHashDTO
-import com.apptank.horus.client.sync.network.dto.SyncActionResponse
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.dto.toEntityData
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -227,7 +225,7 @@ class DataValidatorManager(
      */
     private fun compareEntityHashesWithLocalData(
         entity: String,
-        remoteHashes: List<EntityIdHashDTO>
+        remoteHashes: List<SyncDTO.Response.EntityIdHash>
     ): List<String> {
 
         val ids = mutableListOf<String>()
@@ -333,9 +331,9 @@ class DataValidatorManager(
     }
 
     private fun filterOwnActions(
-        actions: List<SyncActionResponse>,
+        actions: List<SyncDTO.Response.SyncAction>,
         checkpointTimestamp: Long
-    ): List<SyncActionResponse> {
+    ): List<SyncDTO.Response.SyncAction> {
 
         val ownActions =
             syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
@@ -346,7 +344,7 @@ class DataValidatorManager(
         }
     }
 
-    private fun insertData(actionDTO: SyncActionResponse) {
+    private fun insertData(actionDTO: SyncDTO.Response.SyncAction) {
 
         val id = Horus.Attribute("id", actionDTO.data?.get("id") as String)
         val attributes =
@@ -382,7 +380,7 @@ class DataValidatorManager(
         }
     }
 
-    private fun updateData(actionDTO: SyncActionResponse) {
+    private fun updateData(actionDTO: SyncDTO.Response.SyncAction) {
         val id = actionDTO.data?.get("id") as String
         val entity = actionDTO.entity
         val attributes: List<Horus.Attribute<*>> =
@@ -430,7 +428,7 @@ class DataValidatorManager(
         }
     }
 
-    private fun deleteData(actionDTO: SyncActionResponse) {
+    private fun deleteData(actionDTO: SyncDTO.Response.SyncAction) {
 
         // TODO("Validar otras entidades hijas para poder eliminarlas de forma local, por ejemplo: Si es un animal-> eliminar las pesos asociados")
 

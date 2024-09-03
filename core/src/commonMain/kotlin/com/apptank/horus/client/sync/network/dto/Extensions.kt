@@ -1,21 +1,14 @@
 package com.apptank.horus.client.sync.network.dto
 
-
-import com.apptank.horus.client.base.DataMap
+import com.apptank.horus.client.control.SyncAction
+import com.apptank.horus.client.control.SyncActionStatus
+import com.apptank.horus.client.control.SyncActionType
 import com.apptank.horus.client.data.Horus
-import kotlinx.serialization.Serializable
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
-/**
- * Represents the response from an entity API.
- *
- * @property entity The name of the entity.
- * @property data The data associated with the entity, stored as a map of attributes.
- */
-@Serializable
-data class EntityResponse(
-    var entity: String? = null,
-    var data: DataMap? = null
-)
 
 /**
  * Checks if a string represents a relation.
@@ -34,7 +27,7 @@ fun String.isRelation() = this.startsWith("_")
  * @return An [Horus.Entity] object containing the processed entity data.
  * @throws IllegalArgumentException if the entity is null.
  */
-fun EntityResponse.toEntityData(): Horus.Entity {
+fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
 
     val relations =
         data?.filter { it.key.startsWith("_") }?.entries?.map {
@@ -56,7 +49,7 @@ fun EntityResponse.toEntityData(): Horus.Entity {
  * @receiver The list of [EntityResponse] objects to convert.
  * @return A list of [Horus.Entity] objects.
  */
-fun List<EntityResponse>.toListEntityData() = this.map { it.toEntityData() }
+fun List<SyncDTO.Response.Entity>.toListEntityData() = this.map { it.toEntityData() }
 
 /**
  * Maps an attribute value to an [Horus.Attribute].
@@ -87,9 +80,9 @@ private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
  * @receiver The [ArrayList] of [LinkedHashMap] objects to convert.
  * @return A list of [EntityResponse] objects.
  */
-private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<EntityResponse> {
+private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<SyncDTO.Response.Entity> {
     return this.map {
-        EntityResponse().apply {
+        SyncDTO.Response.Entity().apply {
             entity = it["entity"] as? String
             data = (it["data"] as? LinkedHashMap<String, Any?>)?.entries?.associate {
                 it.key to it.value
@@ -97,3 +90,30 @@ private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<E
         }
     }
 }
+
+
+/**
+ * Extension function to convert a SyncAction to a SyncActionRequest
+ */
+fun SyncAction.toRequest(): SyncDTO.Request.SyncActionRequest {
+    return SyncDTO.Request.SyncActionRequest(
+        action = this.action.name,
+        entity = this.entity,
+        data = this.data,
+        datetime = this.datetime.toInstant(TimeZone.UTC).epochSeconds
+    )
+}
+
+fun SyncDTO.Response.SyncAction.toDomain(): SyncAction {
+    return SyncAction(
+        id = 0,
+        action = SyncActionType.valueOf(action!!),
+        entity = entity ?: throw IllegalArgumentException("Entity is null"),
+        status = SyncActionStatus.COMPLETED,
+        data = data ?: mapOf(),
+        datetime = actionedAt?.let {
+            Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
+        } ?: throw IllegalArgumentException("DatetimeAction is null")
+    )
+}
+

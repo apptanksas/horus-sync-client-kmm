@@ -12,9 +12,7 @@ import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.fold
 import com.apptank.horus.client.control.SyncActionType
-import com.apptank.horus.client.sync.network.dto.SyncActionRequest
 import com.apptank.horus.client.sync.network.dto.SyncDTO
-import com.apptank.horus.client.sync.network.dto.ValidateHashingRequest
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
@@ -127,7 +125,7 @@ class SynchronizationServiceTest : ServiceTest() {
 
         // Given
         val actions = generateArray {
-            SyncActionRequest(
+            SyncDTO.Request.SyncActionRequest(
                 SyncActionType.INSERT.name, "farms", mapOf(
                     "id" to uuid(),
                     "name" to "Farm ${uuid()}"
@@ -275,7 +273,7 @@ class SynchronizationServiceTest : ServiceTest() {
             uuid() to uuid(),
             uuid() to uuid()
         )
-        val request = ValidateHashingRequest(data, "hash1")
+        val request = SyncDTO.Request.ValidateHashingRequest(data, "hash1")
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_HASHING)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
