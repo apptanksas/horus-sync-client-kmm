@@ -149,26 +149,13 @@ class DataValidatorManagerTest : TestCase() {
             coEvery { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
                 emptyList()
             )
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
             dataValidatorManager.start()
 
             // Then
             delay(50)
-            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasNotInvoked()
-            coVerify {
-                operationDatabaseHelper.updateWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
-            coVerify {
-                operationDatabaseHelper.deleteWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
-
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -207,7 +194,7 @@ class DataValidatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
             dataValidatorManager.start()
@@ -215,7 +202,7 @@ class DataValidatorManagerTest : TestCase() {
             // Then
             delay(50)
             val insertInvokeExpected = 1
-            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
                 insertInvokeExpected
             )
             verify {
@@ -224,18 +211,6 @@ class DataValidatorManagerTest : TestCase() {
                     SyncControl.Status.COMPLETED
                 )
             }.wasInvoked()
-            coVerify {
-                operationDatabaseHelper.updateWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
-            coVerify {
-                operationDatabaseHelper.deleteWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
         }
 
     @Test
@@ -274,7 +249,7 @@ class DataValidatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.updateWithTransaction(any(), any()) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
             dataValidatorManager.start()
@@ -282,7 +257,7 @@ class DataValidatorManagerTest : TestCase() {
             // Then
             delay(50)
             val updateInvokeExpected = 1
-            coVerify { operationDatabaseHelper.updateWithTransaction(any(), any()) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
                 updateInvokeExpected
             )
             verify {
@@ -291,13 +266,6 @@ class DataValidatorManagerTest : TestCase() {
                     SyncControl.Status.COMPLETED
                 )
             }.wasInvoked()
-            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasNotInvoked()
-            coVerify {
-                operationDatabaseHelper.deleteWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
         }
 
     @Test
@@ -330,7 +298,7 @@ class DataValidatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
             dataValidatorManager.start()
@@ -338,7 +306,7 @@ class DataValidatorManagerTest : TestCase() {
             // Then
             delay(50)
             val deleteInvokeExpected = 1
-            coVerify { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any()))  }.wasInvoked(
                 deleteInvokeExpected
             )
             verify {
@@ -347,18 +315,6 @@ class DataValidatorManagerTest : TestCase() {
                     SyncControl.Status.COMPLETED
                 )
             }.wasInvoked()
-            coVerify {
-                operationDatabaseHelper.updateWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
-            coVerify {
-                operationDatabaseHelper.deleteWithTransaction(
-                    any(),
-                    any()
-                )
-            }.wasNotInvoked()
         }
 
     @Test
@@ -407,25 +363,15 @@ class DataValidatorManagerTest : TestCase() {
                 )
             }.returns(DataResult.Success(responseActions))
 
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
-            every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
-            every { operationDatabaseHelper.updateWithTransaction(any(), any()) }.returns(true)
-            every { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.returns(true)
 
             // When
             dataValidatorManager.start()
 
             // Then
             delay(50)
-            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
-            coVerify { operationDatabaseHelper.updateWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
-            coVerify { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
+            verify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(1)
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -480,25 +426,13 @@ class DataValidatorManagerTest : TestCase() {
                 )
             }.returns(DataResult.Success(responseActions))
 
-
-            every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
-            every { operationDatabaseHelper.updateWithTransaction(any(), any()) }.returns(false)
-            every { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(false)
 
             // When
             dataValidatorManager.start()
 
             // Then
             delay(50)
-            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
-            coVerify { operationDatabaseHelper.updateWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
-            coVerify { operationDatabaseHelper.deleteWithTransaction(any(), any()) }.wasInvoked(
-                1
-            )
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,

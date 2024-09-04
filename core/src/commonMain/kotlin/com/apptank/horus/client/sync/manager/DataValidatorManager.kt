@@ -7,6 +7,7 @@ import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.data.InternalModel
 import com.apptank.horus.client.data.toDTORequest
+import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.database.SQL
@@ -274,12 +275,13 @@ class DataValidatorManager(
 
                 val (actionsInsert, updateActions, deleteActions) = organizeActions(newActions)
 
+                val operations = mapToInsertOperation(actionsInsert) +
+                        mapToUpdateOperation(updateActions) +
+                        mapToDeleteOperation(deleteActions)
 
-                val insertResult = insertActions(actionsInsert)
-                val updateResult = updateActions(updateActions)
-                val deleteResult = deleteActions(deleteActions)
+                val result = operationDatabaseHelper.executeOperations(operations)
 
-                val syncControlStatus = if (insertResult && updateResult && deleteResult) {
+                val syncControlStatus = if (result) {
                     log("[DataValidatorManager:synchronizeData] Data synchronized successfully")
                     SyncControl.Status.COMPLETED
                 } else {
@@ -321,21 +323,11 @@ class DataValidatorManager(
         }
     }
 
-    private fun insertActions(actions: List<SyncControl.Action>): Boolean {
-
-        if (actions.isEmpty()) return true
-
-        return runCatching {
-            operationDatabaseHelper.insertWithTransaction(actions.map { it.toInsertRecord(getUserId()) })
-        }.getOrElse {
-            it.printStackTrace()
-            false
-        }
+    private fun mapToInsertOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.InsertRecord> {
+        return actions.map { it.toInsertRecord(getUserId()) }
     }
 
-    private fun updateActions(actions: List<SyncControl.Action>): Boolean {
-
-        if (actions.isEmpty()) return true
+    private fun mapToUpdateOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.UpdateRecord> {
 
         val actionsUpdate = actions.mapNotNull {
             getEntityById(it.entity, it.getEntityId())?.let { entity ->
@@ -346,25 +338,11 @@ class DataValidatorManager(
             }
         }
 
-        return runCatching {
-            operationDatabaseHelper.updateWithTransaction(actionsUpdate)
-        }.getOrElse {
-            it.printStackTrace()
-            false
-        }
+        return actionsUpdate
     }
 
-    private fun deleteActions(actions: List<SyncControl.Action>): Boolean {
-        if (actions.isEmpty()) return true
-
-        // TODO("Validar otras entidades hijas para poder eliminarlas de forma local, por ejemplo: Si es un animal-> eliminar las pesos asociados")
-        return kotlin.runCatching {
-            operationDatabaseHelper
-                .deleteWithTransaction(actions.map { it.toDeleteRecord() })
-        }.getOrElse {
-            it.printStackTrace()
-            false
-        }
+    private fun mapToDeleteOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.DeleteRecord> {
+        return actions.map { it.toDeleteRecord() }
     }
 
     private fun getEntityById(entity: String, id: String): Horus.Entity? {
