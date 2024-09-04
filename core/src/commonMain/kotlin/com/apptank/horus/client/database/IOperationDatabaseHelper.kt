@@ -1,5 +1,6 @@
 package com.apptank.horus.client.database
 
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.builder.QueryBuilder
 
 interface IOperationDatabaseHelper {
@@ -73,5 +74,5 @@ interface IOperationDatabaseHelper {
      * @param builder the QueryBuilder used to build the SQL query.
      * @return a list of maps, each representing a record from the query result.
      */
-    fun queryRecords(builder: QueryBuilder): List<Map<String, Any>>
+    fun queryRecords(builder: QueryBuilder): List<DataMap>
 }

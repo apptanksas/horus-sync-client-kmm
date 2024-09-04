@@ -25,7 +25,12 @@ sealed class Horus {
     data class Attribute<T>(
         val name: String,
         val value: T
-    )
+    ) {
+        companion object {
+            const val ID = "id"
+            const val HASH = "sync_hash"
+        }
+    }
 
     data class EntityHash(
         val entity: String,

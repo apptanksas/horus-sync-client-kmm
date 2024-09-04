@@ -48,6 +48,8 @@ class DatabaseTablesCreatorDelegate(
      * @return SQL statement to create the table.
      */
     private fun createCreateSQLTable(scheme: EntityScheme): String {
+        // TODO("Implement foreign key constraints to delete oncascade")
+        // TODO("Implement enum types")
         return CreateTableSQLBuilder().apply {
             setTableName(scheme.name)
             // Filter attribute types and add them to the table creation statement.

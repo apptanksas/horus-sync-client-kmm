@@ -1,6 +1,7 @@
 package com.apptank.horus.client.database
 
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.builder.QueryBuilder
 import com.apptank.horus.client.exception.DatabaseOperationFailureException
 import com.apptank.horus.client.extensions.log
@@ -145,7 +146,7 @@ internal class OperationDatabaseHelper(
      * @param builder the QueryBuilder used to build the SQL query.
      * @return a list of maps, each representing a record from the query result.
      */
-    override fun queryRecords(builder: QueryBuilder): List<Map<String, Any>> {
+    override fun queryRecords(builder: QueryBuilder): List<DataMap> {
         // Initialize an empty mutable list to store the query results
         val output = mutableListOf<Map<String, Any>>()
         queryResult(builder.build()) { cursor ->

@@ -1,7 +1,11 @@
 package com.apptank.horus.client.database
 
+import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.extensions.forEachPair
+import com.apptank.horus.client.extensions.log
+import com.apptank.horus.client.extensions.removeIf
+import com.apptank.horus.client.utils.AttributesPreparator
 
 
 /**
@@ -69,4 +73,65 @@ fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
             }
         ))
     return records
+}
+
+
+fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertRecord {
+
+    if (action != SyncControl.ActionType.INSERT) {
+        throw IllegalArgumentException("Action type must be INSERT")
+    }
+
+    val id = Horus.Attribute(Horus.Attribute.ID, getEntityId())
+    val attributes = data
+        .filterNot { it.key == Horus.Attribute.ID }
+        .map { Horus.Attribute(it.key, it.value) }
+        .toList()
+
+    val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
+        id,
+        AttributesPreparator.appendInsertSyncAttributes(
+            id,
+            attributes,
+            userId,
+            getActionedAtTimestamp()
+        ), getActionedAtTimestamp()
+    )
+    return DatabaseOperation.InsertRecord(
+        entity,
+        attributesPrepared.map { it.toDBColumnValue() }
+    )
+}
+
+fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOperation.UpdateRecord {
+
+    val id = getEntityId()
+    val attributes: List<Horus.Attribute<*>> = (getEntityAttributes()).map {
+        Horus.Attribute(it.key, it.value)
+    }.toList()
+
+    val attrId = Horus.Attribute("id", id)
+
+    val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
+        attrId,
+        attributes.toMutableList().apply {
+            currentEntity.attributes.filter { currentAttribute ->
+                attributes.find { it.name == currentAttribute.name } == null
+            }.forEach {
+                add(it)
+            }
+            removeIf { it.name == Horus.Attribute.HASH }
+        })
+
+    return DatabaseOperation.UpdateRecord(
+        entity, attributesPrepared.mapToDBColumValue(),
+        listOf(SQL.WhereCondition(SQL.ColumnValue("id", id)))
+    )
+}
+
+fun SyncControl.Action.toDeleteRecord(): DatabaseOperation.DeleteRecord {
+    return DatabaseOperation.DeleteRecord(
+        entity,
+        listOf(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, getEntityId())))
+    )
 }

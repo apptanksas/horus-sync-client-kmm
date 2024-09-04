@@ -1,8 +1,15 @@
 package com.apptank.horus.client.data
 
-import com.apptank.horus.client.base.DataMap
-import kotlinx.serialization.SerialName
+sealed class InternalModel {
+    data class EntityIdHash(
+        val id: String,
+        val hash: String
+    )
 
-sealed class InternalModel{
-
+    data class EntityHashValidation(
+        val entity: String,
+        val hashExpected: String,
+        val hashObtained: String,
+        val isHashMatched: Boolean
+    )
 }

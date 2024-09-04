@@ -5,22 +5,23 @@ import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.data.InternalModel
 import com.apptank.horus.client.data.toDTORequest
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
-import com.apptank.horus.client.database.mapToDBColumValue
-import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.SQL
+import com.apptank.horus.client.database.toDeleteRecord
+import com.apptank.horus.client.database.toInsertRecord
 import com.apptank.horus.client.database.toRecordsInsert
+import com.apptank.horus.client.database.toUpdateRecord
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import com.apptank.horus.client.extensions.log
-import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.hashing.AttributeHasher
 import com.apptank.horus.client.interfaces.INetworkValidator
-import com.apptank.horus.client.sync.network.dto.SyncDTO
+import com.apptank.horus.client.sync.network.dto.toDomain
 import com.apptank.horus.client.sync.network.dto.toEntityData
+import com.apptank.horus.client.sync.network.dto.toInternalModel
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
-import com.apptank.horus.client.utils.AttributesPreparator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,13 +44,13 @@ class DataValidatorManager(
 
         // Validate if there is network available
         if (!netWorkValidator.isNetworkAvailable()) {
-            log("[SyncValidator] No network available")
+            log("[DataValidatorManager] No network available")
             return
         }
 
         // Validate if there are pending actions to sync with the server
         if (syncControlDatabaseHelper.getPendingActions().isNotEmpty()) {
-            log("[SyncValidator] There is pending actions")
+            log("[DataValidatorManager] There is pending actions")
             return
         }
 
@@ -57,7 +58,7 @@ class DataValidatorManager(
             launch {
                 // Stage 1: Validate if there are new data to sync with the server
                 if (existsDataToSync()) {
-                    log("[SyncValidator] There are new data to sync with the server")
+                    log("[DataValidatorManager] There are new data to sync with the server")
                     synchronizeData()
                     return@launch
                 }
@@ -70,10 +71,12 @@ class DataValidatorManager(
                 val corruptedEntities = mutableMapOf<String, List<String>>()
 
                 entitiesHashesValidated.forEach {
+                    val entity = it.first
+                    val isHashCorrect = it.second
                     // First -> Entity name, Second -> Validation result
-                    log("[SyncValidator] Entity: ${it.first} - Validated: ${it.second}")
+                    log("[DataValidatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
 
-                    if (!it.second) {
+                    if (!isHashCorrect) {
                         corruptedEntities[it.first] = validateEntityDataCorrupted(it.first)
                     }
                 }
@@ -83,12 +86,12 @@ class DataValidatorManager(
 
                     if (ids.isNotEmpty()) {
                         if (restoreCorruptedData(entity, ids)) {
-                            log("[SyncValidator][entity:$entity] Corrupted data restored successfully")
+                            log("[DataValidatorManager][entity:$entity] Corrupted data restored successfully")
                         } else {
-                            log("[SyncValidator][entity:$entity] Error restoring corrupted data")
+                            log("[DataValidatorManager][entity:$entity] Error restoring corrupted data")
                         }
                     } else {
-                        log("[SyncValidator][entity:$entity] No corrupted data to restore")
+                        log("[DataValidatorManager][entity:$entity] No corrupted data to restore")
                     }
                 }
 
@@ -103,11 +106,12 @@ class DataValidatorManager(
     private suspend fun existsDataToSync(): Boolean {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val lastActions =
+            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         val resultActions = synchronizationService.getQueueActions(
             checkpointTimestamp,
-            lastActions.map { it.getDatetimeAsTimestamp() })
+            lastActions.map { it.getActionedAtTimestamp() })
 
         when (resultActions) {
             is DataResult.Success -> {
@@ -117,11 +121,11 @@ class DataValidatorManager(
 
             is DataResult.Failure -> {
                 resultActions.exception.printStackTrace()
-                log("[SyncValidator] Error getting queue data")
+                log("[DataValidatorManager] Error getting queue data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[SyncValidator] Not authorized")
+                log("[DataValidatorManager] Not authorized")
             }
         }
 
@@ -141,11 +145,11 @@ class DataValidatorManager(
             val hashes = mutableListOf<String>()
             // Create a query to get the id and sync_hash of the entity
             val queryBuilder = SimpleQueryBuilder(entity)
-            queryBuilder.select("sync_hash").orderBy("id")
+            queryBuilder.select(Horus.Attribute.HASH).orderBy("id")
 
             // Execute the query and get the hashes
             operationDatabaseHelper.queryRecords(queryBuilder).forEach { record ->
-                hashes.add(record["sync_hash"] as String)
+                hashes.add(record[Horus.Attribute.HASH] as String)
             }
 
             if (hashes.isNotEmpty()) {
@@ -168,24 +172,7 @@ class DataValidatorManager(
      * @return List of entities with the validation result
      */
     private suspend fun validateEntityHashes(entitiesHashes: List<Horus.EntityHash>): List<Pair<String, Boolean>> {
-
-        val result = synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest())
-
-        when (result) {
-            is DataResult.Success -> {
-                return result.data.map { Pair(it.entity!!, it.hashingValidation?.matched ?: false) }
-            }
-
-            is DataResult.Failure -> {
-                result.exception.printStackTrace()
-                log("[SyncValidator] Error validating entity hashes")
-            }
-
-            is DataResult.NotAuthorized -> {
-                log("[SyncValidator] Not authorized")
-            }
-        }
-        return emptyList()
+        return validateRemoteEntitiesData(entitiesHashes).map { Pair(it.entity, it.isHashMatched) }
     }
 
     /**
@@ -195,25 +182,8 @@ class DataValidatorManager(
      * @return List of ids with corrupted data
      */
     private suspend fun validateEntityDataCorrupted(entity: String): List<String> {
-
-        val result = synchronizationService.getEntityHashes(entity)
-
-        when (result) {
-            is DataResult.Success -> {
-                return compareEntityHashesWithLocalData(entity, result.data)
-            }
-
-            is DataResult.Failure -> {
-                result.exception.printStackTrace()
-                log("[SyncValidator] Error validating entity data")
-            }
-
-            is DataResult.NotAuthorized -> {
-                log("[SyncValidator] Not authorized")
-            }
-        }
-
-        return emptyList()
+        val remoteHashes = getRemoteEntitiesHashes(entity)
+        return compareEntityHashesWithLocalData(entity, remoteHashes)
     }
 
     /**
@@ -225,22 +195,22 @@ class DataValidatorManager(
      */
     private fun compareEntityHashesWithLocalData(
         entity: String,
-        remoteHashes: List<SyncDTO.Response.EntityIdHash>
+        remoteHashes: List<InternalModel.EntityIdHash>
     ): List<String> {
 
         val ids = mutableListOf<String>()
 
         val localIdsHashes = operationDatabaseHelper.queryRecords(
-            SimpleQueryBuilder(entity).select("id", "sync_hash")
-        ).associate { it["id"].toString() to it["sync_hash"].toString() }
+            SimpleQueryBuilder(entity).select(Horus.Attribute.ID, Horus.Attribute.HASH)
+        ).associate { it[Horus.Attribute.ID].toString() to it[Horus.Attribute.HASH].toString() }
 
         remoteHashes.forEach {
-            val localHash = localIdsHashes[it.id.toString()]
+            val localHash = localIdsHashes[it.id]
             val entityExists = localHash != null
 
             if (entityExists && localHash != it.hash) {
-                log("[SyncValidator] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
-                ids.add(it.id.toString())
+                log("[DataValidatorManager:compareEntityHashesWithLocalData] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
+                ids.add(it.id)
             }
         }
 
@@ -249,20 +219,19 @@ class DataValidatorManager(
 
 
     private suspend fun restoreCorruptedData(entity: String, ids: List<String>): Boolean {
-        val dataEntitiesResponse = synchronizationService.getDataEntity(entity, ids = ids)
 
-        when (dataEntitiesResponse) {
+        when (val dataEntitiesResponse = synchronizationService.getDataEntity(entity, ids = ids)) {
 
             is DataResult.Success -> {
                 // Delete ids with corrupted data
                 val result = operationDatabaseHelper.deleteRecord(
                     entity,
-                    ids.map { SQL.WhereCondition(SQL.ColumnValue("id", it)) },
+                    ids.map { SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, it)) },
                     SQL.LogicOperator.OR
                 )
 
                 if (!result.isSuccess) {
-                    log("[SyncValidator] Error deleting corrupted data")
+                    log("[DataValidatorManager] Error deleting corrupted data")
                     return false
                 }
 
@@ -273,11 +242,11 @@ class DataValidatorManager(
 
             is DataResult.Failure -> {
                 dataEntitiesResponse.exception.printStackTrace()
-                log("[SyncValidator] Error restoring corrupted data")
+                log("[DataValidatorManager] Error restoring corrupted data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[SyncValidator] Not authorized")
+                log("[DataValidatorManager] Not authorized")
             }
         }
 
@@ -285,39 +254,47 @@ class DataValidatorManager(
     }
 
     private suspend fun synchronizeData() {
+
         val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
 
         if (checkpointDatetime == 0L) {
-            log("[SyncValidator] No checkpoint datetime")
+            log("[DataValidatorManager] No checkpoint datetime")
             return
         }
 
-        log("[SyncValidator] Synchronizing data from checkpoint datetime: $checkpointDatetime")
+        log("[DataValidatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
 
         val actions = synchronizationService.getQueueActions(checkpointDatetime)
 
         when (actions) {
             is DataResult.Success -> {
 
-                val newActions = filterOwnActions(actions.data, checkpointDatetime)
+                val newActions =
+                    filterOwnActions(actions.data.map { it.toDomain() }, checkpointDatetime)
 
-                newActions.forEach {
-                    when (it.action) {
-                        "INSERT" -> insertData(it)
-                        "UPDATE" -> updateData(it)
-                        "DELETE" -> deleteData(it)
-                    }
+                val (actionsInsert, updateActions, deleteActions) = organizeActions(newActions)
+
+
+                val insertResult = insertActions(actionsInsert)
+                val updateResult = updateActions(updateActions)
+                val deleteResult = deleteActions(deleteActions)
+
+                val syncControlStatus = if (insertResult && updateResult && deleteResult) {
+                    log("[DataValidatorManager:synchronizeData] Data synchronized successfully")
+                    SyncControl.Status.COMPLETED
+                } else {
+                    log("[DataValidatorManager:synchronizeData] Error synchronizing data")
+                    SyncControl.Status.FAILED
                 }
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
-                    SyncControl.Status.COMPLETED
+                    syncControlStatus
                 )
-                log("[SyncValidator] Data synchronized successfully")
             }
 
             is DataResult.Failure -> {
                 actions.exception.printStackTrace()
-                log("[SyncValidator] Error getting queue data")
+                log("[DataValidatorManager] Error getting queue data")
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
                     SyncControl.Status.FAILED
@@ -325,122 +302,68 @@ class DataValidatorManager(
             }
 
             is DataResult.NotAuthorized -> {
-                log("[SyncValidator] Not authorized")
+                log("[DataValidatorManager] Not authorized")
             }
         }
     }
 
     private fun filterOwnActions(
-        actions: List<SyncDTO.Response.SyncAction>,
+        actions: List<SyncControl.Action>,
         checkpointTimestamp: Long
-    ): List<SyncDTO.Response.SyncAction> {
+    ): List<SyncControl.Action> {
 
         val ownActions =
             syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         // Filter the actions that are not in the local database
         return actions.filterNot { action ->
-            ownActions.find { it.getDatetimeAsTimestamp() == action.actionedAt!!.toLong() } != null
+            ownActions.find { it.getActionedAtTimestamp() == action.getActionedAtTimestamp() } != null
         }
     }
 
-    private fun insertData(actionDTO: SyncDTO.Response.SyncAction) {
+    private fun insertActions(actions: List<SyncControl.Action>): Boolean {
 
-        val id = Horus.Attribute("id", actionDTO.data?.get("id") as String)
-        val attributes =
-            actionDTO.data.filterNot { it.key == "id" }.map { Horus.Attribute(it.key, it.value) }
-                .toList()
+        if (actions.isEmpty()) return true
 
-        val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
-            id,
-            AttributesPreparator.appendInsertSyncAttributes(
-                id,
-                attributes,
-                getUserId(),
-                actionDTO.actionedAt!!.toLong()
-            ), actionDTO.actionedAt!!.toLong()
-        )
-
-        runCatching {
-            val result = operationDatabaseHelper.insertTransaction(
-                listOf(
-                    DatabaseOperation.InsertRecord(
-                        actionDTO.entity!!, attributesPrepared.mapToDBColumValue()
-                    )
-                )
-            )
-            if (result) {
-                log("[SyncValidator] Data inserted successfully. [${actionDTO.data}]")
-            } else {
-                log("[SyncValidator] Error inserting data. [${actionDTO.data}]")
-            }
+        return runCatching {
+            operationDatabaseHelper.insertTransaction(actions.map { it.toInsertRecord(getUserId()) })
         }.getOrElse {
             it.printStackTrace()
-            log("[SyncValidator] Error inserting data. [${actionDTO.data}]")
+            false
         }
     }
 
-    private fun updateData(actionDTO: SyncDTO.Response.SyncAction) {
-        val id = actionDTO.data?.get("id") as String
-        val entity = actionDTO.entity
-        val attributes: List<Horus.Attribute<*>> =
-            (actionDTO.data["attributes"] as Map<String, Any>).map {
-                Horus.Attribute(
-                    it.key,
-                    it.value
-                )
+    private fun updateActions(actions: List<SyncControl.Action>): Boolean {
+
+        if (actions.isEmpty()) return true
+
+        val actionsUpdate = actions.mapNotNull {
+            getEntityById(it.entity, it.getEntityId())?.let { entity ->
+                it.toUpdateRecord(entity)
+            } ?: run {
+                log("[DataValidatorManager] Error updating data. [${it.data}]")
+                null
             }
-                .toList()
+        }
 
-
-        val currentData = getEntityById(entity!!, id)
-            ?: return log("[SyncValidator] Error getting data to update")
-        val attrId = Horus.Attribute("id", id)
-
-        val attributesPrepared =
-            AttributesPreparator.appendHashAndUpdateAttributes(
-                attrId,
-                attributes.toMutableList().apply {
-                    currentData.attributes.filter { currentAttribute -> attributes.find { it.name == currentAttribute.name } == null }
-                        .forEach {
-                            add(it)
-                        }
-                    removeIf { it.name == "sync_hash" }
-                })
-
-        runCatching {
-            val result = operationDatabaseHelper.updateRecordTransaction(
-                listOf(
-                    DatabaseOperation.UpdateRecord(
-                        entity, attributesPrepared.mapToDBColumValue(),
-                        listOf(SQL.WhereCondition(SQL.ColumnValue("id", id)))
-                    )
-                )
-            )
-            if (result) {
-                log("[SyncValidator] Data updated successfully. [$actionDTO]")
-            } else {
-                log("[SyncValidator] Error updating data. [$actionDTO]")
-            }
+        return runCatching {
+            operationDatabaseHelper.updateRecordTransaction(actionsUpdate)
         }.getOrElse {
             it.printStackTrace()
-            log("[SyncValidator] Error updating data. [$actionDTO]")
+            false
         }
     }
 
-    private fun deleteData(actionDTO: SyncDTO.Response.SyncAction) {
+    private fun deleteActions(actions: List<SyncControl.Action>): Boolean {
+        if (actions.isEmpty()) return true
 
         // TODO("Validar otras entidades hijas para poder eliminarlas de forma local, por ejemplo: Si es un animal-> eliminar las pesos asociados")
-
-        val id = actionDTO.data?.get("id") as String
-        val result = operationDatabaseHelper.deleteRecord(
-            actionDTO.entity!!,
-            listOf(SQL.WhereCondition(SQL.ColumnValue("id", id)))
-        )
-        if (result.isSuccess) {
-            log("[SyncValidator] Data deleted successfully. [${actionDTO.data}]")
-        } else {
-            log("[SyncValidator] Error deleting data. [${actionDTO.data}]")
+        return kotlin.runCatching {
+            operationDatabaseHelper
+                .deleteRecordTransaction(actions.map { it.toDeleteRecord() })
+        }.getOrElse {
+            it.printStackTrace()
+            false
         }
     }
 
@@ -449,7 +372,7 @@ class DataValidatorManager(
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(
                 SQL.WhereCondition(
-                    SQL.ColumnValue("id", id)
+                    SQL.ColumnValue(Horus.Attribute.ID, id)
                 )
             )
         }
@@ -459,11 +382,62 @@ class DataValidatorManager(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
             )
-        }?.firstOrNull()
+        }.firstOrNull()
     }
 
     private fun getUserId(): String {
         return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
     }
 
+    private suspend fun getRemoteEntitiesHashes(entity: String): List<InternalModel.EntityIdHash> {
+        when (val result = synchronizationService.getEntityHashes(entity)) {
+            is DataResult.Success -> {
+                return result.data.map { it.toInternalModel() }
+            }
+
+            is DataResult.Failure -> {
+                result.exception.printStackTrace()
+                log("[DataValidatorManager:getEntitiesHashes] Error validating entity data")
+            }
+
+            is DataResult.NotAuthorized -> {
+                log("[DataValidatorManager:getEntitiesHashes] Not authorized")
+            }
+        }
+
+        return emptyList()
+    }
+
+    private suspend fun validateRemoteEntitiesData(entitiesHashes: List<Horus.EntityHash>): List<InternalModel.EntityHashValidation> {
+        when (val result =
+            synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest())) {
+            is DataResult.Success -> {
+                return result.data.map { it.toInternalModel() }
+            }
+
+            is DataResult.Failure -> {
+                result.exception.printStackTrace()
+                log("[DataValidatorManager:getRemoteValidateEntitiesData] Error validating entity data")
+            }
+
+            is DataResult.NotAuthorized -> {
+                log("[DataValidatorManager:getRemoteValidateEntitiesData] Not authorized")
+            }
+        }
+
+        return emptyList()
+    }
+
+    /**
+     * Organize the actions by type
+     */
+    private fun organizeActions(syncActions: List<SyncControl.Action>): Triple<List<SyncControl.Action>, List<SyncControl.Action>, List<SyncControl.Action>> {
+        val insertActions = syncActions.filter { it.action == SyncControl.ActionType.INSERT }
+            .sortedBy { it.getActionedAtTimestamp() }
+        val updateActions = syncActions.filter { it.action == SyncControl.ActionType.UPDATE }
+            .sortedBy { it.getActionedAtTimestamp() }
+        val deleteActions = syncActions.filter { it.action == SyncControl.ActionType.DELETE }
+            .sortedBy { it.getActionedAtTimestamp() }
+        return Triple(insertActions, updateActions, deleteActions)
+    }
 }

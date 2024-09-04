@@ -2,29 +2,15 @@ package com.apptank.horus.client.sync.network.dto
 
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.data.InternalModel
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 
-/**
- * Checks if a string represents a relation.
- *
- * @receiver The string to check.
- * @return `true` if the string starts with an underscore (`_`), `false` otherwise.
- */
 fun String.isRelation() = this.startsWith("_")
 
-/**
- * Converts an [EntityResponse] to [Horus.Entity].
- *
- * Filters the relations and attributes from the entity data and maps them appropriately.
- *
- * @receiver The [EntityResponse] to convert.
- * @return An [Horus.Entity] object containing the processed entity data.
- * @throws IllegalArgumentException if the entity is null.
- */
 fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
 
     val relations =
@@ -41,24 +27,8 @@ fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
     )
 }
 
-/**
- * Converts a list of [EntityResponse] objects to a list of [Horus.Entity] objects.
- *
- * @receiver The list of [EntityResponse] objects to convert.
- * @return A list of [Horus.Entity] objects.
- */
 fun List<SyncDTO.Response.Entity>.toListEntityData() = this.map { it.toEntityData() }
 
-/**
- * Maps an attribute value to an [Horus.Attribute].
- *
- * Converts the attribute value to the appropriate type.
- *
- * @param name The name of the attribute.
- * @param value The value of the attribute.
- * @return An [Horus.Attribute] containing the name and the processed value.
- * @throws IllegalArgumentException if the attribute value type is not supported.
- */
 private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
 
     return Horus.Attribute(
@@ -72,12 +42,6 @@ private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
     )
 }
 
-/**
- * Converts an [ArrayList] of [LinkedHashMap] objects to a list of [EntityResponse] objects.
- *
- * @receiver The [ArrayList] of [LinkedHashMap] objects to convert.
- * @return A list of [EntityResponse] objects.
- */
 private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<SyncDTO.Response.Entity> {
     return this.map {
         SyncDTO.Response.Entity().apply {
@@ -90,15 +54,12 @@ private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<S
 }
 
 
-/**
- * Extension function to convert a SyncAction to a SyncActionRequest
- */
 fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
     return SyncDTO.Request.SyncActionRequest(
         action = this.action.name,
         entity = this.entity,
         data = this.data,
-        datetime = this.datetime.toInstant(TimeZone.UTC).epochSeconds
+        datetime = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds
     )
 }
 
@@ -109,9 +70,25 @@ fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
         entity = entity ?: throw IllegalArgumentException("Entity is null"),
         status = SyncControl.ActionStatus.COMPLETED,
         data = data ?: mapOf(),
-        datetime = actionedAt?.let {
+        actionedAt = actionedAt?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
         } ?: throw IllegalArgumentException("DatetimeAction is null")
     )
 }
 
+
+fun SyncDTO.Response.EntityIdHash.toInternalModel(): InternalModel.EntityIdHash {
+    return InternalModel.EntityIdHash(
+        id ?: throw IllegalArgumentException("Entity is null"),
+        hash ?: throw IllegalArgumentException("Hash is null")
+    )
+}
+
+fun SyncDTO.Response.EntityHash.toInternalModel(): InternalModel.EntityHashValidation {
+    return InternalModel.EntityHashValidation(
+        entity ?: throw IllegalArgumentException("Entity is null"),
+        hashingValidation?.expected ?: throw IllegalArgumentException("Hash is null"),
+        hashingValidation?.obtained ?: throw IllegalArgumentException("Hash is null"),
+        hashingValidation?.matched ?: throw IllegalArgumentException("Matched is null")
+    )
+}

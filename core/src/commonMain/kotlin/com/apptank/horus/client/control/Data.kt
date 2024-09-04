@@ -50,13 +50,21 @@ sealed class SyncControl {
         val entity: String,
         val status: ActionStatus,
         val data: DataMap,
-        val datetime: LocalDateTime
+        val actionedAt: LocalDateTime
     ) {
 
-        fun getDatetimeAsTimestamp(): Long {
-            return datetime.toInstant(
+        fun getActionedAtTimestamp(): Long {
+            return actionedAt.toInstant(
                 TimeZone.UTC
             ).epochSeconds
+        }
+
+        fun getEntityId(): String {
+            return data["id"] as String
+        }
+
+        fun getEntityAttributes(): DataMap {
+            return data["attributes"] as DataMap
         }
     }
 }

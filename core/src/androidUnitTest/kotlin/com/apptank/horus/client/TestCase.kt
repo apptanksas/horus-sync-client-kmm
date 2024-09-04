@@ -2,7 +2,9 @@ package com.apptank.horus.client
 
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.datetime.Clock
+import org.kotlincrypto.hash.sha2.SHA256
 import java.util.UUID
 import kotlin.random.Random
 
@@ -39,6 +41,18 @@ abstract class TestCase {
     protected fun timestamp(): Long {
         return Clock.System.now().toEpochMilliseconds() / 1000
     }
+
+    protected fun randomHash(): String {
+        return sha256(uuid())
+    }
+
+    private fun sha256(input: String): String {
+        val sha256 = SHA256()
+        val hashBytes = sha256.digest(input.toByteArray())
+        return hashBytes.joinToString("") { it.toHex() }
+    }
+
+    private fun Byte.toHex(): String = this.toUByte().toString(16).padStart(2, '0')
 
     companion object {
         const val USER_ACCESS_TOKEN =
