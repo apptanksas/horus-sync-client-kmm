@@ -2,7 +2,7 @@ package com.apptank.horus.client.migration.domain
 
 data class EntityScheme(
     val name: String,
-    val type : EntityType,
+    val type: EntityType, // TODO("Validate type entity in operations")
     val attributes: List<Attribute>,
     val currentVersion: Long,
     val entitiesRelated: List<EntityScheme>
@@ -13,12 +13,22 @@ enum class EntityType {
     LOOKUP
 }
 
+enum class ConstraintType {
+    FOREIGN_KEY
+}
+
+data class Constraint(
+    val type: ConstraintType,
+    val sentence: String
+)
+
 data class Attribute(
     val name: String,
     val type: AttributeType,
     val isNullable: Boolean,
+    val version: Long,
     val options: List<String> = listOf(),
-    val version: Long
+    val linkedEntity: String? = null // Only for relation
 )
 
 enum class AttributeType {

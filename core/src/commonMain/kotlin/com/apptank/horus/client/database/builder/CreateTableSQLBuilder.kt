@@ -39,7 +39,17 @@ class CreateTableSQLBuilder {
      */
     fun build(): String {
         tableName ?: throw IllegalArgumentException("TableName is missing")
-        return "CREATE TABLE IF NOT EXISTS $tableName (" + attributes.joinToString(", ") { it.convertToSQL() } + ")"
+        val constraints = mutableListOf<String>()
+        var sqlOutput = "CREATE TABLE IF NOT EXISTS $tableName (" + attributes.joinToString(", ") {
+            it.convertToSQL(
+                applyConstraints = { constraints.addAll(it.map { it.sentence }) }
+            )
+        }
+        // Add constraints to the SQL statement
+        if (constraints.isNotEmpty()) {
+            sqlOutput += ", " + constraints.joinToString(", ")
+        }
+        return "$sqlOutput)"
     }
 
 }

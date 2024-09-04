@@ -28,16 +28,20 @@ class DatabaseTablesCreatorDelegate(
      * Generate SQL statements to create tables for each entity scheme.
      * @return List of SQL statements to create tables.
      */
-    private fun List<EntityScheme>.generateSqlTables(): List<String> {
+    private fun List<EntityScheme>.generateSqlTables(reversed: Boolean = true): List<String> {
         val sqlTables = mutableListOf<String>()
 
         // Iterate through each entity scheme.
         this.forEach { scheme ->
             // Generate SQL statements for related entities and add to the list.
-            sqlTables.addAll(scheme.entitiesRelated.generateSqlTables())
+            sqlTables.addAll(scheme.entitiesRelated.generateSqlTables(false))
             // Generate SQL statement to create table for the current entity scheme.
             sqlTables.add(createCreateSQLTable(scheme))
         }
+
+        // Reverse the list of SQL statements if required
+        if (reversed)
+            return sqlTables.reversed()
 
         return sqlTables
     }

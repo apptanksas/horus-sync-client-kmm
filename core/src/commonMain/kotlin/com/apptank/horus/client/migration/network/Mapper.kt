@@ -23,8 +23,8 @@ fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
         this.name ?: throw InvalidDataSchemeException(),
         this.type.toAttributeType(),
         nullable ?: false,
-        this.options ?: listOf(),
-        this.version ?: 1
+        this.version ?: 1,
+        this.options ?: listOf()
     )
 }
 
