@@ -268,7 +268,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -323,7 +324,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -429,7 +431,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -484,7 +487,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "date",
@@ -565,7 +569,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "country",
@@ -1160,7 +1165,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -1215,7 +1221,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "date",
@@ -1296,7 +1303,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "country",
@@ -1453,7 +1461,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "name": "farm_id",
                 "version": 2,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -1553,7 +1562,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -1608,7 +1618,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "date",
@@ -1689,7 +1700,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "country",
@@ -1865,7 +1877,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "name": "farm_id",
                 "version": 3,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -1920,7 +1933,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "name": "farm_id",
                 "version": 2,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -2026,7 +2040,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "name",
@@ -2081,7 +2096,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "date",
@@ -2162,7 +2178,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "name": "farm_id",
                 "version": 1,
                 "type": "uuid",
-                "nullable": false
+                "nullable": false,
+                "linked_entity": "farms"
               },
               {
                 "name": "country",

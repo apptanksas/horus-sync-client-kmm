@@ -3,7 +3,13 @@ package com.apptank.horus.client.database
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
+import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
+import com.apptank.horus.client.migration.domain.Attribute
+import com.apptank.horus.client.migration.domain.AttributeType
+import com.apptank.horus.client.migration.domain.EntityScheme
+import com.apptank.horus.client.migration.domain.EntityType
 import horus.HorusDatabase
 import org.junit.Assert
 import org.junit.Before
@@ -125,6 +131,14 @@ class DatabaseOperationHelperTest : TestCase() {
             },
             0
         ).value
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $entityName", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+        Assert.assertEquals(1, count)
         Assert.assertEquals(nameExpected, nameResult)
     }
 
@@ -220,9 +234,13 @@ class DatabaseOperationHelperTest : TestCase() {
 
         // When
         val resultInsert = databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.deleteRecords(entityName, listOf(SQL.WhereCondition(
-            SQL.ColumnValue("id", uuid)
-        )))
+        val result = databaseHelper.deleteRecords(
+            entityName, listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", uuid)
+                )
+            )
+        )
 
         // Then
         assert(resultInsert)
@@ -235,6 +253,192 @@ class DatabaseOperationHelperTest : TestCase() {
             0
         ).value
         Assert.assertEquals(0, count)
+    }
+
+    @Test
+    fun validateTransactionRollbackWhenFail() {
+        // Given
+        val uuid = uuid()
+        val listActions = listOf(
+            createInsertAction(uuid, "dog"),
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid),
+                    SQL.ColumnValue("name", "cat"),
+                    SQL.ColumnValue("column_to_force_error", "any")
+                )
+            )
+        )
+        // When
+        databaseHelper.executeOperations(listActions)
+
+        // Then
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $entityName", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+        Assert.assertEquals(0, count)
+    }
+
+    @Test
+    fun validateDeleteParentAndOnCascadeDeleteChildren(){
+
+        val delegate = DatabaseTablesCreatorDelegate(
+            listOf(
+                EntityScheme(
+                    "users",
+                    EntityType.EDITABLE,
+                    listOf(
+                        Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                        Attribute("name", AttributeType.String, false, version = 1)
+                    ),
+                    1,
+                    listOf(
+                        // Addresses
+                        EntityScheme(
+                            "addresses",
+                            EntityType.EDITABLE,
+                            listOf(
+                                Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                                Attribute("street", AttributeType.String, false, version = 1),
+                                Attribute(
+                                    "user_id",
+                                    AttributeType.Text,
+                                    false,
+                                    version = 1,
+                                    linkedEntity = "users"
+                                )
+                            ),
+                            1,
+                            listOf(
+                                // Addresses Objects
+                                EntityScheme(
+                                    "addresses_objects",
+                                    EntityType.EDITABLE,
+                                    listOf(
+                                        Attribute(
+                                            "id",
+                                            AttributeType.PrimaryKeyUUID,
+                                            false,
+                                            version = 1
+                                        ),
+                                        Attribute("name", AttributeType.String, false, version = 1),
+                                        Attribute(
+                                            "address_id",
+                                            AttributeType.Text,
+                                            false,
+                                            version = 1,
+                                            linkedEntity = "addresses"
+                                        )
+                                    ),
+                                    1,
+                                    emptyList()
+                                )
+                            )
+                        ),
+                        // Phones
+                        EntityScheme(
+                            "phones",
+                            EntityType.EDITABLE,
+                            listOf(
+                                Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                                Attribute("number", AttributeType.String, false, version = 1),
+                                Attribute(
+                                    "user_id",
+                                    AttributeType.Text,
+                                    false,
+                                    version = 1,
+                                    linkedEntity = "users"
+                                )
+                            ),
+                            1,
+                            emptyList()
+                        )
+                    )
+                )
+            )
+        )
+
+        delegate.createTables {
+            driver.execute(it)
+        }
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val userId = uuid()
+        val addressId = uuid()
+
+        val inserts = listOf(
+            DatabaseOperation.InsertRecord(
+                "users",
+                listOf(
+                    SQL.ColumnValue("id", userId),
+                    SQL.ColumnValue("name", "user1")
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                "addresses",
+                listOf(
+                    SQL.ColumnValue("id", addressId),
+                    SQL.ColumnValue("street", "street1"),
+                    SQL.ColumnValue("user_id", userId)
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                "addresses_objects",
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "object1"),
+                    SQL.ColumnValue("address_id", addressId)
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                "phones",
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("number", "123456789"),
+                    SQL.ColumnValue("user_id", userId)
+                )
+            )
+        )
+
+        databaseHelper.executeOperations(inserts)
+
+        // Validate inserts
+        Assert.assertEquals(1, getCountFromTable("users"))
+        Assert.assertEquals(1, getCountFromTable("addresses"))
+        Assert.assertEquals(1, getCountFromTable("addresses_objects"))
+        Assert.assertEquals(1, getCountFromTable("phones"))
+
+        // Delete user
+        val result = databaseHelper.deleteRecords(
+            "users",
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", userId)
+                )
+            )
+        )
+
+        // Validate delete
+        Assert.assertTrue(result.isSuccess)
+        Assert.assertEquals(0, getCountFromTable("users"))
+        Assert.assertEquals(0, getCountFromTable("addresses"))
+        Assert.assertEquals(0, getCountFromTable("addresses_objects"))
+        Assert.assertEquals(0, getCountFromTable("phones"))
+    }
+
+    private fun getCountFromTable(table: String): Int {
+        return driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $table", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
     }
 
 

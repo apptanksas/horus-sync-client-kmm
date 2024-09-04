@@ -1,6 +1,7 @@
 package com.apptank.horus.client
 
 import android.content.Context
+import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
@@ -21,7 +22,12 @@ class DatabaseDriverFactory(
 ) : IDatabaseDriverFactory {
 
     override fun createDriver(): SqlDriver {
-        return AndroidSqliteDriver(databaseSchema, context, getDatabaseName())
+        return AndroidSqliteDriver(databaseSchema, context, getDatabaseName(),
+            callback = object : AndroidSqliteDriver.Callback(databaseSchema) {
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                db.setForeignKeyConstraintsEnabled(true)
+            }
+        })
     }
 
     override fun retrieveDatabase(): HorusDatabase = HorusDatabase(createDriver())

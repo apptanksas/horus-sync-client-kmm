@@ -40,7 +40,8 @@ sealed class MigrationDTO {
         val type: String? = null,
         val nullable: Boolean? = null,
         val options: List<String>? = null,
-        val related: List<Response.EntityScheme>? = null
+        val related: List<Response.EntityScheme>? = null,
+        @SerialName("linked_entity") val linkedEntity: String? = null
     )
 }
 

@@ -24,7 +24,8 @@ fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
         this.type.toAttributeType(),
         nullable ?: false,
         this.version ?: 1,
-        this.options ?: listOf()
+        this.options ?: listOf(),
+        this.linkedEntity
     )
 }
 
