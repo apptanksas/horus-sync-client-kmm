@@ -69,7 +69,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun insertTransaction(records: List<DatabaseOperation.InsertRecord>, postOperation: () -> Unit) =
+    override fun insertWithTransaction(records: List<DatabaseOperation.InsertRecord>, postOperation: () -> Unit) =
         executeTransaction { db ->
             records.forEach { item ->
                 val values = item.values.prepareMap()
@@ -85,7 +85,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be updated.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun updateRecordTransaction(
+    override fun updateWithTransaction(
         records: List<DatabaseOperation.UpdateRecord>,
         postOperation: () -> Unit
     ) =
@@ -112,7 +112,7 @@ internal class OperationDatabaseHelper(
      * @param operator The logical operator to combine conditions (AND/OR).
      * @return The result of the operation.
      */
-    override fun deleteRecord(
+    override fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
         operator: SQL.LogicOperator
@@ -126,7 +126,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be deleted.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun deleteRecordTransaction(
+    override fun deleteWithTransaction(
         records: List<DatabaseOperation.DeleteRecord>,
         postOperation: () -> Unit
     ) =

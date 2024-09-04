@@ -26,7 +26,7 @@ interface IOperationDatabaseHelper {
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun insertTransaction(
+    fun insertWithTransaction(
         records: List<DatabaseOperation.InsertRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
@@ -37,7 +37,7 @@ interface IOperationDatabaseHelper {
      * @param records A list of records to be updated.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun updateRecordTransaction(
+    fun updateWithTransaction(
         records: List<DatabaseOperation.UpdateRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
@@ -48,7 +48,7 @@ interface IOperationDatabaseHelper {
      * @param records A list of records to be deleted.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun deleteRecordTransaction(
+    fun deleteWithTransaction(
         records: List<DatabaseOperation.DeleteRecord>,
         postOperation: () -> Unit = {}
     ): Boolean
@@ -61,7 +61,7 @@ interface IOperationDatabaseHelper {
      * @param operator The logical operator to combine conditions (AND/OR).
      * @return The result of the operation.
      */
-    fun deleteRecord(
+    fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
         operator: SQL.LogicOperator = SQL.LogicOperator.AND

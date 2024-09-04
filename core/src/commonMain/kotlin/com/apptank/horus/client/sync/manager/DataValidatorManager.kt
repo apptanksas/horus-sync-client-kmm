@@ -224,7 +224,7 @@ class DataValidatorManager(
 
             is DataResult.Success -> {
                 // Delete ids with corrupted data
-                val result = operationDatabaseHelper.deleteRecord(
+                val result = operationDatabaseHelper.deleteRecords(
                     entity,
                     ids.map { SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, it)) },
                     SQL.LogicOperator.OR
@@ -235,7 +235,7 @@ class DataValidatorManager(
                     return false
                 }
 
-                return operationDatabaseHelper.insertTransaction(
+                return operationDatabaseHelper.insertWithTransaction(
                     dataEntitiesResponse.data.map { it.toEntityData() }
                         .flatMap { it.toRecordsInsert() })
             }
@@ -326,7 +326,7 @@ class DataValidatorManager(
         if (actions.isEmpty()) return true
 
         return runCatching {
-            operationDatabaseHelper.insertTransaction(actions.map { it.toInsertRecord(getUserId()) })
+            operationDatabaseHelper.insertWithTransaction(actions.map { it.toInsertRecord(getUserId()) })
         }.getOrElse {
             it.printStackTrace()
             false
@@ -347,7 +347,7 @@ class DataValidatorManager(
         }
 
         return runCatching {
-            operationDatabaseHelper.updateRecordTransaction(actionsUpdate)
+            operationDatabaseHelper.updateWithTransaction(actionsUpdate)
         }.getOrElse {
             it.printStackTrace()
             false
@@ -360,7 +360,7 @@ class DataValidatorManager(
         // TODO("Validar otras entidades hijas para poder eliminarlas de forma local, por ejemplo: Si es un animal-> eliminar las pesos asociados")
         return kotlin.runCatching {
             operationDatabaseHelper
-                .deleteRecordTransaction(actions.map { it.toDeleteRecord() })
+                .deleteWithTransaction(actions.map { it.toDeleteRecord() })
         }.getOrElse {
             it.printStackTrace()
             false

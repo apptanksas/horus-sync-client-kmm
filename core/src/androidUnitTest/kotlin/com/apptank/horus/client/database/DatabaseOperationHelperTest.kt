@@ -137,7 +137,7 @@ class DatabaseOperationHelperTest : TestCase() {
         var postValidate = false
 
         // When
-        val result = databaseHelper.insertTransaction(listActions) {
+        val result = databaseHelper.insertWithTransaction(listActions) {
             postValidate = true
         }
 
@@ -167,7 +167,7 @@ class DatabaseOperationHelperTest : TestCase() {
 
         // When
         databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.updateRecordTransaction(listActions) {
+        val result = databaseHelper.updateWithTransaction(listActions) {
             postValidate = true
         }
 
@@ -194,7 +194,7 @@ class DatabaseOperationHelperTest : TestCase() {
 
         // When
         val resultInsert = databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.deleteRecordTransaction(listActions) {
+        val result = databaseHelper.deleteWithTransaction(listActions) {
             postValidate = true
         }
 
@@ -220,7 +220,7 @@ class DatabaseOperationHelperTest : TestCase() {
 
         // When
         val resultInsert = databaseHelper.executeOperations(insertAction)
-        val result = databaseHelper.deleteRecord(entityName, listOf(SQL.WhereCondition(
+        val result = databaseHelper.deleteRecords(entityName, listOf(SQL.WhereCondition(
             SQL.ColumnValue("id", uuid)
         )))
 
