@@ -2,7 +2,7 @@ package com.apptank.horus.client.sync.manager
 
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
-import com.apptank.horus.client.sync.tasks.base.MigrateLocalDatabaseTask
+import com.apptank.horus.client.sync.tasks.base.ValidateMigrationLocalDatabaseTask
 import com.apptank.horus.client.sync.tasks.base.Task
 import com.apptank.horus.client.sync.tasks.base.TaskResult
 import kotlinx.coroutines.CoroutineDispatcher
@@ -22,7 +22,11 @@ object ControlTaskManager {
     private val retrieveDatabaseSchemeTask =
         RetrieveDatabaseSchemeTask(HorusContainer.getMigrationService())
     private val migrateLocalDatabaseTask =
-        MigrateLocalDatabaseTask(HorusContainer.getDatabaseFactory(), retrieveDatabaseSchemeTask)
+        ValidateMigrationLocalDatabaseTask(
+            HorusContainer.getSettings(),
+            HorusContainer.getDatabaseFactory(),
+            retrieveDatabaseSchemeTask
+        )
 
     private val startupTask = retrieveDatabaseSchemeTask
 
@@ -67,8 +71,7 @@ object ControlTaskManager {
             is TaskResult.Success -> {
                 executeTask(nextTask, taskResult.data)
             }
-
-            is TaskResult.Error -> {
+            is TaskResult.Failure -> {
                 onStatus(Status.FAILED)
             }
         }

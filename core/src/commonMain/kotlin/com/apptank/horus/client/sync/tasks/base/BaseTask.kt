@@ -16,10 +16,10 @@ abstract class BaseTask(
 
 sealed class TaskResult {
     data class Success(val data: Any? = null) : TaskResult()
-    data class Error(val error: Throwable) : TaskResult()
+    data class Failure(val error: Throwable) : TaskResult()
 
     companion object {
         fun success(data: Any? = null): TaskResult = Success(data)
-        fun failure(error: Throwable): TaskResult = Error(error)
+        fun failure(error: Throwable): TaskResult = Failure(error)
     }
 }

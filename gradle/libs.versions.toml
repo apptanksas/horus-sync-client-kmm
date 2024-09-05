@@ -7,6 +7,7 @@ sqldelight = "2.0.2"
 kotlinxDateTime = "0.6.1"
 kotlinCrypto = "0.5.1"
 mockative = "2.2.2"
+settings = "1.2.0"
 
 [libraries]
 
@@ -28,12 +29,15 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlin-crypto = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlinCrypto" }
 # KSP
 ksp-mockative = { module = "io.mockative:mockative-processor", version.ref = "mockative" }
+# Local Storage
+storage-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "settings" }
 
 # Tests
 test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 test-ktor = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 test-sqldelight = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
-test-mockative = { module = "io.mockative:mockative", version.ref = "mockative"}
+test-mockative = { module = "io.mockative:mockative", version.ref = "mockative" }
+test-storage-settings = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

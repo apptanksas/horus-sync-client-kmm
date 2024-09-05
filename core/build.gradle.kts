@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
-    id ("kotlin-kapt")
+    id("kotlin-kapt")
     kotlin("plugin.serialization") version "2.0.20"
     id("maven-publish")
     id("app.cash.sqldelight") version "2.0.2"
@@ -34,7 +34,7 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
@@ -48,11 +48,13 @@ kotlin {
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlin.crypto)
+            implementation(libs.storage.settings)
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
             implementation(libs.test.mockative)
+            implementation(libs.test.storage.settings)
         }
         // Android dependencies
         androidMain.dependencies {

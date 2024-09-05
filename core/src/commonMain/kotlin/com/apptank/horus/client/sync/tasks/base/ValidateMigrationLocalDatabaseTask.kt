@@ -1,0 +1,83 @@
+package com.apptank.horus.client.sync.tasks.base
+
+import app.cash.sqldelight.db.AfterVersion
+import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.migration.database.DatabaseSchema
+import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
+import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
+import com.apptank.horus.client.migration.domain.EntityScheme
+import com.apptank.horus.client.migration.domain.getLastVersion
+import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
+import com.russhwolf.settings.Settings
+
+
+class ValidateMigrationLocalDatabaseTask(
+    private val settings: Settings,
+    private val databaseDriverFactory: IDatabaseDriverFactory,
+    dependsOnTask: RetrieveDatabaseSchemeTask
+) : BaseTask(dependsOnTask) {
+
+    override suspend fun execute(previousDataTask: Any?): TaskResult {
+
+        val data = (previousDataTask as? List<EntityScheme>?)
+            ?: return TaskResult.failure(Exception("Invalid data"))
+
+        return runCatching {
+            val lastVersion = getLastVersion(data)
+            val databaseSchema = createDatabaseScheme(data)
+            val schemaVersion = getCurrentSchemaVersion()
+
+            // Create database schema if it doesn't exist
+            if (schemaVersion == null) {
+                databaseSchema.create(databaseDriverFactory.createDriver())
+                setSchemaVersion(databaseSchema.version)
+                return TaskResult.success()
+            }
+
+            // Migrate database schema to the last version
+            if (lastVersion > schemaVersion) {
+                databaseSchema.migrate(
+                    databaseDriverFactory.createDriver(),
+                    schemaVersion,
+                    lastVersion,
+                    AfterVersion(lastVersion) {
+                        setSchemaVersion(lastVersion)
+                    }
+                )
+                return TaskResult.success()
+            }
+
+            return TaskResult.success()
+
+        }.getOrElse {
+            TaskResult.failure(it)
+        }
+    }
+
+    private fun createDatabaseScheme(entities: List<EntityScheme>): DatabaseSchema {
+        return DatabaseSchema(
+            databaseDriverFactory.getDatabaseName(),
+            databaseDriverFactory.createDriver(),
+            getLastVersion(entities),
+            DatabaseTablesCreatorDelegate(entities),
+            DatabaseUpgradeDelegate(entities)
+        )
+    }
+
+    private fun getLastVersion(entities: List<EntityScheme>): Long {
+        return entities.getLastVersion()
+    }
+
+    private fun getCurrentSchemaVersion(): Long? {
+        return settings.getLongOrNull(SCHEMA_VERSION_KEY)
+    }
+
+    private fun setSchemaVersion(version: Long) {
+        settings.putLong(SCHEMA_VERSION_KEY, version)
+    }
+
+    companion object {
+        const val SCHEMA_VERSION_KEY = "horus_db_schema_version"
+    }
+
+}

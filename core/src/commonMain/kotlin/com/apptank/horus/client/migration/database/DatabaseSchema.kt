@@ -32,6 +32,11 @@ class DatabaseSchema(
             driver.execute(null, it, 0)
         }
         flushCache()
+        callbacks.forEach {
+            if (newVersion >= it.afterVersion) {
+                it.block(driver)
+            }
+        }
         return QueryResult.Value(Unit)
     }
 
