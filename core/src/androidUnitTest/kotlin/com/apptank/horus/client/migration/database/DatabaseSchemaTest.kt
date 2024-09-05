@@ -7,6 +7,7 @@ import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.buildEntitiesFromJSON
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.migration.domain.getLastVersion
+import com.apptank.horus.client.migration.network.toScheme
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +25,7 @@ class DatabaseSchemaTest {
     @Test
     fun migrationIsSuccess() {
         // Given
-        val entities = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1)
+        val entities = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         val databaseSchema =
             DatabaseSchema("databaseName", driver, 1, DatabaseTablesCreatorDelegate(entities))
         val countEntitiesExpected = 6
@@ -46,7 +47,7 @@ class DatabaseSchemaTest {
     @Test
     fun migrationWithVersionExistsSuccess() {
         // Given
-        val entities = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1)
+        val entities = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         val databaseSchema =
             DatabaseSchema("databaseName", driver, 1, DatabaseTablesCreatorDelegate(entities))
         val countEntitiesExpected = 6
@@ -65,8 +66,8 @@ class DatabaseSchemaTest {
     fun migrateDatabaseV1ToV2() {
         // Given
 
-        val entitiesV1 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1)
-        val entitiesV2 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_2)
+        val entitiesV1 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+        val entitiesV2 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_2).map { it.toScheme() }
 
         val oldVersion = entitiesV1.getLastVersion()
         val lastVersion = entitiesV2.getLastVersion()
@@ -138,8 +139,8 @@ class DatabaseSchemaTest {
     @Test
     fun migrateDatabaseV2ToV3() {
         // Given
-        val entitiesV2 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_2)
-        val entitiesV3 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_3)
+        val entitiesV2 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_2).map { it.toScheme() }
+        val entitiesV3 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
 
         val oldVersion = entitiesV2.getLastVersion()
         val lastVersion = entitiesV3.getLastVersion()
@@ -199,8 +200,8 @@ class DatabaseSchemaTest {
     @Test
     fun migrateDatabaseV1ToV3() {
         // Given
-        val entitiesV1 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1)
-        val entitiesV3 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_3)
+        val entitiesV1 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+        val entitiesV3 = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
 
         val oldVersion = entitiesV1.getLastVersion()
         val lastVersion = entitiesV3.getLastVersion()

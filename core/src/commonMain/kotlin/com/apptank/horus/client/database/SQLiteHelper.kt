@@ -13,7 +13,7 @@ import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
 
-internal abstract class SQLiteHelper(
+abstract class SQLiteHelper(
     protected val driver: SqlDriver,
     private val databaseName: String
 ) {
