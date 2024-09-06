@@ -3,8 +3,6 @@ package com.apptank.horus.client.sync.tasks
 import com.apptank.horus.client.base.fold
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
-import com.apptank.horus.client.sync.tasks.base.BaseTask
-import com.apptank.horus.client.sync.tasks.base.TaskResult
 
 class RetrieveDatabaseSchemeTask(
     private val migrationService: IMigrationService

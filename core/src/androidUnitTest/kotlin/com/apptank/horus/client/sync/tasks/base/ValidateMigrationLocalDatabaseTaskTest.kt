@@ -10,6 +10,8 @@ import com.apptank.horus.client.migration.domain.getLastVersion
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
 import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
+import com.apptank.horus.client.sync.tasks.TaskResult
+import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.mockative.Mock
 import io.mockative.classOf

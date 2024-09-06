@@ -2,9 +2,9 @@ package com.apptank.horus.client.sync.manager
 
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
-import com.apptank.horus.client.sync.tasks.base.ValidateMigrationLocalDatabaseTask
-import com.apptank.horus.client.sync.tasks.base.Task
-import com.apptank.horus.client.sync.tasks.base.TaskResult
+import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
+import com.apptank.horus.client.sync.tasks.Task
+import com.apptank.horus.client.sync.tasks.TaskResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,8 +53,12 @@ object ControlTaskManager {
 
     private suspend fun executeTask(task: Task, data: Any?) {
         onStatus(Status.RUNNING)
-        val taskResult = task.execute(data)
-        handleTaskResult(findNextTask(task), taskResult)
+        kotlin.runCatching {
+            val taskResult = task.execute(data)
+            handleTaskResult(findNextTask(task), taskResult)
+        }.getOrElse {
+            onStatus(Status.FAILED)
+        }
     }
 
     private fun findNextTask(task: Task): Task? {
@@ -71,6 +75,7 @@ object ControlTaskManager {
             is TaskResult.Success -> {
                 executeTask(nextTask, taskResult.data)
             }
+
             is TaskResult.Failure -> {
                 onStatus(Status.FAILED)
             }

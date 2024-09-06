@@ -1,4 +1,4 @@
-package com.apptank.horus.client.sync.tasks.base
+package com.apptank.horus.client.sync.tasks
 
 import app.cash.sqldelight.db.AfterVersion
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
@@ -7,7 +7,6 @@ import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
 import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.getLastVersion
-import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
 import com.russhwolf.settings.Settings
 
 

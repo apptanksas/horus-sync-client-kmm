@@ -1,4 +1,4 @@
-package com.apptank.horus.client.sync.tasks.base
+package com.apptank.horus.client.sync.tasks
 
 
 interface Task {
