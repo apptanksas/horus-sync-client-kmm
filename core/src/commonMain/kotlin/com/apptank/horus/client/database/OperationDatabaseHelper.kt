@@ -1,6 +1,7 @@
 package com.apptank.horus.client.database
 
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.builder.QueryBuilder
 import com.apptank.horus.client.exception.DatabaseOperationFailureException
@@ -69,7 +70,7 @@ internal class OperationDatabaseHelper(
      * @param records A list of records to be inserted.
      * @return True if the transaction was successful, false otherwise.
      */
-    override fun insertWithTransaction(records: List<DatabaseOperation.InsertRecord>, postOperation: () -> Unit) =
+    override fun insertWithTransaction(records: List<DatabaseOperation.InsertRecord>, postOperation: Callback) =
         executeTransaction { db ->
             records.forEach { item ->
                 val values = item.values.prepareMap()
@@ -87,7 +88,7 @@ internal class OperationDatabaseHelper(
      */
     override fun updateWithTransaction(
         records: List<DatabaseOperation.UpdateRecord>,
-        postOperation: () -> Unit
+        postOperation: Callback
     ) =
         executeTransaction { _ ->
             records.forEach { item ->
@@ -128,7 +129,7 @@ internal class OperationDatabaseHelper(
      */
     override fun deleteWithTransaction(
         records: List<DatabaseOperation.DeleteRecord>,
-        postOperation: () -> Unit
+        postOperation: Callback
     ) =
         executeTransaction { _ ->
             records.forEach {

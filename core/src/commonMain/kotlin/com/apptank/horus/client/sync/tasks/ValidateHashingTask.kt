@@ -54,12 +54,12 @@ class ValidateHashingTask(
     }
 
     private fun isValidationHashingCompleted(): Boolean {
-        return controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASHING_VALIDATED)
+        return controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
     }
 
     private fun completeHashingValidation() {
         controlDatabaseHelper.addSyncTypeStatus(
-            SyncControl.OperationType.HASHING_VALIDATED,
+            SyncControl.OperationType.HASH_VALIDATION,
             SyncControl.Status.COMPLETED
         )
     }

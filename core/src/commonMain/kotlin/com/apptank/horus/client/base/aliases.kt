@@ -6,6 +6,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 internal typealias DataMap = Map<String, @Serializable(with = AnySerializer::class) Any?>
+internal typealias Callback = () -> Unit
 
 internal fun DataMap.encodeToJSON(): String {
     return Json.encodeToString(this)

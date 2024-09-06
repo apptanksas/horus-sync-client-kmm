@@ -39,7 +39,7 @@ class ValidateHashingTaskTest : TestCase() {
     @Test
     fun `when status hashing validated is completed then return success`() = runBlocking {
         // Given
-        every { controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASHING_VALIDATED) }
+        every { controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION) }
             .returns(true)
 
         // When
@@ -55,7 +55,7 @@ class ValidateHashingTaskTest : TestCase() {
         runBlocking {
             // Given
             every {
-                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASHING_VALIDATED)
+                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
             }.returns(false)
 
             coEvery { synchronizationService.postValidateHashing(any()) }
@@ -73,7 +73,7 @@ class ValidateHashingTaskTest : TestCase() {
         runBlocking {
             // Given
             every {
-                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASHING_VALIDATED)
+                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
             }.returns(false)
 
             coEvery { synchronizationService.postValidateHashing(any()) }
@@ -99,7 +99,7 @@ class ValidateHashingTaskTest : TestCase() {
         runBlocking {
             // Given
             every {
-                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASHING_VALIDATED)
+                controlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
             }.returns(false)
 
             coEvery { synchronizationService.postValidateHashing(any()) }
@@ -120,7 +120,7 @@ class ValidateHashingTaskTest : TestCase() {
             assert(result is TaskResult.Success)
             verify {
                 controlDatabaseHelper.addSyncTypeStatus(
-                    SyncControl.OperationType.HASHING_VALIDATED,
+                    SyncControl.OperationType.HASH_VALIDATION,
                     SyncControl.Status.COMPLETED
                 )
             }

@@ -1,5 +1,9 @@
 package com.apptank.horus.client.di
 
+import com.apptank.horus.client.control.ISyncControlDatabaseHelper
+import com.apptank.horus.client.control.SyncControlDatabaseHelper
+import com.apptank.horus.client.database.IOperationDatabaseHelper
+import com.apptank.horus.client.database.OperationDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.service.MigrationService
@@ -21,6 +25,10 @@ object HorusContainer {
 
     private var migrationService: IMigrationService? = null
 
+    private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
+
+    private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+
     // ------------------------------------------------------------------------
     // Setters
     // ------------------------------------------------------------------------
@@ -32,6 +40,15 @@ object HorusContainer {
 
     fun setupDatabaseFactory(factory: IDatabaseDriverFactory) {
         databaseFactory = factory
+        operationDatabaseHelper = OperationDatabaseHelper(
+            factory.retrieveDatabase(),
+            factory.getDatabaseName(),
+            factory.createDriver()
+        )
+        syncControlDatabaseHelper = SyncControlDatabaseHelper(
+            factory.getDatabaseName(),
+            factory.createDriver()
+        )
     }
 
     fun setupBaseUrl(url: String) {
@@ -58,5 +75,14 @@ object HorusContainer {
         return settings ?: throw IllegalStateException("Settings not set")
     }
 
+    internal fun getSyncControlDatabaseHelper(): ISyncControlDatabaseHelper {
+        return syncControlDatabaseHelper
+            ?: throw IllegalStateException("SyncControlDatabaseHelper not set")
+    }
+
+    internal fun getOperationDatabaseHelper(): IOperationDatabaseHelper {
+        return operationDatabaseHelper
+            ?: throw IllegalStateException("OperationDatabaseHelper not set")
+    }
 
 }

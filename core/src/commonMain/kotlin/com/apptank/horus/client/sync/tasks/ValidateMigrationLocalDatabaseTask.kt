@@ -1,6 +1,7 @@
 package com.apptank.horus.client.sync.tasks
 
 import app.cash.sqldelight.db.AfterVersion
+import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.database.DatabaseSchema
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
@@ -13,6 +14,7 @@ import com.russhwolf.settings.Settings
 class ValidateMigrationLocalDatabaseTask(
     private val settings: Settings,
     private val databaseDriverFactory: IDatabaseDriverFactory,
+    private val syncControlDatabase: ISyncControlDatabaseHelper,
     dependsOnTask: RetrieveDatabaseSchemeTask
 ) : BaseTask(dependsOnTask) {
 
@@ -29,6 +31,7 @@ class ValidateMigrationLocalDatabaseTask(
             // Create database schema if it doesn't exist
             if (schemaVersion == null) {
                 databaseSchema.create(databaseDriverFactory.createDriver())
+                syncControlDatabase.createControlTables()
                 setSchemaVersion(databaseSchema.version)
                 return TaskResult.success()
             }

@@ -8,8 +8,8 @@ import kotlinx.datetime.toInstant
 sealed class SyncControl {
 
     enum class OperationType(val id: Int) {
-        HASHING_VALIDATED(1),
-        INITIAL(2),
+        HASH_VALIDATION(1),
+        INITIAL_SYNCHRONIZATION(2),
         CHECKPOINT(3),
     }
 

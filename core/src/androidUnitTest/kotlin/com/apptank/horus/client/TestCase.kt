@@ -3,14 +3,40 @@ package com.apptank.horus.client
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.base.Callback
+import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
+import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.migration.network.service.IMigrationService
+import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
+import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
+import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
+import io.mockative.Matchers
+import io.mockative.classOf
+import io.mockative.matchers.Matcher
+import io.mockative.mock
 import kotlinx.datetime.Clock
 import org.kotlincrypto.hash.sha2.SHA256
 import java.util.UUID
 import kotlin.random.Random
 
 abstract class TestCase {
+
+    protected fun getMockValidateMigrationTask(): ValidateMigrationLocalDatabaseTask {
+        return ValidateMigrationLocalDatabaseTask(
+            MapSettings(),
+            mock(classOf<IDatabaseDriverFactory>()),
+            mock(
+                classOf<ISyncControlDatabaseHelper>()
+            ),
+            getMockRetrieveDatabaseSchemeTask()
+        )
+    }
+
+    protected fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
+        return RetrieveDatabaseSchemeTask(mock(classOf<IMigrationService>()))
+    }
 
 
     protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {
@@ -58,6 +84,21 @@ abstract class TestCase {
 
     protected fun randomHash(): String {
         return sha256(uuid())
+    }
+
+    protected fun callbackMatcher(): Callback {
+        return Matchers.enqueue(object : Matcher<Callback> {
+            override val placeholder: Callback = {}
+            override fun matches(value: Any?): Boolean {
+                // Validate is a function then execute
+                if (value is Function<*>) {
+                    (value as Callback).invoke()
+                    return true
+                }
+                return false
+            }
+
+        })
     }
 
     private fun sha256(input: String): String {

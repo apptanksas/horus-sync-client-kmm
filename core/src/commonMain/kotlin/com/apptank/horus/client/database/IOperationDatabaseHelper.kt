@@ -1,5 +1,6 @@
 package com.apptank.horus.client.database
 
+import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.builder.QueryBuilder
 
@@ -28,7 +29,7 @@ interface IOperationDatabaseHelper {
      */
     fun insertWithTransaction(
         records: List<DatabaseOperation.InsertRecord>,
-        postOperation: () -> Unit = {}
+        postOperation: Callback = {}
     ): Boolean
 
     /**
@@ -39,7 +40,7 @@ interface IOperationDatabaseHelper {
      */
     fun updateWithTransaction(
         records: List<DatabaseOperation.UpdateRecord>,
-        postOperation: () -> Unit = {}
+        postOperation: Callback = {}
     ): Boolean
 
     /**
@@ -50,7 +51,7 @@ interface IOperationDatabaseHelper {
      */
     fun deleteWithTransaction(
         records: List<DatabaseOperation.DeleteRecord>,
-        postOperation: () -> Unit = {}
+        postOperation: Callback = {}
     ): Boolean
 
     /**

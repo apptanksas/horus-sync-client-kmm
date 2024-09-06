@@ -21,7 +21,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
-        controlManagerDatabaseHelper.onCreate()
+        controlManagerDatabaseHelper.createControlTables()
         SQLiteHelper.flushCache()
     }
 
@@ -41,13 +41,13 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.insertOrThrow(
             SyncControlTable.TABLE_NAME,
             SyncControlTable.mapToCreate(
-                SyncControl.OperationType.INITIAL,
+                SyncControl.OperationType.INITIAL_SYNCHRONIZATION,
                 SyncControl.Status.COMPLETED
             )
         )
         // When
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
         // Then
         Assert.assertTrue(isStatusCompleted)
     }
@@ -58,13 +58,13 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.insertOrThrow(
             SyncControlTable.TABLE_NAME,
             SyncControlTable.mapToCreate(
-                SyncControl.OperationType.INITIAL,
+                SyncControl.OperationType.INITIAL_SYNCHRONIZATION,
                 SyncControl.Status.FAILED
             )
         )
         // When
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
         // Then
         Assert.assertFalse(isStatusCompleted)
     }
@@ -111,12 +111,12 @@ class SyncControlDatabaseHelperTest : TestCase() {
     fun addSyncTypeStatusWithInitialIsSuccess() {
         // When
         controlManagerDatabaseHelper.addSyncTypeStatus(
-            SyncControl.OperationType.INITIAL,
+            SyncControl.OperationType.INITIAL_SYNCHRONIZATION,
             SyncControl.Status.COMPLETED
         )
         // Then
         val isStatusCompleted =
-            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL)
+            controlManagerDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
         Assert.assertTrue(isStatusCompleted)
     }
 

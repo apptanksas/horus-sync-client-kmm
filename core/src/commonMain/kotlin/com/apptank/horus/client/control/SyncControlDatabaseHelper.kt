@@ -27,7 +27,7 @@ internal class SyncControlDatabaseHelper(
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName), ISyncControlDatabaseHelper {
 
-    override fun onCreate() {
+    override fun createControlTables() {
         driver.handle {
             execute(SyncControlTable.SQL_CREATE_TABLE)
             execute(QueueActionsTable.SQL_CREATE_TABLE)

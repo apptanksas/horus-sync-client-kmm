@@ -4,7 +4,7 @@ import com.apptank.horus.client.data.Horus
 
 
 interface ISyncControlDatabaseHelper {
-    fun onCreate()
+    fun createControlTables()
     fun isStatusCompleted(type: SyncControl.OperationType): Boolean
     fun getLastDatetimeCheckpoint(): Long
     fun addSyncTypeStatus(type: SyncControl.OperationType, status: SyncControl.Status)

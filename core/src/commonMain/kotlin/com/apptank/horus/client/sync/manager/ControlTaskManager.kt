@@ -25,6 +25,7 @@ object ControlTaskManager {
         ValidateMigrationLocalDatabaseTask(
             HorusContainer.getSettings(),
             HorusContainer.getDatabaseFactory(),
+            HorusContainer.getSyncControlDatabaseHelper(),
             retrieveDatabaseSchemeTask
         )
 

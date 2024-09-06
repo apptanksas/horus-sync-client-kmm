@@ -4,12 +4,11 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.TestCase
-import com.apptank.horus.client.buildEntitiesFromJSON
+import com.apptank.horus.client.buildEntitiesSchemeFromJSON
+import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.domain.getLastVersion
-import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
-import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
 import com.apptank.horus.client.sync.tasks.TaskResult
 import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
@@ -30,10 +29,10 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     private lateinit var task: ValidateMigrationLocalDatabaseTask
 
     @Mock
-    val migrationService = mock(classOf<IMigrationService>())
+    val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
 
     @Mock
-    val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
+    val syncControlDatabase = mock(classOf<ISyncControlDatabaseHelper>())
 
     @Before
     fun setup() {
@@ -46,14 +45,15 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         task = ValidateMigrationLocalDatabaseTask(
             settings,
             databaseDriverFactory,
-            RetrieveDatabaseSchemeTask(migrationService)
+            syncControlDatabase,
+            getMockRetrieveDatabaseSchemeTask()
         )
     }
 
     @Test
     fun `when don't exists a database then create database scheme`() = runBlocking {
         // Given
-        val entitiesScheme = buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         val countEntitiesExpected = 6
 
         // When
@@ -71,9 +71,9 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
 
             // Given
             val entitiesScheme =
-                buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+                buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
             val entitiesSchemeV2 =
-                buildEntitiesFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
+                buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
 
             val versionExpected = entitiesSchemeV2.getLastVersion()
 
@@ -97,7 +97,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         // Given
 
         val entitiesScheme =
-            buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+            buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         settings.putLong(
             ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY,
             entitiesScheme.getLastVersion()
@@ -116,7 +116,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     @Test
     fun `when occurred an error then result failure`() = runBlocking {
         // When
-        val result = task.execute(buildEntitiesFromJSON(DATA_MIGRATION_VERSION_1))
+        val result = task.execute(buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1))
 
         // Then
         Assert.assertTrue(result is TaskResult.Failure)
