@@ -16,6 +16,8 @@ import com.apptank.horus.client.database.toInsertRecord
 import com.apptank.horus.client.database.toRecordsInsert
 import com.apptank.horus.client.database.toUpdateRecord
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
+import com.apptank.horus.client.extensions.evaluate
+import com.apptank.horus.client.extensions.isTrue
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.hashing.AttributeHasher
 import com.apptank.horus.client.interfaces.INetworkValidator
@@ -30,81 +32,99 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class DataValidatorManager(
+class SynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
-    private val synchronizationService: ISynchronizationService,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val synchronizationService: ISynchronizationService
 ) {
+
+    enum class SynchronizationStatus {
+        SUCCESS,
+        IN_PROGRESS,
+        FAILED,
+        IDLE
+    }
 
     /**
      * Start the validation process
      */
-    fun start() {
+    suspend fun start(onStatus: (SynchronizationStatus, isCompleted: Boolean) -> Unit) {
 
         // Validate if there is network available
         if (!netWorkValidator.isNetworkAvailable()) {
             log("[DataValidatorManager] No network available")
-            return
+            return onStatus(SynchronizationStatus.IDLE, true)
         }
 
         // Validate if there are pending actions to sync with the server
         if (syncControlDatabaseHelper.getPendingActions().isNotEmpty()) {
             log("[DataValidatorManager] There is pending actions")
-            return
+            return onStatus(SynchronizationStatus.IDLE, true)
         }
 
-        CoroutineScope(dispatcher).apply {
-            launch {
-                // Stage 1: Validate if there are new data to sync with the server
-                if (existsDataToSync()) {
-                    log("[DataValidatorManager] There are new data to sync with the server")
-                    synchronizeData()
-                    return@launch
-                }
+        onStatus(SynchronizationStatus.IN_PROGRESS, false)
 
-                // Stage 2: Validate entity hashes
-                val entitiesHashes = getEntityHashes()
-                val entitiesHashesValidated = validateEntityHashes(entitiesHashes)
+        // Stage 1: Validate if there are new data to sync with the server
+        val validateIsExistsDataToSync =
+            existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
 
-                // EntityName -> List of corrupted ids
-                val corruptedEntities = mutableMapOf<String, List<String>>()
+        if (validateIsExistsDataToSync.isTrue()) {
+            log("[DataValidatorManager] There are new data to sync with the server")
 
-                entitiesHashesValidated.forEach {
-                    val entity = it.first
-                    val isHashCorrect = it.second
-                    // First -> Entity name, Second -> Validation result
-                    log("[DataValidatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
+            return onStatus(
+                synchronizeData().evaluate(
+                    SynchronizationStatus.SUCCESS,
+                    SynchronizationStatus.FAILED
+                ), true
+            )
+        }
 
-                    if (!isHashCorrect) {
-                        corruptedEntities[it.first] = validateEntityDataCorrupted(it.first)
-                    }
-                }
+        // Stage 2: Validate entity hashes
+        val entitiesHashes = getEntityHashes()
+        val entitiesHashesValidated = validateEntityHashes(entitiesHashes)
 
-                // Stage 3: Restore corrupted data
-                corruptedEntities.forEach { (entity, ids) ->
+        // EntityName -> List of corrupted ids
+        val corruptedEntities = mutableMapOf<String, List<String>>()
 
-                    if (ids.isNotEmpty()) {
-                        if (restoreCorruptedData(entity, ids)) {
-                            log("[DataValidatorManager][entity:$entity] Corrupted data restored successfully")
-                        } else {
-                            log("[DataValidatorManager][entity:$entity] Error restoring corrupted data")
-                        }
-                    } else {
-                        log("[DataValidatorManager][entity:$entity] No corrupted data to restore")
-                    }
-                }
+        entitiesHashesValidated.forEach {
+            val entity = it.first
+            val isHashCorrect = it.second
+            // First -> Entity name, Second -> Validation result
+            log("[DataValidatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
 
-            }.invokeOnCompletion {
-                it?.printStackTrace()
-                cancel()
+            if (!isHashCorrect) {
+                corruptedEntities[it.first] = validateEntityDataCorrupted(it.first)
             }
         }
+
+        val resultsCorruptedData = mutableListOf<Boolean>()
+
+        // Stage 3: Restore corrupted data
+        corruptedEntities.forEach { (entity, ids) ->
+            if (ids.isNotEmpty()) {
+                val resultRestoreCorruptedData = restoreCorruptedData(entity, ids)
+                if (resultRestoreCorruptedData) {
+                    log("[DataValidatorManager][entity:$entity] Corrupted data restored successfully")
+                } else {
+                    log("[DataValidatorManager][entity:$entity] Error restoring corrupted data")
+                }
+                resultsCorruptedData.add(resultRestoreCorruptedData)
+            } else {
+                log("[DataValidatorManager][entity:$entity] No corrupted data to restore")
+            }
+        }
+
+        return onStatus(
+            resultsCorruptedData.all { it }.evaluate(
+                SynchronizationStatus.SUCCESS,
+                SynchronizationStatus.FAILED
+            ), true
+        )
     }
 
 
-    private suspend fun existsDataToSync(): Boolean {
+    private suspend fun existsDataToSync(): Boolean? {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
         val lastActions =
@@ -130,7 +150,7 @@ class DataValidatorManager(
             }
         }
 
-        return false
+        return null
     }
 
     /**
@@ -254,13 +274,13 @@ class DataValidatorManager(
         return false
     }
 
-    private suspend fun synchronizeData() {
+    private suspend fun synchronizeData(): Boolean {
 
         val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
 
         if (checkpointDatetime == 0L) {
             log("[DataValidatorManager] No checkpoint datetime")
-            return
+            return true
         }
 
         log("[DataValidatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
@@ -292,6 +312,8 @@ class DataValidatorManager(
                     SyncControl.OperationType.CHECKPOINT,
                     syncControlStatus
                 )
+
+                return result
             }
 
             is DataResult.Failure -> {
@@ -301,10 +323,12 @@ class DataValidatorManager(
                     SyncControl.OperationType.CHECKPOINT,
                     SyncControl.Status.FAILED
                 )
+                return false
             }
 
             is DataResult.NotAuthorized -> {
                 log("[DataValidatorManager] Not authorized")
+                return false
             }
         }
     }

@@ -32,8 +32,9 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.random.Random
 import kotlinx.datetime.toInstant
+import org.junit.Assert
 
-class DataValidatorManagerTest : TestCase() {
+class SynchronizatorManagerTest : TestCase() {
 
     @Mock
     val networkValidator = mock(classOf<INetworkValidator>())
@@ -47,42 +48,49 @@ class DataValidatorManagerTest : TestCase() {
     @Mock
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
-    lateinit var dataValidatorManager: DataValidatorManager
+    lateinit var synchronizatorManager: SynchronizatorManager
 
     @Before
     fun setup() {
-        dataValidatorManager = DataValidatorManager(
+        synchronizatorManager = SynchronizatorManager(
             networkValidator,
             syncControlDatabaseHelper,
             operationDatabaseHelper,
             synchronizationService,
-            Dispatchers.Default,
         )
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
     }
 
     @Test
-    fun `when start with network is not available then do nothing`() {
+    fun `when start with network is not available then do nothing`() = runBlocking {
         // Given
         every { networkValidator.isNetworkAvailable() }.returns(false)
 
         // When
-        dataValidatorManager.start()
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.IDLE, status)
+            }
+        }
 
         // Then
         verify { syncControlDatabaseHelper.getPendingActions() }.wasNotInvoked()
     }
 
     @Test
-    fun `when exists data pending to push then do nothing`() {
+    fun `when exists data pending to push then do nothing`() = runBlocking {
         // Given
         val actions = generateSyncActions(SyncControl.ActionType.INSERT)
         every { networkValidator.isNetworkAvailable() }.returns(true)
         every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
 
         // When
-        dataValidatorManager.start()
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.IDLE, status)
+            }
+        }
 
         // Then
         verify { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.wasNotInvoked()
@@ -113,7 +121,11 @@ class DataValidatorManagerTest : TestCase() {
             )
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             coVerify { synchronizationService.getQueueActions(checkpointTimestamp) }.wasNotInvoked()
@@ -152,7 +164,11 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)
@@ -197,7 +213,11 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)
@@ -252,7 +272,11 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)
@@ -301,12 +325,16 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)
             val deleteInvokeExpected = 1
-            coVerify { operationDatabaseHelper.executeOperations(listOf(any()))  }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
                 deleteInvokeExpected
             )
             verify {
@@ -367,7 +395,11 @@ class DataValidatorManagerTest : TestCase() {
 
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)
@@ -383,7 +415,7 @@ class DataValidatorManagerTest : TestCase() {
     @Test
     fun `when exists data to sync and there is a checkpoint then synchronize data is failure`() =
 
-        runBlocking {
+        runBlocking {2
 
             // Given
             val insertActions = generateSyncActions(
@@ -429,7 +461,11 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(false)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.FAILED, status)
+                }
+            }
 
             // Then
             delay(50)
@@ -490,7 +526,11 @@ class DataValidatorManagerTest : TestCase() {
         )
 
         // When
-        dataValidatorManager.start()
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+            }
+        }
 
         // Then
         delay(50)
@@ -570,7 +610,11 @@ class DataValidatorManagerTest : TestCase() {
             every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
 
             // When
-            dataValidatorManager.start()
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
 
             // Then
             delay(50)

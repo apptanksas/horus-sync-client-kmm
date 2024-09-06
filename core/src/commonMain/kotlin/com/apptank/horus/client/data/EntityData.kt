@@ -26,7 +26,7 @@ sealed class Horus {
         val name: String,
         val value: T
     ) {
-        companion object {
+        internal companion object {
             const val ID = "id"
             const val HASH = "sync_hash"
         }

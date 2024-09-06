@@ -15,21 +15,37 @@ object ControlTaskManager {
         FAILED
     }
 
-    private val retrieveDatabaseSchemeTask =
-        RetrieveDatabaseSchemeTask(HorusContainer.getMigrationService())
-    private val migrateLocalDatabaseTask =
-        ValidateMigrationLocalDatabaseTask(
-            HorusContainer.getSettings(),
-            HorusContainer.getDatabaseFactory(),
-            HorusContainer.getSyncControlDatabaseHelper(),
-            retrieveDatabaseSchemeTask
-        )
+    private val validateHashingTask = ValidateHashingTask(
+        HorusContainer.getSyncControlDatabaseHelper(),
+        HorusContainer.getSynchronizationService()
+    )
+
+    private val retrieveDatabaseSchemeTask = RetrieveDatabaseSchemeTask(
+        HorusContainer.getMigrationService()
+    )
+
+    private val validateMigrationLocalDatabaseTask = ValidateMigrationLocalDatabaseTask(
+        HorusContainer.getSettings(),
+        HorusContainer.getDatabaseFactory(),
+        HorusContainer.getSyncControlDatabaseHelper(),
+        retrieveDatabaseSchemeTask
+    )
+
+    private val synchronizeInitialDataTask = SynchronizeInitialDataTask(
+        HorusContainer.getOperationDatabaseHelper(),
+        HorusContainer.getSyncControlDatabaseHelper(),
+        HorusContainer.getSynchronizationService(),
+        validateMigrationLocalDatabaseTask
+    )
+
+    //private val synchronizeDataTask = SynchronizeDataTask()
+
 
     private val startupTask = retrieveDatabaseSchemeTask
 
     private val tasks: List<Task> = listOf(
         retrieveDatabaseSchemeTask,
-        migrateLocalDatabaseTask
+        validateMigrationLocalDatabaseTask
     )
 
     private var onStatus: (Status) -> Unit = {}

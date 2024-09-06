@@ -7,6 +7,8 @@ import com.apptank.horus.client.database.OperationDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.service.MigrationService
+import com.apptank.horus.client.sync.network.service.ISynchronizationService
+import com.apptank.horus.client.sync.network.service.SynchronizationService
 import com.russhwolf.settings.Settings
 import io.ktor.client.engine.cio.CIO
 
@@ -25,6 +27,8 @@ object HorusContainer {
 
     private var migrationService: IMigrationService? = null
 
+    private var synchronizationService: ISynchronizationService? = null
+
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
 
     private var operationDatabaseHelper: IOperationDatabaseHelper? = null
@@ -34,8 +38,12 @@ object HorusContainer {
     // ------------------------------------------------------------------------
 
 
-    fun setupMigrationService(service: IMigrationService) {
+    internal fun setupMigrationService(service: IMigrationService) {
         migrationService = service
+    }
+
+    internal fun setupSynchronizationService(service: ISynchronizationService) {
+        synchronizationService = service
     }
 
     fun setupDatabaseFactory(factory: IDatabaseDriverFactory) {
@@ -65,6 +73,10 @@ object HorusContainer {
 
     internal fun getMigrationService(): IMigrationService {
         return migrationService ?: MigrationService(httpClient, baseUrl!!)
+    }
+
+    internal fun getSynchronizationService(): ISynchronizationService {
+        return synchronizationService ?:  SynchronizationService(httpClient, baseUrl!!)
     }
 
     internal fun getDatabaseFactory(): IDatabaseDriverFactory {
