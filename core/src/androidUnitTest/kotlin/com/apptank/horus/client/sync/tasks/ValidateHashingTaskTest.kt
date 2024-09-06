@@ -6,6 +6,8 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
+import com.apptank.horus.client.tasks.TaskResult
+import com.apptank.horus.client.tasks.ValidateHashingTask
 import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf

@@ -8,6 +8,8 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
+import com.apptank.horus.client.tasks.SynchronizeInitialDataTask
+import com.apptank.horus.client.tasks.TaskResult
 import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf

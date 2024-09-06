@@ -1,4 +1,4 @@
-package com.apptank.horus.client.sync.tasks
+package com.apptank.horus.client.tasks
 
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper

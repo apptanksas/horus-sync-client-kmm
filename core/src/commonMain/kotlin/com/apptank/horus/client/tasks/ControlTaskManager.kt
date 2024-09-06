@@ -1,10 +1,6 @@
-package com.apptank.horus.client.sync.manager
+package com.apptank.horus.client.tasks
 
 import com.apptank.horus.client.di.HorusContainer
-import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
-import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
-import com.apptank.horus.client.sync.tasks.Task
-import com.apptank.horus.client.sync.tasks.TaskResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

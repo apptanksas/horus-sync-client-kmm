@@ -1,4 +1,4 @@
-package com.apptank.horus.client.sync.tasks
+package com.apptank.horus.client.tasks
 
 import app.cash.sqldelight.db.AfterVersion
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper

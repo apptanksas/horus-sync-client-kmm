@@ -9,8 +9,8 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.apptank.horus.client.migration.network.toScheme
-import com.apptank.horus.client.sync.tasks.TaskResult
-import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
+import com.apptank.horus.client.tasks.TaskResult
+import com.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.mockative.Mock
 import io.mockative.classOf

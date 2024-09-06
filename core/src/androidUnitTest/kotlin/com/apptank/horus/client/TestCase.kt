@@ -8,8 +8,8 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.network.service.IMigrationService
-import com.apptank.horus.client.sync.tasks.RetrieveDatabaseSchemeTask
-import com.apptank.horus.client.sync.tasks.ValidateMigrationLocalDatabaseTask
+import com.apptank.horus.client.tasks.RetrieveDatabaseSchemeTask
+import com.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
 import io.mockative.Matchers
