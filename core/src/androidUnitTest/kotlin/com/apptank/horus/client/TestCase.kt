@@ -5,10 +5,13 @@ import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
+import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.network.service.IMigrationService
+import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.RetrieveDatabaseSchemeTask
+import com.apptank.horus.client.tasks.SynchronizeInitialDataTask
 import com.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
@@ -36,6 +39,15 @@ abstract class TestCase {
 
     protected fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
         return RetrieveDatabaseSchemeTask(mock(classOf<IMigrationService>()))
+    }
+
+    protected fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {
+        return SynchronizeInitialDataTask(
+            mock(classOf<IOperationDatabaseHelper>()),
+            mock(classOf<ISyncControlDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>()),
+            getMockValidateMigrationTask()
+        )
     }
 
 
