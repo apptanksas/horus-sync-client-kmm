@@ -63,13 +63,18 @@ internal class SyncControlDatabaseHelper(
     ) {
         validateIfEntityExists(entity)
 
+        val data = attributes.associate { it.name to it.value.toString() }
+
         addAction(
             entity,
             SyncControl.ActionType.INSERT,
-            attributes.associate { it.name to it.value.toString() })
+            data
+        )
+
         emitEntityCreated(
             entity,
-            attributes.first { it.name == QueueActionsTable.ATTR_ID }.value as String
+            attributes.first { it.name == QueueActionsTable.ATTR_ID }.value as String,
+            data
         )
     }
 
@@ -87,14 +92,18 @@ internal class SyncControlDatabaseHelper(
         attributes: List<Horus.Attribute<*>>
     ) {
         validateIfEntityExists(entity)
+
+        val data = attributes.associate { it.name to it.value.toString() }
+
         addAction(
             entity,
             SyncControl.ActionType.UPDATE,
             mapOf(
                 "id" to id.value,
-                "attributes" to attributes.associate { it.name to it.value.toString() })
+                "attributes" to data
+            )
         )
-        emitEntityUpdated(entity, id.value)
+        emitEntityUpdated(entity, id.value, data)
     }
 
     /**
@@ -123,7 +132,10 @@ internal class SyncControlDatabaseHelper(
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .where(
                     SQL.WhereCondition(
-                        SQL.ColumnValue(QueueActionsTable.ATTR_STATUS, SyncControl.ActionStatus.PENDING.id)
+                        SQL.ColumnValue(
+                            QueueActionsTable.ATTR_STATUS,
+                            SyncControl.ActionStatus.PENDING.id
+                        )
                     )
                 ).orderBy(QueueActionsTable.ATTR_DATETIME).build()
 
@@ -234,12 +246,18 @@ internal class SyncControlDatabaseHelper(
         EventBus.post(EventType.ACTION_CREATED, Event())
     }
 
-    private fun emitEntityCreated(entity: String, id: String) {
-        EventBus.post(EventType.ENTITY_CREATED, Event(mutableMapOf("entity" to entity, "id" to id)))
+    private fun emitEntityCreated(entity: String, id: String, data: DataMap) {
+        EventBus.post(
+            EventType.ENTITY_CREATED,
+            Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
+        )
     }
 
-    private fun emitEntityUpdated(entity: String, id: String) {
-        EventBus.post(EventType.ENTITY_UPDATED, Event(mutableMapOf("entity" to entity, "id" to id)))
+    private fun emitEntityUpdated(entity: String, id: String, data: DataMap) {
+        EventBus.post(
+            EventType.ENTITY_UPDATED,
+            Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
+        )
     }
 
     private fun emitEntityDeleted(entity: String, id: String) {

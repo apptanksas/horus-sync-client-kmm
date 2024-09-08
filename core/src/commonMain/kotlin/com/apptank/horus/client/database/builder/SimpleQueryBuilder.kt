@@ -1,4 +1,5 @@
 package com.apptank.horus.client.database.builder
+
 /**
  * A simple implementation of QueryBuilder for building SQL queries for a specific table.
  *
@@ -38,6 +39,8 @@ class SimpleQueryBuilder(
         base.append(buildOrderBy())
         // Append the LIMIT clause if any
         base.append(buildLimit())
+        // Append the OFFSET clause if any
+        base.append(buildOffset())
         // Return the final query string trimmed of any extra spaces
         return base.toString().trim()
     }

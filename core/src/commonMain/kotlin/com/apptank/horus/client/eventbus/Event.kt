@@ -1,6 +1,8 @@
 package com.apptank.horus.client.eventbus
 
-data class Event(val data: Map<String, Any>? = null)
+import com.apptank.horus.client.base.DataMap
+
+data class Event(val data: DataMap? = null)
 
 enum class EventType {
     VALIDATION_COMPLETED, // Sync validation completed
