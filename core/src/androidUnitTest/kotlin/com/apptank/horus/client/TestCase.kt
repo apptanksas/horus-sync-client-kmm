@@ -12,6 +12,7 @@ import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.RetrieveDatabaseSchemeTask
 import com.apptank.horus.client.tasks.SynchronizeInitialDataTask
+import com.apptank.horus.client.tasks.ValidateHashingTask
 import com.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
@@ -26,6 +27,13 @@ import kotlin.random.Random
 
 abstract class TestCase {
 
+    protected fun getMockValidateHashingTask(): ValidateHashingTask {
+        return ValidateHashingTask(
+            mock(classOf<ISyncControlDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>())
+        )
+    }
+
     protected fun getMockValidateMigrationTask(): ValidateMigrationLocalDatabaseTask {
         return ValidateMigrationLocalDatabaseTask(
             MapSettings(),
@@ -38,7 +46,10 @@ abstract class TestCase {
     }
 
     protected fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
-        return RetrieveDatabaseSchemeTask(mock(classOf<IMigrationService>()))
+        return RetrieveDatabaseSchemeTask(
+            mock(classOf<IMigrationService>()),
+            getMockValidateHashingTask()
+        )
     }
 
     protected fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {

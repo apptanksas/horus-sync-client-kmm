@@ -21,7 +21,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
-        controlManagerDatabaseHelper.createControlTables()
+        controlManagerDatabaseHelper.createControlTablesIfNotExists()
         SQLiteHelper.flushCache()
     }
 

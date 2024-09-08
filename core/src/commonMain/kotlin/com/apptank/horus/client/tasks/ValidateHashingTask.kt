@@ -16,6 +16,8 @@ class ValidateHashingTask(
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {
 
+        controlDatabaseHelper.createControlTablesIfNotExists()
+
         if (isValidationHashingCompleted()) {
             return TaskResult.success()
         }

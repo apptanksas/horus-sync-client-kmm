@@ -5,6 +5,7 @@ import com.apptank.horus.client.control.SyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.OperationDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.service.MigrationService
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -32,6 +33,8 @@ object HorusContainer {
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
 
     private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+
+    private var networkValidator: INetworkValidator? = null
 
     // ------------------------------------------------------------------------
     // Setters
@@ -67,6 +70,10 @@ object HorusContainer {
         this.settings = settings
     }
 
+    fun setupNetworkValidator(networkValidator: INetworkValidator) {
+        this.networkValidator = networkValidator
+    }
+
     // ------------------------------------------------------------------------
     // Getters
     // ------------------------------------------------------------------------
@@ -76,7 +83,7 @@ object HorusContainer {
     }
 
     internal fun getSynchronizationService(): ISynchronizationService {
-        return synchronizationService ?:  SynchronizationService(httpClient, baseUrl!!)
+        return synchronizationService ?: SynchronizationService(httpClient, baseUrl!!)
     }
 
     internal fun getDatabaseFactory(): IDatabaseDriverFactory {
@@ -95,6 +102,11 @@ object HorusContainer {
     internal fun getOperationDatabaseHelper(): IOperationDatabaseHelper {
         return operationDatabaseHelper
             ?: throw IllegalStateException("OperationDatabaseHelper not set")
+    }
+
+    internal fun getNetworkValidator(): INetworkValidator {
+        return networkValidator
+            ?: throw IllegalStateException("NetworkValidator not set")
     }
 
 }

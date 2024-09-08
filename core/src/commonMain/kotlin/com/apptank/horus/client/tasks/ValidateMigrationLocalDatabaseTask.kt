@@ -31,7 +31,7 @@ class ValidateMigrationLocalDatabaseTask(
             // Create database schema if it doesn't exist
             if (schemaVersion == null) {
                 databaseSchema.create(databaseDriverFactory.createDriver())
-                syncControlDatabase.createControlTables()
+                syncControlDatabase.createControlTablesIfNotExists()
                 setSchemaVersion(databaseSchema.version)
                 return TaskResult.success()
             }

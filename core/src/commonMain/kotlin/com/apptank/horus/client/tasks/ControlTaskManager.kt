@@ -1,6 +1,9 @@
 package com.apptank.horus.client.tasks
 
+import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.di.HorusContainer
+import com.apptank.horus.client.eventbus.EventBus
+import com.apptank.horus.client.eventbus.EventType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +24,8 @@ object ControlTaskManager {
     )
 
     private val retrieveDatabaseSchemeTask = RetrieveDatabaseSchemeTask(
-        HorusContainer.getMigrationService()
+        HorusContainer.getMigrationService(),
+        validateHashingTask
     )
 
     private val validateMigrationLocalDatabaseTask = ValidateMigrationLocalDatabaseTask(
@@ -38,26 +42,55 @@ object ControlTaskManager {
         validateMigrationLocalDatabaseTask
     )
 
-    //private val synchronizeDataTask = SynchronizeDataTask()
-
-
-    private val startupTask = retrieveDatabaseSchemeTask
-
-    private val tasks: List<Task> = listOf(
-        retrieveDatabaseSchemeTask,
-        validateMigrationLocalDatabaseTask
+    private val synchronizeDataTask = SynchronizeDataTask(
+        HorusContainer.getNetworkValidator(),
+        HorusContainer.getSyncControlDatabaseHelper(),
+        HorusContainer.getOperationDatabaseHelper(),
+        HorusContainer.getSynchronizationService(),
+        synchronizeInitialDataTask
     )
 
+
+    private val startupTask = validateHashingTask
+
+    private val tasks: List<Task> = listOf(
+        validateHashingTask,
+        retrieveDatabaseSchemeTask,
+        validateMigrationLocalDatabaseTask,
+        synchronizeInitialDataTask,
+        synchronizeDataTask
+    )
+
+    private var taskExecutionCounter = 0
+
     private var onStatus: (Status) -> Unit = {}
+    private var onCompleted: Callback = {}
 
     fun start(dispatcher: CoroutineDispatcher = Dispatchers.IO) {
+
+        taskExecutionCounter = 0
+
         CoroutineScope(dispatcher).launch {
             executeStartupTask()
+        }.invokeOnCompletion {
+            if (it != null) {
+                it.printStackTrace()
+                onStatus(Status.FAILED)
+            }
         }
     }
 
     fun setOnCallbackStatusListener(callback: (Status) -> Unit) {
-        onStatus = callback
+        onStatus = {
+            callback(it)
+            if (it == Status.COMPLETED) {
+                onCompleted()
+            }
+        }
+    }
+
+    fun setOnCompleted(callback: Callback) {
+        onCompleted = callback
     }
 
     private suspend fun executeStartupTask() {
@@ -67,9 +100,11 @@ object ControlTaskManager {
     private suspend fun executeTask(task: Task, data: Any?) {
         onStatus(Status.RUNNING)
         kotlin.runCatching {
+            taskExecutionCounter++
             val taskResult = task.execute(data)
             handleTaskResult(findNextTask(task), taskResult)
         }.getOrElse {
+            it.printStackTrace()
             onStatus(Status.FAILED)
         }
     }
@@ -81,7 +116,9 @@ object ControlTaskManager {
     private suspend fun handleTaskResult(nextTask: Task?, taskResult: TaskResult) {
 
         if (nextTask == null) {
-            return onStatus(Status.COMPLETED)
+            return onStatus(Status.COMPLETED).also {
+                emitEventOnReady()
+            }
         }
 
         when (taskResult) {
@@ -95,5 +132,11 @@ object ControlTaskManager {
         }
     }
 
+    private fun emitEventOnReady() {
+        EventBus.post(EventType.VALIDATION_COMPLETED)
+    }
 
+    fun getTaskExecutionCounter(): Int {
+        return taskExecutionCounter
+    }
 }
