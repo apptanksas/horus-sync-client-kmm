@@ -61,6 +61,9 @@ kotlin {
             implementation(libs.sqldelight.driver.android)
             implementation(libs.test.sqldelight)
         }
+        androidUnitTest.dependencies {
+            implementation(libs.android.test.robolectric)
+        }
         // IOS dependencies
         iosMain.dependencies {
             implementation(libs.sqldelight.driver.ios)

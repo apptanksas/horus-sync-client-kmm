@@ -24,10 +24,14 @@ class DatabaseDriverFactory(
     override fun createDriver(): SqlDriver {
         return AndroidSqliteDriver(databaseSchema, context, getDatabaseName(),
             callback = object : AndroidSqliteDriver.Callback(databaseSchema) {
-            override fun onOpen(db: SupportSQLiteDatabase) {
-                db.setForeignKeyConstraintsEnabled(true)
-            }
-        })
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    db.setForeignKeyConstraintsEnabled(true)
+                }
+
+                override fun onCorruption(db: SupportSQLiteDatabase) {
+                    super.onCorruption(db)
+                }
+            })
     }
 
     override fun retrieveDatabase(): HorusDatabase = HorusDatabase(createDriver())

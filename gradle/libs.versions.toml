@@ -9,6 +9,9 @@ kotlinCrypto = "0.5.1"
 mockative = "2.2.2"
 settings = "1.2.0"
 
+# Android
+androidRobolectric = "4.13"
+
 [libraries]
 
 # HTTP CLIENT
@@ -38,6 +41,9 @@ test-ktor = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 test-sqldelight = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 test-mockative = { module = "io.mockative:mockative", version.ref = "mockative" }
 test-storage-settings = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
+
+# Android
+android-test-robolectric = { module = "org.robolectric:robolectric", version.ref = "androidRobolectric"}
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

@@ -46,8 +46,7 @@ object SynchronizeDataFacade {
         onCallbackReady = callback
     }
 
-    @OptIn(ExperimentalUuidApi::class)
-    fun insertNewEntity(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
+    fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
         validateIfReady()
 
@@ -55,7 +54,7 @@ object SynchronizeDataFacade {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
         }
 
-        val uuid = Uuid.random().toByteArray().toString()
+        val uuid = generateUUID()
         val id = Horus.Attribute(Horus.Attribute.ID, uuid)
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
@@ -85,18 +84,18 @@ object SynchronizeDataFacade {
         }
     }
 
-    fun insertNewEntity(
+    fun insert(
         entity: String,
         vararg attributes: Horus.Attribute<*>
     ): DataResult<String> {
-        return insertNewEntity(entity, attributes.toList())
+        return insert(entity, attributes.toList())
     }
 
-    fun insertNewEntity(
+    fun insert(
         entity: String,
         attributes: Map<String, Any>,
     ): DataResult<String> {
-        return insertNewEntity(entity, attributes.map { Horus.Attribute(it.key, it.value) })
+        return insert(entity, attributes.map { Horus.Attribute(it.key, it.value) })
     }
 
     fun updateEntity(
@@ -275,7 +274,6 @@ object SynchronizeDataFacade {
         changeListeners.clear()
     }
 
-
     private fun validateIfReady() {
         if (!isReady) {
             throw IllegalStateException("Synchronizer not ready")
@@ -321,6 +319,11 @@ object SynchronizeDataFacade {
 
     private fun getUserId(): String {
         return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun generateUUID(): String {
+        return Uuid.random().toByteArray().toString()
     }
 
 

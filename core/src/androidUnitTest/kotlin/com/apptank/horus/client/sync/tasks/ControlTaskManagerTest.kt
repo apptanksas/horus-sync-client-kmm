@@ -1,4 +1,4 @@
-package com.apptank.horus.client.sync.manager
+package com.apptank.horus.client.sync.tasks
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
