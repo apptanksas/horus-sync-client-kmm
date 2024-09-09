@@ -86,15 +86,6 @@ android {
 group = "com.apptank.horus.client"
 version = "0.0.0"
 
-
-sqldelight {
-    databases {
-        create("HorusDatabase") {
-            packageName.set("horus")
-        }
-    }
-}
-
 dependencies {
     // Configuration mockative
     configurations

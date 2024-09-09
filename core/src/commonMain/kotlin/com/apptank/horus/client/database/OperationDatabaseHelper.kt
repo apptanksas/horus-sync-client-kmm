@@ -6,7 +6,6 @@ import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.database.builder.QueryBuilder
 import com.apptank.horus.client.exception.DatabaseOperationFailureException
 import com.apptank.horus.client.extensions.log
-import horus.HorusDatabase
 
 internal class OperationDatabaseHelper(
     private val database: HorusDatabase,

@@ -36,6 +36,7 @@ object ControlTaskManager {
     )
 
     private val synchronizeInitialDataTask = SynchronizeInitialDataTask(
+        HorusContainer.getNetworkValidator(),
         HorusContainer.getOperationDatabaseHelper(),
         HorusContainer.getSyncControlDatabaseHelper(),
         HorusContainer.getSynchronizationService(),

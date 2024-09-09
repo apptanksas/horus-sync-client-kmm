@@ -8,6 +8,7 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.RetrieveDatabaseSchemeTask
@@ -54,6 +55,7 @@ abstract class TestCase {
 
     protected fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {
         return SynchronizeInitialDataTask(
+            mock(classOf<INetworkValidator>()),
             mock(classOf<IOperationDatabaseHelper>()),
             mock(classOf<ISyncControlDatabaseHelper>()),
             mock(classOf<ISynchronizationService>()),

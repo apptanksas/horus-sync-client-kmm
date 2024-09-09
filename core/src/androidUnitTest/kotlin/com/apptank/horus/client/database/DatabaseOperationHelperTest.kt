@@ -10,7 +10,6 @@ import com.apptank.horus.client.migration.domain.Attribute
 import com.apptank.horus.client.migration.domain.AttributeType
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.EntityType
-import horus.HorusDatabase
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -28,7 +27,7 @@ class DatabaseOperationHelperTest : TestCase() {
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        database = HorusDatabase(driver)
+        database = HorusDatabase("database", driver)
         databaseHelper = OperationDatabaseHelper(database, "database", driver)
 
         SQLiteHelper.flushCache()
@@ -285,7 +284,7 @@ class DatabaseOperationHelperTest : TestCase() {
     }
 
     @Test
-    fun validateDeleteParentAndOnCascadeDeleteChildren(){
+    fun validateDeleteParentAndOnCascadeDeleteChildren() {
 
         val delegate = DatabaseTablesCreatorDelegate(
             listOf(

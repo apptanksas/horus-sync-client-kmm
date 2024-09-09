@@ -7,6 +7,7 @@ import com.apptank.horus.client.buildEntitiesDataFromJSON
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.database.IOperationDatabaseHelper
+import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.SynchronizeInitialDataTask
 import com.apptank.horus.client.tasks.TaskResult
@@ -34,11 +35,15 @@ class SynchronizeInitialDataTaskTest : TestCase() {
     @Mock
     private val synchronizeService = mock(classOf<ISynchronizationService>())
 
+    @Mock
+    private val networkValidator = mock(classOf<INetworkValidator>())
+
     private lateinit var task: SynchronizeInitialDataTask
 
     @Before
     fun setup() {
         task = SynchronizeInitialDataTask(
+            networkValidator,
             operationDatabaseHelper,
             syncControlDatabaseHelper,
             synchronizeService,
@@ -64,6 +69,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
     fun `when initial synchronization is not completed then synchronize data is failure`(): Unit =
         runBlocking {
             // Given
+            every { networkValidator.isNetworkAvailable() }.returns(true)
             every { syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) }
                 .returns(false)
             coEvery { synchronizeService.getData() }.returns(DataResult.Failure(Exception("Error synchronizing data")))
@@ -81,6 +87,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             // Given
             val entitiesData =
                 buildEntitiesDataFromJSON(MOCK_RESPONSE_GET_DATA)
+            every { networkValidator.isNetworkAvailable() }.returns(true)
             every { syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) }
                 .returns(false)
             coEvery { synchronizeService.getData() }.returns(DataResult.Success(entitiesData))
@@ -104,6 +111,21 @@ class SynchronizeInitialDataTaskTest : TestCase() {
                 )
             }.wasInvoked()
         }
+
+    @Test
+    fun `when network is not available then return failure`(): Unit = runBlocking {
+        // Given
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) }
+            .returns(false)
+
+        // When
+        val result = task.execute(null)
+
+        // Then
+        assert(result is TaskResult.Failure)
+        coVerify { synchronizeService.getData(any()) }.wasNotInvoked()
+    }
 
 
 }

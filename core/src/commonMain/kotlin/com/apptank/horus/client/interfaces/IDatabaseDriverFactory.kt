@@ -1,13 +1,13 @@
 package com.apptank.horus.client.interfaces
 
 import app.cash.sqldelight.db.SqlDriver
-import horus.HorusDatabase
+import com.apptank.horus.client.database.HorusDatabase
 
 
 interface IDatabaseDriverFactory {
     fun getDatabaseName(): String
-
-    fun retrieveDatabase(): HorusDatabase
+    fun getDatabase(): HorusDatabase
+    fun getSchema(): HorusDatabase.Schema
     fun createDriver(): SqlDriver
 }
 

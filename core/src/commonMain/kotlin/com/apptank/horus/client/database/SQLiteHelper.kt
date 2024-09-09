@@ -1,5 +1,6 @@
 package com.apptank.horus.client.database
 
+import app.cash.sqldelight.TransacterImpl
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
@@ -14,9 +15,9 @@ import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
 
 abstract class SQLiteHelper(
-    protected val driver: SqlDriver,
+    driver: SqlDriver,
     private val databaseName: String
-) {
+) : TransacterImpl(driver) {
 
     fun getTablesNames(): List<String> {
 

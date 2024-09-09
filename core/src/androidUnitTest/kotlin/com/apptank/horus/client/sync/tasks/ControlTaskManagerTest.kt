@@ -2,11 +2,14 @@ package com.apptank.horus.client.sync.tasks
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
+import com.apptank.horus.client.DATA_MIGRATION_VERSION_2
+import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.buildEntitiesDataFromJSON
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
+import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
@@ -16,7 +19,6 @@ import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.ControlTaskManager
 import com.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.Settings
-import horus.HorusDatabase
 import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf
@@ -51,16 +53,16 @@ class ControlTaskManagerTest : TestCase() {
     @Mock
     val storageSettings = mock(classOf<Settings>())
 
-    @Mock
-    val horusDatabase = mock(classOf<HorusDatabase>())
 
     @Before
     fun setUp() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val database = HorusDatabase("database.db", driver)
 
         every { databaseDriverFactory.getDatabaseName() }.returns("database.db")
         every { databaseDriverFactory.createDriver() }.returns(driver)
-        every { databaseDriverFactory.retrieveDatabase() }.returns(horusDatabase)
+        every { databaseDriverFactory.getDatabase() }.returns(database)
+        every { databaseDriverFactory.getSchema() }.returns(HorusDatabase.Schema)
 
         with(HorusContainer) {
             setupNetworkValidator(networkValidator)
@@ -75,8 +77,26 @@ class ControlTaskManagerTest : TestCase() {
     @Test
     fun `start execution complete successfully`() = runBlocking {
         // Given
-        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1)
-        val entitiesData = buildEntitiesDataFromJSON(MOCK_RESPONSE_GET_DATA)
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3)
+        val entitiesData = listOf(
+            SyncDTO.Response.Entity(
+                "farms",
+                mapOf(
+                    "id" to uuid(),
+                    "sync_hash" to randomHash(),
+                    "sync_owner_id" to uuid(),
+                    "sync_created_at" to timestamp(),
+                    "sync_updated_at" to timestamp(),
+                    "mv_area_total" to "1",
+                    "mv_area_cow_farming" to "1",
+                    "measure_milk" to "kg",
+                    "measure_weight" to "kg",
+                    "type" to "1",
+                    "name" to "Farm 1",
+                    "destination" to "1",
+                )
+            )
+        )
 
         val taskExecutionCountExpected = 5
 
@@ -97,7 +117,7 @@ class ControlTaskManagerTest : TestCase() {
             synchronizationService.getData(any())
         }.returns(DataResult.Success(entitiesData))
 
-        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { networkValidator.isNetworkAvailable() }.returnsMany(true, false)
 
         var isCompleted = false
 

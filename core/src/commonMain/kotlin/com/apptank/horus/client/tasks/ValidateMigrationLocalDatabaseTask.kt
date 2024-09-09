@@ -3,7 +3,7 @@ package com.apptank.horus.client.tasks
 import app.cash.sqldelight.db.AfterVersion
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
-import com.apptank.horus.client.migration.database.DatabaseSchema
+import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
 import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
 import com.apptank.horus.client.migration.domain.EntityScheme
@@ -20,25 +20,25 @@ class ValidateMigrationLocalDatabaseTask(
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {
 
+        val schema = getDatabaseSchema()
         val data = (previousDataTask as? List<EntityScheme>?)
             ?: return TaskResult.failure(Exception("Invalid data"))
 
         return runCatching {
             val lastVersion = getLastVersion(data)
-            val databaseSchema = createDatabaseScheme(data)
             val schemaVersion = getCurrentSchemaVersion()
 
             // Create database schema if it doesn't exist
             if (schemaVersion == null) {
-                databaseSchema.create(databaseDriverFactory.createDriver())
+                schema.create(databaseDriverFactory.createDriver(), data)
                 syncControlDatabase.createControlTablesIfNotExists()
-                setSchemaVersion(databaseSchema.version)
+                setSchemaVersion(schema.version)
                 return TaskResult.success()
             }
 
             // Migrate database schema to the last version
             if (lastVersion > schemaVersion) {
-                databaseSchema.migrate(
+                schema.migrate(
                     databaseDriverFactory.createDriver(),
                     schemaVersion,
                     lastVersion,
@@ -56,15 +56,7 @@ class ValidateMigrationLocalDatabaseTask(
         }
     }
 
-    private fun createDatabaseScheme(entities: List<EntityScheme>): DatabaseSchema {
-        return DatabaseSchema(
-            databaseDriverFactory.getDatabaseName(),
-            databaseDriverFactory.createDriver(),
-            getLastVersion(entities),
-            DatabaseTablesCreatorDelegate(entities),
-            DatabaseUpgradeDelegate(entities)
-        )
-    }
+    private fun getDatabaseSchema() = databaseDriverFactory.getSchema()
 
     private fun getLastVersion(entities: List<EntityScheme>): Long {
         return entities.getLastVersion()

@@ -5,6 +5,7 @@ import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_2
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
+import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.apptank.horus.client.migration.network.toScheme
@@ -12,32 +13,33 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class DatabaseSchemaTest {
+class HorusDatabaseSchemaTest {
 
     private lateinit var driver: JdbcSqliteDriver
+
+    private lateinit var schema: HorusDatabase.Schema
+    private lateinit var database: HorusDatabase
 
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        schema = HorusDatabase.Schema
+        database = HorusDatabase("databaseName", driver)
     }
-
 
     @Test
     fun migrationIsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val databaseSchema =
-            DatabaseSchema("databaseName", driver, 1, DatabaseTablesCreatorDelegate(entities))
         val countEntitiesExpected = 6
         val versionExpected = 1L
 
-
         // When
-        databaseSchema.create(driver)
+        schema.create(driver, entities)
         val lastVersion = entities.getLastVersion()
 
         // Then
-        val tables = databaseSchema.getTablesNames()
+        val tables = database.getTablesNames()
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
         Assert.assertEquals(versionExpected, lastVersion)
@@ -48,16 +50,13 @@ class DatabaseSchemaTest {
     fun migrationWithVersionExistsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val databaseSchema =
-            DatabaseSchema("databaseName", driver, 1, DatabaseTablesCreatorDelegate(entities))
         val countEntitiesExpected = 6
-
         // When
-        databaseSchema.create(driver)
-        databaseSchema.create(driver)
+        schema.create(driver, entities)
+        schema.create(driver)
 
         // Then
-        val tables = databaseSchema.getTablesNames()
+        val tables = database.getTablesNames()
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
     }
@@ -72,37 +71,24 @@ class DatabaseSchemaTest {
         val oldVersion = entitiesV1.getLastVersion()
         val lastVersion = entitiesV2.getLastVersion()
 
-        val databaseSchemaV1 =
-            DatabaseSchema(
-                "databaseName",
-                driver,
-                oldVersion,
-                DatabaseTablesCreatorDelegate(entitiesV1)
-            )
-        val databaseSchemaV2 =
-            DatabaseSchema(
-                "databaseName", driver, lastVersion,
-                DatabaseTablesCreatorDelegate(entitiesV2),
-                DatabaseUpgradeDelegate(entitiesV2)
-            )
         // When
 
         // --> Migrate V1
-        databaseSchemaV1.create(driver)
+        schema.create(driver, entitiesV1)
 
-        val tableFarmsColumnsV1 = databaseSchemaV1.getColumns("farms")
-        val tableAnimalLotsColumnsV1 = databaseSchemaV1.getColumns("animals_lots")
-        val tableLotsColumnsV1 = databaseSchemaV1.getColumns("lots")
-        val tableFarmLocationsColumnsV1 = databaseSchemaV1.getColumns("farm_locations")
+        val tableFarmsColumnsV1 = database.getColumns("farms")
+        val tableAnimalLotsColumnsV1 = database.getColumns("animals_lots")
+        val tableLotsColumnsV1 = database.getColumns("lots")
+        val tableFarmLocationsColumnsV1 = database.getColumns("farm_locations")
 
         // --> Migrate V2
-        databaseSchemaV2.migrate(driver, oldVersion, lastVersion)
+        schema.migrate(driver, oldVersion, lastVersion, entitiesV2)
 
         // Then
-        val tableFarmsColumnsV2 = databaseSchemaV2.getColumns("farms")
-        val tableAnimalLotsColumnsV2 = databaseSchemaV2.getColumns("animals_lots")
-        val tableLotsColumnsV2 = databaseSchemaV2.getColumns("lots")
-        val tableFarmLocationsColumnsV2 = databaseSchemaV2.getColumns("farm_locations")
+        val tableFarmsColumnsV2 = database.getColumns("farms")
+        val tableAnimalLotsColumnsV2 = database.getColumns("animals_lots")
+        val tableLotsColumnsV2 = database.getColumns("lots")
+        val tableFarmLocationsColumnsV2 = database.getColumns("farm_locations")
 
 
         Assert.assertEquals(1, oldVersion)
@@ -145,35 +131,22 @@ class DatabaseSchemaTest {
         val oldVersion = entitiesV2.getLastVersion()
         val lastVersion = entitiesV3.getLastVersion()
 
-        val databaseSchemaV2 =
-            DatabaseSchema(
-                "databaseName",
-                driver,
-                oldVersion,
-                DatabaseTablesCreatorDelegate(entitiesV2)
-            )
-        val databaseSchemaV3 =
-            DatabaseSchema(
-                "databaseName", driver, lastVersion,
-                DatabaseTablesCreatorDelegate(entitiesV3),
-                DatabaseUpgradeDelegate(entitiesV3)
-            )
         // When
 
         // --> Migrate V2
-        databaseSchemaV2.create(driver)
+        schema.create(driver, entitiesV2)
 
-        val tableFarmsColumnsV2 = databaseSchemaV2.getColumns("farms")
-        val tableLotsColumnsV2 = databaseSchemaV2.getColumns("animals_lots")
-        val tablesV2 = databaseSchemaV2.getTablesNames()
+        val tableFarmsColumnsV2 = database.getColumns("farms")
+        val tableLotsColumnsV2 = database.getColumns("animals_lots")
+        val tablesV2 = database.getTablesNames()
 
         // --> Migrate V3
-        databaseSchemaV3.migrate(driver, oldVersion, lastVersion)
+        schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
 
         // Then
-        val tableFarmsColumnsV3 = databaseSchemaV3.getColumns("farms")
-        val tableLotsColumnsV3 = databaseSchemaV3.getColumns("animals_lots")
-        val tablesV3 = databaseSchemaV3.getTablesNames()
+        val tableFarmsColumnsV3 = database.getColumns("farms")
+        val tableLotsColumnsV3 = database.getColumns("animals_lots")
+        val tablesV3 = database.getTablesNames()
 
 
         Assert.assertEquals(2, oldVersion)
@@ -206,37 +179,24 @@ class DatabaseSchemaTest {
         val oldVersion = entitiesV1.getLastVersion()
         val lastVersion = entitiesV3.getLastVersion()
 
-        val databaseSchemaV1 =
-            DatabaseSchema(
-                "databaseName",
-                driver,
-                oldVersion,
-                DatabaseTablesCreatorDelegate(entitiesV1)
-            )
-        val databaseSchemaV3 =
-            DatabaseSchema(
-                "databaseName", driver, lastVersion,
-                DatabaseTablesCreatorDelegate(entitiesV3),
-                DatabaseUpgradeDelegate(entitiesV3)
-            )
         // When
 
-        // --> Migrate V2
-        databaseSchemaV1.create(driver)
+        // --> Migrate V1
+        schema.create(driver,entitiesV1)
 
-        val tableFarmsColumnsV1 = databaseSchemaV1.getColumns("farms")
-        val tableLotsColumnsV1 = databaseSchemaV1.getColumns("lots")
-        val tableAnimalLotsColumnsV1 = databaseSchemaV1.getColumns("animals_lots")
-        val tablesV1 = databaseSchemaV1.getTablesNames()
+        val tableFarmsColumnsV1 = database.getColumns("farms")
+        val tableLotsColumnsV1 = database.getColumns("lots")
+        val tableAnimalLotsColumnsV1 = database.getColumns("animals_lots")
+        val tablesV1 = database.getTablesNames()
 
         // --> Migrate V3
-        databaseSchemaV3.migrate(driver, oldVersion, lastVersion)
+        schema.migrate(driver, oldVersion, lastVersion,entitiesV3)
 
         // Then
-        val tableFarmsColumnsV3 = databaseSchemaV3.getColumns("farms")
-        val tableAnimalLotsColumnsV3 = databaseSchemaV3.getColumns("animals_lots")
-        val tableLotsColumnsV3 = databaseSchemaV3.getColumns("lots")
-        val tablesV3 = databaseSchemaV3.getTablesNames()
+        val tableFarmsColumnsV3 = database.getColumns("farms")
+        val tableAnimalLotsColumnsV3 = database.getColumns("animals_lots")
+        val tableLotsColumnsV3 = database.getColumns("lots")
+        val tablesV3 = database.getTablesNames()
 
 
         Assert.assertEquals(1, oldVersion)

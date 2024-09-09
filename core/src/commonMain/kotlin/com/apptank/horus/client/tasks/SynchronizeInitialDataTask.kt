@@ -7,20 +7,26 @@ import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.toRecordsInsert
+import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.toListEntityData
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 
 class SynchronizeInitialDataTask(
+    private val networkValidator: INetworkValidator,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizeService: ISynchronizationService,
-     dependsOnTask: ValidateMigrationLocalDatabaseTask
+    dependsOnTask: ValidateMigrationLocalDatabaseTask
 ) : BaseTask(dependsOnTask) {
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {
 
         if (isInitialSynchronizationCompleted()) {
             return TaskResult.success()
+        }
+
+        if (!networkValidator.isNetworkAvailable()) {
+            return TaskResult.failure(Exception("Network is not available"))
         }
 
         val dataResult = synchronizeService.getData()
