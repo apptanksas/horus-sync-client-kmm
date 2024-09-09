@@ -11,12 +11,11 @@ import kotlin.random.Random
 
 class ValidateHashingTask(
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
-    private val syncService: ISynchronizationService
-) : BaseTask() {
+    private val syncService: ISynchronizationService,
+    dependsOnTask: ValidateMigrationLocalDatabaseTask
+) : BaseTask(dependsOnTask) {
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {
-
-        controlDatabaseHelper.createControlTablesIfNotExists()
 
         if (isValidationHashingCompleted()) {
             return TaskResult.success()

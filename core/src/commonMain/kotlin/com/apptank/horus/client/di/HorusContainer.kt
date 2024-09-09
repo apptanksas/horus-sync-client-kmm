@@ -52,7 +52,6 @@ object HorusContainer {
     fun setupDatabaseFactory(factory: IDatabaseDriverFactory) {
         databaseFactory = factory
         operationDatabaseHelper = OperationDatabaseHelper(
-            factory.getDatabase(),
             factory.getDatabaseName(),
             factory.createDriver()
         )

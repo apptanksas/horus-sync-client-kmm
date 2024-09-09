@@ -14,22 +14,20 @@ class AndroidPlatform : Platform {
 
 actual fun getPlatform(): Platform = AndroidPlatform()
 
+
 class DatabaseDriverFactory(
     private val context: Context
 ) : IDatabaseDriverFactory {
 
-    override fun createDriver(): SqlDriver {
-        val schema = getSchema()
-        return AndroidSqliteDriver(schema, context, getDatabaseName(),
-            callback = object : AndroidSqliteDriver.Callback(schema) {
-                override fun onOpen(db: SupportSQLiteDatabase) {
-                    db.setForeignKeyConstraintsEnabled(true)
-                }
+    private val driver: SqlDriver = AndroidSqliteDriver(getSchema(), context, getDatabaseName(),
+        callback = object : AndroidSqliteDriver.Callback(getSchema()) {
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                db.setForeignKeyConstraintsEnabled(true)
+            }
+        })
 
-                override fun onCorruption(db: SupportSQLiteDatabase) {
-                    super.onCorruption(db)
-                }
-            })
+    override fun createDriver(): SqlDriver {
+        return driver
     }
 
     override fun getDatabase(): HorusDatabase = HorusDatabase(getDatabaseName(), createDriver())

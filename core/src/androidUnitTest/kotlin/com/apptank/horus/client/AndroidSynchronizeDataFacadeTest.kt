@@ -2,7 +2,7 @@ package com.apptank.horus.client
 
 import android.app.Activity
 import android.content.Context
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.di.HorusContainer
@@ -11,7 +11,6 @@ import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.database.HorusDatabase
-import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -20,6 +19,7 @@ import io.mockative.Mock
 import io.mockative.classOf
 import io.mockative.mock
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -33,9 +33,9 @@ import org.robolectric.annotation.Config
 class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     private lateinit var databaseFactory: IDatabaseDriverFactory
-    private lateinit var driver: JdbcSqliteDriver
     private lateinit var context: Context
-/*
+    private lateinit var driver: SqlDriver
+
     @Mock
     val networkValidator = mock(classOf<INetworkValidator>())
 
@@ -50,9 +50,10 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     @Before
     fun setUp() {
+
         context = Robolectric.buildActivity(Activity::class.java).get().applicationContext
-        driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        databaseFactory = DatabaseDriverFactory(context, HorusDatabase.Schema)
+        databaseFactory = DatabaseDriverFactory(context)
+        driver = databaseFactory.createDriver()
 
         with(HorusContainer) {
             setupNetworkValidator(networkValidator)
@@ -62,6 +63,12 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
             setupDatabaseFactory(databaseFactory)
             setupBaseUrl("http://dev.horus.com")
         }
+    }
+
+    @After
+    fun tearDown() {
+        driver.close()
+        SynchronizeDataFacade.clear()
     }
 
     @Test
@@ -76,7 +83,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
     }
 
     @Test
-    fun `when is not ready then throw exception`() {
+    fun `when is not ready then throw exception because is not ready`(): Unit = runBlocking {
         Assert.assertThrows(IllegalStateException::class.java) {
             SynchronizeDataFacade.insert("table", mapOf("key" to "value"))
         }
@@ -97,7 +104,9 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
                 "mv_area_cow_farming" to uuid(),
                 "measure_milk" to "kg",
                 "measure_weight" to "kg",
-                "type" to "1"
+                "type" to "1",
+                "name" to "Farm 1",
+                "destination" to "1"
             )
         )
         assert(result is DataResult.Success)
@@ -113,16 +122,13 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     private fun migrateDatabase() {
         val entitiesSchema =
-            buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+            buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
+        HorusDatabase.Schema.create(driver, entitiesSchema)
 
-        com.apptank.horus.client.database.HorusDatabase(
-            databaseFactory.getDatabaseName(), driver, 1, DatabaseTablesCreatorDelegate(
-                entitiesSchema
-            )
-        ).apply {
-            create(driver)
-            Assert.assertTrue(getTablesNames().contains("farms"))
+        driver.also {
+            Assert.assertTrue("table farms not exists", it.getTablesNames().contains("farms"))
         }
-    }*/
+    }
+
 
 }

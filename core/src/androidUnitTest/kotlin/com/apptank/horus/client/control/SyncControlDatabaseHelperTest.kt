@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.database.SQLiteHelper
 import com.apptank.horus.client.extensions.execute
 import org.junit.Assert
@@ -21,7 +22,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
-        controlManagerDatabaseHelper.createControlTablesIfNotExists()
+        HorusDatabase.Schema.create(driver)
         SQLiteHelper.flushCache()
     }
 
@@ -196,7 +197,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getPendingActionsIsSuccess(){
+    fun getPendingActionsIsSuccess() {
         // Given
         val entity = "entity123"
         val attributes = listOf(
@@ -213,12 +214,15 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(1, pendingActions.size)
         Assert.assertEquals(entity, pendingActions.first().entity)
         Assert.assertEquals(SyncControl.ActionType.INSERT, pendingActions.first().action)
-        Assert.assertEquals(attributes.associate { it.name to it.value }, pendingActions.first().data)
+        Assert.assertEquals(
+            attributes.associate { it.name to it.value },
+            pendingActions.first().data
+        )
         Assert.assertEquals(SyncControl.ActionStatus.PENDING, pendingActions.first().status)
     }
 
     @Test
-    fun completeActionsIsSuccess(){
+    fun completeActionsIsSuccess() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(
@@ -246,7 +250,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getLastActionCompleted(){
+    fun getLastActionCompleted() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(
@@ -268,7 +272,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getCompletedActionsAfterDatetime(){
+    fun getCompletedActionsAfterDatetime() {
         // Given
         val entity = "e9827733"
         val attributes = listOf(

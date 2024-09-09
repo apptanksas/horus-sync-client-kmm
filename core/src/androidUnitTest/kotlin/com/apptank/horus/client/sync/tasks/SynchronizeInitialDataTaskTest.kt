@@ -47,7 +47,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             operationDatabaseHelper,
             syncControlDatabaseHelper,
             synchronizeService,
-            getMockValidateMigrationTask()
+            getMockValidateHashingTask()
         )
     }
 

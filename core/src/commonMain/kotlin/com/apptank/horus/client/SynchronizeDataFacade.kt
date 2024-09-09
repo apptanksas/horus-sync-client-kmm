@@ -26,7 +26,7 @@ object SynchronizeDataFacade {
 
     private var changeListeners: MutableList<DataChangeListener> = mutableListOf()
 
-    private val accessDatabaseHelper by lazy {
+    private val operationDatabaseHelper by lazy {
         HorusContainer.getOperationDatabaseHelper()
     }
 
@@ -63,7 +63,7 @@ object SynchronizeDataFacade {
         )
 
         return runCatching {
-            val result = accessDatabaseHelper.insertWithTransaction(
+            val result = operationDatabaseHelper.insertWithTransaction(
                 listOf(
                     DatabaseOperation.InsertRecord(
                         entity, attributesPrepared.mapToDBColumValue()
@@ -129,7 +129,7 @@ object SynchronizeDataFacade {
 
 
         return runCatching {
-            val result = accessDatabaseHelper.updateWithTransaction(
+            val result = operationDatabaseHelper.updateWithTransaction(
                 listOf(
                     DatabaseOperation.UpdateRecord(
                         entity, attributesPrepared.mapToDBColumValue(),
@@ -182,7 +182,7 @@ object SynchronizeDataFacade {
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
         return runCatching {
-            val result = accessDatabaseHelper.deleteWithTransaction(
+            val result = operationDatabaseHelper.deleteWithTransaction(
                 listOf(
                     DatabaseOperation.DeleteRecord(
                         entity,
@@ -231,7 +231,7 @@ object SynchronizeDataFacade {
             }
         }
 
-        val result = accessDatabaseHelper.queryRecords(queryBuilder).map {
+        val result = operationDatabaseHelper.queryRecords(queryBuilder).map {
             Horus.Entity(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
@@ -254,7 +254,7 @@ object SynchronizeDataFacade {
             )
         }
 
-        return accessDatabaseHelper.queryRecords(queryBuilder).map {
+        return operationDatabaseHelper.queryRecords(queryBuilder).map {
             Horus.Entity(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
@@ -326,5 +326,10 @@ object SynchronizeDataFacade {
         return Uuid.random().toByteArray().toString()
     }
 
+    internal fun clear() {
+        isReady = false
+        onCallbackReady = null
+        changeListeners.clear()
+    }
 
 }

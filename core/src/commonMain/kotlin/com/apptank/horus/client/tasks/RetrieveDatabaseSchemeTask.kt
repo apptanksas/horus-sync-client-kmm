@@ -5,9 +5,8 @@ import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
 
 class RetrieveDatabaseSchemeTask(
-    private val migrationService: IMigrationService,
-    dependsOnTask: ValidateHashingTask
-) : BaseTask(dependsOnTask) {
+    private val migrationService: IMigrationService
+) : BaseTask() {
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {
         return migrationService.getMigration().fold(

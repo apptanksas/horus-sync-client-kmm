@@ -16,7 +16,7 @@ class SynchronizeInitialDataTask(
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizeService: ISynchronizationService,
-    dependsOnTask: ValidateMigrationLocalDatabaseTask
+    dependsOnTask: ValidateHashingTask
 ) : BaseTask(dependsOnTask) {
 
     override suspend fun execute(previousDataTask: Any?): TaskResult {

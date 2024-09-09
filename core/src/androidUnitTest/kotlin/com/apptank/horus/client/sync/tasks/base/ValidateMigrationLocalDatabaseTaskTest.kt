@@ -5,7 +5,6 @@ import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
-import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.domain.getLastVersion
@@ -32,9 +31,6 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     @Mock
     val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
 
-    @Mock
-    val syncControlDatabase = mock(classOf<ISyncControlDatabaseHelper>())
-
     @Before
     fun setup() {
         settings = MapSettings()
@@ -47,7 +43,6 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         task = ValidateMigrationLocalDatabaseTask(
             settings,
             databaseDriverFactory,
-            syncControlDatabase,
             getMockRetrieveDatabaseSchemeTask(),
         )
     }
@@ -56,7 +51,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     fun `when don't exists a database then create database scheme`() = runBlocking {
         // Given
         val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 6
+        val countEntitiesExpected = 9
 
         // When
         val result = task.execute(entitiesScheme)

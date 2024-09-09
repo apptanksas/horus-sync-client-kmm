@@ -14,7 +14,6 @@ import com.russhwolf.settings.Settings
 class ValidateMigrationLocalDatabaseTask(
     private val settings: Settings,
     private val databaseDriverFactory: IDatabaseDriverFactory,
-    private val syncControlDatabase: ISyncControlDatabaseHelper,
     dependsOnTask: RetrieveDatabaseSchemeTask
 ) : BaseTask(dependsOnTask) {
 
@@ -31,7 +30,6 @@ class ValidateMigrationLocalDatabaseTask(
             // Create database schema if it doesn't exist
             if (schemaVersion == null) {
                 schema.create(databaseDriverFactory.createDriver(), data)
-                syncControlDatabase.createControlTablesIfNotExists()
                 setSchemaVersion(schema.version)
                 return TaskResult.success()
             }

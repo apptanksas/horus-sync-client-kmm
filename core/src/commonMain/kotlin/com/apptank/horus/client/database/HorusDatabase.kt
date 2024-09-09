@@ -2,12 +2,18 @@ package com.apptank.horus.client.database
 
 import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
+import com.apptank.horus.client.control.QueueActionsTable
+import com.apptank.horus.client.control.SyncControlTable
+import com.apptank.horus.client.extensions.execute
+import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
 import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.getLastVersion
+import kotlin.random.Random
 
 class HorusDatabase(
     databaseName: String,
@@ -22,7 +28,9 @@ class HorusDatabase(
         var currentVersion: Long = 1
 
         override val version: Long
-            get() = currentVersion
+            get() {
+                return currentVersion
+            }
 
         fun create(
             driver: SqlDriver,
@@ -33,9 +41,26 @@ class HorusDatabase(
             return create(driver)
         }
 
+        private fun <T> SqlDriver.rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
+            return executeQuery(null, query, {
+                val resultList = mutableListOf<T>()
+                while (it.next().value) {
+                    mapper(it)?.let { item ->
+                        resultList.add(item)
+                    }
+                }
+                QueryResult.Value(resultList)
+            }, 0).value
+        }
+
+
         override fun create(driver: SqlDriver): QueryResult.Value<Unit> {
-            databaseCreatorDelegate?.createTables {
-                driver.execute(null, it, 0)
+            driver.handle {
+                databaseCreatorDelegate?.createTables {
+                    execute(Random.nextInt(), it, 0)
+                }
+                execute(SyncControlTable.SQL_CREATE_TABLE)
+                execute(QueueActionsTable.SQL_CREATE_TABLE)
             }
             flushCache()
             return QueryResult.Value(Unit)
@@ -59,7 +84,9 @@ class HorusDatabase(
             vararg callbacks: AfterVersion
         ): QueryResult.Value<Unit> {
             databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
-                driver.execute(null, it, 0)
+                driver.handle {
+                    driver.execute(Random.nextInt(), it, 0)
+                }
             }
             flushCache()
             callbacks.forEach {
@@ -72,4 +99,7 @@ class HorusDatabase(
         }
     }
 
+    fun getDatabaseDriver(): SqlDriver {
+        return driver
+    }
 }

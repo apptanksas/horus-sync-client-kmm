@@ -31,7 +31,8 @@ abstract class TestCase {
     protected fun getMockValidateHashingTask(): ValidateHashingTask {
         return ValidateHashingTask(
             mock(classOf<ISyncControlDatabaseHelper>()),
-            mock(classOf<ISynchronizationService>())
+            mock(classOf<ISynchronizationService>()),
+            getMockValidateMigrationTask()
         )
     }
 
@@ -39,17 +40,13 @@ abstract class TestCase {
         return ValidateMigrationLocalDatabaseTask(
             MapSettings(),
             mock(classOf<IDatabaseDriverFactory>()),
-            mock(
-                classOf<ISyncControlDatabaseHelper>()
-            ),
             getMockRetrieveDatabaseSchemeTask()
         )
     }
 
     protected fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
         return RetrieveDatabaseSchemeTask(
-            mock(classOf<IMigrationService>()),
-            getMockValidateHashingTask()
+            mock(classOf<IMigrationService>())
         )
     }
 
@@ -59,7 +56,7 @@ abstract class TestCase {
             mock(classOf<IOperationDatabaseHelper>()),
             mock(classOf<ISyncControlDatabaseHelper>()),
             mock(classOf<ISynchronizationService>()),
-            getMockValidateMigrationTask()
+            getMockValidateHashingTask()
         )
     }
 
@@ -89,13 +86,21 @@ abstract class TestCase {
                 }
             }
             QueryResult.Value(resultList)
-        }, 0).value
+        }, 0).value.also {
+            // close()
+        }
     }
 
     protected fun <T> generateArray(size: Int = 10, creator: () -> T): List<T> {
         val sizeList = Random.nextInt(1, size)
         return List(sizeList) { Random.nextInt(0, size) }.map {
             creator()
+        }
+    }
+
+    protected fun SqlDriver.getTablesNames(): List<String> {
+        return rawQuery(QUERY_TABLES) {
+            it.getString(0)
         }
     }
 

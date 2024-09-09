@@ -13,6 +13,7 @@ import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.log
 
 abstract class SQLiteHelper(
     driver: SqlDriver,
@@ -113,8 +114,15 @@ abstract class SQLiteHelper(
     }
 
     private fun executeInsertOrThrow(query: String) {
-        if (driver.execute(null, query, 0).value == 0L) {
-            throw IllegalStateException("Insertion failed")
+
+        getTablesNames().also {
+            log("Tables: ${it.size}")
+        }
+
+        driver.handle {
+            if (execute(null, query, 0).value == 0L) {
+                throw IllegalStateException("Insertion failed")
+            }
         }
     }
 

@@ -34,7 +34,8 @@ class ValidateHashingTaskTest : TestCase() {
     fun setup() {
         task = ValidateHashingTask(
             controlDatabaseHelper,
-            synchronizationService
+            synchronizationService,
+            getMockValidateMigrationTask()
         )
     }
 

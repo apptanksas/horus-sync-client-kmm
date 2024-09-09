@@ -8,7 +8,6 @@ import com.apptank.horus.client.database.Cursor
 import com.apptank.horus.client.database.SQLiteHelper
 import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.database.SQL
-import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireLong
 import com.apptank.horus.client.extensions.handle
@@ -26,13 +25,6 @@ internal class SyncControlDatabaseHelper(
     databaseName: String,
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName), ISyncControlDatabaseHelper {
-
-    override fun createControlTablesIfNotExists() {
-        driver.handle {
-            execute(SyncControlTable.SQL_CREATE_TABLE)
-            execute(QueueActionsTable.SQL_CREATE_TABLE)
-        }
-    }
 
     override fun isStatusCompleted(type: SyncControl.OperationType): Boolean {
         driver.handle {

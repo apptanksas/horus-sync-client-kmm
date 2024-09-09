@@ -1,13 +1,9 @@
 package com.apptank.horus.client.sync.tasks
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
-import com.apptank.horus.client.DATA_MIGRATION_VERSION_2
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
-import com.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.base.DataResult
-import com.apptank.horus.client.buildEntitiesDataFromJSON
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.di.HorusContainer

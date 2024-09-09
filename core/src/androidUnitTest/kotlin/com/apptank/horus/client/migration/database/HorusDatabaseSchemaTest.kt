@@ -31,7 +31,7 @@ class HorusDatabaseSchemaTest {
     fun migrationIsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 6
+        val countEntitiesExpected = 8
         val versionExpected = 1L
 
         // When
@@ -50,7 +50,7 @@ class HorusDatabaseSchemaTest {
     fun migrationWithVersionExistsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 6
+        val countEntitiesExpected = 8
         // When
         schema.create(driver, entities)
         schema.create(driver)

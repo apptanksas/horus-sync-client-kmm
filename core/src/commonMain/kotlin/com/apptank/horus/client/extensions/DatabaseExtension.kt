@@ -13,7 +13,7 @@ import com.apptank.horus.client.config.BOOL_TRUE
  */
 internal fun Any?.prepareSQLValueAsString(): String {
 
-    if(this == null) return "NULL"
+    if (this == null) return "NULL"
 
     return when (val value = this) {
         is String -> "'$value'"
@@ -28,7 +28,9 @@ fun SqlDriver.execute(query: String) {
 
 
 inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
-    return block(this)
+    return block(this).also {
+       //close()
+    }
 }
 
 fun SqlCursor.getRequireInt(index: Int): Int {

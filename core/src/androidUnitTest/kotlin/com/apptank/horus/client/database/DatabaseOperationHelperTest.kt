@@ -18,7 +18,6 @@ import kotlin.random.Random
 
 class DatabaseOperationHelperTest : TestCase() {
 
-    private lateinit var database: HorusDatabase
     private lateinit var driver: JdbcSqliteDriver
     private lateinit var databaseHelper: OperationDatabaseHelper
 
@@ -27,8 +26,7 @@ class DatabaseOperationHelperTest : TestCase() {
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        database = HorusDatabase("database", driver)
-        databaseHelper = OperationDatabaseHelper(database, "database", driver)
+        databaseHelper = OperationDatabaseHelper("database", driver)
 
         SQLiteHelper.flushCache()
 

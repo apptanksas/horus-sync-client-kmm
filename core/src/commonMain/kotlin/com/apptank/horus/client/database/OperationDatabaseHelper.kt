@@ -8,18 +8,10 @@ import com.apptank.horus.client.exception.DatabaseOperationFailureException
 import com.apptank.horus.client.extensions.log
 
 internal class OperationDatabaseHelper(
-    private val database: HorusDatabase,
     databaseName: String,
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName), IOperationDatabaseHelper {
 
-
-    /**
-     * Executes a list of database operations (insert, update, delete) within a transaction.
-     *
-     * @param actions The list of actions to be performed on the database.
-     * @return True if the transaction was successful, false otherwise.
-     */
     override fun executeOperations(actions: List<DatabaseOperation>) = executeTransaction { _ ->
         actions.forEach { action ->
             val operationIsFailure: Boolean = when (action) {
@@ -54,22 +46,13 @@ internal class OperationDatabaseHelper(
         }
     }
 
-    /**
-     * Executes a variable number of database operations (insert, update, delete) within a transaction.
-     *
-     * @param actions The vararg of actions to be performed on the database.
-     * @return True if the transaction was successful, false otherwise.
-     */
     override fun executeOperations(vararg actions: DatabaseOperation) =
         executeOperations(actions.toList())
 
-    /**
-     * Inserts multiple records into the database within a transaction.
-     *
-     * @param records A list of records to be inserted.
-     * @return True if the transaction was successful, false otherwise.
-     */
-    override fun insertWithTransaction(records: List<DatabaseOperation.InsertRecord>, postOperation: Callback) =
+    override fun insertWithTransaction(
+        records: List<DatabaseOperation.InsertRecord>,
+        postOperation: Callback
+    ) =
         executeTransaction { db ->
             records.forEach { item ->
                 val values = item.values.prepareMap()
@@ -79,12 +62,6 @@ internal class OperationDatabaseHelper(
             postOperation()
         }
 
-    /**
-     * Updates multiple records in the database within a transaction.
-     *
-     * @param records A list of records to be updated.
-     * @return True if the transaction was successful, false otherwise.
-     */
     override fun updateWithTransaction(
         records: List<DatabaseOperation.UpdateRecord>,
         postOperation: Callback
@@ -104,14 +81,6 @@ internal class OperationDatabaseHelper(
             postOperation()
         }
 
-    /**
-     * Deletes records from a specified table based on conditions.
-     *
-     * @param table The name of the table.
-     * @param conditions The list of conditions for deletion.
-     * @param operator The logical operator to combine conditions (AND/OR).
-     * @return The result of the operation.
-     */
     override fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
@@ -120,12 +89,6 @@ internal class OperationDatabaseHelper(
         return executeDelete(table, conditions, operator)
     }
 
-    /**
-     * Deletes multiple records from the database within a transaction.
-     *
-     * @param records A list of records to be deleted.
-     * @return True if the transaction was successful, false otherwise.
-     */
     override fun deleteWithTransaction(
         records: List<DatabaseOperation.DeleteRecord>,
         postOperation: Callback
@@ -139,13 +102,6 @@ internal class OperationDatabaseHelper(
             postOperation()
         }
 
-    /**
-     * Executes a query using the provided QueryBuilder and returns the results as a list of maps.
-     * Each map represents a record, where the keys are the column names and the values are the corresponding values.
-     *
-     * @param builder the QueryBuilder used to build the SQL query.
-     * @return a list of maps, each representing a record from the query result.
-     */
     override fun queryRecords(builder: QueryBuilder): List<DataMap> {
         // Initialize an empty mutable list to store the query results
         val output = mutableListOf<Map<String, Any>>()
@@ -160,15 +116,9 @@ internal class OperationDatabaseHelper(
         return output.reversed()
     }
 
-    /**
-     * Executes a block of code within a database transaction.
-     *
-     * @param executeBody The code block to be executed.
-     * @return True if the transaction was successful, false otherwise.
-     */
     private fun executeTransaction(executeBody: (SqlDriver) -> Unit): Boolean {
         runCatching {
-            database.transaction {
+            transaction {
                 executeBody(driver)
             }
             return true
@@ -178,15 +128,6 @@ internal class OperationDatabaseHelper(
         }
     }
 
-    /**
-     * Executes a delete operation on the database.
-     *
-     * @param db The database instance.
-     * @param table The name of the table.
-     * @param conditions The list of conditions for deletion.
-     * @param operator The logical operator to combine conditions (AND/OR).
-     * @return The result of the delete operation.
-     */
     private fun executeDelete(
         table: String,
         conditions: List<SQL.WhereCondition>,
@@ -203,16 +144,6 @@ internal class OperationDatabaseHelper(
     }
 
 
-    /**
-     * Executes an update operation on the database.
-     *
-     * @param db The database instance.
-     * @param table The name of the table.
-     * @param values The list of column-value pairs to be updated.
-     * @param conditions The list of conditions for the update.
-     * @param operator The logical operator to combine conditions (AND/OR).
-     * @return The result of the update operation.
-     */
     private fun executeUpdate(
         table: String,
         values: List<SQL.ColumnValue>,

@@ -1,6 +1,6 @@
 package com.apptank.horus.client
 
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.russhwolf.settings.Settings
 
 interface Platform {
     val name: String
