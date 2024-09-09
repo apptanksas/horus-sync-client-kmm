@@ -7,8 +7,8 @@ import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.IOperationDatabaseHelper
-import com.apptank.horus.client.database.LocalDatabase
 import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -604,7 +604,7 @@ class SynchronizatorManagerTest : TestCase() {
             // ---> Restore corrupted data
             // --------> Delete corrupted data
             every { operationDatabaseHelper.deleteRecords(any(), any(), any()) }.returns(
-                LocalDatabase.OperationResult(true, 1)
+                DatabaseOperation.Result(true, 1)
             )
             // --------> Insert new data
             every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)

@@ -32,6 +32,17 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+/**
+ * Manages data synchronization between local storage and a remote server.
+ *
+ * This class handles the process of synchronizing data with a remote server, including network validation,
+ * checking for pending actions, validating and restoring corrupted data, and updating the synchronization status.
+ *
+ * @param netWorkValidator An instance of `INetworkValidator` to monitor network availability.
+ * @param syncControlDatabaseHelper An instance of `ISyncControlDatabaseHelper` for managing sync control data.
+ * @param operationDatabaseHelper An instance of `IOperationDatabaseHelper` for handling database operations.
+ * @param synchronizationService An instance of `ISynchronizationService` for interacting with the remote server.
+ */
 class SynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
@@ -39,6 +50,9 @@ class SynchronizatorManager(
     private val synchronizationService: ISynchronizationService
 ) {
 
+    /**
+     * Represents the status of the synchronization process.
+     */
     enum class SynchronizationStatus {
         SUCCESS,
         IN_PROGRESS,
@@ -47,7 +61,12 @@ class SynchronizatorManager(
     }
 
     /**
-     * Start the validation process
+     * Starts the synchronization process and invokes the provided callback with the status and completion flag.
+     *
+     * This method performs several stages of synchronization, including checking network availability,
+     * validating data to sync, restoring corrupted data, and updating the synchronization status.
+     *
+     * @param onStatus A callback function to receive the synchronization status and a completion flag.
      */
     suspend fun start(onStatus: (SynchronizationStatus, isCompleted: Boolean) -> Unit) {
 
@@ -59,7 +78,7 @@ class SynchronizatorManager(
 
         // Validate if there are pending actions to sync with the server
         if (syncControlDatabaseHelper.getPendingActions().isNotEmpty()) {
-            log("[DataValidatorManager] There is pending actions")
+            log("[DataValidatorManager] There are pending actions")
             return onStatus(SynchronizationStatus.IDLE, true)
         }
 
@@ -123,7 +142,13 @@ class SynchronizatorManager(
         )
     }
 
-
+    /**
+     * Checks if there is data to synchronize with the server.
+     *
+     * This method verifies if there are any actions pending synchronization since the last checkpoint.
+     *
+     * @return `true` if there is data to sync, `false` otherwise, or `null` if an error occurred.
+     */
     private suspend fun existsDataToSync(): Boolean? {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
@@ -136,7 +161,7 @@ class SynchronizatorManager(
 
         when (resultActions) {
             is DataResult.Success -> {
-                // If there are actions means that there is data to sync
+                // If there are actions, it means that there is data to sync
                 return resultActions.data.isNotEmpty()
             }
 
@@ -154,9 +179,11 @@ class SynchronizatorManager(
     }
 
     /**
-     * Get the hashes of the entities
+     * Retrieves the hash values of all entities from the local database.
      *
-     * @return List of entities hashes
+     * This method gathers the hashes for each entity to validate data integrity.
+     *
+     * @return A list of entity hashes.
      */
     private fun getEntityHashes(): List<Horus.EntityHash> {
 
@@ -187,20 +214,24 @@ class SynchronizatorManager(
     }
 
     /**
-     * Validate the hashes of the entities with the server
+     * Validates entity hashes against remote data.
      *
-     * @param entitiesHashes List of entities hashes
-     * @return List of entities with the validation result
+     * This method compares local entity hashes with those stored on the remote server.
+     *
+     * @param entitiesHashes A list of entity hashes to validate.
+     * @return A list of pairs containing entity names and validation results.
      */
     private suspend fun validateEntityHashes(entitiesHashes: List<Horus.EntityHash>): List<Pair<String, Boolean>> {
         return validateRemoteEntitiesData(entitiesHashes).map { Pair(it.entity, it.isHashMatched) }
     }
 
     /**
-     * Validate the data of an entity
+     * Checks for corrupted data in the local database based on entity hashes.
      *
-     * @param entity Entity to validate
-     * @return List of ids with corrupted data
+     * This method compares local data with remote hashes to find discrepancies.
+     *
+     * @param entity The name of the entity to check.
+     * @return A list of IDs with corrupted data.
      */
     private suspend fun validateEntityDataCorrupted(entity: String): List<String> {
         val remoteHashes = getRemoteEntitiesHashes(entity)
@@ -208,11 +239,11 @@ class SynchronizatorManager(
     }
 
     /**
-     * Compare the local hashes with the remote hashes
+     * Compares local entity hashes with remote hashes to identify discrepancies.
      *
-     * @param entity Entity to compare
-     * @param remoteHashes List of hashes from the server
-     * @return List of ids with corrupted data
+     * @param entity The name of the entity to check.
+     * @param remoteHashes A list of remote entity hashes.
+     * @return A list of IDs with discrepancies.
      */
     private fun compareEntityHashesWithLocalData(
         entity: String,
@@ -238,7 +269,15 @@ class SynchronizatorManager(
         return ids
     }
 
-
+    /**
+     * Restores corrupted data for a specific entity.
+     *
+     * This method fetches data from the remote server and replaces corrupted local records.
+     *
+     * @param entity The name of the entity to restore.
+     * @param ids A list of IDs with corrupted data.
+     * @return `true` if the restoration was successful, `false` otherwise.
+     */
     private suspend fun restoreCorruptedData(entity: String, ids: List<String>): Boolean {
 
         when (val dataEntitiesResponse = synchronizationService.getDataEntity(entity, ids = ids)) {
@@ -274,6 +313,13 @@ class SynchronizatorManager(
         return false
     }
 
+    /**
+     * Synchronizes local data with the remote server.
+     *
+     * This method retrieves new actions since the last checkpoint and performs the necessary database operations.
+     *
+     * @return `true` if synchronization was successful, `false` otherwise.
+     */
     private suspend fun synchronizeData(): Boolean {
 
         val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
@@ -333,6 +379,13 @@ class SynchronizatorManager(
         }
     }
 
+    /**
+     * Filters out actions that are not present in the local database.
+     *
+     * @param actions A list of synchronization actions.
+     * @param checkpointTimestamp The timestamp of the last checkpoint.
+     * @return A filtered list of actions to be processed.
+     */
     private fun filterOwnActions(
         actions: List<SyncControl.Action>,
         checkpointTimestamp: Long
@@ -347,10 +400,22 @@ class SynchronizatorManager(
         }
     }
 
+    /**
+     * Maps actions to insert operations.
+     *
+     * @param actions A list of actions to insert.
+     * @return A list of insert operations.
+     */
     private fun mapToInsertOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.InsertRecord> {
         return actions.map { it.toInsertRecord(getUserId()) }
     }
 
+    /**
+     * Maps actions to update operations.
+     *
+     * @param actions A list of actions to update.
+     * @return A list of update operations.
+     */
     private fun mapToUpdateOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.UpdateRecord> {
 
         val actionsUpdate = actions.mapNotNull {
@@ -365,10 +430,23 @@ class SynchronizatorManager(
         return actionsUpdate
     }
 
+    /**
+     * Maps actions to delete operations.
+     *
+     * @param actions A list of actions to delete.
+     * @return A list of delete operations.
+     */
     private fun mapToDeleteOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.DeleteRecord> {
         return actions.map { it.toDeleteRecord() }
     }
 
+    /**
+     * Retrieves an entity by its ID.
+     *
+     * @param entity The name of the entity.
+     * @param id The ID of the entity.
+     * @return The entity if found, `null` otherwise.
+     */
     private fun getEntityById(entity: String, id: String): Horus.Entity? {
 
         val queryBuilder = SimpleQueryBuilder(entity).apply {
@@ -387,10 +465,22 @@ class SynchronizatorManager(
         }.firstOrNull()
     }
 
+    /**
+     * Retrieves the authenticated user ID.
+     *
+     * @return The authenticated user ID.
+     * @throws UserNotAuthenticatedException If the user is not authenticated.
+     */
     private fun getUserId(): String {
         return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
     }
 
+    /**
+     * Retrieves remote entity hashes.
+     *
+     * @param entity The name of the entity.
+     * @return A list of remote entity hashes.
+     */
     private suspend fun getRemoteEntitiesHashes(entity: String): List<InternalModel.EntityIdHash> {
         when (val result = synchronizationService.getEntityHashes(entity)) {
             is DataResult.Success -> {
@@ -410,6 +500,12 @@ class SynchronizatorManager(
         return emptyList()
     }
 
+    /**
+     * Validates entity data against remote data.
+     *
+     * @param entitiesHashes A list of entity hashes to validate.
+     * @return A list of entity hash validation results.
+     */
     private suspend fun validateRemoteEntitiesData(entitiesHashes: List<Horus.EntityHash>): List<InternalModel.EntityHashValidation> {
         when (val result =
             synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest())) {
@@ -431,7 +527,10 @@ class SynchronizatorManager(
     }
 
     /**
-     * Organize the actions by type
+     * Organizes synchronization actions into insert, update, and delete operations.
+     *
+     * @param syncActions A list of synchronization actions.
+     * @return A triple containing lists of insert, update, and delete actions.
      */
     private fun organizeActions(syncActions: List<SyncControl.Action>): Triple<List<SyncControl.Action>, List<SyncControl.Action>, List<SyncControl.Action>> {
         val insertActions = syncActions.filter { it.action == SyncControl.ActionType.INSERT }

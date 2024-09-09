@@ -1,28 +1,16 @@
 package com.apptank.horus.client.database.builder
 
-/**
- * A simple implementation of QueryBuilder for building SQL queries for a specific table.
- *
- * @property tableName the name of the table to query.
- * @throws IllegalArgumentException if tableName is empty.
- */
 class SimpleQueryBuilder(
     private val tableName: String
 ) : QueryBuilder() {
 
-    // Initialize block to validate the table name
-    init {
+   init {
         if (tableName.isEmpty()) {
             throw IllegalArgumentException("tableName cannot be empty")
         }
     }
 
-    /**
-     * Builds the SQL query string based on the provided attributes, conditions, order, and limit.
-     *
-     * @return the constructed SQL query string.
-     */
-    override fun build(): String {
+   override fun build(): String {
         // Default to selecting all columns
         var selection = "*"
 

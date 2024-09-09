@@ -9,8 +9,11 @@ import com.apptank.horus.client.database.builder.CreateTableSQLBuilder
 import com.apptank.horus.client.migration.domain.findByName
 
 /**
- * Class responsible for handling database upgrades based on provided entity schemes.
- * @param schemes List of EntityScheme objects representing database entity structures.
+ * This class handles the process of upgrading a database schema by migrating changes from an old version to a current version.
+ * It generates and executes the necessary SQL statements to create new tables and update existing ones according to the provided entity schemes.
+ *
+ * @year 2024
+ * @author John Ospina
  */
 class DatabaseUpgradeDelegate(
     private val schemes: List<EntityScheme>
@@ -25,10 +28,13 @@ class DatabaseUpgradeDelegate(
     private val versionMapEntities = mutableMapOf<Long, List<String>>()
 
     /**
-     * Perform migration from oldVersion to currentVersion.
-     * @param oldVersion The old version of the database schema.
-     * @param currentVersion The current version of the database schema.
-     * @param onExecuteSql Callback function to execute SQL statements.
+     * Migrates the database schema from an old version to the current version by generating and executing SQL statements.
+     *
+     * This method performs incremental migrations for each version between the old version and the current version. It creates new tables and adds new attributes as needed.
+     *
+     * @param oldVersion The version of the database schema to migrate from.
+     * @param currentVersion The version of the database schema to migrate to.
+     * @param onExecuteSql A lambda function that takes an SQL statement as a parameter and executes it. This function is called for each generated SQL statement.
      */
     fun migrate(oldVersion: Long, currentVersion: Long, onExecuteSql: (sql: String) -> Unit) {
         // Generate map of entity attributes for each version.
@@ -39,7 +45,7 @@ class DatabaseUpgradeDelegate(
 
             val newTablesAdded = mutableListOf<String>()
 
-            // Create new tables (If apply)
+            // Create new tables (if applicable).
             versionMapEntities[version]?.forEach {
                 schemes.findByName(it)?.let {
                     onExecuteSql(createCreateSQLTable(it))
@@ -47,10 +53,10 @@ class DatabaseUpgradeDelegate(
                 }
             }
 
-            // Create new attributes
+            // Create new attributes.
             versionMapAttributes[version]?.forEach { (entityName, attrs) ->
 
-                // Validate if is a new entity then must not add attributes
+                // Validate if it's a new entity; attributes should not be added to new entities.
                 if (newTablesAdded.contains(entityName)) {
                     return@forEach
                 }
@@ -67,7 +73,9 @@ class DatabaseUpgradeDelegate(
     }
 
     /**
-     * Generate map of entity attributes for each version of the schema.
+     * Maps the schemes to generate a versioned map of attributes and entities.
+     *
+     * This method creates maps for each version, where each map contains entity names and their associated attributes or a list of entities.
      */
     private fun mapSchemes() {
         // Find the last version of the schema.
@@ -82,17 +90,18 @@ class DatabaseUpgradeDelegate(
     }
 
     /**
-     * Map entity attributes for a specific version of the schema.
-     * @param versionSearch The version of the schema to map attributes for.
-     * @return Map of entity names to their respective attributes for the specified version.
+     * Maps the attributes of entities for a specific version.
+     *
+     * This method recursively maps attributes for entities and their related entities, filtering attributes based on the specified version.
+     *
+     * @param versionSearch The version of the schema to search for.
+     * @return A map of entity names to their attributes for the specified version.
      */
     private fun List<EntityScheme>.mapEntityAttributesVersion(versionSearch: Long): Map<String, List<Attribute>> {
-
         val mapEntityAttributes = mutableMapOf<String, List<Attribute>>()
 
         // Iterate through each entity scheme.
         this.forEach {
-
             // Map attributes for related entities recursively.
             it.entitiesRelated.mapEntityAttributesVersion(versionSearch)
                 .forEach { (entityName, attrs) ->
@@ -109,16 +118,21 @@ class DatabaseUpgradeDelegate(
                 }
             }
 
-
             mapEntityAttributes[entityName] = attributes
         }
 
         return mapEntityAttributes
     }
 
-
+    /**
+     * Maps the entities for a specific version.
+     *
+     * This method recursively maps entities and their related entities, adding entities to the list if they match the specified version.
+     *
+     * @param versionSearch The version of the schema to search for.
+     * @return A list of entity names for the specified version.
+     */
     private fun List<EntityScheme>.mapEntitiesByVersion(versionSearch: Long): List<String> {
-
         val entities = mutableListOf<String>()
 
         this.forEach {
@@ -143,6 +157,14 @@ class DatabaseUpgradeDelegate(
         return entities
     }
 
+    /**
+     * Creates an SQL statement to create a table based on the provided entity scheme.
+     *
+     * This method uses a `CreateTableSQLBuilder` to construct the SQL statement for creating a table. It sets the table name and adds attributes to the table creation statement.
+     *
+     * @param scheme The entity scheme that defines the table to be created.
+     * @return The SQL statement to create the table.
+     */
     private fun createCreateSQLTable(scheme: EntityScheme): String {
         return CreateTableSQLBuilder().apply {
             setTableName(scheme.name)
@@ -152,5 +174,4 @@ class DatabaseUpgradeDelegate(
             }
         }.build()
     }
-
 }

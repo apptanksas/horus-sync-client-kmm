@@ -21,6 +21,12 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.modules.serializersModuleOf
 
+/**
+ * Custom serializer for handling various types of data in JSON serialization and deserialization.
+ *
+ * This serializer supports basic data types such as `String`, `Int`, and `Boolean`, as well as `Map` types.
+ * It is used to serialize and deserialize these types into JSON format using Kotlinx Serialization.
+ */
 internal object AnySerializer : KSerializer<Any> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Any")
@@ -30,6 +36,16 @@ internal object AnySerializer : KSerializer<Any> {
         serializersModule = serializersModuleOf(Any::class, AnySerializer)
     }
 
+    /**
+     * Serializes the provided value into JSON format.
+     *
+     * This method encodes different types of values (e.g., `String`, `Int`, `Boolean`, `Map`) into their
+     * corresponding JSON representations. It only supports JSON encoding and throws an exception for unsupported types.
+     *
+     * @param encoder The encoder used to serialize the value.
+     * @param value The value to be serialized. It should be of type `String`, `Int`, `Boolean`, or `Map`.
+     * @throws SerializationException If the encoder is not a `JsonEncoder` or if the value type is unsupported.
+     */
     override fun serialize(encoder: Encoder, value: Any) {
         val jsonEncoder = encoder as? JsonEncoder
             ?: throw SerializationException("This class can be saved only by Json")
@@ -43,6 +59,17 @@ internal object AnySerializer : KSerializer<Any> {
         jsonEncoder.encodeJsonElement(jsonElement)
     }
 
+    /**
+     * Deserializes a JSON element into a corresponding Kotlin type.
+     *
+     * This method converts JSON elements (e.g., `JsonPrimitive`, `JsonArray`, `JsonObject`) into their
+     * corresponding Kotlin types (`String`, `Int`, `Boolean`, `List<DataMap>`, `DataMap`). It only supports JSON decoding
+     * and throws an exception for unsupported JSON element types.
+     *
+     * @param decoder The decoder used to deserialize the JSON element.
+     * @return The deserialized value, which can be of type `String`, `Int`, `Boolean`, `List<DataMap>`, or `DataMap`.
+     * @throws SerializationException If the decoder is not a `JsonDecoder` or if the JSON element type is unsupported.
+     */
     override fun deserialize(decoder: Decoder): Any {
         val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("This class can be loaded only by Json")
         val jsonElement = jsonDecoder.decodeJsonElement()

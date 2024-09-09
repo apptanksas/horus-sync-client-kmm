@@ -90,7 +90,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         SynchronizeDataFacade.onReady {
             invoked = true
         }
-        EventBus.post(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.VALIDATION_COMPLETED)
         assert(invoked)
     }
 
@@ -330,7 +330,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {
         SynchronizeDataFacade
-        EventBus.post(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.VALIDATION_COMPLETED)
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         migrateDatabase()
         block()

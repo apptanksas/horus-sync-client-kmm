@@ -2,14 +2,49 @@ package com.apptank.horus.client.eventbus
 
 import com.apptank.horus.client.base.DataMap
 
+/**
+ * Represents an event with optional data.
+ *
+ * @property data Optional data associated with the event.
+ */
 data class Event(val data: DataMap? = null)
 
+/**
+ * Enum class representing various types of events.
+ */
 enum class EventType {
-    VALIDATION_COMPLETED, // Sync validation completed
-    SYNC_PUSH_SUCCESS, // Push new data to server is successful
-    SYNC_PUSH_FAILED, // Push new data to server failed
-    ACTION_CREATED, // New actions created and pending to be sync with the server
-    ENTITY_CREATED, // New entity was created
-    ENTITY_UPDATED, // Entity was updated
-    ENTITY_DELETED, // Entity was deleted
+    /**
+     * Event type indicating that synchronization validation is complete.
+     */
+    VALIDATION_COMPLETED,
+
+    /**
+     * Event type indicating that pushing new data to the server was successful.
+     */
+    SYNC_PUSH_SUCCESS,
+
+    /**
+     * Event type indicating that pushing new data to the server failed.
+     */
+    SYNC_PUSH_FAILED,
+
+    /**
+     * Event type indicating that new actions were created and are pending synchronization with the server.
+     */
+    ACTION_CREATED,
+
+    /**
+     * Event type indicating that a new entity was created.
+     */
+    ENTITY_CREATED,
+
+    /**
+     * Event type indicating that an existing entity was updated.
+     */
+    ENTITY_UPDATED,
+
+    /**
+     * Event type indicating that an entity was deleted.
+     */
+    ENTITY_DELETED
 }

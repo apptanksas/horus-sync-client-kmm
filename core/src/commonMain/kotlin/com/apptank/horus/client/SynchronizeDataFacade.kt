@@ -19,6 +19,10 @@ import com.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+/**
+ * Provides a facade for synchronizing data operations, including inserting, updating, and deleting entities.
+ * Handles callbacks and data change listeners, and interacts with the database through various helpers.
+ */
 object SynchronizeDataFacade {
 
     private var isReady = false
@@ -42,10 +46,22 @@ object SynchronizeDataFacade {
         }
     }
 
+    /**
+     * Sets a callback to be invoked when the facade is ready for operations.
+     *
+     * @param callback The callback to be invoked when the facade is ready.
+     */
     fun onReady(callback: Callback) {
         onCallbackReady = callback
     }
 
+    /**
+     * Inserts a new entity into the database with specified attributes.
+     *
+     * @param entity The name of the entity to insert.
+     * @param attributes The attributes to insert with the entity.
+     * @return A [DataResult] indicating success or failure of the insert operation.
+     */
     fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
         validateIfReady()
@@ -84,6 +100,13 @@ object SynchronizeDataFacade {
         }
     }
 
+    /**
+     * Inserts a new entity into the database with specified attributes.
+     *
+     * @param entity The name of the entity to insert.
+     * @param attributes The attributes to insert with the entity.
+     * @return A [DataResult] indicating success or failure of the insert operation.
+     */
     fun insert(
         entity: String,
         vararg attributes: Horus.Attribute<*>
@@ -91,6 +114,13 @@ object SynchronizeDataFacade {
         return insert(entity, attributes.toList())
     }
 
+    /**
+     * Inserts a new entity into the database with specified attributes.
+     *
+     * @param entity The name of the entity to insert.
+     * @param attributes The attributes to insert with the entity.
+     * @return A [DataResult] indicating success or failure of the insert operation.
+     */
     fun insert(
         entity: String,
         attributes: Map<String, Any>,
@@ -98,6 +128,14 @@ object SynchronizeDataFacade {
         return insert(entity, attributes.map { Horus.Attribute(it.key, it.value) })
     }
 
+    /**
+     * Updates an existing entity in the database with specified attributes.
+     *
+     * @param entity The name of the entity to update.
+     * @param id The ID of the entity to update.
+     * @param attributes The attributes to update for the entity.
+     * @return A [DataResult] indicating success or failure of the update operation.
+     */
     fun updateEntity(
         entity: String,
         id: String,
@@ -125,8 +163,6 @@ object SynchronizeDataFacade {
                         }
                     removeIf { it.name == "sync_hash" }
                 })
-
-
 
         return runCatching {
             val result = operationDatabaseHelper.updateWithTransaction(
@@ -158,7 +194,14 @@ object SynchronizeDataFacade {
         }
     }
 
-
+    /**
+     * Updates an existing entity in the database with specified attributes.
+     *
+     * @param entity The name of the entity to update.
+     * @param id The ID of the entity to update.
+     * @param attributes The attributes to update for the entity.
+     * @return A [DataResult] indicating success or failure of the update operation.
+     */
     fun updateEntity(
         entity: String,
         id: String,
@@ -167,6 +210,14 @@ object SynchronizeDataFacade {
         return updateEntity(entity, id, attributes.toList())
     }
 
+    /**
+     * Updates an existing entity in the database with specified attributes.
+     *
+     * @param entity The name of the entity to update.
+     * @param id The ID of the entity to update.
+     * @param attributes The attributes to update for the entity.
+     * @return A [DataResult] indicating success or failure of the update operation.
+     */
     fun updateEntity(
         entity: String,
         id: String,
@@ -175,6 +226,13 @@ object SynchronizeDataFacade {
         return updateEntity(entity, id, attributes.map { Horus.Attribute(it.key, it.value) })
     }
 
+    /**
+     * Deletes an existing entity from the database.
+     *
+     * @param entity The name of the entity to delete.
+     * @param id The ID of the entity to delete.
+     * @return A [DataResult] indicating success or failure of the delete operation.
+     */
     fun deleteEntity(entity: String, id: String): DataResult<Unit> {
 
         validateIfReady()
@@ -207,6 +265,16 @@ object SynchronizeDataFacade {
         }
     }
 
+    /**
+     * Retrieves a list of entities from the database based on the specified conditions.
+     *
+     * @param entity The name of the entity to retrieve.
+     * @param conditions The conditions to apply to the query.
+     * @param orderBy The column to order the results by.
+     * @param limit The maximum number of results to return.
+     * @param offset The number of results to skip before starting to return results.
+     * @return A [DataResult] containing a list of [Horus.Entity] objects.
+     */
     suspend fun getEntities(
         entity: String,
         conditions: List<SQL.WhereCondition> = listOf(),
@@ -240,6 +308,13 @@ object SynchronizeDataFacade {
         return DataResult.Success(result)
     }
 
+    /**
+     * Retrieves a single entity from the database by its ID.
+     *
+     * @param entity The name of the entity to retrieve.
+     * @param id The ID of the entity to retrieve.
+     * @return A [Horus.Entity] object if found, or `null` if not found.
+     */
     fun getEntityById(entity: String, id: String): Horus.Entity? {
 
         validateIfReady()
@@ -261,30 +336,47 @@ object SynchronizeDataFacade {
         }.firstOrNull()
     }
 
+    /**
+     * Adds a listener to be notified of data changes.
+     *
+     * @param dataChangeListener The listener to add.
+     */
     fun addDataChangeListener(dataChangeListener: DataChangeListener) {
         changeListeners.add(dataChangeListener)
     }
 
+    /**
+     * Removes a specific data change listener.
+     *
+     * @param dataChangeListener The listener to remove.
+     */
     fun removeDataChangeListener(dataChangeListener: DataChangeListener) {
         changeListeners.remove(dataChangeListener)
     }
 
+    /**
+     * Removes all data change listeners.
+     */
     fun removeAllDataChangeListeners() {
         changeListeners.clear()
     }
 
+    /**
+     * Checks if the facade is ready for operations and throws an exception if not.
+     */
     private fun validateIfReady() {
         if (!isReady) {
             throw IllegalStateException("Synchronizer not ready")
         }
     }
 
+    /**
+     * Registers event listeners for entity creation, update, and deletion.
+     */
     private fun registerEntityEventListeners() {
-
         // Notify listeners when an entity is created
         EventBus.register(EventType.ENTITY_CREATED) {
             changeListeners.forEach { listener ->
-
                 val entity = it.data?.get("entity") as? String ?: ""
                 val attributes = it.data?.get("attributes") as? DataMap ?: mapOf()
 
@@ -316,19 +408,32 @@ object SynchronizeDataFacade {
         }
     }
 
+    /**
+     * Retrieves the authenticated user ID.
+     *
+     * @return The user ID of the authenticated user.
+     * @throws UserNotAuthenticatedException If no user is authenticated.
+     */
     private fun getUserId(): String {
         return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
     }
 
+    /**
+     * Generates a new UUID.
+     *
+     * @return A new UUID as a [String].
+     */
     @OptIn(ExperimentalUuidApi::class)
     private fun generateUUID(): String {
         return Uuid.random().toString()
     }
 
+    /**
+     * Clears the state of the facade, resetting readiness and clearing listeners.
+     */
     internal fun clear() {
         isReady = false
         onCallbackReady = null
         changeListeners.clear()
     }
-
 }

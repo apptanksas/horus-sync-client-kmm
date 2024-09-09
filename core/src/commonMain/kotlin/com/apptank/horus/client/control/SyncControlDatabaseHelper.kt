@@ -19,13 +19,27 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Maneja datos asociados al control interno de la sincronización
+ * Implementation of the `ISyncControlDatabaseHelper` interface for managing synchronization control data
+ * in an SQLite database. Provides methods for checking statuses, managing synchronization types, and handling
+ * actions such as inserts, updates, and deletions.
+ *
+ * @param databaseName The name of the SQLite database.
+ * @param driver The SQL driver used for database operations.
+ *
+ * @author John Ospina
+ * @year 2024
  */
 internal class SyncControlDatabaseHelper(
     databaseName: String,
     driver: SqlDriver,
 ) : SQLiteHelper(driver, databaseName), ISyncControlDatabaseHelper {
 
+    /**
+     * Checks if the status for a given operation type is completed.
+     *
+     * @param type The type of synchronization operation.
+     * @return True if the status is completed, false otherwise.
+     */
     override fun isStatusCompleted(type: SyncControl.OperationType): Boolean {
         driver.handle {
             return rawQuery(
@@ -35,6 +49,11 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
+    /**
+     * Retrieves the timestamp of the last datetime checkpoint.
+     *
+     * @return The timestamp of the last checkpoint in milliseconds.
+     */
     override fun getLastDatetimeCheckpoint(): Long {
         driver.handle {
             return rawQuery(
@@ -43,12 +62,24 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
+    /**
+     * Adds a new synchronization type status to the database.
+     *
+     * @param type The type of synchronization operation.
+     * @param status The status to be recorded.
+     */
     override fun addSyncTypeStatus(type: SyncControl.OperationType, status: SyncControl.Status) {
         driver.handle {
             insertOrThrow(SyncControlTable.TABLE_NAME, SyncControlTable.mapToCreate(type, status))
         }
     }
 
+    /**
+     * Inserts a new action for an entity into the database.
+     *
+     * @param entity The name of the entity.
+     * @param attributes The attributes of the entity to be inserted.
+     */
     override fun addActionInsert(
         entity: String,
         attributes: List<Horus.Attribute<*>>
@@ -70,13 +101,12 @@ internal class SyncControlDatabaseHelper(
         )
     }
 
-
     /**
-     * Add an update action to the queue
+     * Adds an update action to the queue.
      *
-     * @param entity Entity name
-     * @param id Entity ID
-     * @param attributes List of attributes to update
+     * @param entity The name of the entity.
+     * @param id The identifier of the entity.
+     * @param attributes The attributes to be updated.
      */
     override fun addActionUpdate(
         entity: String,
@@ -99,10 +129,10 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
-     * Add a delete action to the queue
+     * Deletes an action for an entity from the database.
      *
-     * @param entity Entity name
-     * @param id Entity ID
+     * @param entity The name of the entity.
+     * @param id The identifier of the entity.
      */
     override fun addActionDelete(
         entity: String,
@@ -113,11 +143,10 @@ internal class SyncControlDatabaseHelper(
         emitEntityDeleted(entity, id.value)
     }
 
-
     /**
-     * Get pending actions from the queue
+     * Retrieves a list of pending actions from the database.
      *
-     * @return List of pending actions
+     * @return A list of pending synchronization actions.
      */
     override fun getPendingActions(): List<SyncControl.Action> {
         driver.handle {
@@ -136,7 +165,10 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
-     * Update the status of the actions as completed
+     * Marks specified actions as completed.
+     *
+     * @param actionIds The identifiers of the actions to be marked as completed.
+     * @return True if the actions were successfully marked as completed, false otherwise.
      */
     override fun completeActions(actionIds: List<Int>): Boolean {
         driver.handle {
@@ -152,11 +184,10 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
-
     /**
-     * Get the last action completed
+     * Retrieves the last completed action from the database.
      *
-     * @return Last action completed
+     * @return The last completed synchronization action, or null if no actions have been completed.
      */
     override fun getLastActionCompleted(): SyncControl.Action? {
         driver.handle {
@@ -174,7 +205,12 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
-
+    /**
+     * Retrieves all completed actions that occurred after a specified datetime.
+     *
+     * @param datetime The timestamp to filter completed actions.
+     * @return A list of completed synchronization actions that occurred after the specified datetime.
+     */
     override fun getCompletedActionsAfterDatetime(datetime: Long): List<SyncControl.Action> {
         driver.handle {
             val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
@@ -197,11 +233,21 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
-
+    /**
+     * Retrieves a list of all entity names from the database, excluding sync control and queue actions tables.
+     *
+     * @return A list of entity names.
+     */
     override fun getEntityNames(): List<String> {
         return getTablesNames().filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
+    /**
+     * Creates a `SyncControl.Action` object from a database cursor.
+     *
+     * @param cursor The cursor containing the data.
+     * @return The `SyncControl.Action` object.
+     */
     private fun createSyncActionFromCursor(cursor: Cursor): SyncControl.Action {
         return SyncControl.Action(
             cursor.getValue("id"),
@@ -214,6 +260,13 @@ internal class SyncControlDatabaseHelper(
         )
     }
 
+    /**
+     * Adds a new action to the queue.
+     *
+     * @param entity The name of the entity.
+     * @param actionType The type of action to be performed.
+     * @param dataJSON The data associated with the action.
+     */
     private fun addAction(
         entity: String,
         actionType: SyncControl.ActionType,
@@ -228,31 +281,60 @@ internal class SyncControlDatabaseHelper(
         emitEventActionCreated()
     }
 
+    /**
+     * Validates if the specified entity exists in the database.
+     *
+     * @param entity The name of the entity to be validated.
+     * @throws IllegalArgumentException If the entity does not exist.
+     */
     private fun validateIfEntityExists(entity: String) {
         getEntityNames().find { it == entity } ?: run {
             throw IllegalArgumentException("Entity $entity does not exist")
         }
     }
 
+    /**
+     * Emits an event indicating that an action has been created.
+     */
     private fun emitEventActionCreated() {
-        EventBus.post(EventType.ACTION_CREATED, Event())
+        EventBus.emit(EventType.ACTION_CREATED, Event())
     }
 
+    /**
+     * Emits an event indicating that an entity has been created.
+     *
+     * @param entity The name of the entity.
+     * @param id The identifier of the entity.
+     * @param data The attributes of the entity.
+     */
     private fun emitEntityCreated(entity: String, id: String, data: DataMap) {
-        EventBus.post(
+        EventBus.emit(
             EventType.ENTITY_CREATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
     }
 
+    /**
+     * Emits an event indicating that an entity has been updated.
+     *
+     * @param entity The name of the entity.
+     * @param id The identifier of the entity.
+     * @param data The updated attributes of the entity.
+     */
     private fun emitEntityUpdated(entity: String, id: String, data: DataMap) {
-        EventBus.post(
+        EventBus.emit(
             EventType.ENTITY_UPDATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
     }
 
+    /**
+     * Emits an event indicating that an entity has been deleted.
+     *
+     * @param entity The name of the entity.
+     * @param id The identifier of the entity.
+     */
     private fun emitEntityDeleted(entity: String, id: String) {
-        EventBus.post(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
+        EventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
     }
 }

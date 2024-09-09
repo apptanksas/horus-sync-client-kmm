@@ -3,24 +3,21 @@ package com.apptank.horus.client.database
 import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.extensions.forEachPair
-import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.utils.AttributesPreparator
 
-
 /**
- * Base class representing an action to be performed on a database table.
+ * Represents a database operation for different CRUD actions.
  *
- * @property table The name of the database table.
+ * @property table The name of the table where the operation will be applied.
  */
-
 sealed class DatabaseOperation(open val table: String) {
 
     /**
-     * Data class representing an insert action to be performed on a database table.
+     * Represents an insert operation for a record in a database table.
      *
-     * @property table The name of the database table.
-     * @property values A list of column-value pairs to be inserted.
+     * @property table The name of the table where the record will be inserted.
+     * @property values A list of column values to be inserted.
      */
     data class InsertRecord(
         override val table: String,
@@ -28,12 +25,12 @@ sealed class DatabaseOperation(open val table: String) {
     ) : DatabaseOperation(table)
 
     /**
-     * Data class representing an update operation on a database record.
+     * Represents an update operation for a record in a database table.
      *
-     * @property table The name of the table.
-     * @property values The list of column-value pairs to be updated.
-     * @property conditions The list of conditions for the update.
-     * @property operator The logical operator to combine conditions (AND/OR).
+     * @property table The name of the table where the record will be updated.
+     * @property values A list of column values to be updated.
+     * @property conditions A list of conditions that specify which records to update.
+     * @property operator The logical operator used to combine conditions. Default is [SQL.LogicOperator.AND].
      */
     data class UpdateRecord(
         override val table: String,
@@ -42,30 +39,50 @@ sealed class DatabaseOperation(open val table: String) {
         val operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ) : DatabaseOperation(table)
 
-
     /**
-     * Data class representing a delete action to be performed on a database table.
+     * Represents a delete operation for a record in a database table.
      *
-     * @property table The name of the database table.
-     * @property values A list of column-value pairs to be used as conditions for deletion.
+     * @property table The name of the table where the record will be deleted.
+     * @property conditions A list of conditions that specify which records to delete.
+     * @property operator The logical operator used to combine conditions. Default is [SQL.LogicOperator.AND].
      */
     data class DeleteRecord(
         override val table: String,
         val conditions: List<SQL.WhereCondition>,
         val operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ) : DatabaseOperation(table)
+
+    /**
+     * Data class representing the result of a database operation.
+     *
+     * @property isSuccess Indicates if the operation was successful.
+     * @property rowsAffected The number of rows affected by the operation.
+     * @property isFailure Indicates if the operation was failure.
+     */
+    data class Result(
+        val isSuccess: Boolean,
+        val rowsAffected: Int,
+        val isFailure: Boolean = !isSuccess,
+    )
 }
 
-
+/**
+ * Converts the [Horus.Entity] to a list of [DatabaseOperation.InsertRecord] objects.
+ *
+ * @return A list of [DatabaseOperation.InsertRecord] objects representing the entity's data to be inserted.
+ */
 fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
 
     val records = mutableListOf<DatabaseOperation.InsertRecord>()
 
+    // Recursively add insert records for related entities
     this.relations?.forEachPair { relation, entities ->
         entities.forEach {
             records.addAll(it.toRecordsInsert())
         }
     }
+
+    // Add the current entity's insert record
     records.add(
         DatabaseOperation.InsertRecord(
             this.name, this.attributes.map {
@@ -75,7 +92,13 @@ fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
     return records
 }
 
-
+/**
+ * Converts a [SyncControl.Action] to a [DatabaseOperation.InsertRecord].
+ *
+ * @param userId The user ID associated with the action.
+ * @return A [DatabaseOperation.InsertRecord] representing the insert action.
+ * @throws IllegalArgumentException If the action type is not [SyncControl.ActionType.INSERT].
+ */
 fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertRecord {
 
     if (action != SyncControl.ActionType.INSERT) {
@@ -103,6 +126,12 @@ fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertR
     )
 }
 
+/**
+ * Converts a [SyncControl.Action] to a [DatabaseOperation.UpdateRecord].
+ *
+ * @param currentEntity The current state of the entity to be updated.
+ * @return A [DatabaseOperation.UpdateRecord] representing the update action.
+ */
 fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOperation.UpdateRecord {
 
     val id = getEntityId()
@@ -129,6 +158,11 @@ fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOper
     )
 }
 
+/**
+ * Converts a [SyncControl.Action] to a [DatabaseOperation.DeleteRecord].
+ *
+ * @return A [DatabaseOperation.DeleteRecord] representing the delete action.
+ */
 fun SyncControl.Action.toDeleteRecord(): DatabaseOperation.DeleteRecord {
     return DatabaseOperation.DeleteRecord(
         entity,

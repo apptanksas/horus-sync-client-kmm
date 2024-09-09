@@ -5,14 +5,18 @@ import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.config.BOOL_FALSE
 import com.apptank.horus.client.config.BOOL_TRUE
 
+
 /**
- * Prepares a value as a string for SQL operations.
+ * Prepares the SQL representation of a value as a string.
  *
- * @param value The value to be prepared.
- * @return The string representation of the value.
+ * Converts various types of values into their appropriate SQL string representations:
+ * - Strings are enclosed in single quotes.
+ * - Booleans are converted to their corresponding SQL boolean literals.
+ * - Other types are converted to their string representation.
+ *
+ * @return The SQL string representation of the value, or "NULL" if the value is null.
  */
 internal fun Any?.prepareSQLValueAsString(): String {
-
     if (this == null) return "NULL"
 
     return when (val value = this) {
@@ -22,34 +26,91 @@ internal fun Any?.prepareSQLValueAsString(): String {
     }
 }
 
+/**
+ * Executes a SQL query on the driver.
+ *
+ * Executes the provided SQL query with no additional parameters or special handling.
+ *
+ * @param query The SQL query to be executed.
+ */
 fun SqlDriver.execute(query: String) {
     execute(null, query, 0)
 }
 
-
+/**
+ * Executes a block of code within the context of the `SqlDriver`.
+ *
+ * This inline function allows you to perform operations on the `SqlDriver` instance
+ * using a lambda block.
+ *
+ * @param block The block of code to be executed.
+ * @return The result of the block.
+ */
 inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
     return block(this)
 }
 
+/**
+ * Retrieves an integer value from the `SqlCursor` at the specified index.
+ *
+ * Throws an `IllegalStateException` if the value at the specified index is null.
+ *
+ * @param index The index of the value to retrieve.
+ * @return The integer value at the specified index.
+ * @throws IllegalStateException If the value is null.
+ */
 fun SqlCursor.getRequireInt(index: Int): Int {
     return this.getLong(index)?.toInt() ?: throw IllegalStateException("Index $index not found")
 }
 
+/**
+ * Retrieves a long value from the `SqlCursor` at the specified index.
+ *
+ * Throws an `IllegalStateException` if the value at the specified index is null.
+ *
+ * @param index The index of the value to retrieve.
+ * @return The long value at the specified index.
+ * @throws IllegalStateException If the value is null.
+ */
 fun SqlCursor.getRequireLong(index: Int): Long {
     return this.getLong(index) ?: throw IllegalStateException("Index $index not found")
 }
 
+/**
+ * Retrieves a string value from the `SqlCursor` at the specified index.
+ *
+ * Throws an `IllegalStateException` if the value at the specified index is null.
+ *
+ * @param index The index of the value to retrieve.
+ * @return The string value at the specified index.
+ * @throws IllegalStateException If the value is null.
+ */
 fun SqlCursor.getRequireString(index: Int): String {
     return this.getString(index) ?: throw IllegalStateException("Index $index not found")
 }
 
+/**
+ * Retrieves a double value from the `SqlCursor` at the specified index.
+ *
+ * Throws an `IllegalStateException` if the value at the specified index is null.
+ *
+ * @param index The index of the value to retrieve.
+ * @return The double value at the specified index.
+ * @throws IllegalStateException If the value is null.
+ */
 fun SqlCursor.getRequireDouble(index: Int): Double {
     return this.getDouble(index) ?: throw IllegalStateException("Index $index not found")
 }
 
+/**
+ * Retrieves a boolean value from the `SqlCursor` at the specified index.
+ *
+ * Throws an `IllegalStateException` if the value at the specified index is null.
+ *
+ * @param index The index of the value to retrieve.
+ * @return The boolean value at the specified index.
+ * @throws IllegalStateException If the value is null.
+ */
 fun SqlCursor.getRequireBoolean(index: Int): Boolean {
     return this.getBoolean(index) ?: throw IllegalStateException("Index $index not found")
 }
-
-
-

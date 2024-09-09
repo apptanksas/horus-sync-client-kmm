@@ -21,17 +21,40 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
+/**
+ * BaseService provides a foundational layer for making HTTP requests with a shared HttpClient.
+ * It supports GET and POST methods, handles responses, and manages authentication headers.
+ *
+ * The class is designed to work with an engine passed via constructor and a base URL for all requests.
+ *
+ * @param engine The HttpClientEngine used for network requests.
+ * @param baseUrl The base URL for the API endpoints.
+ *
+ * @author John Ospina
+ * @year 2024
+ */
 internal abstract class BaseService(
     engine: HttpClientEngine,
     private val baseUrl: String
 ) {
+    // JSON decoder configured to ignore unknown keys
     val decoderJson = Json { ignoreUnknownKeys = true }
+
+    // HttpClient instance configured with content negotiation for JSON
     protected val client = HttpClient(engine) {
         install(ContentNegotiation) {
             json(decoderJson)
         }
     }
 
+    /**
+     * Makes a GET request to the specified path with optional query parameters.
+     *
+     * @param path The endpoint path to make the request to.
+     * @param queryParams A map of query parameters to append to the request URL.
+     * @param onResponse A lambda function to process the response body into the expected type.
+     * @return A DataResult containing either the result of the request or an error.
+     */
     protected suspend fun <T : Any> get(
         path: String,
         queryParams: Map<String, String> = emptyMap(),
@@ -50,6 +73,14 @@ internal abstract class BaseService(
         )
     }
 
+    /**
+     * Makes a POST request to the specified path with the provided data.
+     *
+     * @param path The endpoint path to make the request to.
+     * @param data The data to be sent as the request body.
+     * @param onResponse A lambda function to process the response body into the expected type.
+     * @return A DataResult containing either the result of the request or an error.
+     */
     protected suspend fun <T : Any> post(
         path: String,
         data: Any,
@@ -62,6 +93,13 @@ internal abstract class BaseService(
         }, onResponse)
     }
 
+    /**
+     * Handles the HTTP response by checking for status codes, parsing the response body, and managing errors.
+     *
+     * @param response The HttpResponse object received from the network request.
+     * @param onResponse A lambda function to process the response body into the expected type.
+     * @return A DataResult containing either the success result or failure information.
+     */
     private suspend fun <T : Any> handleResponse(
         response: HttpResponse,
         onResponse: (response: String) -> T
@@ -92,6 +130,12 @@ internal abstract class BaseService(
         }
     }
 
+    /**
+     * Sets up the necessary headers for the request, including authentication and acting as another user.
+     *
+     * @param builder The HttpRequestBuilder used to configure the request.
+     * @return The modified HttpRequestBuilder with added headers.
+     */
     private fun setupHeaders(builder: HttpRequestBuilder): HttpRequestBuilder {
         builder.headers {
             append(HttpHeader.CONTENT_TYPE, "application/json")
@@ -112,10 +156,21 @@ internal abstract class BaseService(
         return builder
     }
 
+    /**
+     * Builds the full URL for the request by appending the given path to the base URL.
+     *
+     * @param path The path to append to the base URL.
+     * @return The full URL as a String.
+     */
     private fun buildUrl(path: String): String {
         return "$baseUrl/$path"
     }
 
+    /**
+     * Extension function to deserialize a JSON string into an object of the specified type.
+     *
+     * @return The deserialized object of type R.
+     */
     protected inline fun <reified R : Any> String.serialize() =
         decoderJson.decodeFromString<R>(this)
 }

@@ -13,13 +13,23 @@ import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
-import com.apptank.horus.client.extensions.log
 
+/**
+ * Abstract class that provides helper methods for interacting with an SQLite database.
+ *
+ * @property driver The SQL driver used to execute queries.
+ * @property databaseName The name of the database.
+ */
 abstract class SQLiteHelper(
     driver: SqlDriver,
     private val databaseName: String
 ) : TransacterImpl(driver) {
 
+    /**
+     * Retrieves the names of all tables in the database.
+     *
+     * @return A list of table names.
+     */
     fun getTablesNames(): List<String> {
 
         if (CACHE_TABLES[databaseName]?.isNotEmpty() == true) {
@@ -42,6 +52,12 @@ abstract class SQLiteHelper(
         }
     }
 
+    /**
+     * Retrieves the columns of a specified table.
+     *
+     * @param tableName The name of the table.
+     * @return A list of columns in the table.
+     */
     fun getColumns(tableName: String): List<Column> {
 
         if (CACHE_COLUMN_NAMES[databaseName]?.contains(tableName) == true) {
@@ -61,9 +77,14 @@ abstract class SQLiteHelper(
         }
     }
 
-
+    /**
+     * Executes a raw SQL query and maps the result using the provided mapper function.
+     *
+     * @param query The SQL query to execute.
+     * @param mapper A function that maps the cursor to a result of type [T].
+     * @return A list of mapped results.
+     */
     protected fun <T> rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
-
         return driver.executeQuery(null, query, {
             val resultList = mutableListOf<T>()
             while (it.next().value) {
@@ -75,8 +96,14 @@ abstract class SQLiteHelper(
         }, 0).value
     }
 
+    /**
+     * Executes a query and maps the result to a list of [Cursor] objects using the provided mapper function.
+     *
+     * @param query The SQL query to execute.
+     * @param mapper A function that maps the cursor to a result of type [T].
+     * @return A list of mapped results.
+     */
     protected fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
-
         val tableName = getTableName(query)
 
         return driver.executeQuery(null, query, {
@@ -90,7 +117,12 @@ abstract class SQLiteHelper(
         }, 0).value
     }
 
-
+    /**
+     * Inserts data into a specified table, throwing an exception if the insertion fails.
+     *
+     * @param table The name of the table.
+     * @param values The data to insert.
+     */
     protected fun insertOrThrow(table: String, values: DataMap) {
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
@@ -99,6 +131,14 @@ abstract class SQLiteHelper(
         executeInsertOrThrow(query)
     }
 
+    /**
+     * Updates records in a specified table with given values and conditions.
+     *
+     * @param table The name of the table.
+     * @param values The values to update.
+     * @param where The SQL WHERE clause.
+     * @return The number of rows affected.
+     */
     protected fun update(table: String, values: DataMap, where: String): Long {
         val setValues =
             values.entries.joinToString(", ") { (key, value) -> "$key = ${value?.prepareSQLValueAsString()}" }
@@ -107,6 +147,13 @@ abstract class SQLiteHelper(
         return executeUpdate(query)
     }
 
+    /**
+     * Deletes records from a specified table based on conditions.
+     *
+     * @param table The name of the table.
+     * @param where The SQL WHERE clause.
+     * @return The number of rows affected.
+     */
     protected fun delete(table: String, where: String): Long {
         val query = "DELETE FROM $table WHERE $where;"
         info("Delete query: $query")
@@ -122,14 +169,11 @@ abstract class SQLiteHelper(
     }
 
     private fun buildCursorValues(tableName: String, cursor: SqlCursor): List<Cursor> {
-
         val columns = getColumns(tableName)
         val cursors = mutableListOf<Cursor>()
         var index = 0
         while (cursor.next().value) {
-
             val cursorValues = mutableListOf<CursorValue<*>>()
-
             columns.forEach { column ->
                 cursorValues.add(
                     when (column.type) {
@@ -162,13 +206,12 @@ abstract class SQLiteHelper(
         return driver.execute(null, query, 0).value
     }
 
-
     /**
-     * Builds a SQL WHERE clause from conditions and an operator.
+     * Builds a SQL WHERE clause from conditions and a logical operator.
      *
      * @param conditions The list of conditions.
      * @param operator The logical operator to combine conditions (AND/OR).
-     * @return A pair consisting of the WHERE clause and the list of arguments.
+     * @return The SQL WHERE clause.
      */
     protected fun buildWhereEvaluation(
         conditions: List<SQL.WhereCondition>,
@@ -180,6 +223,11 @@ abstract class SQLiteHelper(
         ).trim()
     }
 
+    /**
+     * Converts a list of [SQL.ColumnValue] to a [DataMap].
+     *
+     * @return A map of column names to values.
+     */
     protected fun List<SQL.ColumnValue>.prepareMap(): DataMap {
         return associate { it.column to it.value }
     }
@@ -190,11 +238,12 @@ abstract class SQLiteHelper(
         private var CACHE_COLUMN_NAMES =
             mutableMapOf<String, MutableMap<String, List<Column>>>()
 
+        /**
+         * Clears the cached tables and column names.
+         */
         fun flushCache() {
             CACHE_TABLES = mutableMapOf()
             CACHE_COLUMN_NAMES = mutableMapOf()
         }
     }
-
-
 }

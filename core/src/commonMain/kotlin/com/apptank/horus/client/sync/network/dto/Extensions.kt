@@ -9,8 +9,20 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 
+/**
+ * Extension function to determine if the string represents a relation.
+ *
+ * @return True if the string starts with an underscore ("_"), otherwise false.
+ */
 fun String.isRelation() = this.startsWith("_")
 
+/**
+ * Converts a [SyncDTO.Response.Entity] to a [Horus.Entity].
+ *
+ * @return The [Horus.Entity] representation of the response entity.
+ *
+ * @throws IllegalArgumentException if the entity name is null.
+ */
 fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
 
     val relations =
@@ -19,7 +31,7 @@ fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
         }?.associate { it.first.substring(1) to it.second.toListEntityData() }
 
     return Horus.Entity(
-        entity ?: throw IllegalArgumentException(),
+        entity ?: throw IllegalArgumentException("Entity name is null"),
         data?.filterNot { it.key.isRelation() }?.mapNotNull { item ->
             item.value?.let { mapAttributeValue(item.key, item.value) }
         } ?: emptyList(),
@@ -27,8 +39,22 @@ fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
     )
 }
 
+/**
+ * Converts a list of [SyncDTO.Response.Entity] to a list of [Horus.Entity].
+ *
+ * @return The list of [Horus.Entity] representations.
+ */
 fun List<SyncDTO.Response.Entity>.toListEntityData() = this.map { it.toEntityData() }
 
+/**
+ * Maps attribute name and value to a [Horus.Attribute].
+ *
+ * @param name The name of the attribute.
+ * @param value The value of the attribute.
+ * @return The [Horus.Attribute] corresponding to the given name and value.
+ *
+ * @throws IllegalArgumentException if the value type is not supported.
+ */
 private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
 
     return Horus.Attribute(
@@ -43,6 +69,11 @@ private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
     )
 }
 
+/**
+ * Converts an [ArrayList] of [LinkedHashMap] representing entities to a list of [SyncDTO.Response.Entity].
+ *
+ * @return The list of [SyncDTO.Response.Entity] representations.
+ */
 private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<SyncDTO.Response.Entity> {
     return this.map {
         SyncDTO.Response.Entity().apply {
@@ -54,7 +85,11 @@ private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<S
     }
 }
 
-
+/**
+ * Converts a [SyncControl.Action] to a [SyncDTO.Request.SyncActionRequest].
+ *
+ * @return The [SyncDTO.Request.SyncActionRequest] representation of the action.
+ */
 fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
     return SyncDTO.Request.SyncActionRequest(
         action = this.action.name,
@@ -64,6 +99,13 @@ fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
     )
 }
 
+/**
+ * Converts a [SyncDTO.Response.SyncAction] to a [SyncControl.Action].
+ *
+ * @return The [SyncControl.Action] representation of the sync action response.
+ *
+ * @throws IllegalArgumentException if the entity or action timestamp is null.
+ */
 fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
     return SyncControl.Action(
         id = 0,
@@ -77,19 +119,32 @@ fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
     )
 }
 
-
+/**
+ * Converts a [SyncDTO.Response.EntityIdHash] to an [InternalModel.EntityIdHash].
+ *
+ * @return The [InternalModel.EntityIdHash] representation.
+ *
+ * @throws IllegalArgumentException if the ID or hash is null.
+ */
 fun SyncDTO.Response.EntityIdHash.toInternalModel(): InternalModel.EntityIdHash {
     return InternalModel.EntityIdHash(
-        id ?: throw IllegalArgumentException("Entity is null"),
+        id ?: throw IllegalArgumentException("Entity ID is null"),
         hash ?: throw IllegalArgumentException("Hash is null")
     )
 }
 
+/**
+ * Converts a [SyncDTO.Response.EntityHash] to an [InternalModel.EntityHashValidation].
+ *
+ * @return The [InternalModel.EntityHashValidation] representation.
+ *
+ * @throws IllegalArgumentException if the entity or hash values are null.
+ */
 fun SyncDTO.Response.EntityHash.toInternalModel(): InternalModel.EntityHashValidation {
     return InternalModel.EntityHashValidation(
         entity ?: throw IllegalArgumentException("Entity is null"),
-        hashingValidation?.expected ?: throw IllegalArgumentException("Hash is null"),
-        hashingValidation?.obtained ?: throw IllegalArgumentException("Hash is null"),
-        hashingValidation?.matched ?: throw IllegalArgumentException("Matched is null")
+        hashingValidation?.expected ?: throw IllegalArgumentException("Expected hash is null"),
+        hashingValidation?.obtained ?: throw IllegalArgumentException("Obtained hash is null"),
+        hashingValidation?.matched ?: throw IllegalArgumentException("Matched status is null")
     )
 }

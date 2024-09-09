@@ -5,10 +5,19 @@ import com.apptank.horus.client.migration.domain.AttributeType
 import com.apptank.horus.client.migration.domain.Constraint
 import com.apptank.horus.client.migration.domain.ConstraintType
 
+/**
+ * This class represents an attribute that can be converted into a SQL column definition.
+ *
+ * @year 2024
+ * @author John Ospina
+ */
+
 fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): String {
 
+    // Create a mutable list to hold any constraints
     val constraints = mutableListOf<Constraint>()
 
+    // Start building the SQL column definition
     var sql = this.name + " " + when (this.type) {
         AttributeType.PrimaryKeyInteger -> "INTEGER PRIMARY KEY"
         AttributeType.PrimaryKeyString -> "TEXT PRIMARY KEY"
@@ -25,11 +34,12 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         else -> throw IllegalArgumentException("Attribute type ${this.type} not defined")
     }
 
+    // Add NOT NULL constraint if the attribute is not nullable
     if (!isNullable) {
         sql += " NOT NULL"
     }
 
-    // Apply constraints
+    // Apply constraints such as foreign key relationships
     if (linkedEntity?.isNotBlank() == true) {
         constraints.add(
             Constraint(
@@ -39,7 +49,9 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         )
     }
 
+    // Execute the applyConstraints function with the list of constraints
     applyConstraints(constraints)
 
+    // Return the final SQL column definition
     return sql
 }

@@ -66,7 +66,7 @@ interface IOperationDatabaseHelper {
         table: String,
         conditions: List<SQL.WhereCondition>,
         operator: SQL.LogicOperator = SQL.LogicOperator.AND
-    ): LocalDatabase.OperationResult
+    ): DatabaseOperation.Result
 
     /**
      * Executes a query using the provided QueryBuilder and returns the results as a list of maps.

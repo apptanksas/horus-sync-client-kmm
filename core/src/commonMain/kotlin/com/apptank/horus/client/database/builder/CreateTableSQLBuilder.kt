@@ -5,7 +5,26 @@ import com.apptank.horus.client.migration.domain.Attribute
 
 
 /**
- * Builder class for creating SQL statements to create database tables.
+ * A builder class for constructing SQL `CREATE TABLE` statements.
+ *
+ * This class provides a fluent API for building SQL statements to create a table with specified columns and constraints.
+ *
+ * Example usage:
+ * ```
+ * val sql = CreateTableSQLBuilder()
+ *     .setTableName("users")
+ *     .addAttribute(Attribute("id", "INTEGER PRIMARY KEY AUTOINCREMENT"))
+ *     .addAttribute(Attribute("name", "TEXT NOT NULL"))
+ *     .build()
+ * ```
+ *
+ * This example will produce the following SQL statement:
+ * ```
+ * CREATE TABLE IF NOT EXISTS users (
+ *     id INTEGER PRIMARY KEY AUTOINCREMENT,
+ *     name TEXT NOT NULL
+ * )
+ * ```
  */
 class CreateTableSQLBuilder {
 
@@ -13,9 +32,10 @@ class CreateTableSQLBuilder {
     private var attributes = mutableListOf<Attribute>()
 
     /**
-     * Set the name of the table.
+     * Sets the name of the table to create.
+     *
      * @param tableName The name of the table.
-     * @return Instance of CreateTableSQLBuilder for method chaining.
+     * @return The current instance of [CreateTableSQLBuilder] for method chaining.
      */
     fun setTableName(tableName: String): CreateTableSQLBuilder {
         this.tableName = tableName
@@ -23,9 +43,10 @@ class CreateTableSQLBuilder {
     }
 
     /**
-     * Add an attribute to the table.
-     * @param attribute The attribute to be added to the table.
-     * @return Instance of CreateTableSQLBuilder for method chaining.
+     * Adds an attribute (column) to the table.
+     *
+     * @param attribute The attribute representing a column to be added to the table.
+     * @return The current instance of [CreateTableSQLBuilder] for method chaining.
      */
     fun addAttribute(attribute: Attribute): CreateTableSQLBuilder {
         attributes.add(attribute)
@@ -33,9 +54,10 @@ class CreateTableSQLBuilder {
     }
 
     /**
-     * Build the SQL statement to create the table.
-     * @return SQL statement to create the table.
-     * @throws IllegalArgumentException if tableName is null.
+     * Builds the SQL `CREATE TABLE` statement.
+     *
+     * @return The constructed SQL statement as a string.
+     * @throws IllegalArgumentException if tableName is missing.
      */
     fun build(): String {
         tableName ?: throw IllegalArgumentException("TableName is missing")
@@ -51,5 +73,4 @@ class CreateTableSQLBuilder {
         }
         return "$sqlOutput)"
     }
-
 }

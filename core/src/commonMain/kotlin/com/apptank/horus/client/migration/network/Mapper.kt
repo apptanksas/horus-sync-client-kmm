@@ -7,6 +7,16 @@ import com.apptank.horus.client.migration.domain.EntityType
 import com.apptank.horus.client.migration.exception.InvalidDataSchemeException
 import com.apptank.horus.client.migration.network.dto.MigrationDTO
 
+/**
+ * Converts a `MigrationDTO.Response.EntityScheme` to an `EntityScheme`.
+ *
+ * This function maps the properties of `MigrationDTO.Response.EntityScheme` to an `EntityScheme` object,
+ * converting attributes and related entities to their corresponding types. It throws an `InvalidDataSchemeException`
+ * if essential properties are missing.
+ *
+ * @return An `EntityScheme` object representing the converted data.
+ * @throws InvalidDataSchemeException If the entity name is null.
+ */
 fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
     return EntityScheme(
         this.entity ?: throw InvalidDataSchemeException(),
@@ -17,7 +27,15 @@ fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
     )
 }
 
-
+/**
+ * Converts a `MigrationDTO.AttributeDTO` to an `Attribute`.
+ *
+ * This function maps the properties of `MigrationDTO.AttributeDTO` to an `Attribute` object, converting the attribute type
+ * and handling optional properties. It throws an `InvalidDataSchemeException` if the attribute name is null.
+ *
+ * @return An `Attribute` object representing the converted data.
+ * @throws InvalidDataSchemeException If the attribute name is null.
+ */
 fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
     return Attribute(
         this.name ?: throw InvalidDataSchemeException(),
@@ -30,7 +48,13 @@ fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
 }
 
 /**
- * Map attribute type
+ * Maps a string representation of an attribute type to the corresponding `AttributeType`.
+ *
+ * This function converts a string value (case-insensitive) to an `AttributeType` enum. It throws an `InvalidDataSchemeException`
+ * if the attribute type is not defined.
+ *
+ * @return The corresponding `AttributeType` enum value.
+ * @throws InvalidDataSchemeException If the attribute type string is not recognized.
  */
 private fun String?.toAttributeType(): AttributeType {
     return when (this?.lowercase()) {

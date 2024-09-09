@@ -20,6 +20,21 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
+/**
+ * Manages the synchronization of data with a remote server, handling network changes, and retrying failed attempts.
+ *
+ * This class is responsible for monitoring network availability, attempting data synchronization when network
+ * connectivity is restored, and managing retries for synchronization operations. It utilizes a background coroutine
+ * dispatcher for performing network and database operations.
+ *
+ * @param netWorkValidator An instance of `INetworkValidator` to monitor network availability.
+ * @param syncControlDatabaseHelper An instance of `ISyncControlDatabaseHelper` for accessing and updating the local sync control database.
+ * @param synchronizationService An instance of `ISynchronizationService` for posting queued actions to the remote server.
+ * @param event An instance of `EventBus` for emitting synchronization events.
+ * @param dispatcher A coroutine dispatcher for background operations (default is `Dispatchers.IO`).
+ * @param maxAttempts The maximum number of retry attempts for synchronization operations (default is 3).
+ */
 class RemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
@@ -30,11 +45,18 @@ class RemoteSynchronizatorManager(
 ) {
 
     init {
+        // Registers a callback to attempt synchronization when network changes are detected.
         netWorkValidator.onNetworkChange {
             trySynchronizeData()
         }
     }
 
+    /**
+     * Attempts to synchronize pending data with the remote server.
+     *
+     * This method checks for network availability and initiates synchronization if there are pending actions in the local
+     * sync control database. It handles retry logic and error reporting for synchronization operations.
+     */
     fun trySynchronizeData() {
 
         if (!netWorkValidator.isNetworkAvailable()) {
@@ -58,7 +80,7 @@ class RemoteSynchronizatorManager(
                 },
                 onFailure = {
                     logException("Error trying to sync actions")
-                    event.post(
+                    event.emit(
                         EventType.SYNC_PUSH_FAILED,
                         Event(mapOf<String, Any>("exception" to it))
                     )
@@ -66,28 +88,45 @@ class RemoteSynchronizatorManager(
         }.invokeOnCompletion {
             it?.let {
                 logException("Error trying to sync actions", it)
-                event.post(EventType.SYNC_PUSH_FAILED, Event(mapOf<String, Any>("exception" to it)))
+                event.emit(EventType.SYNC_PUSH_FAILED, Event(mapOf<String, Any>("exception" to it)))
             }
         }
     }
 
-
+    /**
+     * Updates the status of synchronized actions in the local sync control database.
+     *
+     * This method marks actions as completed in the database and emits a success or failure event based on the result.
+     *
+     * @param pendingActions A list of actions that were attempted to be synchronized.
+     */
     private suspend fun updateActionsAsCompleted(pendingActions: List<SyncControl.Action>) {
 
         val actionsId = pendingActions.map { it.id }
-        val countInsertedActions = pendingActions.filter { it.action == SyncControl.ActionType.INSERT }.size
-        val countUpdatedActions = pendingActions.filter { it.action == SyncControl.ActionType.UPDATE }.size
-        val countDeletedActions = pendingActions.filter { it.action == SyncControl.ActionType.DELETE }.size
+        val countInsertedActions =
+            pendingActions.filter { it.action == SyncControl.ActionType.INSERT }.size
+        val countUpdatedActions =
+            pendingActions.filter { it.action == SyncControl.ActionType.UPDATE }.size
+        val countDeletedActions =
+            pendingActions.filter { it.action == SyncControl.ActionType.DELETE }.size
 
         if (attemptOperation { syncControlDatabaseHelper.completeActions(actionsId) }) {
             log("[ActionSync] ${actionsId.size} actions were synced. [Inserts: $countInsertedActions, Updates: $countUpdatedActions, Deletes: $countDeletedActions]")
-            event.post(EventType.SYNC_PUSH_SUCCESS)
+            event.emit(EventType.SYNC_PUSH_SUCCESS)
             return
         }
 
-        event.post(EventType.SYNC_PUSH_FAILED)
+        event.emit(EventType.SYNC_PUSH_FAILED)
     }
 
+    /**
+     * Attempts to execute an operation with retry logic.
+     *
+     * This method retries the operation up to a maximum number of attempts if it fails. It includes a delay between retries.
+     *
+     * @param callback A suspending function that performs the operation.
+     * @return `true` if the operation was successful, `false` otherwise.
+     */
     private suspend fun attemptOperation(callback: () -> Boolean): Boolean {
         var attempts = 0
         var isSuccess = false
@@ -102,6 +141,14 @@ class RemoteSynchronizatorManager(
         return isSuccess
     }
 
+    /**
+     * Attempts to execute an operation that returns a `DataResult` with retry logic.
+     *
+     * This method retries the operation up to a maximum number of attempts if it returns a failure result. It includes a delay between retries.
+     *
+     * @param callback A suspending function that performs the operation and returns a `DataResult`.
+     * @return The result of the operation, which may be a success or failure.
+     */
     private suspend fun <T> attemptOperationResult(
         callback: suspend () -> DataResult<T>
     ): DataResult<T> {
