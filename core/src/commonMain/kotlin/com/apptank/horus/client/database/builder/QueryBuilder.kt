@@ -90,6 +90,10 @@ abstract class QueryBuilder {
             sentences += conditionGrouped
         }
 
+        if (sentences.isBlank()) {
+            return ""
+        }
+
         return " WHERE ${sentences.trim()}"
     }
 

@@ -4,13 +4,19 @@ import android.app.Activity
 import android.content.Context
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.auth.HorusAuthentication
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.base.DataResult
+import com.apptank.horus.client.base.fold
+import com.apptank.horus.client.data.DataChangeListener
+import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.database.HorusDatabase
+import com.apptank.horus.client.database.SQL
+import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -74,6 +80,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         SynchronizeDataFacade.clear()
         HorusContainer.clear()
         driver.close()
+        SynchronizeDataFacade.removeAllDataChangeListeners()
     }
 
     @Test
@@ -102,12 +109,41 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     @Test
     fun `multiples tests associated`() = prepareEnvironment {
+
+        var invokedInsert = false
+        var invokedUpdate = false
+        var invokedDelete = false
+
+        SynchronizeDataFacade.addDataChangeListener(object : DataChangeListener {
+
+            override fun onInsert(entity: String, id: String, data: DataMap) {
+                invokedInsert = true
+            }
+
+            override fun onUpdate(entity: String, id: String, data: DataMap) {
+                invokedUpdate = true
+            }
+
+            override fun onDelete(entity: String, id: String) {
+                invokedDelete = true
+            }
+        })
+
         validateInsertTest()
         validateInsertAndUpdateIsSuccess()
         validateInsertAndDeleteIsSuccess()
+        validateGetEntityByIdReturnEntity()
+        validateGetEntityByIdReturnNull()
+        validateGetEntities()
+        validateGetEntitiesWithWhereConditions()
+        validateGetEntitiesWithLimitAndOffset()
+
+        assert(invokedInsert)
+        assert(invokedUpdate)
+        assert(invokedDelete)
     }
 
-    private fun validateInsertTest() {
+    private fun validateInsertTest() = prepareInternalTest {
         val result = SynchronizeDataFacade.insert(
             "farms",
             createDataInsertRecord()
@@ -115,7 +151,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         assert(result is DataResult.Success)
     }
 
-    private fun validateInsertAndUpdateIsSuccess(){
+    private fun validateInsertAndUpdateIsSuccess() = prepareInternalTest {
         // Given
         val nameExpected = "Farm " + uuid()
         val resultInsert = SynchronizeDataFacade.insert(
@@ -149,7 +185,7 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         }
     }
 
-   private fun validateInsertAndDeleteIsSuccess() {
+    private fun validateInsertAndDeleteIsSuccess() = prepareInternalTest {
         // Given
         val resultInsert = SynchronizeDataFacade.insert(
             "farms",
@@ -157,7 +193,6 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         )
 
         // When
-
         val resultDelete = if (resultInsert is DataResult.Success) {
             SynchronizeDataFacade.deleteEntity("farms", resultInsert.data)
         } else {
@@ -177,13 +212,119 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         }
     }
 
+    private fun validateGetEntityByIdReturnEntity() = prepareInternalTest {
+        // Given
+        val resultInsert = SynchronizeDataFacade.insert(
+            "farms",
+            createDataInsertRecord()
+        )
+
+        // When
+        val entity =
+            SynchronizeDataFacade.getEntityById("farms", (resultInsert as DataResult.Success).data)
+
+        // Then
+        Assert.assertNotNull(entity)
+        Assert.assertTrue(entity?.getString("name")?.isNotEmpty() ?: false)
+    }
+
+    private suspend fun validateGetEntities() = prepareInternalTest {
+        // Given
+        val attributesList = generateArray {
+            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+        }
+
+        attributesList.forEach {
+            SynchronizeDataFacade.insert("farms", *it.toTypedArray())
+        }
+
+        // When
+        val result =
+            SynchronizeDataFacade.getEntities("farms")
+
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(attributesList.size, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateGetEntitiesWithWhereConditions() = prepareInternalTest {
+        // Given
+        val attributesList = createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+
+        val insertResult = SynchronizeDataFacade.insert("farms", *attributesList.toTypedArray())
+
+        // When
+
+        val entityId = getEntityId(insertResult)
+        val result =
+            SynchronizeDataFacade.getEntities(
+                "farms",
+                listOf(SQL.WhereCondition(SQL.ColumnValue("id", entityId)))
+            )
+
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(1, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateGetEntitiesWithLimitAndOffset() = prepareInternalTest {
+
+        val attributesList = List(20) { 0 }.map {
+            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+        }
+
+        attributesList.forEach {
+            SynchronizeDataFacade.insert("farms", *it.toTypedArray())
+        }
+
+        // When
+        val result =
+            SynchronizeDataFacade.getEntities(
+                "farms",
+                limit = 10,
+                offset = 5
+            )
+
+        // Then
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(10, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private fun validateGetEntityByIdReturnNull() {
+        // When
+        val entity =
+            SynchronizeDataFacade.getEntityById("farms", uuid())
+
+        // Then
+        Assert.assertNull(entity)
+    }
+
     private fun createDataInsertRecord() = mapOf(
         "mv_area_total" to uuid(),
         "mv_area_cow_farming" to uuid(),
         "measure_milk" to "kg",
         "measure_weight" to "kg",
         "type" to "1",
-        "name" to "Farm 1",
+        "name" to "Farm " + uuid(),
         "destination" to "1"
     )
 
@@ -195,6 +336,11 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         block()
     }
 
+    private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
+        driver.execute("DELETE FROM farms")
+        block()
+    }
+
     private fun migrateDatabase() {
         val entitiesSchema =
             buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
@@ -203,6 +349,10 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
         driver.also {
             Assert.assertTrue("table farms not exists", it.getTablesNames().contains("farms"))
         }
+    }
+
+    private fun getEntityId(insertResult: DataResult<String>): String {
+        return (insertResult as DataResult.Success).data
     }
 
 

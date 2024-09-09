@@ -322,7 +322,7 @@ object SynchronizeDataFacade {
 
     @OptIn(ExperimentalUuidApi::class)
     private fun generateUUID(): String {
-        return Uuid.random().toByteArray().toString()
+        return Uuid.random().toString()
     }
 
     internal fun clear() {
