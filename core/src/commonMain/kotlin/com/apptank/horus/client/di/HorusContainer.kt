@@ -108,4 +108,19 @@ object HorusContainer {
             ?: throw IllegalStateException("NetworkValidator not set")
     }
 
+    // ------------------------------------------------------------------------
+    // Clear
+    // ------------------------------------------------------------------------
+
+    internal fun clear() {
+        settings = null
+        databaseFactory = null
+        baseUrl = null
+        migrationService = null
+        synchronizationService = null
+        syncControlDatabaseHelper = null
+        operationDatabaseHelper = null
+        networkValidator = null
+    }
+
 }

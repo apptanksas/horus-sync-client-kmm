@@ -22,14 +22,18 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.test.fail
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     private lateinit var databaseFactory: IDatabaseDriverFactory
@@ -67,8 +71,9 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
 
     @After
     fun tearDown() {
-        driver.close()
         SynchronizeDataFacade.clear()
+        HorusContainer.clear()
+        driver.close()
     }
 
     @Test
@@ -96,23 +101,93 @@ class AndroidSynchronizeDataFacadeTest : TestCase() {
     }
 
     @Test
-    fun `validate insert is success`() = prepareEnvironment {
+    fun `multiples tests associated`() = prepareEnvironment {
+        validateInsertTest()
+        validateInsertAndUpdateIsSuccess()
+        validateInsertAndDeleteIsSuccess()
+    }
+
+    private fun validateInsertTest() {
         val result = SynchronizeDataFacade.insert(
             "farms",
-            mapOf(
-                "mv_area_total" to uuid(),
-                "mv_area_cow_farming" to uuid(),
-                "measure_milk" to "kg",
-                "measure_weight" to "kg",
-                "type" to "1",
-                "name" to "Farm 1",
-                "destination" to "1"
-            )
+            createDataInsertRecord()
         )
         assert(result is DataResult.Success)
     }
 
-    private fun prepareEnvironment(block: () -> Unit) = runBlocking {
+    private fun validateInsertAndUpdateIsSuccess(){
+        // Given
+        val nameExpected = "Farm " + uuid()
+        val resultInsert = SynchronizeDataFacade.insert(
+            "farms",
+            createDataInsertRecord()
+        )
+
+        // When
+
+        val resultUpdate = if (resultInsert is DataResult.Success) {
+            SynchronizeDataFacade.updateEntity(
+                "farms",
+                resultInsert.data,
+                mapOf("name" to nameExpected)
+            )
+        } else {
+            DataResult.Failure(Exception("Error"))
+        }
+
+
+        // Then
+        assert(resultInsert is DataResult.Success)
+        assert(resultUpdate is DataResult.Success)
+
+        if (resultInsert is DataResult.Success) {
+            assert(driver.rawQuery("SELECT * FROM farms WHERE id= '" + resultInsert.data + "' AND name = '$nameExpected'") {
+                it.getString(0)
+            }.isNotEmpty())
+        } else {
+            fail()
+        }
+    }
+
+   private fun validateInsertAndDeleteIsSuccess() {
+        // Given
+        val resultInsert = SynchronizeDataFacade.insert(
+            "farms",
+            createDataInsertRecord()
+        )
+
+        // When
+
+        val resultDelete = if (resultInsert is DataResult.Success) {
+            SynchronizeDataFacade.deleteEntity("farms", resultInsert.data)
+        } else {
+            DataResult.Failure(Exception("Error"))
+        }
+
+        // Then
+        assert(resultInsert is DataResult.Success)
+        assert(resultDelete is DataResult.Success)
+
+        if (resultInsert is DataResult.Success) {
+            assert(driver.rawQuery("SELECT * FROM farms WHERE id= '" + resultInsert.data + "'") {
+                it.getString(0)
+            }.isEmpty())
+        } else {
+            fail()
+        }
+    }
+
+    private fun createDataInsertRecord() = mapOf(
+        "mv_area_total" to uuid(),
+        "mv_area_cow_farming" to uuid(),
+        "measure_milk" to "kg",
+        "measure_weight" to "kg",
+        "type" to "1",
+        "name" to "Farm 1",
+        "destination" to "1"
+    )
+
+    private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {
         SynchronizeDataFacade
         EventBus.post(EventType.VALIDATION_COMPLETED)
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)

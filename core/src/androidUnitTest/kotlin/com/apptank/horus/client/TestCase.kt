@@ -86,9 +86,7 @@ abstract class TestCase {
                 }
             }
             QueryResult.Value(resultList)
-        }, 0).value.also {
-            // close()
-        }
+        }, 0).value
     }
 
     protected fun <T> generateArray(size: Int = 10, creator: () -> T): List<T> {

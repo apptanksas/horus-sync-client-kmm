@@ -114,11 +114,6 @@ abstract class SQLiteHelper(
     }
 
     private fun executeInsertOrThrow(query: String) {
-
-        getTablesNames().also {
-            log("Tables: ${it.size}")
-        }
-
         driver.handle {
             if (execute(null, query, 0).value == 0L) {
                 throw IllegalStateException("Insertion failed")

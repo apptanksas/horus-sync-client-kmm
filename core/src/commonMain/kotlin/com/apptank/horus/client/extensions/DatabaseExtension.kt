@@ -28,9 +28,7 @@ fun SqlDriver.execute(query: String) {
 
 
 inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
-    return block(this).also {
-       //close()
-    }
+    return block(this)
 }
 
 fun SqlCursor.getRequireInt(index: Int): Int {

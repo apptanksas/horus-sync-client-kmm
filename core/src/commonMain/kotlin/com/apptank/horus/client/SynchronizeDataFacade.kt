@@ -207,7 +207,6 @@ object SynchronizeDataFacade {
         }
     }
 
-
     suspend fun getEntities(
         entity: String,
         conditions: List<SQL.WhereCondition> = listOf(),
