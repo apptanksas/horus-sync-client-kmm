@@ -1,6 +1,6 @@
 package com.apptank.horus.client.extensions
 
-import com.apptank.horus.client.config.TAG_LOGGING
+import com.apptank.horus.client.di.HorusContainer
 
 /**
  * Logs a message with a logging tag.
@@ -10,7 +10,7 @@ import com.apptank.horus.client.config.TAG_LOGGING
  * @param message The message to be logged.
  */
 fun log(message: String) {
-    println("[Log:$TAG_LOGGING] $message\n")
+    HorusContainer.getLogger()?.log(message)
 }
 
 /**
@@ -21,7 +21,18 @@ fun log(message: String) {
  * @param message The informational message to be logged.
  */
 fun info(message: String) {
-    println("[Info:$TAG_LOGGING] $message\n")
+    HorusContainer.getLogger()?.info(message)
+}
+
+/**
+ * Logs a warning message with a logging tag.
+ *
+ * This function prints the message to the standard output with a "Warn" prefix and the specified tag.
+ *
+ * @param message The warning message to be logged.
+ */
+fun warn(message: String) {
+    HorusContainer.getLogger()?.warn(message)
 }
 
 
@@ -35,6 +46,5 @@ fun info(message: String) {
  * @param throwable The exception whose stack trace should be printed (optional).
  */
 fun logException(message: String, throwable: Throwable? = null) {
-    println("[Exception:$TAG_LOGGING] $message\n")
-    throwable?.printStackTrace()
+    HorusContainer.getLogger()?.error(message, throwable)
 }

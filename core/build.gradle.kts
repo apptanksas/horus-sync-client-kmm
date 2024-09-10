@@ -84,7 +84,7 @@ android {
 }
 
 group = "com.apptank.horus.client"
-version = "0.0.0"
+version = "0.1.0"
 
 dependencies {
     // Configuration mockative

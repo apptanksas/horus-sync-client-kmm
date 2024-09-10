@@ -21,6 +21,7 @@ import com.apptank.horus.client.extensions.isTrue
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.hashing.AttributeHasher
 import com.apptank.horus.client.di.INetworkValidator
+import com.apptank.horus.client.extensions.warn
 import com.apptank.horus.client.sync.network.dto.toDomain
 import com.apptank.horus.client.sync.network.dto.toEntityData
 import com.apptank.horus.client.sync.network.dto.toInternalModel
@@ -64,15 +65,20 @@ internal class SynchronizatorManager(
      */
     suspend fun start(onStatus: (SynchronizationStatus, isCompleted: Boolean) -> Unit) {
 
+        if (HorusAuthentication.isNotUserAuthenticated()) {
+            warn("[SynchronizatorManager] User is not authenticated")
+            return onStatus(SynchronizationStatus.IDLE, true)
+        }
+
         // Validate if there is network available
         if (!netWorkValidator.isNetworkAvailable()) {
-            log("[DataValidatorManager] No network available")
+            log("[SynchronizatorManager] No network available")
             return onStatus(SynchronizationStatus.IDLE, true)
         }
 
         // Validate if there are pending actions to sync with the server
         if (syncControlDatabaseHelper.getPendingActions().isNotEmpty()) {
-            log("[DataValidatorManager] There are pending actions")
+            log("[SynchronizatorManager] There are pending actions")
             return onStatus(SynchronizationStatus.IDLE, true)
         }
 
@@ -83,7 +89,7 @@ internal class SynchronizatorManager(
             existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
 
         if (validateIsExistsDataToSync.isTrue()) {
-            log("[DataValidatorManager] There are new data to sync with the server")
+            log("[SynchronizatorManager] There are new data to sync with the server")
 
             return onStatus(
                 synchronizeData().evaluate(
@@ -104,7 +110,7 @@ internal class SynchronizatorManager(
             val entity = it.first
             val isHashCorrect = it.second
             // First -> Entity name, Second -> Validation result
-            log("[DataValidatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
+            log("[SynchronizatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
 
             if (!isHashCorrect) {
                 corruptedEntities[it.first] = validateEntityDataCorrupted(it.first)
@@ -118,13 +124,13 @@ internal class SynchronizatorManager(
             if (ids.isNotEmpty()) {
                 val resultRestoreCorruptedData = restoreCorruptedData(entity, ids)
                 if (resultRestoreCorruptedData) {
-                    log("[DataValidatorManager][entity:$entity] Corrupted data restored successfully")
+                    log("[SynchronizatorManager][entity:$entity] Corrupted data restored successfully")
                 } else {
-                    log("[DataValidatorManager][entity:$entity] Error restoring corrupted data")
+                    log("[SynchronizatorManager][entity:$entity] Error restoring corrupted data")
                 }
                 resultsCorruptedData.add(resultRestoreCorruptedData)
             } else {
-                log("[DataValidatorManager][entity:$entity] No corrupted data to restore")
+                log("[SynchronizatorManager][entity:$entity] No corrupted data to restore")
             }
         }
 
@@ -161,11 +167,11 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 resultActions.exception.printStackTrace()
-                log("[DataValidatorManager] Error getting queue data")
+                log("[SynchronizatorManager] Error getting queue data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[DataValidatorManager] Not authorized")
+                log("[SynchronizatorManager] Not authorized")
             }
         }
 
@@ -255,7 +261,7 @@ internal class SynchronizatorManager(
             val entityExists = localHash != null
 
             if (entityExists && localHash != it.hash) {
-                log("[DataValidatorManager:compareEntityHashesWithLocalData] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
+                log("[SynchronizatorManager:compareEntityHashesWithLocalData] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
                 ids.add(it.id)
             }
         }
@@ -285,7 +291,7 @@ internal class SynchronizatorManager(
                 )
 
                 if (!result.isSuccess) {
-                    log("[DataValidatorManager] Error deleting corrupted data")
+                    log("[SynchronizatorManager] Error deleting corrupted data")
                     return false
                 }
 
@@ -296,11 +302,11 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 dataEntitiesResponse.exception.printStackTrace()
-                log("[DataValidatorManager] Error restoring corrupted data")
+                log("[SynchronizatorManager] Error restoring corrupted data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[DataValidatorManager] Not authorized")
+                log("[SynchronizatorManager] Not authorized")
             }
         }
 
@@ -319,11 +325,11 @@ internal class SynchronizatorManager(
         val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
 
         if (checkpointDatetime == 0L) {
-            log("[DataValidatorManager] No checkpoint datetime")
+            log("[SynchronizatorManager] No checkpoint datetime")
             return true
         }
 
-        log("[DataValidatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
+        log("[SynchronizatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
 
         val actions = synchronizationService.getQueueActions(checkpointDatetime)
 
@@ -342,10 +348,10 @@ internal class SynchronizatorManager(
                 val result = operationDatabaseHelper.executeOperations(operations)
 
                 val syncControlStatus = if (result) {
-                    log("[DataValidatorManager:synchronizeData] Data synchronized successfully")
+                    log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
                     SyncControl.Status.COMPLETED
                 } else {
-                    log("[DataValidatorManager:synchronizeData] Error synchronizing data")
+                    log("[SynchronizatorManager:synchronizeData] Error synchronizing data")
                     SyncControl.Status.FAILED
                 }
                 syncControlDatabaseHelper.addSyncTypeStatus(
@@ -358,7 +364,7 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 actions.exception.printStackTrace()
-                log("[DataValidatorManager] Error getting queue data")
+                log("[SynchronizatorManager] Error getting queue data")
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
                     SyncControl.Status.FAILED
@@ -367,7 +373,7 @@ internal class SynchronizatorManager(
             }
 
             is DataResult.NotAuthorized -> {
-                log("[DataValidatorManager] Not authorized")
+                log("[SynchronizatorManager] Not authorized")
                 return false
             }
         }
@@ -416,7 +422,7 @@ internal class SynchronizatorManager(
             getEntityById(it.entity, it.getEntityId())?.let { entity ->
                 it.toUpdateRecord(entity)
             } ?: run {
-                log("[DataValidatorManager] Error updating data. [${it.data}]")
+                log("[SynchronizatorManager] Error updating data. [${it.data}]")
                 null
             }
         }
@@ -483,11 +489,11 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 result.exception.printStackTrace()
-                log("[DataValidatorManager:getEntitiesHashes] Error validating entity data")
+                log("[SynchronizatorManager:getEntitiesHashes] Error validating entity data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[DataValidatorManager:getEntitiesHashes] Not authorized")
+                log("[SynchronizatorManager:getEntitiesHashes] Not authorized")
             }
         }
 
@@ -509,11 +515,11 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 result.exception.printStackTrace()
-                log("[DataValidatorManager:getRemoteValidateEntitiesData] Error validating entity data")
+                log("[SynchronizatorManager:getRemoteValidateEntitiesData] Error validating entity data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[DataValidatorManager:getRemoteValidateEntitiesData] Not authorized")
+                log("[SynchronizatorManager:getRemoteValidateEntitiesData] Not authorized")
             }
         }
 

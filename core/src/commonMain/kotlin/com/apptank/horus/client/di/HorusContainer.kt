@@ -40,6 +40,8 @@ object HorusContainer {
 
     private var networkValidator: INetworkValidator? = null
 
+    private var logger: ILogger? = null
+
     // ------------------------------------------------------------------------
     // Setters
     // ------------------------------------------------------------------------
@@ -105,6 +107,16 @@ object HorusContainer {
     fun setupNetworkValidator(networkValidator: INetworkValidator) {
         this.networkValidator = networkValidator
     }
+
+    /**
+     * Sets up the logger.
+     *
+     * @param logger The [ILogger] instance to set up.
+     */
+    fun setupLogger(logger: ILogger) {
+        this.logger = logger
+    }
+
 
     // ------------------------------------------------------------------------
     // Getters
@@ -183,6 +195,20 @@ object HorusContainer {
             ?: throw IllegalStateException("NetworkValidator not set")
     }
 
+    /**
+     * Retrieves the logger.
+     *
+     * @return The [ILogger] instance.
+     */
+    internal fun getLogger(): ILogger? {
+        return logger
+    }
+
+    /**
+     * Create a new instance of remote synchronizator manager.
+     *
+     * @return A new instance of [RemoteSynchronizatorManager].
+     */
     internal fun createRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
         return RemoteSynchronizatorManager(
             getNetworkValidator(),

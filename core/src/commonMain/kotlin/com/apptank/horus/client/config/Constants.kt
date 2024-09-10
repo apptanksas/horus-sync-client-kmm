@@ -18,4 +18,4 @@ internal const val BOOL_TRUE = "1"
 internal const val BOOL_FALSE = "0"
 
 // Tag used for logging messages related to Horus synchronization processes
-internal const val TAG_LOGGING = "HorusSync"
+internal const val TAG_LOGGING = "Horus"

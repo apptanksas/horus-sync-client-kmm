@@ -4,7 +4,7 @@
 
 ```shell  
 ../gradlew publishToMavenLocal
-```  
+```
 
 Ubicacion de las dependencias
 

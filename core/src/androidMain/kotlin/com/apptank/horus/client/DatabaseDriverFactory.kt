@@ -8,7 +8,7 @@ import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.di.IDatabaseDriverFactory
 
-class DatabaseDriverFactory(
+internal class DatabaseDriverFactory(
     context: Context
 ) : IDatabaseDriverFactory {
 

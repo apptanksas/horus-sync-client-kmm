@@ -11,7 +11,7 @@ import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import com.apptank.horus.client.tasks.ControlTaskManager
 
-class ActivitySynchronizeHandlerLifeCycle : ActivityLifecycleCallbacks {
+class HorusSynchronizeHandlerActivityLifeCycle : ActivityLifecycleCallbacks {
 
     private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
 

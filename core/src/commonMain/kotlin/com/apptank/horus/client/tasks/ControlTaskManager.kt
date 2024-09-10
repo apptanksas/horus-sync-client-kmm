@@ -1,9 +1,11 @@
 package com.apptank.horus.client.tasks
 
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
+import com.apptank.horus.client.extensions.warn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +86,12 @@ internal object ControlTaskManager {
      * @param dispatcher The [CoroutineDispatcher] to use for task execution. Defaults to [Dispatchers.IO].
      */
     fun start(dispatcher: CoroutineDispatcher = Dispatchers.IO) {
+
+        if (HorusAuthentication.isNotUserAuthenticated()) {
+            warn("User is not authenticated to start the horus task manager")
+            return
+        }
+
         taskExecutionCounter = 0
 
         CoroutineScope(dispatcher).launch {
@@ -172,6 +180,7 @@ internal object ControlTaskManager {
             is TaskResult.Success -> {
                 executeTask(nextTask, taskResult.data)
             }
+
             is TaskResult.Failure -> {
                 onStatus(Status.FAILED)
             }

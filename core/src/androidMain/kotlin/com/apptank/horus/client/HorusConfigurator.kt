@@ -30,6 +30,7 @@ class HorusConfigurator(
             setupBaseUrl(baseUrl)
             setupDatabaseFactory(DatabaseDriverFactory(context))
             setupNetworkValidator(NetworkValidator(context))
+            setupLogger(AndroidLogger())
         }
     }
 }

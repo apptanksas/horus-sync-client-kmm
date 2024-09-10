@@ -5,7 +5,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import com.apptank.horus.client.di.INetworkValidator
 
-class NetworkValidator(
+internal class NetworkValidator(
     private val context: Context
 ) : INetworkValidator {
 

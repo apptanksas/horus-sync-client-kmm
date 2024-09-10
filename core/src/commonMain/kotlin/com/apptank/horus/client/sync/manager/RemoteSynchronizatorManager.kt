@@ -1,5 +1,6 @@
 package com.apptank.horus.client.sync.manager
 
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.coFold
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
@@ -11,6 +12,7 @@ import com.apptank.horus.client.extensions.info
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.extensions.logException
 import com.apptank.horus.client.di.INetworkValidator
+import com.apptank.horus.client.extensions.warn
 import com.apptank.horus.client.sync.network.dto.toRequest
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import kotlinx.coroutines.CoroutineDispatcher
@@ -58,6 +60,11 @@ internal class RemoteSynchronizatorManager(
      * sync control database. It handles retry logic and error reporting for synchronization operations.
      */
     fun trySynchronizeData() {
+
+        if (HorusAuthentication.isNotUserAuthenticated()) {
+            warn("User is not authenticated")
+            return
+        }
 
         if (!netWorkValidator.isNetworkAvailable()) {
             info("No network available")
