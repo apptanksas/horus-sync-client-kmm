@@ -239,7 +239,8 @@ internal class SyncControlDatabaseHelper(
      * @return A list of entity names.
      */
     override fun getEntityNames(): List<String> {
-        return getTablesNames().filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
+        return getTableEntities().map { it.name }
+            .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
     /**

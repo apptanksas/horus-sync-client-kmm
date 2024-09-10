@@ -5,14 +5,18 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.DataMap
+import com.apptank.horus.client.control.EntitiesTable
+import com.apptank.horus.client.data.InternalModel
+import com.apptank.horus.client.database.builder.SimpleQueryBuilder
+import com.apptank.horus.client.extensions.createSQLInsert
 import com.apptank.horus.client.extensions.getRequireBoolean
 import com.apptank.horus.client.extensions.getRequireDouble
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.extensions.getRequireString
-import com.apptank.horus.client.extensions.notContains
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.notContains
 
 /**
  * Abstract class that provides helper methods for interacting with an SQLite database.
@@ -30,25 +34,47 @@ abstract class SQLiteHelper(
      *
      * @return A list of table names.
      */
-    fun getTablesNames(): List<String> {
+    fun getTableEntities(): List<InternalModel.TableEntity> {
 
         if (CACHE_TABLES[databaseName]?.isNotEmpty() == true) {
             return CACHE_TABLES[databaseName] ?: emptyList()
         }
 
-        val tables = mutableListOf<String>()
+        val tables = mutableListOf<InternalModel.TableEntity>()
 
+        val simpleQuery = SimpleQueryBuilder(EntitiesTable.TABLE_NAME)
+            .build()
+
+        this.driver.handle {
+            // Query tables
+            val result: List<InternalModel.TableEntity> = queryResult(simpleQuery) { cursor ->
+                InternalModel.TableEntity(
+                    cursor.getValue(EntitiesTable.ATTR_NAME),
+                    cursor.getValue(EntitiesTable.ATTR_IS_WRITABLE)
+                )
+            }
+
+            tables.addAll(result)
+        }
+
+        return tables.also {
+            CACHE_TABLES[databaseName] = it
+        }
+    }
+
+    /**
+     * Retrieves the names of all tables in the database.
+     *
+     * @return A list of table names.
+     */
+    fun getTables(): List<String> {
         this.driver.handle {
             // Query tables
             val result: List<String> = rawQuery(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ) { cursor -> cursor.getString(0) }
 
-            tables.addAll(result.filter { TABLES_SYSTEM.notContains(it) })
-        }
-
-        return tables.also {
-            CACHE_TABLES[databaseName] = it
+            return (result.filter { TABLES_SYSTEM.notContains(it) })
         }
     }
 
@@ -124,9 +150,7 @@ abstract class SQLiteHelper(
      * @param values The data to insert.
      */
     protected fun insertOrThrow(table: String, values: DataMap) {
-        val columns = values.keys.joinToString(", ")
-        val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
-        val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
+        val query = driver.createSQLInsert(table, values)
         info("Insert query: $query")
         executeInsertOrThrow(query)
     }
@@ -180,7 +204,8 @@ abstract class SQLiteHelper(
                         "INTEGER" -> CursorValue(cursor.getRequireInt(column.position), column)
                         "TEXT" -> CursorValue(cursor.getRequireString(column.position), column)
                         "REAL" -> CursorValue(cursor.getRequireDouble(column.position), column)
-                        else -> throw IllegalArgumentException("Invalid column type")
+                        "BOOLEAN" -> CursorValue(cursor.getRequireBoolean(column.position), column)
+                        else -> throw IllegalArgumentException("Invalid column type ${column.type}")
                     }
                 )
             }
@@ -234,7 +259,7 @@ abstract class SQLiteHelper(
 
     companion object {
         private val TABLES_SYSTEM = listOf("android_metadata", "sqlite_sequence")
-        private var CACHE_TABLES = mutableMapOf<String, List<String>>()
+        private var CACHE_TABLES = mutableMapOf<String, List<InternalModel.TableEntity>>()
         private var CACHE_COLUMN_NAMES =
             mutableMapOf<String, MutableMap<String, List<Column>>>()
 

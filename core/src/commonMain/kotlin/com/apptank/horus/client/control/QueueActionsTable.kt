@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 object QueueActionsTable {
 
     // Name of the table in the database
-    const val TABLE_NAME = "queue_actions"
+    const val TABLE_NAME = "horus_queue_actions"
 
     // Column names in the table
     const val ATTR_ID = "id"

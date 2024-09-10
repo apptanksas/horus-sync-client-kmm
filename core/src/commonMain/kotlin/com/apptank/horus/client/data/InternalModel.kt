@@ -30,4 +30,9 @@ sealed class InternalModel {
         val hashObtained: String,
         val isHashMatched: Boolean
     )
+
+    data class TableEntity(
+        val name: String,
+        val isWritable: Boolean
+    )
 }

@@ -18,7 +18,7 @@ class DatabaseTablesCreatorDelegateTest {
             listOf(
                 EntityScheme(
                     tableName,
-                    EntityType.EDITABLE,
+                    EntityType.WRITABLE,
                     listOf(
                         Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                         Attribute("id2", AttributeType.PrimaryKeyString, false, version = 1),
@@ -75,7 +75,7 @@ class DatabaseTablesCreatorDelegateTest {
             listOf(
                 EntityScheme(
                     "users",
-                    EntityType.EDITABLE,
+                    EntityType.WRITABLE,
                     listOf(
                         Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                         Attribute("name", AttributeType.String, false, version = 1)
@@ -85,7 +85,7 @@ class DatabaseTablesCreatorDelegateTest {
                         // Addresses
                         EntityScheme(
                             "addresses",
-                            EntityType.EDITABLE,
+                            EntityType.WRITABLE,
                             listOf(
                                 Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                                 Attribute("street", AttributeType.String, false, version = 1),
@@ -102,7 +102,7 @@ class DatabaseTablesCreatorDelegateTest {
                                 // Addresses Objects
                                 EntityScheme(
                                     "addresses_objects",
-                                    EntityType.EDITABLE,
+                                    EntityType.WRITABLE,
                                     listOf(
                                         Attribute(
                                             "id",
@@ -127,7 +127,7 @@ class DatabaseTablesCreatorDelegateTest {
                         // Phones
                         EntityScheme(
                             "phones",
-                            EntityType.EDITABLE,
+                            EntityType.WRITABLE,
                             listOf(
                                 Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                                 Attribute("number", AttributeType.String, false, version = 1),

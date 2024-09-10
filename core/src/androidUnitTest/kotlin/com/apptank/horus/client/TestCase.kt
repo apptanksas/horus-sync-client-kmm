@@ -4,8 +4,11 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.base.Callback
+import com.apptank.horus.client.control.EntitiesTable
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
+import com.apptank.horus.client.extensions.createSQLInsert
+import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
@@ -127,6 +130,15 @@ abstract class TestCase {
             }
 
         })
+    }
+
+    protected fun SqlDriver.registerEntity(entity: String) {
+        execute(
+            createSQLInsert(
+                EntitiesTable.TABLE_NAME,
+                EntitiesTable.mapToCreate(entity, true)
+            )
+        )
     }
 
     private fun sha256(input: String): String {

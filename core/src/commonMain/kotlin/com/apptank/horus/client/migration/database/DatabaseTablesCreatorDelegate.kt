@@ -14,6 +14,9 @@ class DatabaseTablesCreatorDelegate(
     private val schemes: List<EntityScheme>
 ) {
 
+    // List of entities created
+    private val entitiesCreated = mutableListOf<EntityScheme>()
+
     /**
      * Creates tables based on the provided entity schemes and executes the corresponding SQL statements.
      *
@@ -27,6 +30,16 @@ class DatabaseTablesCreatorDelegate(
             // Execute SQL statement.
             onExecuteSql(sql)
         }
+    }
+
+
+    /**
+     * Gets the list of entities created.
+     *
+     * @return A list of entity schemes that were created.
+     */
+    fun getEntitiesCreated(): List<EntityScheme> {
+        return entitiesCreated
     }
 
     /**
@@ -64,6 +77,9 @@ class DatabaseTablesCreatorDelegate(
      * @return The SQL statement to create the table.
      */
     private fun createCreateSQLTable(scheme: EntityScheme): String {
+
+        entitiesCreated.add(scheme)
+
         return CreateTableSQLBuilder().apply {
             setTableName(scheme.name)
             // Filter attribute types and add them to the table creation statement.

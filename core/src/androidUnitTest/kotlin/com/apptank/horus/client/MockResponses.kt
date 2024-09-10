@@ -2221,3 +2221,125 @@ const val DATA_MIGRATION_VERSION_3 = """
   }
 ]
 """
+
+const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
+[
+  {
+    "entity": "measures_values",
+    "type": "editable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_string",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "measure",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "w",
+          "v",
+          "a"
+        ]
+      },
+      {
+        "name": "unit",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "kg",
+          "g",
+          "lb",
+          "oz",
+          "mg",
+          "t",
+          "m3",
+          "L",
+          "mL",
+          "cm3",
+          "dm3",
+          "in3",
+          "ft3",
+          "yd3",
+          "m2",
+          "cm2",
+          "mm2",
+          "km2",
+          "ha",
+          "in2",
+          "ft2",
+          "yd2",
+          "ac"
+        ]
+      },
+      {
+        "name": "value",
+        "version": 1,
+        "type": "float",
+        "nullable": false
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "animal_breeds",
+    "type": "lookup",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_integer",
+        "nullable": false
+      },
+      {
+        "name": "type",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "name": "name",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      }
+    ],
+    "current_version": 1
+  }
+]
+"""

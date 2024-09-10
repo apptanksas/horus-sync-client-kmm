@@ -30,7 +30,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     @Test
     fun onCreateIsSuccess() {
         // Then
-        val tablesNames = controlManagerDatabaseHelper.getTablesNames()
+        val tablesNames = controlManagerDatabaseHelper.getTables()
 
         Assert.assertTrue(tablesNames.contains(SyncControlTable.TABLE_NAME))
         Assert.assertTrue(tablesNames.contains(QueueActionsTable.TABLE_NAME))
@@ -131,6 +131,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
 
         // When
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -155,6 +156,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
 
         // When
         controlManagerDatabaseHelper.addActionUpdate(entity, attributes.first(), attributes)
@@ -180,6 +182,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
 
         // When
         controlManagerDatabaseHelper.addActionDelete(entity, attributes.first())
@@ -205,6 +208,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
 
         // When
@@ -230,6 +235,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
         val pendingActions = controlManagerDatabaseHelper.getPendingActions()
 
@@ -258,6 +265,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
 
@@ -280,6 +289,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
             Horus.Attribute("name", "name")
         )
         driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
 
         val pendingActions = controlManagerDatabaseHelper.getPendingActions()

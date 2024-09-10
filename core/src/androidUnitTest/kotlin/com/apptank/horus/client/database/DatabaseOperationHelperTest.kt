@@ -288,7 +288,7 @@ class DatabaseOperationHelperTest : TestCase() {
             listOf(
                 EntityScheme(
                     "users",
-                    EntityType.EDITABLE,
+                    EntityType.WRITABLE,
                     listOf(
                         Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                         Attribute("name", AttributeType.String, false, version = 1)
@@ -298,7 +298,7 @@ class DatabaseOperationHelperTest : TestCase() {
                         // Addresses
                         EntityScheme(
                             "addresses",
-                            EntityType.EDITABLE,
+                            EntityType.WRITABLE,
                             listOf(
                                 Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                                 Attribute("street", AttributeType.String, false, version = 1),
@@ -315,7 +315,7 @@ class DatabaseOperationHelperTest : TestCase() {
                                 // Addresses Objects
                                 EntityScheme(
                                     "addresses_objects",
-                                    EntityType.EDITABLE,
+                                    EntityType.WRITABLE,
                                     listOf(
                                         Attribute(
                                             "id",
@@ -340,7 +340,7 @@ class DatabaseOperationHelperTest : TestCase() {
                         // Phones
                         EntityScheme(
                             "phones",
-                            EntityType.EDITABLE,
+                            EntityType.WRITABLE,
                             listOf(
                                 Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
                                 Attribute("number", AttributeType.String, false, version = 1),

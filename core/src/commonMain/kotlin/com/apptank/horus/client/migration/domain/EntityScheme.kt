@@ -4,25 +4,32 @@ package com.apptank.horus.client.migration.domain
  * Represents an entity scheme that includes information about an entity, its attributes, and related entities.
  *
  * @param name The name of the entity.
- * @param type The type of the entity, which could be either EDITABLE or LOOKUP.
+ * @param type The type of the entity, which could be either WRITABLE or READABLE.
  * @param attributes A list of attributes associated with the entity.
  * @param currentVersion The current version of the entity scheme.
  * @param entitiesRelated A list of related entity schemes.
  */
 data class EntityScheme(
     val name: String,
-    val type: EntityType, // TODO("Validate type entity in operations")
+    val type: EntityType,
     val attributes: List<Attribute>,
     val currentVersion: Long,
     val entitiesRelated: List<EntityScheme>
-)
+) {
+    /**
+     * Indicates if the entity is writable.
+     *
+     * @return `true` if the entity is writable, `false` otherwise.
+     */
+    fun isWritable() = type == EntityType.WRITABLE
+}
 
 /**
  * Enum representing the types of entities.
  */
 enum class EntityType {
-    EDITABLE,
-    LOOKUP
+    WRITABLE,
+    READABLE
 }
 
 /**

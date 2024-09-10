@@ -2,6 +2,7 @@ package com.apptank.horus.client.extensions
 
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import com.apptank.horus.client.base.DataMap
 import com.apptank.horus.client.config.BOOL_FALSE
 import com.apptank.horus.client.config.BOOL_TRUE
 
@@ -24,6 +25,20 @@ internal fun Any?.prepareSQLValueAsString(): String {
         is Boolean -> if (value) BOOL_TRUE else BOOL_FALSE
         else -> value.toString()
     }
+}
+
+
+/**
+ * Creates an SQL INSERT statement for the specified table and values.
+ *
+ * @param table The name of the table to insert the values into.
+ * @param values A map of column names to values to be inserted.
+ * @return The SQL INSERT statement.
+ */
+internal fun SqlDriver.createSQLInsert(table: String, values: DataMap): String {
+    val columns = values.keys.joinToString(", ")
+    val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
+    return "INSERT INTO $table ($columns) VALUES ($valuesString)"
 }
 
 /**

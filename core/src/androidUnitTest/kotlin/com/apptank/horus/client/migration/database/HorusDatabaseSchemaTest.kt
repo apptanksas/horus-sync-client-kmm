@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_1
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_2
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
+import com.apptank.horus.client.DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.extensions.notContains
@@ -31,7 +32,7 @@ class HorusDatabaseSchemaTest {
     fun migrationIsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 8
+        val countEntitiesExpected = 6
         val versionExpected = 1L
 
         // When
@@ -39,7 +40,7 @@ class HorusDatabaseSchemaTest {
         val lastVersion = entities.getLastVersion()
 
         // Then
-        val tables = database.getTablesNames()
+        val tables = database.getTableEntities()
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
         Assert.assertEquals(versionExpected, lastVersion)
@@ -50,13 +51,13 @@ class HorusDatabaseSchemaTest {
     fun migrationWithVersionExistsSuccess() {
         // Given
         val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 8
+        val countEntitiesExpected = 6
         // When
         schema.create(driver, entities)
         schema.create(driver)
 
         // Then
-        val tables = database.getTablesNames()
+        val tables = database.getTableEntities()
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
     }
@@ -138,7 +139,7 @@ class HorusDatabaseSchemaTest {
 
         val tableFarmsColumnsV2 = database.getColumns("farms")
         val tableLotsColumnsV2 = database.getColumns("animals_lots")
-        val tablesV2 = database.getTablesNames()
+        val tablesV2 = database.getTableEntities().map { it.name }
 
         // --> Migrate V3
         schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
@@ -146,7 +147,7 @@ class HorusDatabaseSchemaTest {
         // Then
         val tableFarmsColumnsV3 = database.getColumns("farms")
         val tableLotsColumnsV3 = database.getColumns("animals_lots")
-        val tablesV3 = database.getTablesNames()
+        val tablesV3 = database.getTableEntities().map { it.name }
 
 
         Assert.assertEquals(2, oldVersion)
@@ -182,21 +183,21 @@ class HorusDatabaseSchemaTest {
         // When
 
         // --> Migrate V1
-        schema.create(driver,entitiesV1)
+        schema.create(driver, entitiesV1)
 
         val tableFarmsColumnsV1 = database.getColumns("farms")
         val tableLotsColumnsV1 = database.getColumns("lots")
         val tableAnimalLotsColumnsV1 = database.getColumns("animals_lots")
-        val tablesV1 = database.getTablesNames()
+        val tablesV1 = database.getTableEntities().map { it.name }
 
         // --> Migrate V3
-        schema.migrate(driver, oldVersion, lastVersion,entitiesV3)
+        schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
 
         // Then
         val tableFarmsColumnsV3 = database.getColumns("farms")
         val tableAnimalLotsColumnsV3 = database.getColumns("animals_lots")
         val tableLotsColumnsV3 = database.getColumns("lots")
-        val tablesV3 = database.getTablesNames()
+        val tablesV3 = database.getTableEntities().map { it.name }
 
 
         Assert.assertEquals(1, oldVersion)
@@ -227,5 +228,22 @@ class HorusDatabaseSchemaTest {
         // Validate new entity "farms_metadata" was added in the version 3
         Assert.assertTrue(tablesV1.notContains("farms_metadata"))
         Assert.assertTrue(tablesV3.contains("farms_metadata"))
+    }
+
+    @Test
+    fun validateEntitiesWritableAndReadable() {
+        // Given
+        val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE)
+            .map { it.toScheme() }
+
+        // When
+        schema.create(driver, entities)
+
+        // Then
+        val tableWritable = database.getTableEntities().find { it.name == "measures_values" }
+        val tableReadable = database.getTableEntities().find { it.name == "animal_breeds" }
+
+        Assert.assertTrue(tableWritable?.isWritable == true)
+        Assert.assertTrue(tableReadable?.isWritable == false)
     }
 }

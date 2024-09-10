@@ -27,6 +27,8 @@ class DatabaseUpgradeDelegate(
     // Structure: <VersionNumber -> List Entities>
     private val versionMapEntities = mutableMapOf<Long, List<String>>()
 
+    private val newEntitiesCreated = mutableListOf<EntityScheme>()
+
     /**
      * Migrates the database schema from an old version to the current version by generating and executing SQL statements.
      *
@@ -50,6 +52,7 @@ class DatabaseUpgradeDelegate(
                 schemes.findByName(it)?.let {
                     onExecuteSql(createCreateSQLTable(it))
                     newTablesAdded.add(it.name)
+                    newEntitiesCreated.add(it)
                 }
             }
 
@@ -70,6 +73,15 @@ class DatabaseUpgradeDelegate(
                 }
             }
         }
+    }
+
+    /**
+     * Gets the list of entities created.
+     *
+     * @return A list of entity schemes that were created.
+     */
+    fun getNewEntitiesCreated(): List<EntityScheme> {
+        return newEntitiesCreated
     }
 
     /**
@@ -174,4 +186,6 @@ class DatabaseUpgradeDelegate(
             }
         }.build()
     }
+
+
 }

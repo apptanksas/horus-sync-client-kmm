@@ -7,7 +7,7 @@ import com.apptank.horus.client.utils.SystemTime
  */
 object SyncControlTable {
 
-    const val TABLE_NAME = "sync_control"
+    const val TABLE_NAME = "horus_sync_control"
 
     // Column names
     const val ATTR_ID = "id"

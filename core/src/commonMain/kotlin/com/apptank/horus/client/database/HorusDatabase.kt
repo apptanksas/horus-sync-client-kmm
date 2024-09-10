@@ -5,8 +5,10 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
+import com.apptank.horus.client.control.EntitiesTable
 import com.apptank.horus.client.control.QueueActionsTable
 import com.apptank.horus.client.control.SyncControlTable
+import com.apptank.horus.client.extensions.createSQLInsert
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.handle
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
@@ -91,11 +93,19 @@ class HorusDatabase(
          */
         override fun create(driver: SqlDriver): QueryResult.Value<Unit> {
             driver.handle {
+
+                execute(EntitiesTable.SQL_CREATE_TABLE)
+                execute(SyncControlTable.SQL_CREATE_TABLE)
+                execute(QueueActionsTable.SQL_CREATE_TABLE)
+
                 databaseCreatorDelegate?.createTables {
                     execute(Random.nextInt(), it, 0)
                 }
-                execute(SyncControlTable.SQL_CREATE_TABLE)
-                execute(QueueActionsTable.SQL_CREATE_TABLE)
+
+                // Insert entities into the entities table indicating if they are writable
+                databaseCreatorDelegate?.getEntitiesCreated()?.forEach { entity ->
+                    insertEntity(entity)
+                }
             }
             flushCache()
             return QueryResult.Value(Unit)
@@ -137,9 +147,14 @@ class HorusDatabase(
             newVersion: Long,
             vararg callbacks: AfterVersion
         ): QueryResult.Value<Unit> {
-            databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
-                driver.handle {
+            driver.handle {
+                databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
                     driver.execute(Random.nextInt(), it, 0)
+                }
+
+                // Insert entities into the entities table indicating if they are writable
+                databaseUpgradeDelegate?.getNewEntitiesCreated()?.forEach { entity ->
+                    insertEntity(entity)
                 }
             }
             flushCache()
@@ -151,6 +166,19 @@ class HorusDatabase(
             currentVersion = newVersion
             return QueryResult.Value(Unit)
         }
+
+        private fun SqlDriver.insertEntity(entity: EntityScheme) {
+            try {
+                execute(
+                    createSQLInsert(
+                        EntitiesTable.TABLE_NAME,
+                        EntitiesTable.mapToCreate(entity.name, entity.isWritable())
+                    )
+                )
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
     }
 
     /**
@@ -161,4 +189,5 @@ class HorusDatabase(
     fun getDatabaseDriver(): SqlDriver {
         return driver
     }
+
 }
