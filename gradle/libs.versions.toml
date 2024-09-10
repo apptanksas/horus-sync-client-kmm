@@ -1,23 +1,51 @@
 [versions]
 agp = "8.2.2"
-kotlin = "1.9.20"
-compose = "1.5.4"
-compose-compiler = "1.5.4"
-compose-material3 = "1.1.2"
-androidx-activityCompose = "1.8.0"
+kotlin = "2.0.20"
+kotlinxSerialization = "1.7.2"
+ktor = "2.3.2"
+sqldelight = "2.0.2"
+kotlinxDateTime = "0.6.1"
+kotlinCrypto = "0.5.1"
+mockative = "2.2.2"
+settings = "1.2.0"
+
+# Android
+androidRobolectric = "4.13"
 
 [libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose" }
-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+
+# HTTP CLIENT
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
+ktor-client-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+# Database
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-driver-ios = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+# Utils
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDateTime" }
+kotlin-crypto = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlinCrypto" }
+# KSP
+ksp-mockative = { module = "io.mockative:mockative-processor", version.ref = "mockative" }
+# Local Storage
+storage-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "settings" }
+
+# Tests
+test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+test-ktor = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+test-sqldelight = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+test-mockative = { module = "io.mockative:mockative", version.ref = "mockative" }
+test-storage-settings = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
+
+# Android
+android-test-robolectric = { module = "org.robolectric:robolectric", version.ref = "androidRobolectric"}
 
 [plugins]
-androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
