@@ -17,7 +17,7 @@ import com.apptank.horus.client.migration.network.dto.MigrationDTO
  * @return An `EntityScheme` object representing the converted data.
  * @throws InvalidDataSchemeException If the entity name is null.
  */
-fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
+internal fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
 
     val type = when (this.type?.uppercase()) {
         "LOOKUP" -> EntityType.READABLE
@@ -43,7 +43,7 @@ fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
  * @return An `Attribute` object representing the converted data.
  * @throws InvalidDataSchemeException If the attribute name is null.
  */
-fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
+internal fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
     return Attribute(
         this.name ?: throw InvalidDataSchemeException(),
         this.type.toAttributeType(),

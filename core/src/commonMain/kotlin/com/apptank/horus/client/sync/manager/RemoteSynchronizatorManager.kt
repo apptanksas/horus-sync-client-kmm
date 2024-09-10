@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
  * @param dispatcher A coroutine dispatcher for background operations (default is `Dispatchers.IO`).
  * @param maxAttempts The maximum number of retry attempts for synchronization operations (default is 3).
  */
-class RemoteSynchronizatorManager(
+internal class RemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,

@@ -16,6 +16,8 @@ import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.database.SQL
+import com.apptank.horus.client.exception.EntityNotExistsException
+import com.apptank.horus.client.exception.EntityNotWritableException
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.toScheme
@@ -35,6 +37,7 @@ import org.junit.runners.MethodSorters
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.random.Random
 import kotlin.test.fail
 
 @RunWith(RobolectricTestRunner::class)
@@ -101,11 +104,6 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
     }
 
-    @Test
-    fun `validate insert is failure by entity dont exists`() = prepareEnvironment {
-        val result = HorusDataFacade.insert("table_not_found", mapOf("key" to "value"))
-        assert(result is DataResult.Failure)
-    }
 
     @Test
     fun `multiples tests associated`() = prepareEnvironment {
@@ -129,6 +127,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
             }
         })
 
+        validateEntityIsNotWritable()
+        validatesOperationIsFailureByEntityNoExists()
         validateInsertTest()
         validateInsertAndUpdateIsSuccess()
         validateInsertAndDeleteIsSuccess()
@@ -143,9 +143,43 @@ class AndroidHorusDataFacadeTest : TestCase() {
         assert(invokedDelete)
     }
 
+    private fun validateEntityIsNotWritable() = prepareInternalTest {
+        Assert.assertThrows(EntityNotWritableException::class.java) {
+            HorusDataFacade.insert("animal_breeds", mapOf("key" to "value"))
+        }
+    }
+
+    private suspend fun validatesOperationIsFailureByEntityNoExists() = prepareInternalTest {
+
+        val entityName = "any_table_" + Random.nextInt()
+
+        Assert.assertThrows(EntityNotExistsException::class.java) {
+            HorusDataFacade.insert(entityName, mapOf("key" to "value"))
+        }
+
+        Assert.assertThrows(EntityNotExistsException::class.java) {
+            HorusDataFacade.updateEntity(entityName, "id", mapOf("key" to "value"))
+        }
+
+        Assert.assertThrows(EntityNotExistsException::class.java) {
+            HorusDataFacade.deleteEntity(entityName, "id")
+        }
+
+        Assert.assertThrows(EntityNotExistsException::class.java) {
+            HorusDataFacade.getEntityById(entityName, "id")
+        }
+
+        Assert.assertThrows(EntityNotExistsException::class.java) {
+            runBlocking {
+                HorusDataFacade.getEntities(entityName)
+            }
+        }
+
+    }
+
     private fun validateInsertTest() = prepareInternalTest {
         val result = HorusDataFacade.insert(
-            "farms",
+            "measures_values",
             createDataInsertRecord()
         )
         assert(result is DataResult.Success)
@@ -153,9 +187,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun validateInsertAndUpdateIsSuccess() = prepareInternalTest {
         // Given
-        val nameExpected = "Farm " + uuid()
+        val valueExpected = Random.nextFloat()
         val resultInsert = HorusDataFacade.insert(
-            "farms",
+            "measures_values",
             createDataInsertRecord()
         )
 
@@ -163,9 +197,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val resultUpdate = if (resultInsert is DataResult.Success) {
             HorusDataFacade.updateEntity(
-                "farms",
+                "measures_values",
                 resultInsert.data,
-                mapOf("name" to nameExpected)
+                mapOf("value" to valueExpected)
             )
         } else {
             DataResult.Failure(Exception("Error"))
@@ -177,7 +211,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         assert(resultUpdate is DataResult.Success)
 
         if (resultInsert is DataResult.Success) {
-            assert(driver.rawQuery("SELECT * FROM farms WHERE id= '" + resultInsert.data + "' AND name = '$nameExpected'") {
+            assert(driver.rawQuery("SELECT * FROM measures_values WHERE id= '" + resultInsert.data + "' AND value = $valueExpected") {
                 it.getString(0)
             }.isNotEmpty())
         } else {
@@ -188,13 +222,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateInsertAndDeleteIsSuccess() = prepareInternalTest {
         // Given
         val resultInsert = HorusDataFacade.insert(
-            "farms",
+            "measures_values",
             createDataInsertRecord()
         )
 
         // When
         val resultDelete = if (resultInsert is DataResult.Success) {
-            HorusDataFacade.deleteEntity("farms", resultInsert.data)
+            HorusDataFacade.deleteEntity("measures_values", resultInsert.data)
         } else {
             DataResult.Failure(Exception("Error"))
         }
@@ -204,7 +238,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         assert(resultDelete is DataResult.Success)
 
         if (resultInsert is DataResult.Success) {
-            assert(driver.rawQuery("SELECT * FROM farms WHERE id= '" + resultInsert.data + "'") {
+            assert(driver.rawQuery("SELECT * FROM measures_values WHERE id= '" + resultInsert.data + "'") {
                 it.getString(0)
             }.isEmpty())
         } else {
@@ -215,17 +249,20 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateGetEntityByIdReturnEntity() = prepareInternalTest {
         // Given
         val resultInsert = HorusDataFacade.insert(
-            "farms",
+            "measures_values",
             createDataInsertRecord()
         )
 
         // When
         val entity =
-            HorusDataFacade.getEntityById("farms", (resultInsert as DataResult.Success).data)
+            HorusDataFacade.getEntityById(
+                "measures_values",
+                (resultInsert as DataResult.Success).data
+            )
 
         // Then
         Assert.assertNotNull(entity)
-        Assert.assertTrue(entity?.getString("name")?.isNotEmpty() ?: false)
+        Assert.assertTrue((entity?.getFloat("value") ?: 0F) > 0f)
     }
 
     private suspend fun validateGetEntities() = prepareInternalTest {
@@ -235,12 +272,12 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
 
         attributesList.forEach {
-            HorusDataFacade.insert("farms", *it.toTypedArray())
+            HorusDataFacade.insert("measures_values", *it.toTypedArray())
         }
 
         // When
         val result =
-            HorusDataFacade.getEntities("farms")
+            HorusDataFacade.getEntities("measures_values")
 
         result.fold(
             { entities ->
@@ -257,14 +294,14 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Given
         val attributesList = createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
 
-        val insertResult = HorusDataFacade.insert("farms", *attributesList.toTypedArray())
+        val insertResult = HorusDataFacade.insert("measures_values", *attributesList.toTypedArray())
 
         // When
 
         val entityId = getEntityId(insertResult)
         val result =
             HorusDataFacade.getEntities(
-                "farms",
+                "measures_values",
                 listOf(SQL.WhereCondition(SQL.ColumnValue("id", entityId)))
             )
 
@@ -286,13 +323,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
 
         attributesList.forEach {
-            HorusDataFacade.insert("farms", *it.toTypedArray())
+            HorusDataFacade.insert("measures_values", *it.toTypedArray())
         }
 
         // When
         val result =
             HorusDataFacade.getEntities(
-                "farms",
+                "measures_values",
                 limit = 10,
                 offset = 5
             )
@@ -312,20 +349,16 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateGetEntityByIdReturnNull() {
         // When
         val entity =
-            HorusDataFacade.getEntityById("farms", uuid())
+            HorusDataFacade.getEntityById("measures_values", uuid())
 
         // Then
         Assert.assertNull(entity)
     }
 
     private fun createDataInsertRecord() = mapOf(
-        "mv_area_total" to uuid(),
-        "mv_area_cow_farming" to uuid(),
-        "measure_milk" to "kg",
-        "measure_weight" to "kg",
-        "type" to "1",
-        "name" to "Farm " + uuid(),
-        "destination" to "1"
+        "measure" to "w",
+        "unit" to "kg",
+        "value" to 10.0f
     )
 
     private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {
@@ -337,17 +370,22 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
-        driver.execute("DELETE FROM farms")
+        driver.execute("DELETE FROM measures_values")
+        driver.execute("DELETE FROM animal_breeds")
+
         block()
     }
 
     private fun migrateDatabase() {
         val entitiesSchema =
-            buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3).map { it.toScheme() }
+            buildEntitiesSchemeFromJSON(DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE).map { it.toScheme() }
         HorusDatabase.Schema.create(driver, entitiesSchema)
 
         driver.also {
-            Assert.assertTrue("table farms not exists", it.getTablesNames().contains("farms"))
+            Assert.assertTrue(
+                "table measures_values not exists",
+                it.getTablesNames().contains("measures_values")
+            )
         }
     }
 

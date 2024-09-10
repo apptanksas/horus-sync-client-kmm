@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 /**
  * Manages and executes a series of tasks in a specific order, handling dependencies between tasks.
  */
-object ControlTaskManager {
+internal object ControlTaskManager {
 
     /**
      * Enum representing the status of the task execution process.

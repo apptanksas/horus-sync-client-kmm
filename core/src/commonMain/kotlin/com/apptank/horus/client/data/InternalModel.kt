@@ -3,7 +3,7 @@ package com.apptank.horus.client.data
 /**
  * A sealed class representing internal models related to entity hashing and validation.
  */
-sealed class InternalModel {
+internal sealed class InternalModel {
 
     /**
      * Represents an entity identified by an ID and associated with a hash.

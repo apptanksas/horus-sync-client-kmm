@@ -13,7 +13,7 @@ import com.russhwolf.settings.Settings
  * @property databaseDriverFactory Factory to create database drivers for schema operations.
  * @property dependsOnTask The task that must be completed before this task can run.
  */
-class ValidateMigrationLocalDatabaseTask(
+internal class ValidateMigrationLocalDatabaseTask(
     private val settings: Settings,
     private val databaseDriverFactory: IDatabaseDriverFactory,
     dependsOnTask: RetrieveDatabaseSchemeTask

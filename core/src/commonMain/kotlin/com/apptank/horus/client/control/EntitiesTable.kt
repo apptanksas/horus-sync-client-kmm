@@ -1,6 +1,6 @@
 package com.apptank.horus.client.control
 
-object EntitiesTable {
+internal object EntitiesTable {
 
     const val TABLE_NAME = "horus_entities"
 

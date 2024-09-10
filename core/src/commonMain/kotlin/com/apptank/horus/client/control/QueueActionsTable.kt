@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
  * @author John Ospina
  * @year 2024
  */
-object QueueActionsTable {
+internal object QueueActionsTable {
 
     // Name of the table in the database
     const val TABLE_NAME = "horus_queue_actions"

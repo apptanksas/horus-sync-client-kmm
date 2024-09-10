@@ -76,4 +76,5 @@ interface IOperationDatabaseHelper {
      * @return a list of maps, each representing a record from the query result.
      */
     fun queryRecords(builder: QueryBuilder): List<DataMap>
+
 }

@@ -48,7 +48,7 @@ class SynchronizatorManagerTest : TestCase() {
     @Mock
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
-    lateinit var synchronizatorManager: SynchronizatorManager
+    internal lateinit var synchronizatorManager: SynchronizatorManager
 
     @Before
     fun setup() {

@@ -10,6 +10,7 @@ import com.apptank.horus.client.extensions.execute
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
 
 
 class SyncControlDatabaseHelperTest : TestCase() {
@@ -301,5 +302,26 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         // Then
         Assert.assertEquals(1, completedActions.size)
+    }
+
+    @Test
+    fun validateIsEntitiesIsWritable(){
+
+        val entityWritable = "entity_writable_123"
+        val entityReadOnly = "entity_read_only_423"
+
+        driver.createTable(entityWritable, mapOf("id" to "TEXT"))
+        driver.createTable(entityReadOnly, mapOf("id" to "TEXT"))
+
+        driver.registerEntity(entityWritable)
+        driver.registerEntity(entityReadOnly, false)
+
+        // When
+        val isWritable = controlManagerDatabaseHelper.isEntityCanBeWritable(entityWritable)
+        val isReadOnly = !controlManagerDatabaseHelper.isEntityCanBeWritable(entityReadOnly)
+
+        // Then
+        assert(isWritable)
+        assert(isReadOnly)
     }
 }

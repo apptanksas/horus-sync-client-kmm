@@ -34,7 +34,7 @@ abstract class SQLiteHelper(
      *
      * @return A list of table names.
      */
-    fun getTableEntities(): List<InternalModel.TableEntity> {
+    internal fun getTableEntities(): List<InternalModel.TableEntity> {
 
         if (CACHE_TABLES[databaseName]?.isNotEmpty() == true) {
             return CACHE_TABLES[databaseName] ?: emptyList()
@@ -84,7 +84,7 @@ abstract class SQLiteHelper(
      * @param tableName The name of the table.
      * @return A list of columns in the table.
      */
-    fun getColumns(tableName: String): List<Column> {
+    internal fun getColumns(tableName: String): List<Column> {
 
         if (CACHE_COLUMN_NAMES[databaseName]?.contains(tableName) == true) {
             return CACHE_COLUMN_NAMES[databaseName]?.get(tableName) ?: emptyList()
@@ -129,7 +129,7 @@ abstract class SQLiteHelper(
      * @param mapper A function that maps the cursor to a result of type [T].
      * @return A list of mapped results.
      */
-    protected fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
+    internal fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
         val tableName = getTableName(query)
 
         return driver.executeQuery(null, query, {

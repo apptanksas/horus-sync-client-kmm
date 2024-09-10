@@ -4,7 +4,7 @@ package com.apptank.horus.client.tasks
 /**
  * Interface representing a task that can be executed and has optional dependencies.
  */
-interface Task {
+internal interface Task {
     /**
      * Returns the task that this task depends on, if any.
      *
@@ -26,7 +26,7 @@ interface Task {
  *
  * @param dependsOnTask An optional task that this task depends on.
  */
-abstract class BaseTask(
+internal abstract class BaseTask(
     private val dependsOnTask: Task? = null
 ) : Task {
     /**
@@ -40,7 +40,7 @@ abstract class BaseTask(
 /**
  * Sealed class representing the result of a task execution.
  */
-sealed class TaskResult {
+internal sealed class TaskResult {
     /**
      * Represents a successful task execution.
      *

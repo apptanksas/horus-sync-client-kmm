@@ -5,7 +5,7 @@ import com.apptank.horus.client.utils.SystemTime
 /**
  * Object that defines the schema and utility functions for the `sync_control` table in the database.
  */
-object SyncControlTable {
+internal object SyncControlTable {
 
     const val TABLE_NAME = "horus_sync_control"
 

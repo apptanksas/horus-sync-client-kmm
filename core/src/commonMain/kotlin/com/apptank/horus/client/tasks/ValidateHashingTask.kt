@@ -16,7 +16,7 @@ import kotlin.random.Random
  * @property syncService Service to handle synchronization operations.
  * @property dependsOnTask The task that must be completed before this task can run.
  */
-class ValidateHashingTask(
+internal class ValidateHashingTask(
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val syncService: ISynchronizationService,
     dependsOnTask: ValidateMigrationLocalDatabaseTask

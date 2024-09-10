@@ -428,6 +428,7 @@ class DatabaseOperationHelperTest : TestCase() {
         Assert.assertEquals(0, getCountFromTable("phones"))
     }
 
+
     private fun getCountFromTable(table: String): Int {
         return driver.executeQuery(
             null,
@@ -437,7 +438,6 @@ class DatabaseOperationHelperTest : TestCase() {
             0
         ).value
     }
-
 
     private fun createInsertAction(uuid: String, name: String) = DatabaseOperation.InsertRecord(
         entityName,

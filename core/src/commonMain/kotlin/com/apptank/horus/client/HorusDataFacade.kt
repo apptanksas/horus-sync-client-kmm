@@ -13,6 +13,8 @@ import com.apptank.horus.client.database.mapToDBColumValue
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
+import com.apptank.horus.client.exception.EntityNotExistsException
+import com.apptank.horus.client.exception.EntityNotWritableException
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
 import com.apptank.horus.client.extensions.removeIf
 import com.apptank.horus.client.utils.AttributesPreparator
@@ -64,7 +66,7 @@ object HorusDataFacade {
      */
     fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
-        validateIfReady()
+        validateConstraints(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -142,7 +144,7 @@ object HorusDataFacade {
         attributes: List<Horus.Attribute<*>>
     ): DataResult<Unit> {
 
-        validateIfReady()
+        validateConstraints(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -235,7 +237,7 @@ object HorusDataFacade {
      */
     fun deleteEntity(entity: String, id: String): DataResult<Unit> {
 
-        validateIfReady()
+        validateConstraints(entity)
 
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
@@ -283,7 +285,7 @@ object HorusDataFacade {
         offset: Int? = null
     ): DataResult<List<Horus.Entity>> {
 
-        validateIfReady()
+        validateConstraintsReadable(entity)
 
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(*conditions.toTypedArray())
@@ -317,7 +319,7 @@ object HorusDataFacade {
      */
     fun getEntityById(entity: String, id: String): Horus.Entity? {
 
-        validateIfReady()
+        validateConstraintsReadable(entity)
 
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(
@@ -362,12 +364,44 @@ object HorusDataFacade {
     }
 
     /**
+     * Validates the constraints for the facade.
+     */
+    private fun validateConstraints(entity: String) {
+        validateIsReady()
+        validateIsEntityExists(entity)
+        validateIsCanWriteIntoEntity(entity)
+    }
+
+    /**
+     * Validates the constraints for the facade.
+     */
+    private fun validateConstraintsReadable(entity: String) {
+        validateIsReady()
+        validateIsEntityExists(entity)
+    }
+
+    /**
      * Checks if the facade is ready for operations and throws an exception if not.
      */
-    private fun validateIfReady() {
+    private fun validateIsReady() {
         if (!isReady) {
             throw IllegalStateException("Synchronizer not ready")
         }
+    }
+
+    /**
+     * Validates if the entity exists in the database.
+     */
+    private fun validateIsEntityExists(entity: String) {
+        syncControlDatabaseHelper.getEntityNames().find { it == entity }
+            ?: throw EntityNotExistsException(entity)
+    }
+
+    private fun validateIsCanWriteIntoEntity(entity: String) {
+        if (syncControlDatabaseHelper.isEntityCanBeWritable(entity)) {
+            return
+        }
+        throw EntityNotWritableException(entity)
     }
 
     /**

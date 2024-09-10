@@ -90,7 +90,7 @@ private fun ArrayList<LinkedHashMap<String, Any>>.toListEntityResponse(): List<S
  *
  * @return The [SyncDTO.Request.SyncActionRequest] representation of the action.
  */
-fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
+internal fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
     return SyncDTO.Request.SyncActionRequest(
         action = this.action.name,
         entity = this.entity,
@@ -106,7 +106,7 @@ fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
  *
  * @throws IllegalArgumentException if the entity or action timestamp is null.
  */
-fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
+internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
     return SyncControl.Action(
         id = 0,
         action = SyncControl.ActionType.valueOf(action!!),
@@ -126,7 +126,7 @@ fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
  *
  * @throws IllegalArgumentException if the ID or hash is null.
  */
-fun SyncDTO.Response.EntityIdHash.toInternalModel(): InternalModel.EntityIdHash {
+internal fun SyncDTO.Response.EntityIdHash.toInternalModel(): InternalModel.EntityIdHash {
     return InternalModel.EntityIdHash(
         id ?: throw IllegalArgumentException("Entity ID is null"),
         hash ?: throw IllegalArgumentException("Hash is null")
@@ -140,7 +140,7 @@ fun SyncDTO.Response.EntityIdHash.toInternalModel(): InternalModel.EntityIdHash 
  *
  * @throws IllegalArgumentException if the entity or hash values are null.
  */
-fun SyncDTO.Response.EntityHash.toInternalModel(): InternalModel.EntityHashValidation {
+internal fun SyncDTO.Response.EntityHash.toInternalModel(): InternalModel.EntityHashValidation {
     return InternalModel.EntityHashValidation(
         entity ?: throw IllegalArgumentException("Entity is null"),
         hashingValidation?.expected ?: throw IllegalArgumentException("Expected hash is null"),

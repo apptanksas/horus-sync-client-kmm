@@ -7,7 +7,7 @@ typealias CallbackEvent = (Event) -> Unit
 /**
  * Singleton object for managing event listeners and dispatching events.
  */
-object EventBus {
+internal object EventBus {
 
     /**
      * Map of event types to their associated listeners.

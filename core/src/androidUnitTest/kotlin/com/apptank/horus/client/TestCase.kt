@@ -31,7 +31,7 @@ import kotlin.random.Random
 
 abstract class TestCase {
 
-    protected fun getMockValidateHashingTask(): ValidateHashingTask {
+    internal fun getMockValidateHashingTask(): ValidateHashingTask {
         return ValidateHashingTask(
             mock(classOf<ISyncControlDatabaseHelper>()),
             mock(classOf<ISynchronizationService>()),
@@ -39,7 +39,7 @@ abstract class TestCase {
         )
     }
 
-    protected fun getMockValidateMigrationTask(): ValidateMigrationLocalDatabaseTask {
+    internal fun getMockValidateMigrationTask(): ValidateMigrationLocalDatabaseTask {
         return ValidateMigrationLocalDatabaseTask(
             MapSettings(),
             mock(classOf<IDatabaseDriverFactory>()),
@@ -47,13 +47,13 @@ abstract class TestCase {
         )
     }
 
-    protected fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
+    internal fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
         return RetrieveDatabaseSchemeTask(
             mock(classOf<IMigrationService>())
         )
     }
 
-    protected fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {
+    internal fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {
         return SynchronizeInitialDataTask(
             mock(classOf<INetworkValidator>()),
             mock(classOf<IOperationDatabaseHelper>()),
@@ -132,11 +132,11 @@ abstract class TestCase {
         })
     }
 
-    protected fun SqlDriver.registerEntity(entity: String) {
+    protected fun SqlDriver.registerEntity(entity: String, isWritable: Boolean = true) {
         execute(
             createSQLInsert(
                 EntitiesTable.TABLE_NAME,
-                EntitiesTable.mapToCreate(entity, true)
+                EntitiesTable.mapToCreate(entity, isWritable)
             )
         )
     }

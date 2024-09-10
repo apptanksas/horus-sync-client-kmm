@@ -10,7 +10,7 @@ import org.kotlincrypto.hash.sha2.SHA256
  *
  * Provides functionality to generate a hash from a list of `Horus.Attribute` objects or a list of strings.
  */
-object AttributeHasher {
+internal object AttributeHasher {
 
     /**
      * Generates a SHA-256 hash from a list of `Horus.Attribute` objects.

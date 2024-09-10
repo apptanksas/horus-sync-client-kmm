@@ -13,7 +13,7 @@ import kotlinx.serialization.modules.serializersModuleOf
  * @property type The data type of the column.
  * @property nullable Indicates whether the column can have null values.
  */
-data class Column(
+internal data class Column(
     val position: Int,
     val name: String,
     val type: String,
@@ -29,7 +29,7 @@ data class Column(
  *
  * @param T The type of value expected for the specified attribute.
  */
-data class Cursor(
+internal data class Cursor(
     val index: Int,
     val table: String,
     val values: List<CursorValue<*>>
@@ -71,7 +71,7 @@ data class Cursor(
  *
  * @param T The type of the column value.
  */
-data class CursorValue<T>(
+internal data class CursorValue<T>(
     val value: T,
     val column: Column
 )

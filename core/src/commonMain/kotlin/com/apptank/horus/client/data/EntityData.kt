@@ -68,7 +68,7 @@ sealed class Horus {
          * @param name The name of the attribute.
          * @return The float value of the attribute.
          */
-        fun getFloat(name: String): Float = data[name] as Float
+        fun getFloat(name: String): Float = (data[name] as Double).toFloat()
 
         /**
          * Retrieves a long attribute value by its name.

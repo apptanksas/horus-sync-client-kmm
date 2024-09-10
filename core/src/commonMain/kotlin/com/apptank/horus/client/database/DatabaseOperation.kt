@@ -71,7 +71,7 @@ sealed class DatabaseOperation(open val table: String) {
  *
  * @return A list of [DatabaseOperation.InsertRecord] objects representing the entity's data to be inserted.
  */
-fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
+internal fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
 
     val records = mutableListOf<DatabaseOperation.InsertRecord>()
 
@@ -99,7 +99,7 @@ fun Horus.Entity.toRecordsInsert(): List<DatabaseOperation.InsertRecord> {
  * @return A [DatabaseOperation.InsertRecord] representing the insert action.
  * @throws IllegalArgumentException If the action type is not [SyncControl.ActionType.INSERT].
  */
-fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertRecord {
+internal fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertRecord {
 
     if (action != SyncControl.ActionType.INSERT) {
         throw IllegalArgumentException("Action type must be INSERT")
@@ -132,7 +132,7 @@ fun SyncControl.Action.toInsertRecord(userId: String): DatabaseOperation.InsertR
  * @param currentEntity The current state of the entity to be updated.
  * @return A [DatabaseOperation.UpdateRecord] representing the update action.
  */
-fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOperation.UpdateRecord {
+internal fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOperation.UpdateRecord {
 
     val id = getEntityId()
     val attributes: List<Horus.Attribute<*>> = (getEntityAttributes()).map {
@@ -163,7 +163,7 @@ fun SyncControl.Action.toUpdateRecord(currentEntity: Horus.Entity): DatabaseOper
  *
  * @return A [DatabaseOperation.DeleteRecord] representing the delete action.
  */
-fun SyncControl.Action.toDeleteRecord(): DatabaseOperation.DeleteRecord {
+internal fun SyncControl.Action.toDeleteRecord(): DatabaseOperation.DeleteRecord {
     return DatabaseOperation.DeleteRecord(
         entity,
         listOf(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, getEntityId())))

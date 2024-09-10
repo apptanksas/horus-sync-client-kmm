@@ -244,6 +244,16 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
+     * Checks if an entity can be written to.
+     *
+     * @param entityName The name of the entity to check.
+     * @return True if the entity can be written to, false otherwise.
+     */
+    override fun isEntityCanBeWritable(entityName: String): Boolean {
+        return getTableEntities().filter { it.isWritable }.any { it.name == entityName }
+    }
+
+    /**
      * Creates a `SyncControl.Action` object from a database cursor.
      *
      * @param cursor The cursor containing the data.

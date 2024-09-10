@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
  * @param operationDatabaseHelper An instance of `IOperationDatabaseHelper` for handling database operations.
  * @param synchronizationService An instance of `ISynchronizationService` for interacting with the remote server.
  */
-class SynchronizatorManager(
+internal class SynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,

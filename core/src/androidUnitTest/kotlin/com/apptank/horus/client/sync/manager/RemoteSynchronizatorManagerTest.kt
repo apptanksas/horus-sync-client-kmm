@@ -40,9 +40,9 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     @Mock
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
-    val eventBus = EventBus
+    private val eventBus = EventBus
 
-    lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
+    private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
 
     @Before
     fun setup() {

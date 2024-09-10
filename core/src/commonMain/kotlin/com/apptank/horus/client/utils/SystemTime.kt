@@ -5,7 +5,7 @@ import kotlinx.datetime.Clock
 /**
  * Provides utility functions related to system time.
  */
-object SystemTime {
+internal object SystemTime {
 
     /**
      * Retrieves the current timestamp in seconds since the Unix epoch.

@@ -6,4 +6,4 @@ package com.apptank.horus.client.exception
  * This exception is used to indicate that a user is not authenticated and thus cannot perform
  * certain actions that require authentication.
  */
-class UserNotAuthenticatedException : Exception("User not authenticated")
+class UserNotAuthenticatedException : HorusException("User not authenticated")

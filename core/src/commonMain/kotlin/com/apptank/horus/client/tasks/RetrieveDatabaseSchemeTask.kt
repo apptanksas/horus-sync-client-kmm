@@ -9,7 +9,7 @@ import com.apptank.horus.client.migration.network.toScheme
  *
  * @property migrationService The service used to get migration data.
  */
-class RetrieveDatabaseSchemeTask(
+internal class RetrieveDatabaseSchemeTask(
     private val migrationService: IMigrationService
 ) : BaseTask() {
 

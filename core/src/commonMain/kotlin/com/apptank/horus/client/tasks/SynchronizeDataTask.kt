@@ -16,7 +16,7 @@ import com.apptank.horus.client.sync.network.service.ISynchronizationService
  * @property synchronizationService Service to handle synchronization operations.
  * @property dependsOnTask The task that must be completed before this task can run.
  */
-class SynchronizeDataTask(
+internal class SynchronizeDataTask(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
