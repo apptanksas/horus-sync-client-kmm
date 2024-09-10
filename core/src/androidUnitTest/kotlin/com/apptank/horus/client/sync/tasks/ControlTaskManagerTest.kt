@@ -56,7 +56,7 @@ class ControlTaskManagerTest : TestCase() {
         val database = HorusDatabase("database.db", driver)
 
         every { databaseDriverFactory.getDatabaseName() }.returns("database.db")
-        every { databaseDriverFactory.createDriver() }.returns(driver)
+        every { databaseDriverFactory.getDriver() }.returns(driver)
         every { databaseDriverFactory.getDatabase() }.returns(database)
         every { databaseDriverFactory.getSchema() }.returns(HorusDatabase.Schema)
 

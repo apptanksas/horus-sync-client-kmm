@@ -33,9 +33,9 @@ interface IDatabaseDriverFactory {
     fun getSchema(): HorusDatabase.Schema
 
     /**
-     * Creates and returns an instance of `SqlDriver` for database operations.
+     * Retrieves a new instance of `SqlDriver`.
      *
-     * @return An instance of `SqlDriver` used for interacting with the database.
+     * @return A new instance of `SqlDriver`.
      */
-    fun createDriver(): SqlDriver
+    fun getDriver(): SqlDriver
 }

@@ -23,7 +23,7 @@ import kotlin.uuid.Uuid
  * Provides a facade for synchronizing data operations, including inserting, updating, and deleting entities.
  * Handles callbacks and data change listeners, and interacts with the database through various helpers.
  */
-object SynchronizeDataFacade {
+object HorusDataFacade {
 
     private var isReady = false
     private var onCallbackReady: Callback? = null

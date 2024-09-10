@@ -1,11 +1,7 @@
 package com.apptank.horus.client.tasks
 
 import app.cash.sqldelight.db.AfterVersion
-import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
-import com.apptank.horus.client.database.HorusDatabase
-import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
-import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.russhwolf.settings.Settings
@@ -46,7 +42,7 @@ class ValidateMigrationLocalDatabaseTask(
 
             // Create database schema if it doesn't exist.
             if (schemaVersion == null) {
-                schema.create(databaseDriverFactory.createDriver(), data)
+                schema.create(databaseDriverFactory.getDriver(), data)
                 setSchemaVersion(schema.version)
                 return TaskResult.success()
             }
@@ -54,7 +50,7 @@ class ValidateMigrationLocalDatabaseTask(
             // Migrate database schema to the last version if needed.
             if (lastVersion > schemaVersion) {
                 schema.migrate(
-                    databaseDriverFactory.createDriver(),
+                    databaseDriverFactory.getDriver(),
                     schemaVersion,
                     lastVersion,
                     AfterVersion(lastVersion) {

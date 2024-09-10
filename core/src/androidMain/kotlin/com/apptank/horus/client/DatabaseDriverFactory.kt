@@ -8,13 +8,6 @@ import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
 
-class AndroidPlatform : Platform {
-    override val name: String = "Android ${android.os.Build.VERSION.SDK_INT}"
-}
-
-actual fun getPlatform(): Platform = AndroidPlatform()
-
-
 class DatabaseDriverFactory(
     private val context: Context
 ) : IDatabaseDriverFactory {
@@ -26,11 +19,11 @@ class DatabaseDriverFactory(
             }
         })
 
-    override fun createDriver(): SqlDriver {
+    override fun getDriver(): SqlDriver {
         return driver
     }
 
-    override fun getDatabase(): HorusDatabase = HorusDatabase(getDatabaseName(), createDriver())
+    override fun getDatabase(): HorusDatabase = HorusDatabase(getDatabaseName(), getDriver())
     override fun getDatabaseName(): String = DATABASE_NAME
 
     override fun getSchema(): HorusDatabase.Schema = HorusDatabase.Schema

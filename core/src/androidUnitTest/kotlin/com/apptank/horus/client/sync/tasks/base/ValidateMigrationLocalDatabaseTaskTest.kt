@@ -36,7 +36,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         settings = MapSettings()
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
 
-        every { databaseDriverFactory.createDriver() }.returns(driver)
+        every { databaseDriverFactory.getDriver() }.returns(driver)
         every { databaseDriverFactory.getDatabaseName() }.returns("test")
         every { databaseDriverFactory.getSchema() }.returns(HorusDatabase.Schema)
 

@@ -72,11 +72,11 @@ object HorusContainer {
         databaseFactory = factory
         operationDatabaseHelper = OperationDatabaseHelper(
             factory.getDatabaseName(),
-            factory.createDriver()
+            factory.getDriver()
         )
         syncControlDatabaseHelper = SyncControlDatabaseHelper(
             factory.getDatabaseName(),
-            factory.createDriver()
+            factory.getDriver()
         )
     }
 
