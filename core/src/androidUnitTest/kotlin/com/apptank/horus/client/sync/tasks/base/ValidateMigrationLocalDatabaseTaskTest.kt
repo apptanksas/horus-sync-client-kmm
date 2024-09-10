@@ -6,7 +6,7 @@ import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.database.HorusDatabase
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.di.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.apptank.horus.client.migration.network.toScheme
 import com.apptank.horus.client.tasks.TaskResult

@@ -7,7 +7,7 @@ import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.toRecordsInsert
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.toListEntityData
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 

@@ -1,4 +1,4 @@
-package com.apptank.horus.client.interfaces
+package com.apptank.horus.client.di
 
 import com.apptank.horus.client.base.Callback
 
@@ -23,4 +23,14 @@ interface INetworkValidator {
      * @param callback A function to be called when the network status changes.
      */
     fun onNetworkChange(callback: Callback)
+
+    /**
+     * Registers a network callback to monitor network changes.
+     */
+    fun registerNetworkCallback()
+
+    /**
+     * Unregisters the network callback.
+     */
+    fun unregisterNetworkCallback()
 }

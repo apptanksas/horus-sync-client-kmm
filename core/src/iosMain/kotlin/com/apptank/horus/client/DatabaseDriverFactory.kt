@@ -5,7 +5,7 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import co.touchlab.sqliter.DatabaseConfiguration
 import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.database.HorusDatabase
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.di.IDatabaseDriverFactory
 
 /**
  * A factory class responsible for creating and providing database drivers

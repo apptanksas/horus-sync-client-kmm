@@ -9,7 +9,7 @@ import com.apptank.horus.client.control.SyncControl
 import com.apptank.horus.client.data.Horus
 import com.apptank.horus.client.database.DatabaseOperation
 import com.apptank.horus.client.database.IOperationDatabaseHelper
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import io.mockative.Mock
@@ -21,7 +21,6 @@ import io.mockative.eq
 import io.mockative.every
 import io.mockative.mock
 import io.mockative.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock

@@ -1,7 +1,7 @@
 package com.apptank.horus.client.tasks
 
 import app.cash.sqldelight.db.AfterVersion
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.di.IDatabaseDriverFactory
 import com.apptank.horus.client.migration.domain.EntityScheme
 import com.apptank.horus.client.migration.domain.getLastVersion
 import com.russhwolf.settings.Settings

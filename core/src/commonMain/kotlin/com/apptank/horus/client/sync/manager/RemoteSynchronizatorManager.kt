@@ -10,7 +10,7 @@ import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.extensions.info
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.extensions.logException
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.toRequest
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,7 +39,7 @@ internal class RemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
-    private val event: EventBus,
+    private val event: EventBus = EventBus,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxAttempts: Int = 3
 ) {

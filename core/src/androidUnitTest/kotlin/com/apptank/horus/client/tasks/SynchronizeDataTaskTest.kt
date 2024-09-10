@@ -4,7 +4,7 @@ import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import io.mockative.Mock

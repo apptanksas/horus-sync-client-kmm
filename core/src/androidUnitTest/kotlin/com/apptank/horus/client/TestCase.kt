@@ -10,8 +10,8 @@ import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.extensions.createSQLInsert
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.prepareSQLValueAsString
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.IDatabaseDriverFactory
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.RetrieveDatabaseSchemeTask

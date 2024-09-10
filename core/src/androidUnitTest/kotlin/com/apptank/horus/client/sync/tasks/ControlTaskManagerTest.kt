@@ -7,8 +7,8 @@ import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.di.HorusContainer
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.IDatabaseDriverFactory
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService

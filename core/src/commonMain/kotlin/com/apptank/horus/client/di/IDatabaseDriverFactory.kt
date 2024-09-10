@@ -1,4 +1,4 @@
-package com.apptank.horus.client.interfaces
+package com.apptank.horus.client.di
 
 import app.cash.sqldelight.db.SqlDriver
 import com.apptank.horus.client.database.HorusDatabase

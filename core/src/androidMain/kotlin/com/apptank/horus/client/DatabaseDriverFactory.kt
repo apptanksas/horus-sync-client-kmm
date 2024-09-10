@@ -6,10 +6,10 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.apptank.horus.client.config.DATABASE_NAME
 import com.apptank.horus.client.database.HorusDatabase
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
+import com.apptank.horus.client.di.IDatabaseDriverFactory
 
 class DatabaseDriverFactory(
-    private val context: Context
+    context: Context
 ) : IDatabaseDriverFactory {
 
     private val driver: SqlDriver = AndroidSqliteDriver(getSchema(), context, getDatabaseName(),

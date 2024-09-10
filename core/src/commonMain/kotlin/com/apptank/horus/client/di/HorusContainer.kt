@@ -4,10 +4,9 @@ import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
 import com.apptank.horus.client.database.OperationDatabaseHelper
-import com.apptank.horus.client.interfaces.IDatabaseDriverFactory
-import com.apptank.horus.client.interfaces.INetworkValidator
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.migration.network.service.MigrationService
+import com.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.sync.network.service.SynchronizationService
 import com.russhwolf.settings.Settings
@@ -182,6 +181,14 @@ object HorusContainer {
     internal fun getNetworkValidator(): INetworkValidator {
         return networkValidator
             ?: throw IllegalStateException("NetworkValidator not set")
+    }
+
+    internal fun createRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
+        return RemoteSynchronizatorManager(
+            getNetworkValidator(),
+            getSyncControlDatabaseHelper(),
+            getSynchronizationService()
+        )
     }
 
     // ------------------------------------------------------------------------

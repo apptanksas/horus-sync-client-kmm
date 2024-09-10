@@ -20,17 +20,11 @@ import com.apptank.horus.client.extensions.evaluate
 import com.apptank.horus.client.extensions.isTrue
 import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.hashing.AttributeHasher
-import com.apptank.horus.client.interfaces.INetworkValidator
+import com.apptank.horus.client.di.INetworkValidator
 import com.apptank.horus.client.sync.network.dto.toDomain
 import com.apptank.horus.client.sync.network.dto.toEntityData
 import com.apptank.horus.client.sync.network.dto.toInternalModel
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /**
  * Manages data synchronization between local storage and a remote server.
