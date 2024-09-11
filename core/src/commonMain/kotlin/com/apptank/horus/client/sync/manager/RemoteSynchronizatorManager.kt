@@ -146,12 +146,12 @@ internal class RemoteSynchronizatorManager(
      * @return `true` if the operation was successful, `false` otherwise.
      */
     private suspend fun attemptOperation(callback: () -> Boolean): Boolean {
-        var attempts = 0
+        var attempts = 0L
         var isSuccess = false
         do {
             isSuccess = callback()
             if (attempts > 0) {
-                delay(1000)
+                delay(2000 * attempts)
             }
             attempts++
         } while (!isSuccess && attempts < maxAttempts)
@@ -170,12 +170,12 @@ internal class RemoteSynchronizatorManager(
     private suspend fun <T> attemptOperationResult(
         callback: suspend () -> DataResult<T>
     ): DataResult<T> {
-        var attempts = 0
+        var attempts = 0L
         var result: DataResult<T>
         do {
             result = callback()
             if (attempts > 0) {
-                delay(1000)
+                delay(2000 * attempts)
             }
             attempts++
         } while (result is DataResult.Failure && attempts < maxAttempts)

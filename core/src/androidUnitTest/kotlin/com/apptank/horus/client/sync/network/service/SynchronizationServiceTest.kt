@@ -12,6 +12,7 @@ import com.apptank.horus.client.ServiceTest
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.base.fold
 import com.apptank.horus.client.control.SyncControl
+import com.apptank.horus.client.extensions.log
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
@@ -131,6 +132,19 @@ class SynchronizationServiceTest : ServiceTest() {
                     "name" to "Farm ${uuid()}"
                 ), timestamp()
             )
+        } + generateArray {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.UPDATE.name, "farms", mapOf(
+                    "id" to uuid(),
+                    "attributes" to mapOf(
+                        "name" to "Attribute ${uuid()}",
+                        "boolean" to true,
+                        "int" to 1,
+                        "double" to 1.0,
+                        "float" to 1.0f,
+                    )
+                ), timestamp()
+            )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
         val service = SynchronizationService(mockEngine, BASE_URL)
@@ -139,6 +153,17 @@ class SynchronizationServiceTest : ServiceTest() {
         // Then
         assert(response is DataResult.Success)
         assertRequestBody(Json.encodeToString(actions))
+
+        // Validate request body
+        Json.decodeFromString<List<SyncDTO.Response.SyncAction>>(Json.encodeToString(actions))
+            .filter {
+                it.action == SyncControl.ActionType.UPDATE.name
+            }.forEach {
+            Assert.assertTrue(
+                "Attributes is type " + it.data!!["attributes"]!!::class.simpleName,
+                it.data?.get("attributes") is LinkedHashMap<*, *>
+            )
+        }
     }
 
     @Test

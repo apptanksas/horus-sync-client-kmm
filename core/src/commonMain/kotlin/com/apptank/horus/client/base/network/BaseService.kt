@@ -139,8 +139,6 @@ internal abstract class BaseService(
         }.getOrElse {
             it.printStackTrace()
             DataResult.Failure(it)
-        }.also {
-            client.close()
         }
     }
 
