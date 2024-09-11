@@ -130,7 +130,7 @@ internal abstract class BaseService(
 
             val responseText = response.bodyAsText()
 
-            if (responseText.isBlank()) {
+            if (responseText.responseIsEmpty()) {
                 return DataResult.Success(Unit as T)
             }
 
@@ -185,4 +185,14 @@ internal abstract class BaseService(
      */
     protected inline fun <reified R : Any> String.serialize() =
         decoderJson.decodeFromString<R>(this)
+
+    /**
+     * Extension function to check if a response body is empty or contains only whitespace.
+     * This is used to determine if the response is valid or not.
+     *
+     * @return True if the response is empty or contains only whitespace, false otherwise.
+     */
+    private fun String.responseIsEmpty(): Boolean {
+        return this.isBlank() || this == "{}" || this == "[]"
+    }
 }

@@ -343,6 +343,28 @@ class SynchronizationServiceTest : ServiceTest() {
     }
 
     @Test
+    fun getLastQueueActionIsEmptyWithObjectEmpty() = runBlocking {
+        // Given
+        val mockEngine = createMockResponse("{}")
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getLastQueueAction()
+        // Then
+        assert(response is DataResult.Success)
+    }
+
+    @Test
+    fun getLastQueueActionIsEmptyWithArrayEmpty() = runBlocking {
+        // Given
+        val mockEngine = createMockResponse("[]")
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getLastQueueAction()
+        // Then
+        assert(response is DataResult.Success)
+    }
+
+    @Test
     fun getEntityHashes() = runBlocking {
         // Given
         val entity = "entity123"
@@ -363,6 +385,30 @@ class SynchronizationServiceTest : ServiceTest() {
             onFailure = {
                 Assert.fail("Error")
             })
+    }
+
+    @Test
+    fun getEntityHashesIsEmptyWithArrayEmpty() = runBlocking {
+        // Given
+        val entity = "entity123"
+        val mockEngine = createMockResponse("[]")
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getEntityHashes(entity)
+        // Then
+        assert(response is DataResult.Success)
+    }
+
+    @Test
+    fun getEntityHashesIsEmptyWithObjectEmpty() = runBlocking {
+        // Given
+        val entity = "entity123"
+        val mockEngine = createMockResponse("{}")
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getEntityHashes(entity)
+        // Then
+        assert(response is DataResult.Success)
     }
 
 }
