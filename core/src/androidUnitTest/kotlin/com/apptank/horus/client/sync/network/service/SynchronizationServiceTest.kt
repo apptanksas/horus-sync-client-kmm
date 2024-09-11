@@ -159,11 +159,11 @@ class SynchronizationServiceTest : ServiceTest() {
             .filter {
                 it.action == SyncControl.ActionType.UPDATE.name
             }.forEach {
-            Assert.assertTrue(
-                "Attributes is type " + it.data!!["attributes"]!!::class.simpleName,
-                it.data?.get("attributes") is LinkedHashMap<*, *>
-            )
-        }
+                Assert.assertTrue(
+                    "Attributes is type " + it.data!!["attributes"]!!::class.simpleName,
+                    it.data?.get("attributes") is LinkedHashMap<*, *>
+                )
+            }
     }
 
     @Test
@@ -397,6 +397,9 @@ class SynchronizationServiceTest : ServiceTest() {
         val response = service.getEntityHashes(entity)
         // Then
         assert(response is DataResult.Success)
+        if (response is DataResult.Success) {
+            Assert.assertTrue(response.data.isEmpty())
+        }
     }
 
     @Test
@@ -409,6 +412,9 @@ class SynchronizationServiceTest : ServiceTest() {
         val response = service.getEntityHashes(entity)
         // Then
         assert(response is DataResult.Success)
+        if (response is DataResult.Success) {
+            Assert.assertTrue(response.data.isEmpty())
+        }
     }
 
 }

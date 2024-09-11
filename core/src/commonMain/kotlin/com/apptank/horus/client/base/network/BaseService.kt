@@ -69,7 +69,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the result of the request or an error.
      */
-    protected suspend fun <T : Any> get(
+    protected suspend inline fun <reified T : Any> get(
         path: String,
         queryParams: Map<String, String> = emptyMap(),
         onResponse: (response: String) -> T
@@ -95,7 +95,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the result of the request or an error.
      */
-    protected suspend fun <T : Any> post(
+    protected suspend inline fun <reified T : Any> post(
         path: String,
         data: Any,
         onResponse: (response: String) -> T
@@ -114,7 +114,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the success result or failure information.
      */
-    private suspend fun <T : Any> handleResponse(
+    private suspend inline fun <reified T : Any> handleResponse(
         response: HttpResponse,
         onResponse: (response: String) -> T
     ): DataResult<T> {
@@ -130,8 +130,12 @@ internal abstract class BaseService(
 
             val responseText = response.bodyAsText()
 
-            if (responseText.responseIsEmpty()) {
-                return DataResult.Success(Unit as T)
+            if (responseText.responseIsEmpty() && T::class == List::class) {
+                return DataResult.Success(onResponse("[]"))
+            }
+
+            if(responseText.responseIsEmpty()) {
+                return DataResult.Success(onResponse("{}"))
             }
 
             val responseParsed: T = onResponse(responseText)

@@ -23,7 +23,7 @@ internal class RetrieveDatabaseSchemeTask(
         return migrationService.getMigration().fold(
             onSuccess = {
                 // On success, map the migration data to the schema and return it.
-                TaskResult.success(it.map { it.toScheme() })
+                TaskResult.success(it?.map { it.toScheme() })
             },
             onFailure = {
                 // On failure, return the error.
