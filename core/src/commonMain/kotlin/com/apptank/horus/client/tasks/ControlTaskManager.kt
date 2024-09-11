@@ -10,7 +10,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 
 /**
  * Manages and executes a series of tasks in a specific order, handling dependencies between tasks.
@@ -80,6 +82,8 @@ internal object ControlTaskManager {
     // Callback to be invoked when all tasks are completed.
     private var onCompleted: Callback = {}
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     /**
      * Starts the execution of tasks.
      *
@@ -94,12 +98,16 @@ internal object ControlTaskManager {
 
         taskExecutionCounter = 0
 
-        CoroutineScope(dispatcher).launch {
-            executeStartupTask()
-        }.invokeOnCompletion {
-            if (it != null) {
-                it.printStackTrace()
-                onStatus(Status.FAILED)
+        scope.apply {
+            val job = launch(dispatcher) {
+                executeStartupTask()
+            }
+            job.invokeOnCompletion {
+                if (it != null) {
+                    it.printStackTrace()
+                    onStatus(Status.FAILED)
+                }
+                job.cancel()
             }
         }
     }

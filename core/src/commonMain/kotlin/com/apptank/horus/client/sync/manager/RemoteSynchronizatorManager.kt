@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -53,6 +54,8 @@ internal class RemoteSynchronizatorManager(
         }
     }
 
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
     /**
      * Attempts to synchronize pending data with the remote server.
      *
@@ -71,31 +74,39 @@ internal class RemoteSynchronizatorManager(
             return
         }
 
-        CoroutineScope(dispatcher).launch {
+        scope.apply {
+            val job = launch {
 
-            val pendingActions = syncControlDatabaseHelper.getPendingActions()
+                val pendingActions = syncControlDatabaseHelper.getPendingActions()
 
-            if (pendingActions.isEmpty()) {
-                return@launch
+                if (pendingActions.isEmpty()) {
+                    return@launch
+                }
+
+                attemptOperationResult {
+                    synchronizationService.postQueueActions(pendingActions.map { it.toRequest() })
+                }.coFold(
+                    onSuccess = {
+                        updateActionsAsCompleted(pendingActions)
+                    },
+                    onFailure = {
+                        logException("Error trying to sync actions")
+                        event.emit(
+                            EventType.SYNC_PUSH_FAILED,
+                            Event(mapOf<String, Any>("exception" to it))
+                        )
+                    })
             }
 
-            attemptOperationResult {
-                synchronizationService.postQueueActions(pendingActions.map { it.toRequest() })
-            }.coFold(
-                onSuccess = {
-                    updateActionsAsCompleted(pendingActions)
-                },
-                onFailure = {
-                    logException("Error trying to sync actions")
+            job.invokeOnCompletion {
+                it?.let {
+                    logException("Error trying to sync actions", it)
                     event.emit(
                         EventType.SYNC_PUSH_FAILED,
                         Event(mapOf<String, Any>("exception" to it))
                     )
-                })
-        }.invokeOnCompletion {
-            it?.let {
-                logException("Error trying to sync actions", it)
-                event.emit(EventType.SYNC_PUSH_FAILED, Event(mapOf<String, Any>("exception" to it)))
+                }
+                job.cancel()
             }
         }
     }

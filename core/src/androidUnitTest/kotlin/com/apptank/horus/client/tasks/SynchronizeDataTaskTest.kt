@@ -1,6 +1,7 @@
 package com.apptank.horus.client.tasks
 
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.database.IOperationDatabaseHelper
@@ -15,6 +16,7 @@ import io.mockative.every
 import io.mockative.mock
 import io.mockative.verify
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -43,6 +45,13 @@ class SynchronizeDataTaskTest : TestCase() {
             synchronizationService,
             getMockSynchronizeInitialDataTask()
         )
+
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+    }
+
+    @After
+    fun tearDown() {
+        HorusAuthentication.clearSession()
     }
 
     @Test
