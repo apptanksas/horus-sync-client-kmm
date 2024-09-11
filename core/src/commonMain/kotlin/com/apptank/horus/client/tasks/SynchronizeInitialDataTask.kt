@@ -91,5 +91,9 @@ internal class SynchronizeInitialDataTask(
             SyncControl.OperationType.INITIAL_SYNCHRONIZATION,
             SyncControl.Status.COMPLETED
         )
+        controlDatabaseHelper.addSyncTypeStatus(
+            SyncControl.OperationType.CHECKPOINT,
+            SyncControl.Status.COMPLETED
+        )
     }
 }

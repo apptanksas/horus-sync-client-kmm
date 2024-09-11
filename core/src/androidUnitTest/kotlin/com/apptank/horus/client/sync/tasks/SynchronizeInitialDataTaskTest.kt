@@ -120,6 +120,12 @@ class SynchronizeInitialDataTaskTest : TestCase() {
                     SyncControl.Status.COMPLETED
                 )
             }.wasInvoked()
+            verify {
+                syncControlDatabaseHelper.addSyncTypeStatus(
+                    SyncControl.OperationType.CHECKPOINT,
+                    SyncControl.Status.COMPLETED
+                )
+            }.wasInvoked()
         }
 
     @Test

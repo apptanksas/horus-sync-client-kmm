@@ -89,6 +89,20 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun getLastDatetimeCheckPointWithAddSyncTypeStatusIsSuccess() {
+        // Given
+
+        // When
+        controlManagerDatabaseHelper.addSyncTypeStatus(
+            SyncControl.OperationType.CHECKPOINT,
+            SyncControl.Status.COMPLETED
+        )
+        val lastDatetimeCheckpoint = controlManagerDatabaseHelper.getLastDatetimeCheckpoint()
+        // Then
+        Assert.assertNotEquals(0L, lastDatetimeCheckpoint)
+    }
+
+    @Test
     fun getLastDatetimeCheckPointIsZero() {
         // When
         val lastDatetimeCheckpoint = controlManagerDatabaseHelper.getLastDatetimeCheckpoint()
