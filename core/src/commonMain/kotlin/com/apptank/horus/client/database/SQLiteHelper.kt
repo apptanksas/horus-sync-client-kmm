@@ -91,15 +91,21 @@ abstract class SQLiteHelper(
         }
         val query = "PRAGMA table_info($tableName);" // Query columns
 
-        return driver.handle {
+        val columns = driver.handle {
             rawQuery(query) { cursor ->
                 Column(
                     cursor.getRequireInt(0),
                     cursor.getRequireString(1),
                     cursor.getRequireString(2),
-                    cursor.getRequireBoolean(3),
+                    cursor.getRequireBoolean(3).not(),
                 )
             }
+        }
+
+        return columns.also {
+            if (CACHE_COLUMN_NAMES[databaseName] == null)
+                CACHE_COLUMN_NAMES[databaseName] = mutableMapOf()
+            CACHE_COLUMN_NAMES[databaseName]?.set(tableName, it)
         }
     }
 

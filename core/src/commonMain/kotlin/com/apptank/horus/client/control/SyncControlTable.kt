@@ -18,10 +18,10 @@ internal object SyncControlTable {
     // SQL statement to create the table if it does not exist
     const val SQL_CREATE_TABLE =
         "CREATE TABLE IF NOT EXISTS $TABLE_NAME (" +
-                "$ATTR_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "$ATTR_TYPE INTEGER," +
-                "$ATTR_STATUS INTEGER," +
-                "$ATTR_DATETIME INTEGER)"
+                "$ATTR_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+                "$ATTR_TYPE INTEGER NOT NULL," +
+                "$ATTR_STATUS INTEGER NOT NULL," +
+                "$ATTR_DATETIME INTEGER NOT NULL)"
 
     /**
      * Maps an `OperationType` and `Status` to a `Map` for insertion into the `sync_control` table.

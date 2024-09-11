@@ -31,12 +31,12 @@ internal object QueueActionsTable {
      */
     const val SQL_CREATE_TABLE =
         "CREATE TABLE IF NOT EXISTS $TABLE_NAME (" +
-                "$ATTR_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "$ATTR_ACTION_TYPE INTEGER," +
-                "$ATTR_ENTITY TEXT," +
-                "$ATTR_DATA TEXT," +
-                "$ATTR_STATUS INTEGER," +
-                "$ATTR_DATETIME INTEGER)"
+                "$ATTR_ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+                "$ATTR_ACTION_TYPE INTEGER NOT NULL," +
+                "$ATTR_ENTITY TEXT NOT NULL," +
+                "$ATTR_DATA TEXT NOT NULL," +
+                "$ATTR_STATUS INTEGER NOT NULL," +
+                "$ATTR_DATETIME INTEGER NOT NULL)"
 
     /**
      * Maps the details of an action to a format suitable for insertion into the queue_actions table.
