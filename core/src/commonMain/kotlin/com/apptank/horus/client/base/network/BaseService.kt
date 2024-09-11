@@ -3,9 +3,15 @@ package com.apptank.horus.client.base.network
 import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
+import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.logException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -44,6 +50,14 @@ internal abstract class BaseService(
     protected val client = HttpClient(engine) {
         install(ContentNegotiation) {
             json(decoderJson)
+        }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    info(message)
+                }
+            }
+            level = LogLevel.ALL
         }
     }
 

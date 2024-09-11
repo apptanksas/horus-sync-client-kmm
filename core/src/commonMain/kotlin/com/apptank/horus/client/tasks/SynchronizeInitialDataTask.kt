@@ -68,7 +68,7 @@ internal class SynchronizeInitialDataTask(
      * @return True if the data was successfully saved, false otherwise.
      */
     private fun saveData(entities: List<Horus.Entity>, postCreated: Callback): Boolean {
-        val operations = entities.flatMap { it.toRecordsInsert() }
+        val operations = entities.flatMap { it.toRecordsInsert() }.reversed()
         return operationDatabaseHelper.insertWithTransaction(operations) {
             postCreated()
         }

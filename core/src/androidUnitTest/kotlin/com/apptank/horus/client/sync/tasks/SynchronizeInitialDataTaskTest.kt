@@ -1,13 +1,23 @@
 package com.apptank.horus.client.sync.tasks
 
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.apptank.horus.client.DATA_MIGRATION_INITIAL_DATA_TASK
+import com.apptank.horus.client.DATA_SYNC_INITIAL_DATA_TASK
 import com.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import com.apptank.horus.client.TestCase
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.buildEntitiesDataFromJSON
+import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
+import com.apptank.horus.client.control.SyncControlDatabaseHelper
+import com.apptank.horus.client.data.Horus
+import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.database.IOperationDatabaseHelper
+import com.apptank.horus.client.database.OperationDatabaseHelper
 import com.apptank.horus.client.di.INetworkValidator
+import com.apptank.horus.client.extensions.execute
+import com.apptank.horus.client.migration.network.toScheme
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.apptank.horus.client.tasks.SynchronizeInitialDataTask
 import com.apptank.horus.client.tasks.TaskResult
@@ -126,6 +136,41 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         assert(result is TaskResult.Failure)
         coVerify { synchronizeService.getData(any()) }.wasNotInvoked()
     }
+
+    @Test
+    fun `when get data is success then migration success with database constraints`(): Unit = runBlocking {
+
+        // Given
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val operationDatabaseHelper = OperationDatabaseHelper("database", driver)
+        val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+
+        val task =  SynchronizeInitialDataTask(
+            networkValidator,
+            operationDatabaseHelper,
+            syncControlDatabaseHelper,
+            synchronizeService,
+            getMockValidateHashingTask()
+        )
+
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
+        val entitiesData = buildEntitiesDataFromJSON(DATA_SYNC_INITIAL_DATA_TASK)
+
+        every { networkValidator.isNetworkAvailable() }.returns(true)
+        coEvery { synchronizeService.getData() }.returns(DataResult.Success(entitiesData))
+
+        HorusDatabase.Schema.create(driver, entitiesScheme)
+
+        // When
+        val result = task.execute(null)
+
+        // Then
+        assert(result is TaskResult.Success)
+    }
+
+
 
 
 }
