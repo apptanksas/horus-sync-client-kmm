@@ -3,6 +3,7 @@ package com.apptank.horus.client.sync.tasks
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.buildEntitiesSchemeFromJSON
 import com.apptank.horus.client.database.HorusDatabase
@@ -24,18 +25,22 @@ import io.mockative.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Test
+import org.junit.runners.MethodSorters
 import kotlin.test.fail
 
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class ControlTaskManagerTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
 
     @Mock
-    val networkValidator = mock(classOf<INetworkValidator>())
+    val networkValidator: INetworkValidator = mock(classOf<INetworkValidator>())
 
     @Mock
     val migrationService = mock(classOf<IMigrationService>())
@@ -68,6 +73,13 @@ class ControlTaskManagerTest : TestCase() {
             setupDatabaseFactory(databaseDriverFactory)
             setupBaseUrl("http://dev.horus.com")
         }
+
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+    }
+
+    @After
+    fun tearDown() {
+        HorusAuthentication.clearSession()
     }
 
     @Test
@@ -113,7 +125,7 @@ class ControlTaskManagerTest : TestCase() {
             synchronizationService.getData(any())
         }.returns(DataResult.Success(entitiesData))
 
-        every { networkValidator.isNetworkAvailable() }.returnsMany(true, false)
+        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false)
 
         var isCompleted = false
 
@@ -133,10 +145,10 @@ class ControlTaskManagerTest : TestCase() {
         delay(1000)
 
         // Then
-        Assert.assertTrue(isCompleted)
         Assert.assertEquals(
             taskExecutionCountExpected,
             ControlTaskManager.getTaskExecutionCounter()
         )
+        Assert.assertTrue(isCompleted)
     }
 }

@@ -3,9 +3,15 @@ package com.apptank.horus.client.base.network
 import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.exception.UserNotAuthenticatedException
+import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.logException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -45,6 +51,14 @@ internal abstract class BaseService(
         install(ContentNegotiation) {
             json(decoderJson)
         }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    info(message)
+                }
+            }
+            level = LogLevel.ALL
+        }
     }
 
     /**
@@ -55,7 +69,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the result of the request or an error.
      */
-    protected suspend fun <T : Any> get(
+    protected suspend inline fun <reified T : Any> get(
         path: String,
         queryParams: Map<String, String> = emptyMap(),
         onResponse: (response: String) -> T
@@ -81,7 +95,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the result of the request or an error.
      */
-    protected suspend fun <T : Any> post(
+    protected suspend inline fun <reified T : Any> post(
         path: String,
         data: Any,
         onResponse: (response: String) -> T
@@ -100,7 +114,7 @@ internal abstract class BaseService(
      * @param onResponse A lambda function to process the response body into the expected type.
      * @return A DataResult containing either the success result or failure information.
      */
-    private suspend fun <T : Any> handleResponse(
+    private suspend inline fun <reified T : Any> handleResponse(
         response: HttpResponse,
         onResponse: (response: String) -> T
     ): DataResult<T> {
@@ -116,8 +130,12 @@ internal abstract class BaseService(
 
             val responseText = response.bodyAsText()
 
-            if (responseText.isBlank()) {
-                return DataResult.Success(Unit as T)
+            if (responseText.responseIsEmpty() && T::class == List::class) {
+                return DataResult.Success(onResponse("[]"))
+            }
+
+            if(responseText.responseIsEmpty()) {
+                return DataResult.Success(onResponse("{}"))
             }
 
             val responseParsed: T = onResponse(responseText)
@@ -125,8 +143,6 @@ internal abstract class BaseService(
         }.getOrElse {
             it.printStackTrace()
             DataResult.Failure(it)
-        }.also {
-            client.close()
         }
     }
 
@@ -173,4 +189,14 @@ internal abstract class BaseService(
      */
     protected inline fun <reified R : Any> String.serialize() =
         decoderJson.decodeFromString<R>(this)
+
+    /**
+     * Extension function to check if a response body is empty or contains only whitespace.
+     * This is used to determine if the response is valid or not.
+     *
+     * @return True if the response is empty or contains only whitespace, false otherwise.
+     */
+    private fun String.responseIsEmpty(): Boolean {
+        return this.isBlank() || this == "{}" || this == "[]"
+    }
 }

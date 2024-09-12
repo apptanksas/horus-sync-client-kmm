@@ -5,11 +5,13 @@ import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
+import com.apptank.horus.client.extensions.info
 import com.apptank.horus.client.extensions.warn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -25,6 +27,9 @@ internal object ControlTaskManager {
         COMPLETED,   // Task execution has completed successfully.
         FAILED       // Task execution has failed.
     }
+
+
+    private val networkValidator = HorusContainer.getNetworkValidator()
 
     // Task instances with their dependencies set up.
     private val retrieveDatabaseSchemeTask = RetrieveDatabaseSchemeTask(
@@ -80,6 +85,8 @@ internal object ControlTaskManager {
     // Callback to be invoked when all tasks are completed.
     private var onCompleted: Callback = {}
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     /**
      * Starts the execution of tasks.
      *
@@ -92,14 +99,24 @@ internal object ControlTaskManager {
             return
         }
 
+        if (networkValidator.isNetworkAvailable().not()) {
+            info("Network is not available to start the horus task manager")
+            emitEventOnReady()
+            return
+        }
+
         taskExecutionCounter = 0
 
-        CoroutineScope(dispatcher).launch {
-            executeStartupTask()
-        }.invokeOnCompletion {
-            if (it != null) {
-                it.printStackTrace()
-                onStatus(Status.FAILED)
+        scope.apply {
+            val job = launch(dispatcher) {
+                executeStartupTask()
+            }
+            job.invokeOnCompletion {
+                if (it != null) {
+                    it.printStackTrace()
+                    onStatus(Status.FAILED)
+                }
+                job.cancel()
             }
         }
     }
@@ -191,7 +208,8 @@ internal object ControlTaskManager {
      * Emits an event when the task execution is completed.
      */
     private fun emitEventOnReady() {
-        EventBus.emit(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.ON_READY)
+        info("[Synchronization Validation] Horus sync is ready to operation")
     }
 
     /**

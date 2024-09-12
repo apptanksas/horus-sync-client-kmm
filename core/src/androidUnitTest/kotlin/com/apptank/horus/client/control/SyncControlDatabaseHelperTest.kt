@@ -89,6 +89,20 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun getLastDatetimeCheckPointWithAddSyncTypeStatusIsSuccess() {
+        // Given
+
+        // When
+        controlManagerDatabaseHelper.addSyncTypeStatus(
+            SyncControl.OperationType.CHECKPOINT,
+            SyncControl.Status.COMPLETED
+        )
+        val lastDatetimeCheckpoint = controlManagerDatabaseHelper.getLastDatetimeCheckpoint()
+        // Then
+        Assert.assertNotEquals(0L, lastDatetimeCheckpoint)
+    }
+
+    @Test
     fun getLastDatetimeCheckPointIsZero() {
         // When
         val lastDatetimeCheckpoint = controlManagerDatabaseHelper.getLastDatetimeCheckpoint()
@@ -323,5 +337,26 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then
         assert(isWritable)
         assert(isReadOnly)
+    }
+
+    @Test
+    fun getWritableEntitiesIsSuccess(){
+        // Given
+        val entityWritable = "entity_writable_123"
+        val entityReadOnly = "entity_read_only_423"
+
+        driver.createTable(entityWritable, mapOf("id" to "TEXT"))
+        driver.createTable(entityReadOnly, mapOf("id" to "TEXT"))
+
+        driver.registerEntity(entityWritable)
+        driver.registerEntity(entityReadOnly, false)
+
+        // When
+        val writableEntities = controlManagerDatabaseHelper.getWritableEntityNames()
+
+        // Then
+        Assert.assertEquals(1, writableEntities.size)
+        assert(writableEntities.contains(entityWritable))
+        assert(!writableEntities.contains(entityReadOnly))
     }
 }

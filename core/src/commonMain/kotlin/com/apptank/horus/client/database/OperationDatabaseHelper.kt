@@ -157,6 +157,7 @@ internal class OperationDatabaseHelper(
     override fun queryRecords(builder: QueryBuilder): List<DataMap> {
         // Initialize an empty mutable list to store the query results
         val output = mutableListOf<Map<String, Any>>()
+
         queryResult(builder.build()) { cursor ->
             val map = mutableMapOf<String, Any>()
             cursor.values.forEach {

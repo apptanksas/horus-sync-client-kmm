@@ -25,14 +25,14 @@ sealed class SyncDTO {
          * @param action The type of action (e.g., "INSERT", "UPDATE", "DELETE").
          * @param entity The name of the entity being synchronized.
          * @param data The data to be synchronized.
-         * @param datetime The timestamp of the action.
+         * @param actionedAt The timestamp of the action.
          */
         @Serializable
         data class SyncActionRequest(
             private val action: String,
             private val entity: String,
             private val data: DataMap,
-            private val datetime: Long
+            @SerialName("actioned_at") private val actionedAt: Long
         )
 
         /**

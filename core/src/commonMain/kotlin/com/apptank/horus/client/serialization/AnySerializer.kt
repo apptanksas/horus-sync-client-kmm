@@ -17,6 +17,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.modules.serializersModuleOf
@@ -53,7 +58,10 @@ internal object AnySerializer : KSerializer<Any> {
             is String -> JsonPrimitive(value)
             is Int -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
-            is Map<*, *> -> JsonPrimitive(Json.encodeToString(value as DataMap))
+            is Double -> JsonPrimitive(value)
+            is Float -> JsonPrimitive(value)
+            is Map<*, *> -> JsonObject(value.mapKeys { it.key.toString() }
+                .mapValues { Json.encodeToJsonElement(it.value) })
             else -> throw SerializationException("Unsupported type")
         }
         jsonEncoder.encodeJsonElement(jsonElement)
@@ -71,7 +79,8 @@ internal object AnySerializer : KSerializer<Any> {
      * @throws SerializationException If the decoder is not a `JsonDecoder` or if the JSON element type is unsupported.
      */
     override fun deserialize(decoder: Decoder): Any {
-        val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("This class can be loaded only by Json")
+        val jsonDecoder = decoder as? JsonDecoder
+            ?: throw SerializationException("This class can be loaded only by Json")
         val jsonElement = jsonDecoder.decodeJsonElement()
 
         return when (jsonElement) {
@@ -79,8 +88,11 @@ internal object AnySerializer : KSerializer<Any> {
                 jsonElement.isString -> jsonElement.content
                 jsonElement.intOrNull != null -> jsonElement.int
                 jsonElement.booleanOrNull != null -> jsonElement.boolean
+                jsonElement.floatOrNull != null -> jsonElement.float
+                jsonElement.doubleOrNull != null -> jsonElement.double
                 else -> throw SerializationException("Unknown primitive type")
             }
+
             is JsonArray -> decoderJSON.decodeFromString<List<DataMap>>(jsonElement.toString())
             is JsonObject -> decoderJSON.decodeFromString<DataMap>(jsonElement.toString())
             else -> throw SerializationException("Unsupported JsonElement type")

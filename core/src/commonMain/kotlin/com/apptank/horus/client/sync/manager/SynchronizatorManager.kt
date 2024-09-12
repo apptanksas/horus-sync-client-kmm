@@ -189,7 +189,7 @@ internal class SynchronizatorManager(
 
         val output = mutableListOf<Horus.EntityHash>()
 
-        syncControlDatabaseHelper.getEntityNames().forEach { entity ->
+        syncControlDatabaseHelper.getWritableEntityNames().forEach { entity ->
             val hashes = mutableListOf<String>()
             // Create a query to get the id and sync_hash of the entity
             val queryBuilder = SimpleQueryBuilder(entity)

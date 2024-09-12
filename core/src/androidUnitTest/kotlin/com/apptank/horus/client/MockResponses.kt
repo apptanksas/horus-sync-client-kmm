@@ -2343,3 +2343,628 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
   }
 ]
 """
+
+const val DATA_MIGRATION_INITIAL_DATA_TASK = """
+    [
+  {
+    "entity": "measures_values",
+    "type": "editable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_string",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "measure",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "w",
+          "v",
+          "a"
+        ]
+      },
+      {
+        "name": "unit",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "kg",
+          "g",
+          "lb",
+          "oz",
+          "mg",
+          "t",
+          "m3",
+          "L",
+          "mL",
+          "cm3",
+          "dm3",
+          "in3",
+          "ft3",
+          "yd3",
+          "m2",
+          "cm2",
+          "mm2",
+          "km2",
+          "ha",
+          "in2",
+          "ft2",
+          "yd2",
+          "ac"
+        ]
+      },
+      {
+        "name": "value",
+        "version": 1,
+        "type": "float",
+        "nullable": false
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "farms",
+    "type": "editable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_string",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "name",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "destination",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "name": "mv_area_total",
+        "version": 1,
+        "type": "uuid",
+        "nullable": false
+      },
+      {
+        "name": "mv_area_cow_farming",
+        "version": 1,
+        "type": "uuid",
+        "nullable": false
+      },
+      {
+        "name": "measure_milk",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "kg",
+          "g",
+          "lb",
+          "oz",
+          "mg",
+          "t",
+          "m3",
+          "L",
+          "mL",
+          "cm3",
+          "dm3",
+          "in3",
+          "ft3",
+          "yd3",
+          "m2",
+          "cm2",
+          "mm2",
+          "km2",
+          "ha",
+          "in2",
+          "ft2",
+          "yd2",
+          "ac"
+        ]
+      },
+      {
+        "name": "measure_weight",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "kg",
+          "g",
+          "lb",
+          "oz",
+          "mg",
+          "t",
+          "m3",
+          "L",
+          "mL",
+          "cm3",
+          "dm3",
+          "in3",
+          "ft3",
+          "yd3",
+          "m2",
+          "cm2",
+          "mm2",
+          "km2",
+          "ha",
+          "in2",
+          "ft2",
+          "yd2",
+          "ac"
+        ]
+      },
+      {
+        "name": "type",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2"
+        ]
+      },
+      {
+        "name": "relations_one_of_many",
+        "version": 1,
+        "type": "relation_one_of_many",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "farms_metadata",
+            "type": "editable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_string",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "farm_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "farms"
+              },
+              {
+                "name": "name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "value",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "animals",
+            "type": "editable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_string",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "farm_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "farms"
+              },
+              {
+                "name": "name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "code",
+                "version": 1,
+                "type": "string",
+                "nullable": true
+              },
+              {
+                "name": "gender",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "m",
+                  "f",
+                  "ud"
+                ]
+              },
+              {
+                "name": "type",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              {
+                "name": "purpose",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4"
+                ]
+              },
+              {
+                "name": "branding_iron_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "sale_status",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "0",
+                  "1",
+                  "2"
+                ]
+              },
+              {
+                "name": "stage",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              {
+                "name": "reproductive_status",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3"
+                ]
+              },
+              {
+                "name": "health_status",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              {
+                "name": "inside",
+                "version": 1,
+                "type": "boolean",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      },
+      {
+        "name": "relations_one_of_one",
+        "version": 1,
+        "type": "relation_one_of_one",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "farm_locations",
+            "type": "editable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_string",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "farm_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "farms"
+              },
+              {
+                "name": "country",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "city_id",
+                "version": 1,
+                "type": "int",
+                "nullable": false
+              },
+              {
+                "name": "longitude",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "latitude",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "address",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      }
+    ],
+    "current_version": 1
+  }
+]
+"""
+
+const val DATA_SYNC_INITIAL_DATA_TASK = """
+    [
+    {
+        "entity": "measures_values",
+        "data": {
+            "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "89424a4c2efa23f3b6a0caa03bfdcf66dd3d6d31c0559c8c286f82fcd3798f6d",
+            "sync_created_at": 1725044885,
+            "sync_updated_at": 1725044885,
+            "measure": "w",
+            "unit": "kg",
+            "value": 10
+        }
+    },
+    {
+        "entity": "farms",
+        "data": {
+            "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "e3d47ef233c70cc1819b8cf63818d7f79c3dc8d54d90c8241b76eae67be7254d",
+            "sync_created_at": 1725051913,
+            "sync_updated_at": 1725051913,
+            "name": "Finca Los Alpinos",
+            "destination": "1",
+            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "measure_milk": "L",
+            "measure_weight": "kg",
+            "type": "1",
+            "_metadata": [],
+            "_lots": [],
+            "_animals": [
+                {
+                    "entity": "animals",
+                    "data": {
+                        "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
+                        "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+                        "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
+                        "sync_created_at": 1725051913,
+                        "sync_updated_at": 1725051913,
+                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "name": "Camila",
+                        "code": "9012345",
+                        "gender": "f",
+                        "type": "1",
+                        "purpose": "2",
+                        "sale_status": "0",
+                        "stage": "4",
+                        "reproductive_status": "1",
+                        "health_status": "1",
+                        "inside": 1,
+                        "_deaths": [],
+                        "_facts": [],
+                        "_favorites": [],
+                        "_images": [],
+                        "_weights": [],
+                        "_inseminations": [],
+                        "_treatments": [],
+                        "_alerts": [],
+                        "_pregnantChecks": [],
+                        "_abortions": [],
+                        "_breed": [],
+                        "_mastitis": [],
+                        "_milking": []
+                    }
+                }
+            ],
+            "_irons": [],
+            "_milkSales": []
+        }
+    },
+    {
+        "entity": "farms",
+        "data": {
+            "id": "7d00764c-9660-4f32-b9c0-00bc2ef0f6fa",
+            "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
+            "sync_hash": "2a1fbbb73aa1d37cb9e36874ea900034e16de18263960fde38b01578380a80a9",
+            "sync_created_at": 1725281682,
+            "sync_updated_at": 1725281682,
+            "name": "Finca Maracana",
+            "destination": "1",
+            "mv_area_total": "ec8f99e4-82c9-496f-9ba8-4c39585daa27",
+            "mv_area_cow_farming": "03b0fe9c-b06f-489f-8148-8301bec3f89a",
+            "measure_milk": "L",
+            "measure_weight": "kg",
+            "type": "1",
+            "_metadata": [],
+            "_lots": [],
+            "_animals": [],
+            "_irons": [],
+            "_milkSales": []
+        }
+    }
+]
+"""

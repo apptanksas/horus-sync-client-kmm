@@ -9,7 +9,7 @@ import com.apptank.horus.client.di.HorusContainer
  *
  * @param message The message to be logged.
  */
-fun log(message: String) {
+internal fun log(message: String) {
     HorusContainer.getLogger()?.log(message)
 }
 
@@ -20,7 +20,7 @@ fun log(message: String) {
  *
  * @param message The informational message to be logged.
  */
-fun info(message: String) {
+internal fun info(message: String) {
     HorusContainer.getLogger()?.info(message)
 }
 
@@ -31,7 +31,7 @@ fun info(message: String) {
  *
  * @param message The warning message to be logged.
  */
-fun warn(message: String) {
+internal fun warn(message: String) {
     HorusContainer.getLogger()?.warn(message)
 }
 

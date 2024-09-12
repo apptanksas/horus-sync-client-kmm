@@ -243,6 +243,11 @@ internal class SyncControlDatabaseHelper(
             .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
+    override fun getWritableEntityNames(): List<String> {
+        return getTableEntities().filter { it.isWritable }.map { it.name }
+            .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
+    }
+
     /**
      * Checks if an entity can be written to.
      *

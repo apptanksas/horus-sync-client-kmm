@@ -1,6 +1,7 @@
 package com.apptank.horus.client.sync.manager
 
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.auth.HorusAuthentication
 import com.apptank.horus.client.base.DataResult
 import com.apptank.horus.client.control.ISyncControlDatabaseHelper
 import com.apptank.horus.client.control.SyncControl
@@ -22,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -54,6 +56,13 @@ class RemoteSynchronizatorManagerTest : TestCase() {
             Dispatchers.Default,
             0
         )
+
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+    }
+
+    @After
+    fun tearDown() {
+        HorusAuthentication.clearSession()
     }
 
     @Test

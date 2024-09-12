@@ -10,7 +10,8 @@ import com.russhwolf.settings.SharedPreferencesSettings
  * @param baseUrl The base URL of the API.
  */
 class HorusConfigurator(
-    private val baseUrl: String
+    private val baseUrl: String,
+    private val isDebug: Boolean = false
 ) {
 
     /**
@@ -30,7 +31,7 @@ class HorusConfigurator(
             setupBaseUrl(baseUrl)
             setupDatabaseFactory(DatabaseDriverFactory(context))
             setupNetworkValidator(NetworkValidator(context))
-            setupLogger(AndroidLogger())
+            if (isDebug) setupLogger(AndroidLogger())
         }
     }
 }

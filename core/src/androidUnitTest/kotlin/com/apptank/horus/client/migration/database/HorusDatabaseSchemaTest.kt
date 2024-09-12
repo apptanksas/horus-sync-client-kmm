@@ -120,6 +120,10 @@ class HorusDatabaseSchemaTest {
         Assert.assertNull(tableFarmLocationsColumnsV1.find { it.name == "longitude" })
         Assert.assertTrue(tableFarmLocationsColumnsV2.isNotEmpty())
         Assert.assertNotNull(tableFarmLocationsColumnsV2.find { it.name == "longitude" })
+        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_hash" })
+        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_owner_id" })
+        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_created_at" })
+        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_updated_at" })
     }
 
 
@@ -158,6 +162,7 @@ class HorusDatabaseSchemaTest {
         Assert.assertNull(tableFarmsColumnsV2.find { it.name == "destination" })
         Assert.assertTrue(tableFarmsColumnsV3.isNotEmpty())
         Assert.assertNotNull(tableFarmsColumnsV3.find { it.name == "destination" })
+        Assert.assertFalse(tableFarmsColumnsV3.find { it.name == "destination" }?.nullable ?: true)
 
 
         // Validate that the column "animal_id" was added in the version 3
@@ -165,6 +170,7 @@ class HorusDatabaseSchemaTest {
         Assert.assertNull(tableLotsColumnsV2.find { it.name == "animal_id" })
         Assert.assertTrue(tableLotsColumnsV3.isNotEmpty())
         Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "animal_id" })
+        Assert.assertFalse(tableLotsColumnsV3.find { it.name == "animal_id" }?.nullable ?: true)
 
         // Validate new entity "farms_metadata" was added in the version 3
         Assert.assertTrue(tablesV2.notContains("farms_metadata"))

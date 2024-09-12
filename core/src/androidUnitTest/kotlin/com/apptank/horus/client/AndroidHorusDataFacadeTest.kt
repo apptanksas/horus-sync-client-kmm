@@ -93,7 +93,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         HorusDataFacade.onReady {
             invoked = true
         }
-        EventBus.emit(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.ON_READY)
         assert(invoked)
     }
 
@@ -363,7 +363,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {
         HorusDataFacade
-        EventBus.emit(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.ON_READY)
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         migrateDatabase()
         block()

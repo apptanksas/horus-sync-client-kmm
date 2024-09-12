@@ -9,12 +9,12 @@ import kotlinx.serialization.json.Json
  * Typealias for a map that holds data where the values are of any type, serializable using `AnySerializer`.
  * This is commonly used to handle dynamic or flexible data structures in JSON format.
  */
-internal typealias DataMap = Map<String, @Serializable(with = AnySerializer::class) Any?>
+typealias DataMap = Map<String, @Serializable(with = AnySerializer::class) Any?>
 
 /**
  * Typealias for a simple callback function that takes no arguments and returns no value.
  */
-internal typealias Callback = () -> Unit
+typealias Callback = () -> Unit
 
 /**
  * Extension function for DataMap that serializes the map into a JSON string.

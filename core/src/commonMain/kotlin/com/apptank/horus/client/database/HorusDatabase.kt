@@ -11,6 +11,8 @@ import com.apptank.horus.client.control.SyncControlTable
 import com.apptank.horus.client.extensions.createSQLInsert
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.handle
+import com.apptank.horus.client.extensions.info
+import com.apptank.horus.client.extensions.logException
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
 import com.apptank.horus.client.migration.database.DatabaseUpgradeDelegate
 import com.apptank.horus.client.migration.domain.EntityScheme
@@ -67,25 +69,6 @@ class HorusDatabase(
         }
 
         /**
-         * Executes a raw query using the provided driver and maps the results using the provided mapper.
-         *
-         * @param query The SQL query to execute.
-         * @param mapper A function to map each row of the cursor to a result item.
-         * @return A list of results obtained from the query.
-         */
-        private fun <T> SqlDriver.rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
-            return executeQuery(null, query, {
-                val resultList = mutableListOf<T>()
-                while (it.next().value) {
-                    mapper(it)?.let { item ->
-                        resultList.add(item)
-                    }
-                }
-                QueryResult.Value(resultList)
-            }, 0).value
-        }
-
-        /**
          * Creates the database schema using the provided driver.
          *
          * @param driver The SQL driver used to execute queries.
@@ -100,6 +83,7 @@ class HorusDatabase(
 
                 databaseCreatorDelegate?.createTables {
                     execute(Random.nextInt(), it, 0)
+                    info("[Migration] Created table: $it")
                 }
 
                 // Insert entities into the entities table indicating if they are writable
@@ -148,8 +132,10 @@ class HorusDatabase(
             vararg callbacks: AfterVersion
         ): QueryResult.Value<Unit> {
             driver.handle {
+
                 databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
                     driver.execute(Random.nextInt(), it, 0)
+                    info("[Migration] Executed: $it")
                 }
 
                 // Insert entities into the entities table indicating if they are writable
@@ -177,6 +163,7 @@ class HorusDatabase(
                 )
             } catch (e: Exception) {
                 // Ignore
+                logException("[Migration] Error insert entity", e)
             }
         }
     }
