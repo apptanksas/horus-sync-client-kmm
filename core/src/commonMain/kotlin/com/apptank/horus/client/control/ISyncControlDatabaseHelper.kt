@@ -108,6 +108,13 @@ interface ISyncControlDatabaseHelper {
     fun getEntityNames(): List<String>
 
     /**
+     * Retrieves a list of all entity names that can be written to.
+     *
+     * @return A list of entity names.
+     */
+    fun getWritableEntityNames(): List<String>
+
+    /**
      * Checks if an entity can be written to.
      *
      * @param entityName The name of the entity to check.

@@ -338,4 +338,25 @@ class SyncControlDatabaseHelperTest : TestCase() {
         assert(isWritable)
         assert(isReadOnly)
     }
+
+    @Test
+    fun getWritableEntitiesIsSuccess(){
+        // Given
+        val entityWritable = "entity_writable_123"
+        val entityReadOnly = "entity_read_only_423"
+
+        driver.createTable(entityWritable, mapOf("id" to "TEXT"))
+        driver.createTable(entityReadOnly, mapOf("id" to "TEXT"))
+
+        driver.registerEntity(entityWritable)
+        driver.registerEntity(entityReadOnly, false)
+
+        // When
+        val writableEntities = controlManagerDatabaseHelper.getWritableEntityNames()
+
+        // Then
+        Assert.assertEquals(1, writableEntities.size)
+        assert(writableEntities.contains(entityWritable))
+        assert(!writableEntities.contains(entityReadOnly))
+    }
 }

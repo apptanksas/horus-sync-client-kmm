@@ -512,7 +512,7 @@ class SynchronizatorManagerTest : TestCase() {
         }.returns(DataResult.Success(emptyList()))
 
         // ---> Get entities name
-        every { syncControlDatabaseHelper.getEntityNames() }.returns(entityNames)
+        every { syncControlDatabaseHelper.getWritableEntityNames() }.returns(entityNames)
         // ---> Get entities hash
         every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
         // ---> Validate entities data
@@ -585,7 +585,7 @@ class SynchronizatorManagerTest : TestCase() {
             }.returns(DataResult.Success(emptyList()))
 
             // ---> Get entities name
-            every { syncControlDatabaseHelper.getEntityNames() }.returns(entityNames)
+            every { syncControlDatabaseHelper.getWritableEntityNames() }.returns(entityNames)
             // ---> Get entities hash
             every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
             // ---> Validate entities data
