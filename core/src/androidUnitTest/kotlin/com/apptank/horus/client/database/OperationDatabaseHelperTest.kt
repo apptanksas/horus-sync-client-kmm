@@ -3,6 +3,7 @@ package com.apptank.horus.client.database
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.apptank.horus.client.TestCase
+import com.apptank.horus.client.database.builder.SimpleQueryBuilder
 import com.apptank.horus.client.extensions.execute
 import com.apptank.horus.client.extensions.getRequireInt
 import com.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
@@ -16,7 +17,7 @@ import org.junit.Test
 import kotlin.random.Random
 
 
-class DatabaseOperationHelperTest : TestCase() {
+class OperationDatabaseHelperTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
     private lateinit var databaseHelper: OperationDatabaseHelper
@@ -428,6 +429,88 @@ class DatabaseOperationHelperTest : TestCase() {
         Assert.assertEquals(0, getCountFromTable("phones"))
     }
 
+    @Test
+    fun validateQueryRecordIsSuccess() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        val listActions = generateArray {
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("value", Random.nextInt()),
+                    SQL.ColumnValue("float", Random.nextFloat()),
+                    SQL.ColumnValue("boolean", Random.nextBoolean())
+                )
+            )
+        }
+        databaseHelper.insertWithTransaction(listActions)
+        // When
+        val result = databaseHelper.queryRecords(SimpleQueryBuilder(entityName))
+
+        // Then
+        Assert.assertEquals(listActions.size, result.size)
+        result.forEach {
+            Assert.assertTrue(it.containsKey("id"))
+            Assert.assertTrue(it.containsKey("name"))
+            Assert.assertTrue(it.containsKey("value"))
+            Assert.assertTrue(it.containsKey("float"))
+            Assert.assertTrue(it.containsKey("boolean"))
+        }
+    }
+
+    @Test
+    fun validateQueryRecordWithSelectTwoIsSuccess() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        val listActions = generateArray {
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("value", Random.nextInt()),
+                    SQL.ColumnValue("float", Random.nextFloat()),
+                    SQL.ColumnValue("boolean", Random.nextBoolean())
+                )
+            )
+        }
+        databaseHelper.insertWithTransaction(listActions)
+        // When
+        val result = databaseHelper.queryRecords(SimpleQueryBuilder(entityName).apply {
+            select("name","boolean")
+        })
+
+        // Then
+        Assert.assertEquals(listActions.size, result.size)
+        result.forEach {
+            Assert.assertTrue(it.containsKey("name"))
+            Assert.assertTrue(it.containsKey("boolean"))
+        }
+    }
 
     private fun getCountFromTable(table: String): Int {
         return driver.executeQuery(
