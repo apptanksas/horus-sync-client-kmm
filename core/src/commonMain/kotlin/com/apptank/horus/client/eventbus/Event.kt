@@ -14,9 +14,9 @@ data class Event(val data: DataMap? = null)
  */
 enum class EventType {
     /**
-     * Event type indicating that synchronization validation is complete.
+     * Event type indicating that the client is ready to start synchronization.
      */
-    VALIDATION_COMPLETED,
+    ON_READY,
 
     /**
      * Event type indicating that pushing new data to the server was successful.

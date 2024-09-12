@@ -42,7 +42,7 @@ object HorusDataFacade {
 
     init {
         registerEntityEventListeners()
-        EventBus.register(EventType.VALIDATION_COMPLETED) {
+        EventBus.register(EventType.ON_READY) {
             isReady = true
             onCallbackReady?.invoke()
         }

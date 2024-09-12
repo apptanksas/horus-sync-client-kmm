@@ -5,6 +5,7 @@ import com.apptank.horus.client.base.Callback
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.eventbus.EventBus
 import com.apptank.horus.client.eventbus.EventType
+import com.apptank.horus.client.extensions.info
 import com.apptank.horus.client.extensions.warn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -12,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 
 /**
  * Manages and executes a series of tasks in a specific order, handling dependencies between tasks.
@@ -27,6 +27,9 @@ internal object ControlTaskManager {
         COMPLETED,   // Task execution has completed successfully.
         FAILED       // Task execution has failed.
     }
+
+
+    private val networkValidator = HorusContainer.getNetworkValidator()
 
     // Task instances with their dependencies set up.
     private val retrieveDatabaseSchemeTask = RetrieveDatabaseSchemeTask(
@@ -93,6 +96,12 @@ internal object ControlTaskManager {
 
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated to start the horus task manager")
+            return
+        }
+
+        if (networkValidator.isNetworkAvailable().not()) {
+            info("Network is not available to start the horus task manager")
+            emitEventOnReady()
             return
         }
 
@@ -199,7 +208,8 @@ internal object ControlTaskManager {
      * Emits an event when the task execution is completed.
      */
     private fun emitEventOnReady() {
-        EventBus.emit(EventType.VALIDATION_COMPLETED)
+        EventBus.emit(EventType.ON_READY)
+        info("[Synchronization Validation] Horus sync is ready to operation")
     }
 
     /**

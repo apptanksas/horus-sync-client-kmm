@@ -10,6 +10,8 @@ import com.apptank.horus.client.database.HorusDatabase
 import com.apptank.horus.client.di.HorusContainer
 import com.apptank.horus.client.di.IDatabaseDriverFactory
 import com.apptank.horus.client.di.INetworkValidator
+import com.apptank.horus.client.eventbus.EventBus
+import com.apptank.horus.client.eventbus.EventType
 import com.apptank.horus.client.migration.network.service.IMigrationService
 import com.apptank.horus.client.sync.network.dto.SyncDTO
 import com.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -20,6 +22,7 @@ import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf
 import io.mockative.coEvery
+import io.mockative.coVerify
 import io.mockative.every
 import io.mockative.mock
 import kotlinx.coroutines.Dispatchers
@@ -28,16 +31,19 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Test
+import org.junit.runners.MethodSorters
 import kotlin.test.fail
 
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class ControlTaskManagerTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
 
     @Mock
-    val networkValidator = mock(classOf<INetworkValidator>())
+    val networkValidator: INetworkValidator = mock(classOf<INetworkValidator>())
 
     @Mock
     val migrationService = mock(classOf<IMigrationService>())
@@ -122,7 +128,7 @@ class ControlTaskManagerTest : TestCase() {
             synchronizationService.getData(any())
         }.returns(DataResult.Success(entitiesData))
 
-        every { networkValidator.isNetworkAvailable() }.returnsMany(true, false)
+        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false)
 
         var isCompleted = false
 
@@ -142,10 +148,10 @@ class ControlTaskManagerTest : TestCase() {
         delay(1000)
 
         // Then
-        Assert.assertTrue(isCompleted)
         Assert.assertEquals(
             taskExecutionCountExpected,
             ControlTaskManager.getTaskExecutionCounter()
         )
+        Assert.assertTrue(isCompleted)
     }
 }
