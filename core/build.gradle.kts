@@ -31,7 +31,7 @@ kotlin {
         ios.deploymentTarget = "16.0"
         framework {
             baseName = "core"
-            isStatic = true
+            isStatic = false
         }
     }
 
@@ -84,7 +84,7 @@ android {
 }
 
 group = "com.apptank.horus.client"
-version = "0.0.20"
+version = "0.0.23"
 
 dependencies {
     // Configuration mockative
