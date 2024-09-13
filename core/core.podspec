@@ -1,20 +1,20 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'core'
     spec.version                  = '1.0'
-    spec.homepage                 = 'Link to the Shared Module homepage'
+    spec.homepage                 = 'Link [TBD]'
     spec.source                   = { :http=> ''}
     spec.authors                  = ''
     spec.license                  = ''
-    spec.summary                  = 'Some description for the Shared Module'
-    spec.vendored_frameworks      = 'build/cocoapods/framework/core.framework'
+    spec.summary                  = 'Horus is a library data synchronizer between app and remote server'
+    spec.vendored_frameworks      = 'build/cocoapods/framework/horus.framework'
     spec.libraries                = 'c++'
     spec.ios.deployment_target    = '16.0'
                 
                 
-    if !Dir.exist?('build/cocoapods/framework/core.framework') || Dir.empty?('build/cocoapods/framework/core.framework')
+    if !Dir.exist?('build/cocoapods/framework/horus.framework') || Dir.empty?('build/cocoapods/framework/horus.framework')
         raise "
 
-        Kotlin framework 'core' doesn't exist yet, so a proper Xcode project can't be generated.
+        Kotlin framework 'horus' doesn't exist yet, so a proper Xcode project can't be generated.
         'pod install' should be executed after running ':generateDummyFramework' Gradle task:
 
             ./gradlew :core:generateDummyFramework
@@ -28,7 +28,7 @@ Pod::Spec.new do |spec|
                 
     spec.pod_target_xcconfig = {
         'KOTLIN_PROJECT_PATH' => ':core',
-        'PRODUCT_MODULE_NAME' => 'core',
+        'PRODUCT_MODULE_NAME' => 'horus',
     }
                 
     spec.script_phases = [
