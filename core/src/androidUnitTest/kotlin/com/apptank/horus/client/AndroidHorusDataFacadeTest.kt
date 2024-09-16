@@ -132,8 +132,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateInsertTest()
         validateInsertAndUpdateIsSuccess()
         validateInsertAndDeleteIsSuccess()
-        validateGetEntityByIdReturnEntity()
-        validateGetEntityByIdReturnNull()
+        validateGetEntityByIdReturnRecord()
+        validateGetByIdReturnNull()
         validateGetEntities()
         validateGetEntitiesWithWhereConditions()
         validateGetEntitiesWithLimitAndOffset()
@@ -158,20 +158,20 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
 
         Assert.assertThrows(EntityNotExistsException::class.java) {
-            HorusDataFacade.updateEntity(entityName, "id", mapOf("key" to "value"))
+            HorusDataFacade.update(entityName, "id", mapOf("key" to "value"))
         }
 
         Assert.assertThrows(EntityNotExistsException::class.java) {
-            HorusDataFacade.deleteEntity(entityName, "id")
+            HorusDataFacade.delete(entityName, "id")
         }
 
         Assert.assertThrows(EntityNotExistsException::class.java) {
-            HorusDataFacade.getEntityById(entityName, "id")
+            HorusDataFacade.getById(entityName, "id")
         }
 
         Assert.assertThrows(EntityNotExistsException::class.java) {
             runBlocking {
-                HorusDataFacade.getEntities(entityName)
+                HorusDataFacade.querySimple(entityName)
             }
         }
 
@@ -196,7 +196,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // When
 
         val resultUpdate = if (resultInsert is DataResult.Success) {
-            HorusDataFacade.updateEntity(
+            HorusDataFacade.update(
                 "measures_values",
                 resultInsert.data,
                 mapOf("value" to valueExpected)
@@ -228,7 +228,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // When
         val resultDelete = if (resultInsert is DataResult.Success) {
-            HorusDataFacade.deleteEntity("measures_values", resultInsert.data)
+            HorusDataFacade.delete("measures_values", resultInsert.data)
         } else {
             DataResult.Failure(Exception("Error"))
         }
@@ -246,7 +246,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
     }
 
-    private fun validateGetEntityByIdReturnEntity() = prepareInternalTest {
+    private fun validateGetEntityByIdReturnRecord() = prepareInternalTest {
         // Given
         val resultInsert = HorusDataFacade.insert(
             "measures_values",
@@ -255,7 +255,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // When
         val entity =
-            HorusDataFacade.getEntityById(
+            HorusDataFacade.getById(
                 "measures_values",
                 (resultInsert as DataResult.Success).data
             )
@@ -277,7 +277,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // When
         val result =
-            HorusDataFacade.getEntities("measures_values")
+            HorusDataFacade.querySimple("measures_values")
 
         result.fold(
             { entities ->
@@ -300,7 +300,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val entityId = getEntityId(insertResult)
         val result =
-            HorusDataFacade.getEntities(
+            HorusDataFacade.querySimple(
                 "measures_values",
                 listOf(SQL.WhereCondition(SQL.ColumnValue("id", entityId)))
             )
@@ -328,7 +328,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // When
         val result =
-            HorusDataFacade.getEntities(
+            HorusDataFacade.querySimple(
                 "measures_values",
                 limit = 10,
                 offset = 5
@@ -346,10 +346,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
     }
 
-    private fun validateGetEntityByIdReturnNull() {
+    private fun validateGetByIdReturnNull() {
         // When
         val entity =
-            HorusDataFacade.getEntityById("measures_values", uuid())
+            HorusDataFacade.getById("measures_values", uuid())
 
         // Then
         Assert.assertNull(entity)
