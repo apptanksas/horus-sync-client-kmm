@@ -220,7 +220,7 @@ del registro.
 
 val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 
-val result = HorusDataFacade.deleteEntity("users", userId)
+val result = HorusDataFacade.delete("users", userId)
 
 when (result) {
     is DataResult.Success -> {
