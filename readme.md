@@ -287,7 +287,7 @@ la sesión usuario de su aplicación para poder configurar el access token.
 ### Configurar access token
 
 ```kotlin  
-HorusAuthentication.setupUserAccessToken("[ACCESS_TOKEN]")  
+HorusAuthentication.setupUserAccessToken("{ACCESS_TOKEN}")  
 ```  
 
 ### Limpiar sesion
