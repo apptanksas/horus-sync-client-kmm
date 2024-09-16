@@ -58,7 +58,7 @@ object HorusDataFacade {
     }
 
     /**
-     * Inserts a new entity into the database with specified attributes.
+     * Inserts a new record into the database with specified attributes.
      *
      * @param entity The name of the entity to insert.
      * @param attributes The attributes to insert with the entity.
@@ -103,7 +103,7 @@ object HorusDataFacade {
     }
 
     /**
-     * Inserts a new entity into the database with specified attributes.
+     * Inserts a new record into the database with specified attributes.
      *
      * @param entity The name of the entity to insert.
      * @param attributes The attributes to insert with the entity.
@@ -117,7 +117,7 @@ object HorusDataFacade {
     }
 
     /**
-     * Inserts a new entity into the database with specified attributes.
+     * Inserts a new record into the database with specified attributes.
      *
      * @param entity The name of the entity to insert.
      * @param attributes The attributes to insert with the entity.
@@ -138,7 +138,7 @@ object HorusDataFacade {
      * @param attributes The attributes to update for the entity.
      * @return A [DataResult] indicating success or failure of the update operation.
      */
-    fun updateEntity(
+    fun update(
         entity: String,
         id: String,
         attributes: List<Horus.Attribute<*>>
@@ -150,7 +150,7 @@ object HorusDataFacade {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
         }
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
-        val currentData = getEntityById(entity, id) ?: return DataResult.Failure(
+        val currentData = getById(entity, id) ?: return DataResult.Failure(
             IllegalStateException("Entity not found")
         )
 
@@ -204,38 +204,38 @@ object HorusDataFacade {
      * @param attributes The attributes to update for the entity.
      * @return A [DataResult] indicating success or failure of the update operation.
      */
-    fun updateEntity(
+    fun update(
         entity: String,
         id: String,
         vararg attributes: Horus.Attribute<*>
     ): DataResult<Unit> {
-        return updateEntity(entity, id, attributes.toList())
+        return update(entity, id, attributes.toList())
     }
 
     /**
-     * Updates an existing entity in the database with specified attributes.
+     * Updates an existing record in the database with specified attributes.
      *
      * @param entity The name of the entity to update.
      * @param id The ID of the entity to update.
      * @param attributes The attributes to update for the entity.
      * @return A [DataResult] indicating success or failure of the update operation.
      */
-    fun updateEntity(
+    fun update(
         entity: String,
         id: String,
         attributes: Map<String, Any>
     ): DataResult<Unit> {
-        return updateEntity(entity, id, attributes.map { Horus.Attribute(it.key, it.value) })
+        return update(entity, id, attributes.map { Horus.Attribute(it.key, it.value) })
     }
 
     /**
-     * Deletes an existing entity from the database.
+     * Deletes an existing record from the database.
      *
      * @param entity The name of the entity to delete.
      * @param id The ID of the entity to delete.
      * @return A [DataResult] indicating success or failure of the delete operation.
      */
-    fun deleteEntity(entity: String, id: String): DataResult<Unit> {
+    fun delete(entity: String, id: String): DataResult<Unit> {
 
         validateConstraints(entity)
 
@@ -268,7 +268,7 @@ object HorusDataFacade {
     }
 
     /**
-     * Retrieves a list of entities from the database based on the specified conditions.
+     * Retrieves a list of records from the database based on the specified conditions.
      *
      * @param entity The name of the entity to retrieve.
      * @param conditions The conditions to apply to the query.
@@ -277,7 +277,7 @@ object HorusDataFacade {
      * @param offset The number of results to skip before starting to return results.
      * @return A [DataResult] containing a list of [Horus.Entity] objects.
      */
-    suspend fun getEntities(
+    suspend fun querySimple(
         entity: String,
         conditions: List<SQL.WhereCondition> = listOf(),
         orderBy: String? = null,
@@ -311,13 +311,13 @@ object HorusDataFacade {
     }
 
     /**
-     * Retrieves a single entity from the database by its ID.
+     * Retrieves a single record from the database by its ID.
      *
      * @param entity The name of the entity to retrieve.
      * @param id The ID of the entity to retrieve.
      * @return A [Horus.Entity] object if found, or `null` if not found.
      */
-    fun getEntityById(entity: String, id: String): Horus.Entity? {
+    fun getById(entity: String, id: String): Horus.Entity? {
 
         validateConstraintsReadable(entity)
 
