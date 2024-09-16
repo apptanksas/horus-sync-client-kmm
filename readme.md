@@ -19,13 +19,13 @@ seguridad y la integridad de los datos.
 Agregar el repositorio y la dependencia en tu archivo `build.gradle`:
 
 ```gradle 
-repositories {    
- mavenCentral() // o jitpack, dependiendo de donde publiques la librería}    
- dependencies {    
+repositories {
+    mavenCentral() // o jitpack, dependiendo de donde publiques la librería
+}
+
+dependencies {
     implementation 'com.ejemplo:nombre-libreria:1.0.0'
 }
-} 
-
 ```
 
 ## Android
