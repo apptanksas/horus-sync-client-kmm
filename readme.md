@@ -24,6 +24,7 @@ dependencies {
 ```  
 
 # Modo de Uso
+
 ## Android
 
 ### Configuración
@@ -63,6 +64,11 @@ class MainApplication : Application() {
 }
 ```
 
+## IOS
+
+### Configuración
+
+* Agrega la configuracion de ```-lsqlite3``` en los linkers flag de la aplicación en XCode > Build Settings > "Other Linker Flags". 
 
 ## Pruebas en local
 

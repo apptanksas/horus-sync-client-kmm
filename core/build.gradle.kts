@@ -25,13 +25,13 @@ kotlin {
     iosSimulatorArm64()
 
     cocoapods {
-        summary = "Some description for the Shared Module"
-        homepage = "Link to the Shared Module homepage"
+        summary = "Horus is a library data synchronizer between app and remote server"
+        homepage = "Link [TBD]"
         version = "1.0"
         ios.deploymentTarget = "16.0"
         framework {
-            baseName = "core"
-            isStatic = true
+            baseName = "horus"
+            isStatic = false
         }
     }
 
@@ -84,7 +84,7 @@ android {
 }
 
 group = "com.apptank.horus.client"
-version = "0.0.20"
+version = "0.0.25"
 
 dependencies {
     // Configuration mockative
