@@ -72,7 +72,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.apptank.horus"
+    namespace = "org.apptank.horus"
     compileSdk = 34
     defaultConfig {
         minSdk = 24
@@ -83,8 +83,8 @@ android {
     }
 }
 
-group = "com.apptank.horus"
-version = "0.0.25"
+group = "org.apptank.horus"
+version = "0.0.26"
 
 dependencies {
     // Configuration mockative
