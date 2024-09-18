@@ -19,11 +19,7 @@ import org.apptank.horus.client.migration.network.dto.MigrationDTO
  */
 internal fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
 
-    val type = when (this.type?.uppercase()) {
-        "LOOKUP" -> EntityType.READABLE
-        "EDITABLE" -> EntityType.WRITABLE
-        else -> throw InvalidDataSchemeException("Entity type ${this.type} not defined")
-    }
+    val type = EntityType.valueOf(this.type?.uppercase() ?: EntityType.WRITABLE.name)
 
     return EntityScheme(
         this.entity ?: throw InvalidDataSchemeException(),
