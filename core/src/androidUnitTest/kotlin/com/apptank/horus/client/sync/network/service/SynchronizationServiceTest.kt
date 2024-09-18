@@ -78,7 +78,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
-        val response = service.getDataEntity("farms")
+        val response = service.getDataEntity("products")
         // Then
         assert(response is DataResult.Success)
         response.fold(
@@ -100,7 +100,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
-        val response = service.getDataEntity("farms", ids = ids)
+        val response = service.getDataEntity("products", ids = ids)
         // Then
         assert(response is DataResult.Success)
         assertRequestContainsQueryParam("ids", ids.joinToString(","))
@@ -114,7 +114,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
-        val response = service.getDataEntity("farms", timestampAfter)
+        val response = service.getDataEntity("products", timestampAfter)
         // Then
         assert(response is DataResult.Success)
         assertRequestContainsQueryParam("after", timestampAfter.toString())
@@ -127,14 +127,14 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val actions = generateArray {
             SyncDTO.Request.SyncActionRequest(
-                SyncControl.ActionType.INSERT.name, "farms", mapOf(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
                     "id" to uuid(),
-                    "name" to "Farm ${uuid()}"
+                    "name" to "Product  ${uuid()}"
                 ), timestamp()
             )
         } + generateArray {
             SyncDTO.Request.SyncActionRequest(
-                SyncControl.ActionType.UPDATE.name, "farms", mapOf(
+                SyncControl.ActionType.UPDATE.name, "products", mapOf(
                     "id" to uuid(),
                     "attributes" to mapOf(
                         "name" to "Attribute ${uuid()}",

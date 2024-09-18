@@ -9,8 +9,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateGetAllData() {
-        val expected = "SELECT * FROM animal"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT * FROM category"
+        val builder = SimpleQueryBuilder("category")
         val result = builder.build()
 
         Assert.assertEquals(expected, result)
@@ -18,8 +18,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateGetAllDataWithSelection() {
-        val expected = "SELECT id,date,value FROM animal"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT id,date,value FROM category"
+        val builder = SimpleQueryBuilder("category")
 
         builder.select("id", "date", "value")
 
@@ -30,8 +30,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithSimpleWhereAnd() {
-        val expected = "SELECT * FROM animal WHERE id > 120 AND date = '2023'"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT * FROM category WHERE id > 120 AND date = '2023'"
+        val builder = SimpleQueryBuilder("category")
 
         builder.where(
             SQL.WhereCondition(
@@ -55,9 +55,9 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithWhereAndJoinOr() {
-        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = '2023') " +
+        val expected = "SELECT * FROM category WHERE (id > 120 AND date = '2023') " +
                 "OR (is_male = 1 AND age < 10)"
-        val builder = SimpleQueryBuilder("animal")
+        val builder = SimpleQueryBuilder("category")
 
         builder
             .where(
@@ -96,9 +96,9 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateWithWhereAndJoinOrGrouped() {
-        val expected = "SELECT * FROM animal WHERE (id > 120 AND date = '2023') " +
+        val expected = "SELECT * FROM category WHERE (id > 120 AND date = '2023') " +
                 "AND (is_male = 1 OR age < 10)"
-        val builder = SimpleQueryBuilder("animal")
+        val builder = SimpleQueryBuilder("category")
 
         builder
             .where(
@@ -137,8 +137,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateLimit() {
-        val expected = "SELECT * FROM animal LIMIT 10"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT * FROM category LIMIT 10"
+        val builder = SimpleQueryBuilder("category")
 
         val result = builder.limit(10).build()
 
@@ -147,8 +147,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateOrderByAge() {
-        val expected = "SELECT * FROM animal ORDER BY age DESC"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT * FROM category ORDER BY age DESC"
+        val builder = SimpleQueryBuilder("category")
 
         val result = builder.orderBy("age").build()
 
@@ -157,8 +157,8 @@ class SimpleQueryBuilderTest {
 
     @Test
     fun validateLimitAndOrderBy() {
-        val expected = "SELECT * FROM animal ORDER BY age DESC LIMIT 10"
-        val builder = SimpleQueryBuilder("animal")
+        val expected = "SELECT * FROM category ORDER BY age DESC LIMIT 10"
+        val builder = SimpleQueryBuilder("category")
 
         val result = builder.limit(10).orderBy("age").build()
 

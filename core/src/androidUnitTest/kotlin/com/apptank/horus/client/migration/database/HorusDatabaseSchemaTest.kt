@@ -77,53 +77,53 @@ class HorusDatabaseSchemaTest {
         // --> Migrate V1
         schema.create(driver, entitiesV1)
 
-        val tableFarmsColumnsV1 = database.getColumns("farms")
-        val tableAnimalLotsColumnsV1 = database.getColumns("animals_lots")
+        val tableProductsColumnsV1 = database.getColumns("products")
+        val tableCategoryLotsColumnsV1 = database.getColumns("categories_lots")
         val tableLotsColumnsV1 = database.getColumns("lots")
-        val tableFarmLocationsColumnsV1 = database.getColumns("farm_locations")
+        val tableProductLocationsColumnsV1 = database.getColumns("product_locations")
 
         // --> Migrate V2
         schema.migrate(driver, oldVersion, lastVersion, entitiesV2)
 
         // Then
-        val tableFarmsColumnsV2 = database.getColumns("farms")
-        val tableAnimalLotsColumnsV2 = database.getColumns("animals_lots")
+        val tableProductsColumnsV2 = database.getColumns("products")
+        val tableCategoryLotsColumnsV2 = database.getColumns("categories_lots")
         val tableLotsColumnsV2 = database.getColumns("lots")
-        val tableFarmLocationsColumnsV2 = database.getColumns("farm_locations")
+        val tableProductLocationsColumnsV2 = database.getColumns("product_locations")
 
 
         Assert.assertEquals(1, oldVersion)
         Assert.assertEquals(2, lastVersion)
 
         // Validate that the column "name" was added in the version 2
-        Assert.assertTrue(tableFarmsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableFarmsColumnsV1.find { it.name == "name" })
-        Assert.assertTrue(tableFarmsColumnsV2.isNotEmpty())
-        Assert.assertNotNull(tableFarmsColumnsV2.find { it.name == "name" })
+        Assert.assertTrue(tableProductsColumnsV1.isNotEmpty())
+        Assert.assertNull(tableProductsColumnsV1.find { it.name == "name" })
+        Assert.assertTrue(tableProductsColumnsV2.isNotEmpty())
+        Assert.assertNotNull(tableProductsColumnsV2.find { it.name == "name" })
 
         // Validate that the column "lot_id" was added in the version 2
-        Assert.assertTrue(tableAnimalLotsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableAnimalLotsColumnsV1.find { it.name == "lot_id" })
-        Assert.assertTrue(tableAnimalLotsColumnsV2.isNotEmpty())
-        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "lot_id" })
+        Assert.assertTrue(tableCategoryLotsColumnsV1.isNotEmpty())
+        Assert.assertNull(tableCategoryLotsColumnsV1.find { it.name == "lot_id" })
+        Assert.assertTrue(tableCategoryLotsColumnsV2.isNotEmpty())
+        Assert.assertNotNull(tableCategoryLotsColumnsV2.find { it.name == "lot_id" })
 
-        // Validate that the column "farm_" and "name" was added in the version 2
+        // Validate that the column "product_" and "name" was added in the version 2
         Assert.assertTrue(tableLotsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableLotsColumnsV1.find { it.name == "farm_id" })
+        Assert.assertNull(tableLotsColumnsV1.find { it.name == "product_id" })
         Assert.assertNull(tableLotsColumnsV1.find { it.name == "name" })
         Assert.assertTrue(tableLotsColumnsV2.isNotEmpty())
-        Assert.assertNotNull(tableLotsColumnsV2.find { it.name == "farm_id" })
+        Assert.assertNotNull(tableLotsColumnsV2.find { it.name == "product_id" })
         Assert.assertNotNull(tableLotsColumnsV2.find { it.name == "name" })
 
         // Validate that the column "longitude" was added in the version 2
-        Assert.assertTrue(tableFarmLocationsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableFarmLocationsColumnsV1.find { it.name == "longitude" })
-        Assert.assertTrue(tableFarmLocationsColumnsV2.isNotEmpty())
-        Assert.assertNotNull(tableFarmLocationsColumnsV2.find { it.name == "longitude" })
-        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_hash" })
-        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_owner_id" })
-        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_created_at" })
-        Assert.assertNotNull(tableAnimalLotsColumnsV2.find { it.name == "sync_updated_at" })
+        Assert.assertTrue(tableProductLocationsColumnsV1.isNotEmpty())
+        Assert.assertNull(tableProductLocationsColumnsV1.find { it.name == "longitude" })
+        Assert.assertTrue(tableProductLocationsColumnsV2.isNotEmpty())
+        Assert.assertNotNull(tableProductLocationsColumnsV2.find { it.name == "longitude" })
+        Assert.assertNotNull(tableCategoryLotsColumnsV2.find { it.name == "sync_hash" })
+        Assert.assertNotNull(tableCategoryLotsColumnsV2.find { it.name == "sync_owner_id" })
+        Assert.assertNotNull(tableCategoryLotsColumnsV2.find { it.name == "sync_created_at" })
+        Assert.assertNotNull(tableCategoryLotsColumnsV2.find { it.name == "sync_updated_at" })
     }
 
 
@@ -141,16 +141,16 @@ class HorusDatabaseSchemaTest {
         // --> Migrate V2
         schema.create(driver, entitiesV2)
 
-        val tableFarmsColumnsV2 = database.getColumns("farms")
-        val tableLotsColumnsV2 = database.getColumns("animals_lots")
+        val tableProductsColumnsV2 = database.getColumns("products")
+        val tableLotsColumnsV2 = database.getColumns("categories_lots")
         val tablesV2 = database.getTableEntities().map { it.name }
 
         // --> Migrate V3
         schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
 
         // Then
-        val tableFarmsColumnsV3 = database.getColumns("farms")
-        val tableLotsColumnsV3 = database.getColumns("animals_lots")
+        val tableProductsColumnsV3 = database.getColumns("products")
+        val tableLotsColumnsV3 = database.getColumns("categories_lots")
         val tablesV3 = database.getTableEntities().map { it.name }
 
 
@@ -158,23 +158,23 @@ class HorusDatabaseSchemaTest {
         Assert.assertEquals(3, lastVersion)
 
         // Validate that the column "destination" was added in the version 3
-        Assert.assertTrue(tableFarmsColumnsV2.isNotEmpty())
-        Assert.assertNull(tableFarmsColumnsV2.find { it.name == "destination" })
-        Assert.assertTrue(tableFarmsColumnsV3.isNotEmpty())
-        Assert.assertNotNull(tableFarmsColumnsV3.find { it.name == "destination" })
-        Assert.assertFalse(tableFarmsColumnsV3.find { it.name == "destination" }?.nullable ?: true)
+        Assert.assertTrue(tableProductsColumnsV2.isNotEmpty())
+        Assert.assertNull(tableProductsColumnsV2.find { it.name == "destination" })
+        Assert.assertTrue(tableProductsColumnsV3.isNotEmpty())
+        Assert.assertNotNull(tableProductsColumnsV3.find { it.name == "destination" })
+        Assert.assertFalse(tableProductsColumnsV3.find { it.name == "destination" }?.nullable ?: true)
 
 
-        // Validate that the column "animal_id" was added in the version 3
+        // Validate that the column "product_id" was added in the version 3
         Assert.assertTrue(tableLotsColumnsV2.isNotEmpty())
-        Assert.assertNull(tableLotsColumnsV2.find { it.name == "animal_id" })
+        Assert.assertNull(tableLotsColumnsV2.find { it.name == "product_id" })
         Assert.assertTrue(tableLotsColumnsV3.isNotEmpty())
-        Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "animal_id" })
-        Assert.assertFalse(tableLotsColumnsV3.find { it.name == "animal_id" }?.nullable ?: true)
+        Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "product_id" })
+        Assert.assertFalse(tableLotsColumnsV3.find { it.name == "product_id" }?.nullable ?: true)
 
-        // Validate new entity "farms_metadata" was added in the version 3
-        Assert.assertTrue(tablesV2.notContains("farms_metadata"))
-        Assert.assertTrue(tablesV3.contains("farms_metadata"))
+        // Validate new entity "products_metadata" was added in the version 3
+        Assert.assertTrue(tablesV2.notContains("products_metadata"))
+        Assert.assertTrue(tablesV3.contains("products_metadata"))
     }
 
     @Test
@@ -191,17 +191,17 @@ class HorusDatabaseSchemaTest {
         // --> Migrate V1
         schema.create(driver, entitiesV1)
 
-        val tableFarmsColumnsV1 = database.getColumns("farms")
+        val tableProductsColumnsV1 = database.getColumns("products")
         val tableLotsColumnsV1 = database.getColumns("lots")
-        val tableAnimalLotsColumnsV1 = database.getColumns("animals_lots")
+        val tableCategoryLotsColumnsV1 = database.getColumns("categories_lots")
         val tablesV1 = database.getTableEntities().map { it.name }
 
         // --> Migrate V3
         schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
 
         // Then
-        val tableFarmsColumnsV3 = database.getColumns("farms")
-        val tableAnimalLotsColumnsV3 = database.getColumns("animals_lots")
+        val tableProductsColumnsV3 = database.getColumns("products")
+        val tableCategoryLotsColumnsV3 = database.getColumns("categories_lots")
         val tableLotsColumnsV3 = database.getColumns("lots")
         val tablesV3 = database.getTableEntities().map { it.name }
 
@@ -209,31 +209,31 @@ class HorusDatabaseSchemaTest {
         Assert.assertEquals(1, oldVersion)
         Assert.assertEquals(3, lastVersion)
 
-        // Validate that the column "farm_" and "name" was added in the version 2
+        // Validate that the column "product_" and "name" was added in the version 2
         Assert.assertTrue(tableLotsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableLotsColumnsV1.find { it.name == "farm_id" })
+        Assert.assertNull(tableLotsColumnsV1.find { it.name == "product_id" })
         Assert.assertNull(tableLotsColumnsV1.find { it.name == "name" })
         Assert.assertTrue(tableLotsColumnsV3.isNotEmpty())
-        Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "farm_id" })
+        Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "product_id" })
         Assert.assertNotNull(tableLotsColumnsV3.find { it.name == "name" })
 
 
         // Validate that the column "destination" was added in the version 3
-        Assert.assertTrue(tableFarmsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableFarmsColumnsV1.find { it.name == "destination" })
-        Assert.assertTrue(tableFarmsColumnsV3.isNotEmpty())
-        Assert.assertNotNull(tableFarmsColumnsV3.find { it.name == "destination" })
+        Assert.assertTrue(tableProductsColumnsV1.isNotEmpty())
+        Assert.assertNull(tableProductsColumnsV1.find { it.name == "destination" })
+        Assert.assertTrue(tableProductsColumnsV3.isNotEmpty())
+        Assert.assertNotNull(tableProductsColumnsV3.find { it.name == "destination" })
 
 
-        // Validate that the column "animal_id" was added in the version 3
-        Assert.assertTrue(tableAnimalLotsColumnsV1.isNotEmpty())
-        Assert.assertNull(tableAnimalLotsColumnsV1.find { it.name == "animal_id" })
-        Assert.assertTrue(tableAnimalLotsColumnsV3.isNotEmpty())
-        Assert.assertNotNull(tableAnimalLotsColumnsV3.find { it.name == "animal_id" })
+        // Validate that the column "product_id" was added in the version 3
+        Assert.assertTrue(tableCategoryLotsColumnsV1.isNotEmpty())
+        Assert.assertNull(tableCategoryLotsColumnsV1.find { it.name == "product_id" })
+        Assert.assertTrue(tableCategoryLotsColumnsV3.isNotEmpty())
+        Assert.assertNotNull(tableCategoryLotsColumnsV3.find { it.name == "product_id" })
 
-        // Validate new entity "farms_metadata" was added in the version 3
-        Assert.assertTrue(tablesV1.notContains("farms_metadata"))
-        Assert.assertTrue(tablesV3.contains("farms_metadata"))
+        // Validate new entity "products_metadata" was added in the version 3
+        Assert.assertTrue(tablesV1.notContains("products_metadata"))
+        Assert.assertTrue(tablesV3.contains("products_metadata"))
     }
 
     @Test
@@ -246,8 +246,8 @@ class HorusDatabaseSchemaTest {
         schema.create(driver, entities)
 
         // Then
-        val tableWritable = database.getTableEntities().find { it.name == "measures_values" }
-        val tableReadable = database.getTableEntities().find { it.name == "animal_breeds" }
+        val tableWritable = database.getTableEntities().find { it.name == "measures" }
+        val tableReadable = database.getTableEntities().find { it.name == "product_breeds" }
 
         Assert.assertTrue(tableWritable?.isWritable == true)
         Assert.assertTrue(tableReadable?.isWritable == false)

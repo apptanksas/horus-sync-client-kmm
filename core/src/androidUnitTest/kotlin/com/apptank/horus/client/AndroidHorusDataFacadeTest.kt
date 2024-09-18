@@ -145,7 +145,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun validateEntityIsNotWritable() = prepareInternalTest {
         Assert.assertThrows(EntityNotWritableException::class.java) {
-            HorusDataFacade.insert("animal_breeds", mapOf("key" to "value"))
+            HorusDataFacade.insert("product_breeds", mapOf("key" to "value"))
         }
     }
 
@@ -179,7 +179,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun validateInsertTest() = prepareInternalTest {
         val result = HorusDataFacade.insert(
-            "measures_values",
+            "measures",
             createDataInsertRecord()
         )
         assert(result is DataResult.Success)
@@ -189,7 +189,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Given
         val valueExpected = Random.nextFloat()
         val resultInsert = HorusDataFacade.insert(
-            "measures_values",
+            "measures",
             createDataInsertRecord()
         )
 
@@ -197,7 +197,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val resultUpdate = if (resultInsert is DataResult.Success) {
             HorusDataFacade.update(
-                "measures_values",
+                "measures",
                 resultInsert.data,
                 mapOf("value" to valueExpected)
             )
@@ -211,7 +211,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         assert(resultUpdate is DataResult.Success)
 
         if (resultInsert is DataResult.Success) {
-            assert(driver.rawQuery("SELECT * FROM measures_values WHERE id= '" + resultInsert.data + "' AND value = $valueExpected") {
+            assert(driver.rawQuery("SELECT * FROM measures WHERE id= '" + resultInsert.data + "' AND value = $valueExpected") {
                 it.getString(0)
             }.isNotEmpty())
         } else {
@@ -222,13 +222,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateInsertAndDeleteIsSuccess() = prepareInternalTest {
         // Given
         val resultInsert = HorusDataFacade.insert(
-            "measures_values",
+            "measures",
             createDataInsertRecord()
         )
 
         // When
         val resultDelete = if (resultInsert is DataResult.Success) {
-            HorusDataFacade.delete("measures_values", resultInsert.data)
+            HorusDataFacade.delete("measures", resultInsert.data)
         } else {
             DataResult.Failure(Exception("Error"))
         }
@@ -238,7 +238,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         assert(resultDelete is DataResult.Success)
 
         if (resultInsert is DataResult.Success) {
-            assert(driver.rawQuery("SELECT * FROM measures_values WHERE id= '" + resultInsert.data + "'") {
+            assert(driver.rawQuery("SELECT * FROM measures WHERE id= '" + resultInsert.data + "'") {
                 it.getString(0)
             }.isEmpty())
         } else {
@@ -249,14 +249,14 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateGetEntityByIdReturnRecord() = prepareInternalTest {
         // Given
         val resultInsert = HorusDataFacade.insert(
-            "measures_values",
+            "measures",
             createDataInsertRecord()
         )
 
         // When
         val entity =
             HorusDataFacade.getById(
-                "measures_values",
+                "measures",
                 (resultInsert as DataResult.Success).data
             )
 
@@ -272,12 +272,12 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
 
         attributesList.forEach {
-            HorusDataFacade.insert("measures_values", *it.toTypedArray())
+            HorusDataFacade.insert("measures", *it.toTypedArray())
         }
 
         // When
         val result =
-            HorusDataFacade.querySimple("measures_values")
+            HorusDataFacade.querySimple("measures")
 
         result.fold(
             { entities ->
@@ -294,14 +294,14 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Given
         val attributesList = createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
 
-        val insertResult = HorusDataFacade.insert("measures_values", *attributesList.toTypedArray())
+        val insertResult = HorusDataFacade.insert("measures", *attributesList.toTypedArray())
 
         // When
 
         val entityId = getEntityId(insertResult)
         val result =
             HorusDataFacade.querySimple(
-                "measures_values",
+                "measures",
                 listOf(SQL.WhereCondition(SQL.ColumnValue("id", entityId)))
             )
 
@@ -323,13 +323,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
 
         attributesList.forEach {
-            HorusDataFacade.insert("measures_values", *it.toTypedArray())
+            HorusDataFacade.insert("measures", *it.toTypedArray())
         }
 
         // When
         val result =
             HorusDataFacade.querySimple(
-                "measures_values",
+                "measures",
                 limit = 10,
                 offset = 5
             )
@@ -349,7 +349,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateGetByIdReturnNull() {
         // When
         val entity =
-            HorusDataFacade.getById("measures_values", uuid())
+            HorusDataFacade.getById("measures", uuid())
 
         // Then
         Assert.assertNull(entity)
@@ -370,8 +370,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
-        driver.execute("DELETE FROM measures_values")
-        driver.execute("DELETE FROM animal_breeds")
+        driver.execute("DELETE FROM measures")
+        driver.execute("DELETE FROM product_breeds")
 
         block()
     }
@@ -383,8 +383,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         driver.also {
             Assert.assertTrue(
-                "table measures_values not exists",
-                it.getTablesNames().contains("measures_values")
+                "table measures not exists",
+                it.getTablesNames().contains("measures")
             )
         }
     }

@@ -3,7 +3,7 @@ package com.apptank.horus.client
 const val MOCK_RESPONSE_GET_MIGRATION = """
     [
   {
-    "entity": "measures_values",
+    "entity": "measures",
     "type": "editable",
     "attributes": [
       {
@@ -88,7 +88,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
     "current_version": 1
   },
   {
-    "entity": "farms",
+    "entity": "products",
     "type": "editable",
     "attributes": [
       {
@@ -141,19 +141,19 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         ]
       },
       {
-        "name": "mv_area_total",
+        "name": "mv_size",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "mv_area_cow_farming",
+        "name": "mv_variant",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "measure_milk",
+        "name": "volume",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -184,7 +184,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         ]
       },
       {
-        "name": "measure_weight",
+        "name": "weight",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -231,7 +231,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         "nullable": false,
         "related": [
           {
-            "entity": "farms_metadata",
+            "entity": "products_metadata",
             "type": "editable",
             "attributes": [
               {
@@ -265,11 +265,11 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -321,11 +321,11 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -340,7 +340,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false,
                 "related": [
                   {
-                    "entity": "animals_lots",
+                    "entity": "categories_lots",
                     "type": "editable",
                     "attributes": [
                       {
@@ -380,7 +380,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                         "nullable": false
                       },
                       {
-                        "name": "animal_id",
+                        "name": "product_id",
                         "version": 1,
                         "type": "int",
                         "nullable": false
@@ -428,11 +428,11 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -450,7 +450,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
             "current_version": 1
           },
           {
-            "entity": "farm_milk_sales",
+            "entity": "product_milk_sales",
             "type": "editable",
             "attributes": [
               {
@@ -484,11 +484,11 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "date",
@@ -509,7 +509,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "mv_animal_consume",
+                "name": "mv_product_consume",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false
@@ -532,7 +532,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         "nullable": false,
         "related": [
           {
-            "entity": "farm_locations",
+            "entity": "product_locations",
             "type": "editable",
             "attributes": [
               {
@@ -566,11 +566,11 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "country",
@@ -611,7 +611,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
     "current_version": 1
   },
   {
-    "entity": "animal_breeds",
+    "entity": "product_breeds",
     "type": "lookup",
     "attributes": [
       {
@@ -648,7 +648,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
 const val MOCK_RESPONSE_GET_DATA = """
     [
     {
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -661,7 +661,7 @@ const val MOCK_RESPONSE_GET_DATA = """
         }
     },
     {
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -670,23 +670,23 @@ const val MOCK_RESPONSE_GET_DATA = """
             "sync_updated_at": 1725051913,
             "name": "Finca Los Alpinos",
             "destination": "1",
-            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
-            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
-            "measure_milk": "L",
-            "measure_weight": "kg",
+            "mv_size": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_variant": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "volume": "L",
+            "weight": "kg",
             "type": "1",
             "_metadata": [],
             "_lots": [],
-            "_animals": [
+            "_categories": [
                 {
-                    "entity": "animals",
+                    "entity": "categories",
                     "data": {
                         "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
                         "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
                         "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
                         "sync_created_at": 1725051913,
                         "sync_updated_at": 1725051913,
-                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "product_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
                         "name": "Camila",
                         "code": "9012345",
                         "gender": "f",
@@ -697,24 +697,15 @@ const val MOCK_RESPONSE_GET_DATA = """
                         "reproductive_status": "1",
                         "health_status": "1",
                         "inside": 1,
-                        "_deaths": [],
                         "_facts": [],
                         "_favorites": [],
                         "_images": [],
                         "_weights": [],
-                        "_inseminations": [],
-                        "_treatments": [],
                         "_alerts": [],
-                        "_pregnantChecks": [],
-                        "_abortions": [],
-                        "_breed": [],
-                        "_mastitis": [],
                         "_milking": []
                     }
                 }
-            ],
-            "_irons": [],
-            "_milkSales": []
+            ]
         }
     }
 ]
@@ -723,7 +714,7 @@ const val MOCK_RESPONSE_GET_DATA = """
 const val MOCK_RESPONSE_GET_DATA_ENTITY = """
     [
     {
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -732,23 +723,23 @@ const val MOCK_RESPONSE_GET_DATA_ENTITY = """
             "sync_updated_at": 1725051913,
             "name": "Finca Los Alpinos",
             "destination": "1",
-            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
-            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
-            "measure_milk": "L",
-            "measure_weight": "kg",
+            "mv_size": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_variant": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "volume": "L",
+            "weight": "kg",
             "type": "1",
             "_metadata": [],
             "_lots": [],
-            "_animals": [
+            "_categories": [
                 {
-                    "entity": "animals",
+                    "entity": "categories",
                     "data": {
                         "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
                         "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
                         "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
                         "sync_created_at": 1725051913,
                         "sync_updated_at": 1725051913,
-                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "product_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
                         "name": "Camila",
                         "code": "9012345",
                         "gender": "f",
@@ -786,7 +777,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     [
     {
         "action": "INSERT",
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
             "unit": "kg",
@@ -798,7 +789,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     },
     {
         "action": "INSERT",
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4",
             "unit": "kg",
@@ -810,7 +801,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     },
     {
         "action": "UPDATE",
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4",
             "attributes": {
@@ -824,7 +815,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     },
     {
         "action": "DELETE",
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4"
         },
@@ -833,39 +824,39 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     },
     {
         "action": "INSERT",
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "ea5c701b-5439-47b4-adcf-b91802bec259",
             "name": "Finca Los Alpinos",
             "type": 1,
             "destination": 1,
-            "measure_milk": "L",
-            "mv_area_total": "0e83bf78-0e91-4c9d-88c7-d760d3dd8ef8",
-            "measure_weight": "kg",
-            "mv_area_cow_farming": "568c3ceb-c323-4b43-8269-c9104bff8431"
+            "volume": "L",
+            "mv_size": "0e83bf78-0e91-4c9d-88c7-d760d3dd8ef8",
+            "weight": "kg",
+            "mv_variant": "568c3ceb-c323-4b43-8269-c9104bff8431"
         },
         "actioned_at": 1725037000,
         "synced_at": 1725048957
     },
     {
         "action": "INSERT",
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
             "name": "Finca Los Alpinos",
             "type": 1,
             "destination": 1,
-            "measure_milk": "L",
-            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
-            "measure_weight": "kg",
-            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90"
+            "volume": "L",
+            "mv_size": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "weight": "kg",
+            "mv_variant": "4635a0a7-8548-4327-b74d-9ca88a6ccf90"
         },
         "actioned_at": 1725037000,
         "synced_at": 1725051913
     },
     {
         "action": "INSERT",
-        "entity": "animals",
+        "entity": "categories",
         "data": {
             "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
             "code": "9012345",
@@ -874,7 +865,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
             "stage": 4,
             "gender": "f",
             "inside": true,
-            "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+            "product_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
             "purpose": 2,
             "sale_status": "0",
             "health_status": 1,
@@ -890,7 +881,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
 const val MOCK_RESPONSE_POST_VALIDATE_DATA = """
     [
     {
-        "entity": "farms",
+        "entity": "products",
         "hash": {
             "expected": "86f90952b15a4c31dd1fcebbda7d807611e304eb45793b91f1d27db2024d210f",
             "obtained": "86f90952b15a4c31dd1fcebbda7d807611e304eb45793b91f1d27db2024d210f",
@@ -898,7 +889,7 @@ const val MOCK_RESPONSE_POST_VALIDATE_DATA = """
         }
     },
     {
-        "entity": "animals",
+        "entity": "categories",
         "hash": {
             "expected": "6f2488fa2911ca67861dcc5d1549874d8bf9c76f37cb5c1bfad5c7b5f52550c8",
             "obtained": "5467ab59e695c4c470c3c3d2912aca5530087b2286878f7e74e725163468f94f",
@@ -925,7 +916,7 @@ const val MOCK_RESPONSE_INTERNAL_SERVER_ERROR = """
 const val MOCK_RESPONSE_GET_LAST_QUEUE_ACTION = """
     {
     "action": "INSERT",
-    "entity": "animals",
+    "entity": "categories",
     "data": {
         "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
         "code": "9012345",
@@ -934,7 +925,7 @@ const val MOCK_RESPONSE_GET_LAST_QUEUE_ACTION = """
         "stage": 4,
         "gender": "f",
         "inside": true,
-        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+        "product_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
         "purpose": 2,
         "sale_status": "0",
         "health_status": 1,
@@ -959,7 +950,7 @@ const val MOCK_RESPONSE_GET_ENTITY_HASHES = """
 const val DATA_MIGRATION_VERSION_1 ="""
     [
   {
-    "entity": "farms",
+    "entity": "products",
     "type": "editable",
     "attributes": [
       {
@@ -993,19 +984,19 @@ const val DATA_MIGRATION_VERSION_1 ="""
         "nullable": false
       },
       {
-        "name": "mv_area_total",
+        "name": "mv_size",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "mv_area_cow_farming",
+        "name": "mv_variant",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "measure_milk",
+        "name": "volume",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1017,7 +1008,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
         ]
       },
       {
-        "name": "measure_weight",
+        "name": "weight",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1086,7 +1077,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "nullable": false,
                 "related": [
                   {
-                    "entity": "animals_lots",
+                    "entity": "categories_lots",
                     "type": "editable",
                     "attributes": [
                       {
@@ -1162,11 +1153,11 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -1184,7 +1175,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
             "current_version": 1
           },
           {
-            "entity": "farm_milk_sales",
+            "entity": "product_milk_sales",
             "type": "editable",
             "attributes": [
               {
@@ -1218,11 +1209,11 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "date",
@@ -1243,7 +1234,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "nullable": false
               },
               {
-                "name": "mv_animal_consume",
+                "name": "mv_product_consume",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false
@@ -1266,7 +1257,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
         "nullable": false,
         "related": [
           {
-            "entity": "farm_locations",
+            "entity": "product_locations",
             "type": "editable",
             "attributes": [
               {
@@ -1300,11 +1291,11 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "country",
@@ -1331,7 +1322,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
 const val DATA_MIGRATION_VERSION_2 = """
     [
   {
-    "entity": "farms",
+    "entity": "products",
     "type": "editable",
     "attributes": [
       {
@@ -1371,19 +1362,19 @@ const val DATA_MIGRATION_VERSION_2 = """
         "nullable": false
       },
       {
-        "name": "mv_area_total",
+        "name": "mv_size",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "mv_area_cow_farming",
+        "name": "mv_variant",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "measure_milk",
+        "name": "volume",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1395,7 +1386,7 @@ const val DATA_MIGRATION_VERSION_2 = """
         ]
       },
       {
-        "name": "measure_weight",
+        "name": "weight",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1458,11 +1449,11 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 2,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -1477,7 +1468,7 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false,
                 "related": [
                   {
-                    "entity": "animals_lots",
+                    "entity": "categories_lots",
                     "type": "editable",
                     "attributes": [
                       {
@@ -1559,11 +1550,11 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -1581,7 +1572,7 @@ const val DATA_MIGRATION_VERSION_2 = """
             "current_version": 1
           },
           {
-            "entity": "farm_milk_sales",
+            "entity": "product_milk_sales",
             "type": "editable",
             "attributes": [
               {
@@ -1615,11 +1606,11 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "date",
@@ -1640,7 +1631,7 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false
               },
               {
-                "name": "mv_animal_consume",
+                "name": "mv_product_consume",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false
@@ -1663,7 +1654,7 @@ const val DATA_MIGRATION_VERSION_2 = """
         "nullable": false,
         "related": [
           {
-            "entity": "farm_locations",
+            "entity": "product_locations",
             "type": "editable",
             "attributes": [
               {
@@ -1697,11 +1688,11 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "country",
@@ -1734,7 +1725,7 @@ const val DATA_MIGRATION_VERSION_2 = """
 const val DATA_MIGRATION_VERSION_3 = """
     [
   {
-    "entity": "farms",
+    "entity": "products",
     "type": "editable",
     "attributes": [
       {
@@ -1787,19 +1778,19 @@ const val DATA_MIGRATION_VERSION_3 = """
         ]
       },
       {
-        "name": "mv_area_total",
+        "name": "mv_size",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "mv_area_cow_farming",
+        "name": "mv_variant",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "measure_milk",
+        "name": "volume",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1811,7 +1802,7 @@ const val DATA_MIGRATION_VERSION_3 = """
         ]
       },
       {
-        "name": "measure_weight",
+        "name": "weight",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -1840,7 +1831,7 @@ const val DATA_MIGRATION_VERSION_3 = """
         "nullable": false,
         "related": [
           {
-            "entity": "farms_metadata",
+            "entity": "products_metadata",
             "type": "editable",
             "attributes": [
               {
@@ -1874,11 +1865,11 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 3,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -1930,11 +1921,11 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 2,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -1949,7 +1940,7 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false,
                 "related": [
                   {
-                    "entity": "animals_lots",
+                    "entity": "categories_lots",
                     "type": "editable",
                     "attributes": [
                       {
@@ -1989,7 +1980,7 @@ const val DATA_MIGRATION_VERSION_3 = """
                         "nullable": false
                       },
                       {
-                        "name": "animal_id",
+                        "name": "product_id",
                         "version": 3,
                         "type": "int",
                         "nullable": false
@@ -2037,11 +2028,11 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -2059,7 +2050,7 @@ const val DATA_MIGRATION_VERSION_3 = """
             "current_version": 1
           },
           {
-            "entity": "farm_milk_sales",
+            "entity": "product_milk_sales",
             "type": "editable",
             "attributes": [
               {
@@ -2093,11 +2084,11 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "date",
@@ -2118,7 +2109,7 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "mv_animal_consume",
+                "name": "mv_product_consume",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false
@@ -2141,7 +2132,7 @@ const val DATA_MIGRATION_VERSION_3 = """
         "nullable": false,
         "related": [
           {
-            "entity": "farm_locations",
+            "entity": "product_locations",
             "type": "editable",
             "attributes": [
               {
@@ -2175,11 +2166,11 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "country",
@@ -2225,7 +2216,7 @@ const val DATA_MIGRATION_VERSION_3 = """
 const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
 [
   {
-    "entity": "measures_values",
+    "entity": "measures",
     "type": "editable",
     "attributes": [
       {
@@ -2310,7 +2301,7 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
     "current_version": 1
   },
   {
-    "entity": "animal_breeds",
+    "entity": "product_breeds",
     "type": "lookup",
     "attributes": [
       {
@@ -2347,7 +2338,7 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
 const val DATA_MIGRATION_INITIAL_DATA_TASK = """
     [
   {
-    "entity": "measures_values",
+    "entity": "measures",
     "type": "editable",
     "attributes": [
       {
@@ -2432,7 +2423,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
     "current_version": 1
   },
   {
-    "entity": "farms",
+    "entity": "products",
     "type": "editable",
     "attributes": [
       {
@@ -2485,19 +2476,19 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         ]
       },
       {
-        "name": "mv_area_total",
+        "name": "mv_size",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "mv_area_cow_farming",
+        "name": "mv_variant",
         "version": 1,
         "type": "uuid",
         "nullable": false
       },
       {
-        "name": "measure_milk",
+        "name": "volume",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -2528,7 +2519,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         ]
       },
       {
-        "name": "measure_weight",
+        "name": "weight",
         "version": 1,
         "type": "enum",
         "nullable": false,
@@ -2575,7 +2566,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         "nullable": false,
         "related": [
           {
-            "entity": "farms_metadata",
+            "entity": "products_metadata",
             "type": "editable",
             "attributes": [
               {
@@ -2609,11 +2600,11 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -2631,7 +2622,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
             "current_version": 1
           },
           {
-            "entity": "animals",
+            "entity": "categories",
             "type": "editable",
             "attributes": [
               {
@@ -2665,11 +2656,11 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "name",
@@ -2791,7 +2782,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         "nullable": false,
         "related": [
           {
-            "entity": "farm_locations",
+            "entity": "product_locations",
             "type": "editable",
             "attributes": [
               {
@@ -2825,11 +2816,11 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "nullable": false
               },
               {
-                "name": "farm_id",
+                "name": "product_id",
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "farms"
+                "linked_entity": "products"
               },
               {
                 "name": "country",
@@ -2875,7 +2866,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
 const val DATA_SYNC_INITIAL_DATA_TASK = """
     [
     {
-        "entity": "measures_values",
+        "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb5",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -2888,7 +2879,7 @@ const val DATA_SYNC_INITIAL_DATA_TASK = """
         }
     },
     {
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -2897,23 +2888,23 @@ const val DATA_SYNC_INITIAL_DATA_TASK = """
             "sync_updated_at": 1725051913,
             "name": "Finca Los Alpinos",
             "destination": "1",
-            "mv_area_total": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
-            "mv_area_cow_farming": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
-            "measure_milk": "L",
-            "measure_weight": "kg",
+            "mv_size": "5701514f-fd5c-4417-b3d9-6fdcd8ee746b",
+            "mv_variant": "4635a0a7-8548-4327-b74d-9ca88a6ccf90",
+            "volume": "L",
+            "weight": "kg",
             "type": "1",
             "_metadata": [],
             "_lots": [],
-            "_animals": [
+            "_categories": [
                 {
-                    "entity": "animals",
+                    "entity": "categories",
                     "data": {
                         "id": "00aedddd-325d-4472-a04c-27e57f5d6018",
                         "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
                         "sync_hash": "d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83",
                         "sync_created_at": 1725051913,
                         "sync_updated_at": 1725051913,
-                        "farm_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
+                        "product_id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
                         "name": "Camila",
                         "code": "9012345",
                         "gender": "f",
@@ -2945,7 +2936,7 @@ const val DATA_SYNC_INITIAL_DATA_TASK = """
         }
     },
     {
-        "entity": "farms",
+        "entity": "products",
         "data": {
             "id": "7d00764c-9660-4f32-b9c0-00bc2ef0f6fa",
             "sync_owner_id": "5160ea14-8676-3881-9b93-0859a7f59431",
@@ -2954,14 +2945,14 @@ const val DATA_SYNC_INITIAL_DATA_TASK = """
             "sync_updated_at": 1725281682,
             "name": "Finca Maracana",
             "destination": "1",
-            "mv_area_total": "ec8f99e4-82c9-496f-9ba8-4c39585daa27",
-            "mv_area_cow_farming": "03b0fe9c-b06f-489f-8148-8301bec3f89a",
-            "measure_milk": "L",
-            "measure_weight": "kg",
+            "mv_size": "ec8f99e4-82c9-496f-9ba8-4c39585daa27",
+            "mv_variant": "03b0fe9c-b06f-489f-8148-8301bec3f89a",
+            "volume": "L",
+            "weight": "kg",
             "type": "1",
             "_metadata": [],
             "_lots": [],
-            "_animals": [],
+            "_categories": [],
             "_irons": [],
             "_milkSales": []
         }

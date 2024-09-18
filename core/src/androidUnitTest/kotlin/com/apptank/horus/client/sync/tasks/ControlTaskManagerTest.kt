@@ -88,19 +88,19 @@ class ControlTaskManagerTest : TestCase() {
         val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_3)
         val entitiesData = listOf(
             SyncDTO.Response.Entity(
-                "farms",
+                "products",
                 mapOf(
                     "id" to uuid(),
                     "sync_hash" to randomHash(),
                     "sync_owner_id" to uuid(),
                     "sync_created_at" to timestamp(),
                     "sync_updated_at" to timestamp(),
-                    "mv_area_total" to "1",
-                    "mv_area_cow_farming" to "1",
-                    "measure_milk" to "kg",
-                    "measure_weight" to "kg",
+                    "mv_size" to "1",
+                    "mv_variant" to "1",
+                    "volume" to "kg",
+                    "weight" to "kg",
                     "type" to "1",
-                    "name" to "Farm 1",
+                    "name" to "Product  1",
                     "destination" to "1",
                 )
             )
