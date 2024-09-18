@@ -317,9 +317,5 @@ C:\Users\[User]\.m2\repository\com\apptank\horus\client\core
 
 ``` groovy 
 
-implementation("or.apptank.horus.client:core-android:{version}")   
-``` 
-
-## Links de ayuda
-
-- [How to publish your own Kotlin Multiplatform library to MavenCentral]()
+implementation("org.apptank.horus:client-android:{version}")   
+```

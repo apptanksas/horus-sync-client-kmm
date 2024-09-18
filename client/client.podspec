@@ -1,5 +1,5 @@
 Pod::Spec.new do |spec|
-    spec.name                     = 'core'
+    spec.name                     = 'client'
     spec.version                  = '1.0'
     spec.homepage                 = 'Link [TBD]'
     spec.source                   = { :http=> ''}
@@ -17,7 +17,7 @@ Pod::Spec.new do |spec|
         Kotlin framework 'horus' doesn't exist yet, so a proper Xcode project can't be generated.
         'pod install' should be executed after running ':generateDummyFramework' Gradle task:
 
-            ./gradlew :core:generateDummyFramework
+            ./gradlew :client:generateDummyFramework
 
         Alternatively, proper pod installation is performed during Gradle sync in the IDE (if Podfile location is set)"
     end
@@ -27,13 +27,13 @@ Pod::Spec.new do |spec|
     }
                 
     spec.pod_target_xcconfig = {
-        'KOTLIN_PROJECT_PATH' => ':core',
+        'KOTLIN_PROJECT_PATH' => ':client',
         'PRODUCT_MODULE_NAME' => 'horus',
     }
                 
     spec.script_phases = [
         {
-            :name => 'Build core',
+            :name => 'Build client',
             :execution_position => :before_compile,
             :shell_path => '/bin/sh',
             :script => <<-SCRIPT
