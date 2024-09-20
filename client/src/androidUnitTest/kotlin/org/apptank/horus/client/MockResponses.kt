@@ -4,7 +4,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
     [
   {
     "entity": "measures",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -89,7 +89,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
   },
   {
     "entity": "products",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -232,7 +232,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         "related": [
           {
             "entity": "products_metadata",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -288,7 +288,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
           },
           {
             "entity": "lots",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -341,7 +341,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "related": [
                   {
                     "entity": "categories_lots",
-                    "type": "editable",
+                    "type": "writable",
                     "attributes": [
                       {
                         "name": "id",
@@ -395,7 +395,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
           },
           {
             "entity": "branding_irons",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -451,7 +451,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
           },
           {
             "entity": "product_milk_sales",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -533,7 +533,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         "related": [
           {
             "entity": "product_locations",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -612,7 +612,7 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
   },
   {
     "entity": "product_breeds",
-    "type": "lookup",
+    "type": "readable",
     "attributes": [
       {
         "name": "id",
@@ -951,7 +951,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
     [
   {
     "entity": "products",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -1038,7 +1038,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
         "related": [
           {
             "entity": "lots",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1078,7 +1078,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "related": [
                   {
                     "entity": "categories_lots",
-                    "type": "editable",
+                    "type": "writable",
                     "attributes": [
                       {
                         "name": "id",
@@ -1120,7 +1120,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
           },
           {
             "entity": "branding_irons",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1176,7 +1176,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
           },
           {
             "entity": "product_milk_sales",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1258,7 +1258,7 @@ const val DATA_MIGRATION_VERSION_1 ="""
         "related": [
           {
             "entity": "product_locations",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1323,7 +1323,7 @@ const val DATA_MIGRATION_VERSION_2 = """
     [
   {
     "entity": "products",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -1416,7 +1416,7 @@ const val DATA_MIGRATION_VERSION_2 = """
         "related": [
           {
             "entity": "lots",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1469,7 +1469,7 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "related": [
                   {
                     "entity": "categories_lots",
-                    "type": "editable",
+                    "type": "writable",
                     "attributes": [
                       {
                         "name": "id",
@@ -1517,7 +1517,7 @@ const val DATA_MIGRATION_VERSION_2 = """
           },
           {
             "entity": "branding_irons",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1573,7 +1573,7 @@ const val DATA_MIGRATION_VERSION_2 = """
           },
           {
             "entity": "product_milk_sales",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1655,7 +1655,7 @@ const val DATA_MIGRATION_VERSION_2 = """
         "related": [
           {
             "entity": "product_locations",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1726,7 +1726,7 @@ const val DATA_MIGRATION_VERSION_3 = """
     [
   {
     "entity": "products",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -1832,7 +1832,7 @@ const val DATA_MIGRATION_VERSION_3 = """
         "related": [
           {
             "entity": "products_metadata",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1888,7 +1888,7 @@ const val DATA_MIGRATION_VERSION_3 = """
           },
           {
             "entity": "lots",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -1941,7 +1941,7 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "related": [
                   {
                     "entity": "categories_lots",
-                    "type": "editable",
+                    "type": "writable",
                     "attributes": [
                       {
                         "name": "id",
@@ -1995,7 +1995,7 @@ const val DATA_MIGRATION_VERSION_3 = """
           },
           {
             "entity": "branding_irons",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -2051,7 +2051,7 @@ const val DATA_MIGRATION_VERSION_3 = """
           },
           {
             "entity": "product_milk_sales",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -2133,7 +2133,7 @@ const val DATA_MIGRATION_VERSION_3 = """
         "related": [
           {
             "entity": "product_locations",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -2217,7 +2217,7 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
 [
   {
     "entity": "measures",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -2302,7 +2302,7 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
   },
   {
     "entity": "product_breeds",
-    "type": "lookup",
+    "type": "readable",
     "attributes": [
       {
         "name": "id",
@@ -2339,7 +2339,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
     [
   {
     "entity": "measures",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -2424,7 +2424,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
   },
   {
     "entity": "products",
-    "type": "editable",
+    "type": "writable",
     "attributes": [
       {
         "name": "id",
@@ -2567,7 +2567,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         "related": [
           {
             "entity": "products_metadata",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -2623,7 +2623,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
           },
           {
             "entity": "categories",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",
@@ -2783,7 +2783,7 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
         "related": [
           {
             "entity": "product_locations",
-            "type": "editable",
+            "type": "writable",
             "attributes": [
               {
                 "name": "id",

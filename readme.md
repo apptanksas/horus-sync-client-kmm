@@ -1,8 +1,3 @@
-
-<div style="border: 2px solid red; padding: 10px; color: white;margin:20px;background:red;font-weight:bold;">
-Attention: This library currently is testing stage until publish the version 1.0.0. 
-</div>
-
 <p align="center">  
 <img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo"></a>  
 </p>  
@@ -10,6 +5,8 @@ Attention: This library currently is testing stage until publish the version 1.0
 <p align="center">  
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/apptanksas/horus-sync-php/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status"></a>  
 </p>  
+
+**Please note:** This library currently is testing stage until publish the version 1.0.0.
 
 # Horusync client KMM
 

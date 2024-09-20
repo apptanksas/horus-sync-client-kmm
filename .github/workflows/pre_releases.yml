@@ -1,0 +1,77 @@
+name: Tag Release Candidate on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - release/*
+
+jobs:
+  create_rc_tag:
+    if: github.event.pull_request.merged == true  # Solo ejecuta si el PR ha sido mergeado
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Extract version from branch name (e.g. release/1.0.0 -> 1.0.0)
+      - name: Extract version from branch
+        id: extract_version
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"  # Nombre de la rama a la que se hizo el PR (target)
+          VERSION="${BRANCH_NAME#release/}"      # Extrae el número de versión
+          echo "Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_ENV
+
+      # Fetch all tags to check existing RC tags
+      - name: Fetch all tags
+        run: |
+          git fetch --tags
+
+      # Determine the next RC number
+      - name: Determine next RC tag
+        id: determine_rc_tag
+        run: |
+          VERSION=${{ env.version }}
+          TAG_PREFIX="v${VERSION}-rc"
+          echo "TAG_PREFIX: $TAG_PREFIX"
+
+          # Encuentra el mayor RC existente
+          LAST_RC=$(git tag --list "${TAG_PREFIX}*" | sed 's/.*rc//' | sort -nr | head -n 1)
+          echo "Último RC encontrado: $LAST_RC"
+
+          # Si no hay RCs previos, comenzar desde 1
+          if [ -z "$LAST_RC" ]; then
+            NEXT_RC=1
+          else
+            NEXT_RC=$((LAST_RC + 1))
+          fi
+
+          NEW_TAG="${TAG_PREFIX}${NEXT_RC}"
+          echo "New tag: $NEW_TAG"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+
+      # Create the new RC tag and push it
+      - name: Create and push RC tag
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
+
+      # Notify Packagist of the new tag
+      - name: Notify Packagist
+        run: |
+          curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=jospina_apptank&apiToken=${{secrets.PACKAGIST_TOKEN}}' -d'{"repository":{"url":"${{vars.PACKAGIST_PACKAGE_URL}}"}}'
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.new_tag }}
+          release_name: ${{ env.new_tag }}
+          draft: false
+          prerelease: true
