@@ -28,12 +28,14 @@ Horus is a client library for Kotlin Multiplatform aimed at providing an easy an
 Add the repository and dependency in your `build.gradle` file:
 
 ```gradle 
+
 repositories {
-    mavenCentral() // o jitpack, dependiendo de donde publiques la librería
+    mavenCentral() // Add the repository if it is not already added
 }
 
 dependencies {
-    implementation 'com.ejemplo:nombre-libreria:1.0.0'
+   implementation("org.apptank.horus:client:{version}") // Kotlin Multiplatform
+   implementation("org.apptank.horus:client-android:{version}") // Android
 }
 ```
 
