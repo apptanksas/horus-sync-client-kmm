@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HorusClient"
-include(":core")
+include(":client")
