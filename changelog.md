@@ -1,5 +1,6 @@
 # Changelog
 
+## v0.1.4
 ## v0.1.3
 - Fix releasing to maven central
 

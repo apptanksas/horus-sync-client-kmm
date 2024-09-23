@@ -58,7 +58,7 @@ jobs:
           echo "mavenCentralPassword=${MAVEN_CENTRAL_PASSWORD}" >> gradle.properties
           echo "signing.keyId=${SIGNING_KEY_ID}" >> gradle.properties
           echo "signing.password=${SIGNING_KEY_PASSWORD}" >> gradle.properties
-          echo "signing.secretKeyRingFile=${HOME}/secret_key.gpg" >> gradle.properties
+          echo "signing.secretKeyRingFile=${GITHUB_WORKSPACE}/secret_key.gpg" >> gradle.properties
 
       - name: Decode and create secret key
         run: |
