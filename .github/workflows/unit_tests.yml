@@ -13,12 +13,21 @@ permissions:
 
 jobs:
   build:
-
     runs-on: macos-latest
 
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -33,7 +42,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build --parallel --configuration-cache
 
       - name: Run unit tests
-        run: ./gradlew :client:cleanTestDebugUnitTest :client:testDebugUnitTest --tests "org.apptank.horus.client.*" --no-configuration-cache
+        run: ./gradlew :client:cleanTestDebugUnitTest :client:testDebugUnitTest --tests "org.apptank.horus.client.*"
