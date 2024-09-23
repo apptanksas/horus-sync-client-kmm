@@ -58,7 +58,11 @@ jobs:
           echo "mavenCentralPassword=${MAVEN_CENTRAL_PASSWORD}" >> gradle.properties
           echo "signing.keyId=${SIGNING_KEY_ID}" >> gradle.properties
           echo "signing.password=${SIGNING_KEY_PASSWORD}" >> gradle.properties
-          echo "signing.secretKeyRingFile=${HOME}/secring.gpg" >> gradle.properties
+          echo "signing.secretKeyRingFile=${HOME}/secret_key.gpg" >> gradle.properties
+
+      - name: Decode and create secret key
+        run: |
+          echo ${{ secrets.SIGNING_KEY_SECRET }} | base64 --decode > secret_key.gpg
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -66,6 +70,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Publish To Maven Central
+        if: env.release == 'true'
         run: |
           ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
 

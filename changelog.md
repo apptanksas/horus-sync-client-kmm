@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.3
+- Fix releasing to maven central
+
 ## v0.1.2
 - Fix gradle properties
 
