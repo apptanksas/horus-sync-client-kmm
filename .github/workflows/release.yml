@@ -21,9 +21,8 @@ jobs:
           echo ${{ secrets.SIGNING_KEY_SECRET }} | base64 --decode > secret_key.gpg
           ls -l secret_key.gpg
           pwd
+          echo "signing.secretKeyRingFile=${HOME}/secret_key.gpg"
           echo ${{ secrets.SIGNING_KEY_SECRET }}
-          pwd
-          base64 secret_key.gpg | echo
 
       - name: Set permissions for GPG key
         run: chmod 600 secret_key.gpg
