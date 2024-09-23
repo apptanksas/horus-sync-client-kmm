@@ -1,9 +1,9 @@
 <p align="center">  
-<img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo"></a>  
-</p>  
-
-<p align="center">  
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/apptanksas/horus-sync-php/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status"></a>  
+<img src="https://raw.githubusercontent.com/apptanksas/horus-sync-php/master/assets/logo-horusync.svg" width="400" alt="Horusync Logo">
+<br/>
+<img src="https://github.com/apptanksas/horus-sync-client-kmm/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status">
+<img src="https://img.shields.io/maven-central/v/org.apptank.horus/client" alt="Latest Stable Version">
+<img src="https://img.shields.io/github/license/apptanksas/horus-sync-client-kmm" alt="License">
 </p>  
 
 **Please note:** This library currently is testing stage until publish the version 1.0.0.
@@ -34,8 +34,15 @@ repositories {
 }
 
 dependencies {
+
    implementation("org.apptank.horus:client:{version}") // Kotlin Multiplatform
    implementation("org.apptank.horus:client-android:{version}") // Android
+   
+   // IOS implementation
+   implementation("org.apptank.horus:client-iosarm64:{version}") // IOS arm64
+   implementation("org.apptank.horus:client-iosx64:{version}") // IOS x64
+   implementation("org.apptank.horus:client-iossimulatorarm64:{version}") // IOS simulator arm64
+
 }
 ```
 
@@ -323,11 +330,3 @@ HorusAuthentication.setUserActingAs("{USER_OWNER_ID}")
 Location of the dependencies
 
 C:\Users\[User]\.m2\repository\com\apptank\horus\client\core
-
-#### Android implementation
-
-
-``` groovy 
-
-implementation("org.apptank.horus:client-android:{version}")   
-```
