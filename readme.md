@@ -29,21 +29,23 @@ Add the repository and dependency in your `build.gradle` file:
 
 ```gradle 
 
-repositories {
-    mavenCentral() // Add the repository if it is not already added
+kotlin {
+     
+     /** ... Another configurations ... */
+     
+     sourceSets {
+          androidMain.dependencies {
+              implementation("org.apptank.horus:client-android:{version}") // Android
+          }
+          commonMain.dependencies {
+            /** ... Dependencies for common module ... */
+          }
+          iosMain.dependencies {
+              implementation("org.apptank.horus:client:{version}") // IOS
+          }
+    }
 }
 
-dependencies {
-
-   implementation("org.apptank.horus:client:{version}") // Kotlin Multiplatform
-   implementation("org.apptank.horus:client-android:{version}") // Android
-   
-   // IOS implementation
-   implementation("org.apptank.horus:client-iosarm64:{version}") // IOS arm64
-   implementation("org.apptank.horus:client-iosx64:{version}") // IOS x64
-   implementation("org.apptank.horus:client-iossimulatorarm64:{version}") // IOS simulator arm64
-
-}
 ```
 
 ## Android
@@ -70,21 +72,21 @@ application's life cycle.
 
 ```kotlin 
 class MainApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        setupHorus()
-    }
+  override fun onCreate() {
+    super.onCreate()
+    setupHorus()
+  }
 
-    private fun setupHorus() {
+  private fun setupHorus() {
 
-        val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
+    val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
 
-        // Configure Horus      
-        HorusConfigurator(BASE_SERVER_URL, isDebug = true).configure(this)
+    // Configure Horus      
+    HorusConfigurator(BASE_SERVER_URL, isDebug = true).configure(this)
 
-        // Register the activity lifecycle callbacks      
-        registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
-    }
+    // Register the activity lifecycle callbacks      
+    registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
+  }
 }   
 ```   
 
@@ -94,6 +96,100 @@ class MainApplication : Application() {
 
 * Add the configuration of ```-lsqlite3``` in the application's linker flags in XCode > Build
   Settings > "Other Linker Flags".
+
+### Initialization
+
+#### 1. Create an app delegate to handle lifecycle events
+
+```swift
+    class AppDelegate: NSObject, UIApplicationDelegate {  
+	    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {  
+	        IOSHorusLifeCycle().onCreate()  
+	        IOSHorusLifeCycle().onResume()  
+	        return true  
+	    }  
+	  
+	    func applicationDidBecomeActive(_ application: UIApplication) {  
+	        IOSHorusLifeCycle().onResume()  
+	    }  
+	  
+	    func applicationWillResignActive(_ application: UIApplication) {  
+	        IOSHorusLifeCycle().onPause()  
+	    }
+}
+```   
+
+#### 2. Implement a NetworkValidator to check the network status
+
+```swift
+
+final class NetworkValidator: ClientINetworkValidator {
+    
+    static let shared = NetworkValidator()
+
+    private let queue = DispatchQueue(label: "NetworkMonitor")
+    private let mutableQueue = DispatchQueue(label: "NetworkMonitor.mutable")
+    private let monitor = NWPathMonitor()
+    private var networkChangeCallback: (() -> Void)?
+    private var isMonitoring = false
+    
+    private init() {
+        monitor.pathUpdateHandler = { [weak self] path in
+            guard let self = self else { return }
+
+            if self.isMonitoring {
+                self.networkChangeCallback?()
+            }
+        }
+        monitor.start(queue: queue)
+    }
+
+    func isNetworkAvailable() -> Bool {
+        let path = monitor.currentPath
+        return path.status == .satisfied
+    }
+
+    func onNetworkChange(callback: @escaping () -> Void) {
+        self.networkChangeCallback = callback
+        callback()
+    }
+
+    func registerNetworkCallback() {
+        guard !isMonitoring else { return }
+        setIsMonitoring(true)
+    }
+
+    func unregisterNetworkCallback() {
+        guard isMonitoring else { return }
+        setIsMonitoring(false)
+    }
+    
+    private func setIsMonitoring(_ bool: Bool) {
+        mutableQueue.sync {
+            isMonitoring = bool
+        }
+    }
+}
+```
+
+#### 3. Configure Horus in the initialization of the application
+
+```swift
+
+@main
+struct iOSApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    init(){
+        IOSHorusConfigurator().configure(networkValidator: NetworkValidator.shared)
+    }
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+```
 
 # 2. How to use
 
@@ -109,7 +205,7 @@ ready to operate, use the **onReady** method of the **HorusDataFacade** class to
 
 ```kotlin  
 HorusDataFacade.onReady {
-    /** PUT YOUR CODE **/
+  /** PUT YOUR CODE **/
 }  
 ```  
 ### Subscribe to data changes
@@ -119,16 +215,16 @@ To know when a record is inserted, updated or deleted in an entity, subscribe to
 ```kotlin 
 HorusDataFacade.addDataChangeListener(object : DataChangeListener {
 
-    override fun onInsert(entity: String, id: String, data: DataMap) {
-        /** WHEN IS INSERTED A NEW RECORD **/
-    }
-    override fun onUpdate(entity: String, id: String, data: DataMap) {
-        /** WHEN IS UPDATED A RECORD **/
-    }
+  override fun onInsert(entity: String, id: String, data: DataMap) {
+    /** WHEN IS INSERTED A NEW RECORD **/
+  }
+  override fun onUpdate(entity: String, id: String, data: DataMap) {
+    /** WHEN IS UPDATED A RECORD **/
+  }
 
-    override fun onDelete(entity: String, id: String) {
-        /** WHEN IS DELETED A RECORD **/
-    }
+  override fun onDelete(entity: String, id: String) {
+    /** WHEN IS DELETED A RECORD **/
+  }
 })  
 ```  
 
@@ -172,16 +268,16 @@ val newData = mapOf("name":"Aston", "lastname":"Coleman")
 val result = HorusDataFacade.insert(entityName, newData)
 
 when (result) {
-    is DataResult.Success -> {
-        val entityId = result.data
-        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-    }
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN INSERT FAILS */
-    }
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.Success -> {
+    val entityId = result.data
+    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+  }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN INSERT FAILS */
+  }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -189,13 +285,13 @@ Alternative result validation
 
 ```kotlin  
 result.fold(
-    onSuccess = {
-        val entityId = result.data
-        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-    },
-    onFailure = {
-        /** YOUR CODE HERE WHEN INSERT FAILS */
-    })  
+  onSuccess = {
+    val entityId = result.data
+    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+  },
+  onFailure = {
+    /** YOUR CODE HERE WHEN INSERT FAILS */
+  })  
 ```  
 
 ### Actualizar datos de un registro
@@ -208,22 +304,22 @@ the attributes to update.
 val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val newName = "Elton"
 val result = HorusDataFacade.update(
-    "users", userId, mapOf(
-        "name" to newName
-    )
+  "users", userId, mapOf(
+    "name" to newName
+  )
 )
 when (result) {
-    is DataResult.Success -> {
-        /** YOUR CODE HERE WHEN SUCCESS */
-    }
+  is DataResult.Success -> {
+    /** YOUR CODE HERE WHEN SUCCESS */
+  }
 
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN FAILURE */
-    }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN FAILURE */
+  }
 
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -238,15 +334,15 @@ val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val result = HorusDataFacade.delete("users", userId)
 
 when (result) {
-    is DataResult.Success -> {
-        /** YOUR CODE HERE WHEN SUCCESS */
-    }
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN FAILURE */
-    }
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.Success -> {
+    /** YOUR CODE HERE WHEN SUCCESS */
+  }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN FAILURE */
+  }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -263,16 +359,16 @@ Optional parameters:
 
 ```kotlin  
 val whereConditions = listOf(
-    SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
+  SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
 )
 HorusDataFacade.querySimple("users", whereConditions, orderBy = "name")
-    .fold(
-      onSuccess = { users ->
-        //** YOUR CODE HERE WHEN SUCCESS */ 
-      }, 
-      onFailure = {
-        //** YOUR CODE HERE WHEN FAILURE */ 
-      })
+  .fold(
+    onSuccess = { users ->
+      //** YOUR CODE HERE WHEN SUCCESS */ 
+    },
+    onFailure = {
+      //** YOUR CODE HERE WHEN FAILURE */ 
+    })
 
 ```  
 
