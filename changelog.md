@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.5
+- Fixed JSON map serializer
+- Fixed Http client implementation
+- Change IOS HorusConfigurator to implement logger
+- Fixed avoid parallel remote synchronizer manager
+
 ## v0.1.4
 ## v0.1.3
 - Fix releasing to maven central

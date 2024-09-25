@@ -115,7 +115,7 @@ internal class SyncControlDatabaseHelper(
     ) {
         validateIfEntityExists(entity)
 
-        val data = attributes.associate { it.name to it.value.toString() }
+        val data: DataMap = attributes.associate { it.name to it.value.toString() }
 
         addAction(
             entity,

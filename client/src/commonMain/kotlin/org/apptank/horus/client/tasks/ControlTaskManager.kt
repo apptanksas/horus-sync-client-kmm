@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.extensions.logException
 
 /**
  * Manages and executes a series of tasks in a specific order, handling dependencies between tasks.
@@ -161,9 +162,11 @@ internal object ControlTaskManager {
         onStatus(Status.RUNNING)
         kotlin.runCatching {
             taskExecutionCounter++
+            info("[ControlTask] Executing task: ${task::class.simpleName}")
             val taskResult = task.execute(data)
             handleTaskResult(findNextTask(task), taskResult)
         }.getOrElse {
+            logException("[ControlTask] Error executing task: ${task::class.simpleName}", it)
             it.printStackTrace()
             onStatus(Status.FAILED)
         }
@@ -197,8 +200,8 @@ internal object ControlTaskManager {
             is TaskResult.Success -> {
                 executeTask(nextTask, taskResult.data)
             }
-
             is TaskResult.Failure -> {
+                logException("[ControlTask] Error executing task", taskResult.error)
                 onStatus(Status.FAILED)
             }
         }

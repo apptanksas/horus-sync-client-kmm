@@ -61,8 +61,13 @@ fun SqlDriver.execute(query: String) {
  * @param block The block of code to be executed.
  * @return The result of the block.
  */
-inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
-    return block(this)
+internal inline fun <R> SqlDriver.handle(block: SqlDriver.() -> R): R {
+    return kotlin.runCatching {
+        block(this)
+    }.getOrElse {
+        logException("Error SQLDriver: ${it.message}", it)
+        throw it
+    }
 }
 
 /**
