@@ -17,6 +17,7 @@ import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.notContains
+import kotlin.random.Random
 
 /**
  * Abstract class that provides helper methods for interacting with an SQLite database.
@@ -117,15 +118,17 @@ abstract class SQLiteHelper(
      * @return A list of mapped results.
      */
     protected fun <T> rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
-        return driver.executeQuery(null, query, {
-            val resultList = mutableListOf<T>()
-            while (it.next().value) {
-                mapper(it)?.let { item ->
-                    resultList.add(item)
+        return transactionWithResult {
+            driver.executeQuery(Random.nextInt(), query, {
+                val resultList = mutableListOf<T>()
+                while (it.next().value) {
+                    mapper(it)?.let { item ->
+                        resultList.add(item)
+                    }
                 }
-            }
-            QueryResult.Value(resultList)
-        }, 0).value
+                QueryResult.Value(resultList)
+            }, 0).value
+        }
     }
 
     /**
@@ -136,18 +139,20 @@ abstract class SQLiteHelper(
      * @return A list of mapped results.
      */
     internal fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
-        val tableName = getTableName(query)
-        val attributes = extractSelectAttributes(query)
+        return transactionWithResult {
+            val tableName = getTableName(query)
+            val attributes = extractSelectAttributes(query)
 
-        return driver.executeQuery(null, query, {
-            val resultList = mutableListOf<T>()
-            buildCursorValues(tableName, attributes, it).forEach { cursor ->
-                mapper(cursor)?.let { item ->
-                    resultList.add(item)
+            driver.executeQuery(null, query, {
+                val resultList = mutableListOf<T>()
+                buildCursorValues(tableName, attributes, it).forEach { cursor ->
+                    mapper(cursor)?.let { item ->
+                        resultList.add(item)
+                    }
                 }
-            }
-            QueryResult.Value(resultList)
-        }, 0).value
+                QueryResult.Value(resultList)
+            }, 0).value
+        }
     }
 
     /**

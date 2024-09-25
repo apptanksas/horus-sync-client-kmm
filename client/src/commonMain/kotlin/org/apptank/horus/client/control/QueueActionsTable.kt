@@ -46,10 +46,10 @@ internal object QueueActionsTable {
      * @param jsonData The data associated with the action, serialized as a JSON string.
      * @return A map of column names to values for insertion into the table.
      */
-    fun mapToCreate(actionType: SyncControl.ActionType, entity: String, jsonData: Map<String, @Serializable(with = AnySerializer::class) Any?>) = mapOf(
+    inline fun mapToCreate(actionType: SyncControl.ActionType, entity: String, jsonData: Map<String, Any?>) = mapOf(
         ATTR_ACTION_TYPE to actionType.id,
         ATTR_ENTITY to entity,
-        ATTR_DATA to Json.encodeToString(jsonData),
+        ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
         ATTR_DATETIME to SystemTime.getCurrentTimestamp()
     )

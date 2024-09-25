@@ -46,6 +46,8 @@ internal class RemoteSynchronizatorManager(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxAttempts: Int = 3
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    private var isTakenProcess = false
 
     init {
         // Registers a callback to attempt synchronization when network changes are detected.
@@ -53,8 +55,6 @@ internal class RemoteSynchronizatorManager(
             trySynchronizeData()
         }
     }
-
-    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     /**
      * Attempts to synchronize pending data with the remote server.
@@ -74,8 +74,15 @@ internal class RemoteSynchronizatorManager(
             return
         }
 
+        if (isTakenProcess) {
+            warn("Process synchronizator already in progress")
+            return
+        }
+
         scope.apply {
             val job = launch {
+
+                takeProcess()
 
                 val pendingActions = syncControlDatabaseHelper.getPendingActions()
 
@@ -107,6 +114,7 @@ internal class RemoteSynchronizatorManager(
                     )
                 }
                 job.cancel()
+                releaseProcess()
             }
         }
     }
@@ -181,6 +189,14 @@ internal class RemoteSynchronizatorManager(
         } while (result is DataResult.Failure && attempts < maxAttempts)
 
         return result
+    }
+
+    private fun takeProcess() {
+        isTakenProcess = true
+    }
+
+    private fun releaseProcess() {
+        isTakenProcess = false
     }
 
 }

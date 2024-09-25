@@ -5,7 +5,6 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
@@ -36,7 +35,7 @@ internal object AnySerializer : KSerializer<Any> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("Any")
 
-    private val decoderJSON = Json {
+    val decoderJSON = Json {
         ignoreUnknownKeys = true
         serializersModule = serializersModuleOf(Any::class, AnySerializer)
     }
@@ -61,7 +60,7 @@ internal object AnySerializer : KSerializer<Any> {
             is Double -> JsonPrimitive(value)
             is Float -> JsonPrimitive(value)
             is Map<*, *> -> JsonObject(value.mapKeys { it.key.toString() }
-                .mapValues { Json.encodeToJsonElement(it.value) })
+                .mapValues { decoderJSON.encodeToJsonElement(it.value) })
             else -> throw SerializationException("Unsupported type")
         }
         jsonEncoder.encodeJsonElement(jsonElement)

@@ -10,7 +10,8 @@ import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.sync.network.service.SynchronizationService
 import com.russhwolf.settings.Settings
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
 
 
 /**
@@ -25,8 +26,10 @@ object HorusContainer {
     private var baseUrl: String? = null
 
     private val httpClient by lazy {
-        CIO.create {
-            requestTimeout = 60 * 1000
+        HttpClient(){
+            install(HttpTimeout){
+                requestTimeoutMillis = 60L * 1000 // 60 secs
+            }
         }
     }
 
@@ -129,7 +132,7 @@ object HorusContainer {
      * @throws IllegalStateException if the migration service is not set.
      */
     internal fun getMigrationService(): IMigrationService {
-        return migrationService ?: MigrationService(httpClient, baseUrl!!)
+        return migrationService ?: MigrationService(httpClient.engine, baseUrl!!)
     }
 
     /**
@@ -139,7 +142,7 @@ object HorusContainer {
      * @throws IllegalStateException if the synchronization service is not set.
      */
     internal fun getSynchronizationService(): ISynchronizationService {
-        return synchronizationService ?: SynchronizationService(httpClient, baseUrl!!)
+        return synchronizationService ?: SynchronizationService(httpClient.engine, baseUrl!!)
     }
 
     /**
