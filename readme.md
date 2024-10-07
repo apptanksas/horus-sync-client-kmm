@@ -410,6 +410,14 @@ HorusDataFacade.forceSync(onSuccess={
     })
 ```
 
+### Validate if exists data to synchronize
+
+To validate if there is data to synchronize, use the **hasDataToSync** method.
+
+```kotlin
+val hasDataToSync = HorusDataFacade.hasDataToSync()
+```
+
 ## Authentication
 
 Horus needs a user access token in session to be able to send the information to the remote server,

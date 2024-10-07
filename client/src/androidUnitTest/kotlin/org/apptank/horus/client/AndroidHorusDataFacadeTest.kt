@@ -118,6 +118,56 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     @Test
+    fun `when hasDataToSync return true`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getPendingActions()
+        }.returns(
+            listOf(
+                SyncControl.Action(
+                    Random.nextInt(), SyncControl.ActionType.INSERT,
+                    "entity",
+                    SyncControl.ActionStatus.PENDING,
+                    emptyMap(), Clock.System.now()
+                        .toLocalDateTime(
+                            TimeZone.UTC
+                        )
+                )
+            )
+        )
+
+        // When
+        val result = HorusDataFacade.hasDataToSync()
+        // Then
+        assert(result)
+    }
+
+    @Test
+    fun `when hasDataToSync return false`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getPendingActions()
+        }.returns(emptyList())
+
+        // When
+        val result = HorusDataFacade.hasDataToSync()
+        // Then
+        Assert.assertFalse(result)
+    }
+
+    @Test
     fun `when forceSync is invoked and network is not available then invoke onFailure`() =
         runBlocking {
 
