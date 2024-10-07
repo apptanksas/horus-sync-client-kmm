@@ -6,6 +6,7 @@
 - Added method into `HorusDataFacade` to get the entity names list.
 - Added method into `HorusDataFacade` to validate if exists data to synchronize.
 - 
+
 ## v0.1.5
 - Fixed JSON map serializer
 - Fixed Http client implementation

@@ -168,6 +168,26 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     @Test
+    fun `when getLastSyncDate return null`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val timestampExpected = Clock.System.now().epochSeconds
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getLastDatetimeCheckpoint()
+        }.returns(timestampExpected)
+
+        // When
+        val result = HorusDataFacade.getLastSyncDate()
+        // Then
+        Assert.assertEquals(timestampExpected, result)
+    }
+
+    @Test
     fun `when forceSync is invoked and network is not available then invoke onFailure`() =
         runBlocking {
 

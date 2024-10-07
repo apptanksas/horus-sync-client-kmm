@@ -436,6 +436,16 @@ object HorusDataFacade {
         return syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
     }
 
+
+    /**
+     * Gets the last synchronization timestamp.
+     *
+     * @return The last synchronization timestamp, or `null` if no synchronization has occurred.
+     */
+    fun getLastSyncDate(): Long? {
+        return syncControlDatabaseHelper?.getLastDatetimeCheckpoint()
+    }
+
     /**
      * Adds a listener to be notified of data changes.
      *
