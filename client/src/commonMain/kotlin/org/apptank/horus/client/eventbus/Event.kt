@@ -46,5 +46,10 @@ enum class EventType {
     /**
      * Event type indicating that an entity was deleted.
      */
-    ENTITY_DELETED
+    ENTITY_DELETED,
+
+    /**
+     * Event type indicating that the user setup has changed.
+     */
+    SETUP_CHANGED
 }

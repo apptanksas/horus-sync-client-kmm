@@ -4,6 +4,7 @@ import org.apptank.horus.client.serialization.AnySerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.apptank.horus.client.eventbus.Event
 
 /**
  * Typealias for a map that holds data where the values are of any type, serializable using `AnySerializer`.
@@ -15,6 +16,16 @@ typealias DataMap = Map<String, @Serializable(with = AnySerializer::class) Any?>
  * Typealias for a simple callback function that takes no arguments and returns no value.
  */
 typealias Callback = () -> Unit
+
+/**
+ * Typealias for a nullable callback function that takes no arguments and returns no value.
+ */
+typealias CallbackNullable = Callback?
+
+/**
+ * Typealias for a callback function that takes an [Event] as an argument and returns no value.
+ */
+internal typealias CallbackEvent = (Event) -> Unit
 
 /**
  * Extension function for DataMap that serializes the map into a JSON string.

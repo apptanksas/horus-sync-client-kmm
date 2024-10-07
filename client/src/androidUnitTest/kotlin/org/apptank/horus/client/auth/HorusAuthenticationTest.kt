@@ -1,6 +1,8 @@
 package org.apptank.horus.client.auth
 
 import org.apptank.horus.client.TestCase
+import org.apptank.horus.client.eventbus.EventBus
+import org.apptank.horus.client.eventbus.EventType
 import org.junit.Assert
 import org.junit.Test
 
@@ -9,10 +11,18 @@ class HorusAuthenticationTest : TestCase() {
 
     @Test
     fun testSetupUserAccessToken() {
+
+        var eventReceived = false
+
+        EventBus.register(EventType.SETUP_CHANGED){
+            eventReceived = true
+        }
+
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         Assert.assertEquals(USER_ACCESS_TOKEN, HorusAuthentication.getUserAccessToken())
         Assert.assertTrue(HorusAuthentication.isUserAuthenticated())
         Assert.assertFalse(HorusAuthentication.isUserActingAs())
+        Assert.assertTrue(eventReceived)
     }
 
     @Test

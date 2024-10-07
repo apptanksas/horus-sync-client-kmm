@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.2.0
+
 ## v0.1.5
 - Fixed JSON map serializer
 - Fixed Http client implementation

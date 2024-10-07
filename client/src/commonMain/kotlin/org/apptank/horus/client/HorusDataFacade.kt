@@ -2,6 +2,8 @@ package org.apptank.horus.client
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.base.CallbackEvent
+import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.data.DataChangeListener
@@ -11,12 +13,14 @@ import org.apptank.horus.client.database.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
+import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.removeIf
+import org.apptank.horus.client.tasks.ControlTaskManager
 import org.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -39,6 +43,20 @@ object HorusDataFacade {
     private val syncControlDatabaseHelper by lazy {
         HorusContainer.getSyncControlDatabaseHelper()
     }
+
+    private val remoteSynchronizatorManager by lazy {
+        HorusContainer.getRemoteSynchronizatorManager()
+    }
+
+    private val controlTaskManager by lazy { ControlTaskManager }
+
+    private var networkValidator: INetworkValidator? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getNetworkValidator()
+            }
+            return field
+        }
 
     init {
         registerEntityEventListeners()
@@ -339,6 +357,62 @@ object HorusDataFacade {
     }
 
     /**
+     * Gets the list of entities available in the database.
+     */
+    fun getEntityNames(): List<String> {
+        return syncControlDatabaseHelper.getEntityNames()
+    }
+
+    /**
+     * Forces a synchronization of data with the remote server. Validating if the network is available.
+     *
+     * @param onSuccess The callback to be invoked when the synchronization is successful.
+     * @param onFailure The callback to be invoked when the synchronization fails.
+     */
+    fun forceSync(onSuccess: CallbackNullable = null, onFailure: CallbackNullable = null) {
+
+        if (networkValidator?.isNetworkAvailable() == false) {
+            onFailure?.invoke()
+            return
+        }
+
+        var callbackSyncPushSuccess: CallbackEvent? = null
+        var callbackSyncPushFailure: CallbackEvent? = null
+        val removeListeners: Callback = {
+            callbackSyncPushSuccess?.let { callback ->
+                EventBus.unregister(
+                    EventType.SYNC_PUSH_SUCCESS,
+                    callback
+                )
+            }
+            callbackSyncPushFailure?.let { callback ->
+                EventBus.unregister(
+                    EventType.SYNC_PUSH_FAILED,
+                    callback
+                )
+            }
+        }
+        callbackSyncPushSuccess = { onSuccess?.invoke();removeListeners.invoke() }
+        callbackSyncPushFailure = { onFailure?.invoke();removeListeners.invoke() }
+
+        with(controlTaskManager) {
+            setOnCallbackStatusListener {
+                if (it === ControlTaskManager.Status.FAILED) {
+                    onFailure?.invoke()
+                }
+            }
+            setOnCompleted {
+
+                EventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
+                EventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
+
+                remoteSynchronizatorManager.trySynchronizeData()
+            }
+            start()
+        }
+    }
+
+    /**
      * Adds a listener to be notified of data changes.
      *
      * @param dataChangeListener The listener to add.
@@ -362,6 +436,7 @@ object HorusDataFacade {
     fun removeAllDataChangeListeners() {
         changeListeners.clear()
     }
+
 
     /**
      * Validates the constraints for the facade.
@@ -469,5 +544,6 @@ object HorusDataFacade {
         isReady = false
         onCallbackReady = null
         changeListeners.clear()
+        networkValidator = null
     }
 }
