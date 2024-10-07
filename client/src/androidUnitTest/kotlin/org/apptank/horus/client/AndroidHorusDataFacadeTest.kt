@@ -24,9 +24,22 @@ import org.apptank.horus.client.migration.network.toScheme
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import com.russhwolf.settings.Settings
 import io.mockative.Mock
+import io.mockative.any
 import io.mockative.classOf
+import io.mockative.coEvery
+import io.mockative.every
 import io.mockative.mock
+import io.mockative.verify
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -104,6 +117,181 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
     }
 
+    @Test
+    fun `when hasDataToSync return true`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getPendingActions()
+        }.returns(
+            listOf(
+                SyncControl.Action(
+                    Random.nextInt(), SyncControl.ActionType.INSERT,
+                    "entity",
+                    SyncControl.ActionStatus.PENDING,
+                    emptyMap(), Clock.System.now()
+                        .toLocalDateTime(
+                            TimeZone.UTC
+                        )
+                )
+            )
+        )
+
+        // When
+        val result = HorusDataFacade.hasDataToSync()
+        // Then
+        assert(result)
+    }
+
+    @Test
+    fun `when hasDataToSync return false`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getPendingActions()
+        }.returns(emptyList())
+
+        // When
+        val result = HorusDataFacade.hasDataToSync()
+        // Then
+        Assert.assertFalse(result)
+    }
+
+    @Test
+    fun `when getLastSyncDate return null`(): Unit = runBlocking {
+        // Given
+        val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val timestampExpected = Clock.System.now().epochSeconds
+
+        with(HorusContainer) {
+            setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+        }
+
+        every {
+            mockSyncControlDatabaseHelper.getLastDatetimeCheckpoint()
+        }.returns(timestampExpected)
+
+        // When
+        val result = HorusDataFacade.getLastSyncDate()
+        // Then
+        Assert.assertEquals(timestampExpected, result)
+    }
+
+    @Test
+    fun `when forceSync is invoked and network is not available then invoke onFailure`() =
+        runBlocking {
+
+            // Given
+            var invoked = false
+            val mockNetworkValidator = mock(classOf<INetworkValidator>())
+            every { mockNetworkValidator.isNetworkAvailable() }.returns(false)
+            HorusContainer.setupNetworkValidator(mockNetworkValidator)
+
+            // When
+            HorusDataFacade.forceSync(onFailure = {
+                invoked = true
+            })
+
+            // Then
+            delay(500)
+            verify { mockNetworkValidator.isNetworkAvailable() }
+            assert(invoked)
+        }
+
+    @Test
+    fun `when forceSync is invoked and network is available then invoke onSuccess`() =
+        runBlocking {
+            // Given
+            var invokedOnSuccess = false
+            var invokedOnFailure = false
+
+            val mockNetworkValidator = mock(classOf<INetworkValidator>())
+            val mockMigrationService = mock(classOf<IMigrationService>())
+            val mockSyncService = mock(classOf<ISynchronizationService>())
+            val mockSettings = mock(classOf<Settings>())
+            val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+            val mockOperationDatabaseHelper = mock(classOf<IOperationDatabaseHelper>())
+
+            HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+            HorusContainer.setupLogger(KotlinLogger())
+            every { mockNetworkValidator.isNetworkAvailable() }.returns(true)
+            coEvery { mockMigrationService.getMigration() }.returns(
+                DataResult.Success(
+                    buildEntitiesSchemeFromJSON(DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE)
+                )
+            )
+            every {
+                mockSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY)
+            }.returns(1)
+
+            every {
+                mockSyncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
+            }.returns(true)
+
+            every {
+                mockSyncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
+            }.returns(true)
+
+            every {
+                mockSyncControlDatabaseHelper.getPendingActions()
+            }.returns(
+                listOf(
+                    SyncControl.Action(
+                        Random.nextInt(), SyncControl.ActionType.INSERT,
+                        "entity",
+                        SyncControl.ActionStatus.PENDING,
+                        emptyMap(), Clock.System.now()
+                            .toLocalDateTime(
+                                TimeZone.UTC
+                            )
+                    )
+                )
+            )
+
+            coEvery { mockSyncService.postQueueActions(any()) }.returns(DataResult.Success(Unit))
+            every { mockSyncControlDatabaseHelper.completeActions(any()) }.returns(true)
+
+            with(HorusContainer) {
+                setupMigrationService(mockMigrationService)
+                setupNetworkValidator(mockNetworkValidator)
+                setupSettings(mockSettings)
+                setupLogger(KotlinLogger())
+                setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+                setupOperationDatabaseHelper(mockOperationDatabaseHelper)
+                setupRemoteSynchronizatorManager(
+                    RemoteSynchronizatorManager(
+                        mockNetworkValidator,
+                        mockSyncControlDatabaseHelper,
+                        mockSyncService
+                    )
+                )
+            }
+
+            // When
+            HorusDataFacade.forceSync(onSuccess = {
+                invokedOnSuccess = true
+            }, onFailure = {
+                invokedOnFailure = true
+            })
+
+            // Then
+            delay(500)
+            verify { mockNetworkValidator.isNetworkAvailable() }
+            Assert.assertFalse(invokedOnFailure)
+            assert(invokedOnSuccess)
+            Assert.assertEquals(0, EventBus.getCountListeners(EventType.SYNC_PUSH_FAILED))
+            Assert.assertEquals(0, EventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS))
+        }
 
     @Test
     fun `multiples tests associated`() = prepareEnvironment {
@@ -137,6 +325,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateGetEntities()
         validateGetEntitiesWithWhereConditions()
         validateGetEntitiesWithLimitAndOffset()
+        validateGetEntitiesName()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -354,6 +543,19 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Then
         Assert.assertNull(entity)
     }
+
+    private fun validateGetEntitiesName() = prepareInternalTest {
+        // Given
+        val countEntitiesExpected = 2
+
+        // When
+        val entitiesName = HorusDataFacade.getEntityNames()
+
+        // Then
+        Assert.assertTrue(entitiesName.isNotEmpty())
+        Assert.assertEquals(countEntitiesExpected, entitiesName.size)
+    }
+
 
     private fun createDataInsertRecord() = mapOf(
         "measure" to "w",

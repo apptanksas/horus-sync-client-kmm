@@ -26,8 +26,8 @@ object HorusContainer {
     private var baseUrl: String? = null
 
     private val httpClient by lazy {
-        HttpClient(){
-            install(HttpTimeout){
+        HttpClient() {
+            install(HttpTimeout) {
                 requestTimeoutMillis = 60L * 1000 // 60 secs
             }
         }
@@ -44,6 +44,8 @@ object HorusContainer {
     private var networkValidator: INetworkValidator? = null
 
     private var logger: ILogger? = null
+
+    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
 
     // ------------------------------------------------------------------------
     // Setters
@@ -65,6 +67,23 @@ object HorusContainer {
      */
     internal fun setupSynchronizationService(service: ISynchronizationService) {
         synchronizationService = service
+    }
+
+    /**
+     * Sets up the remote synchronizator manager.
+     *
+     * @param manager The [RemoteSynchronizatorManager] instance to set up.
+     */
+    internal fun setupRemoteSynchronizatorManager(manager: RemoteSynchronizatorManager) {
+        remoteSynchronizatorManager = manager
+    }
+
+    internal fun setupSyncControlDatabaseHelper(helper: ISyncControlDatabaseHelper) {
+        syncControlDatabaseHelper = helper
+    }
+
+    internal fun setupOperationDatabaseHelper(helper: IOperationDatabaseHelper) {
+        operationDatabaseHelper = helper
     }
 
     /**
@@ -142,7 +161,10 @@ object HorusContainer {
      * @throws IllegalStateException if the synchronization service is not set.
      */
     internal fun getSynchronizationService(): ISynchronizationService {
-        return synchronizationService ?: SynchronizationService(httpClient.engine, baseUrl!!)
+        if (synchronizationService == null) {
+            synchronizationService = SynchronizationService(httpClient.engine, baseUrl!!)
+        }
+        return synchronizationService!!
     }
 
     /**
@@ -208,16 +230,19 @@ object HorusContainer {
     }
 
     /**
-     * Create a new instance of remote synchronizator manager.
+     * Retrieves the remote synchronizator manager.
      *
      * @return A new instance of [RemoteSynchronizatorManager].
      */
-    internal fun createRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
-        return RemoteSynchronizatorManager(
-            getNetworkValidator(),
-            getSyncControlDatabaseHelper(),
-            getSynchronizationService()
-        )
+    internal fun getRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
+        if (remoteSynchronizatorManager == null) {
+            remoteSynchronizatorManager = RemoteSynchronizatorManager(
+                getNetworkValidator(),
+                getSyncControlDatabaseHelper(),
+                getSynchronizationService()
+            )
+        }
+        return remoteSynchronizatorManager!!
     }
 
     // ------------------------------------------------------------------------

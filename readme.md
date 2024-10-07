@@ -388,6 +388,36 @@ if (user != null) {
 
 ```  
 
+## Utilities
+
+### Get entities name
+
+To get the list of entities that are being managed by Horus, use the **getEntityNames** method.
+
+```kotlin
+val entityNames = HorusDataFacade.getEntityNames()
+```
+
+### Force synchronization
+
+To force the synchronization of the data with the server, use the **forceSync** method.
+
+```kotlin
+HorusDataFacade.forceSync(onSuccess={
+      /** YOUR CODE HERE WHEN SUCCESS */
+    }, onFailure={
+        /** YOUR CODE HERE WHEN FAILURE */ 
+    })
+```
+
+### Validate if exists data to synchronize
+
+To validate if there is data to synchronize, use the **hasDataToSync** method.
+
+```kotlin
+val hasDataToSync = HorusDataFacade.hasDataToSync()
+```
+
 ## Authentication
 
 Horus needs a user access token in session to be able to send the information to the remote server,

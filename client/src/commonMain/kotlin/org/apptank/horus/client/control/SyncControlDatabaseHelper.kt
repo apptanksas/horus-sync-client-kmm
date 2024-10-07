@@ -56,9 +56,28 @@ internal class SyncControlDatabaseHelper(
      */
     override fun getLastDatetimeCheckpoint(): Long {
         driver.handle {
-            return rawQuery(
-                "SELECT ${SyncControlTable.ATTR_DATETIME} FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${SyncControl.OperationType.CHECKPOINT.id} ORDER BY ${SyncControlTable.ATTR_ID} DESC LIMIT 1"
-            ) { it.getRequireLong(0) }.firstOrNull() ?: 0L
+            val query = SimpleQueryBuilder(SyncControlTable.TABLE_NAME).apply {
+                select(SyncControlTable.ATTR_DATETIME)
+                where(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            SyncControlTable.ATTR_TYPE,
+                            SyncControl.OperationType.CHECKPOINT.id
+                        )
+                    )
+                )
+                where(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            SyncControlTable.ATTR_STATUS,
+                            SyncControl.Status.COMPLETED.id
+                        )
+                    )
+                )
+                orderBy(SyncControlTable.ATTR_ID, SQL.OrderBy.DESC)
+                limit(1)
+            }
+            return rawQuery(query.build()) { it.getRequireLong(0) }.firstOrNull() ?: 0L
         }
     }
 

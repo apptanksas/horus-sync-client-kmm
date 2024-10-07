@@ -47,7 +47,6 @@ internal class RemoteSynchronizatorManager(
     private val maxAttempts: Int = 3
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
-    private var isTakenProcess = false
 
     init {
         // Registers a callback to attempt synchronization when network changes are detected.
@@ -197,6 +196,10 @@ internal class RemoteSynchronizatorManager(
 
     private fun releaseProcess() {
         isTakenProcess = false
+    }
+
+    companion object {
+        private var isTakenProcess = false
     }
 
 }
