@@ -143,7 +143,7 @@ class OperationDatabaseHelperTest : TestCase() {
     @Test
     fun validateInsertTransaction() {
         // Given
-        val listActions = generateArray {
+        val listActions = generateRandomArray {
             createInsertAction(uuid(), "dog")
         }
         var postValidate = false
@@ -171,7 +171,7 @@ class OperationDatabaseHelperTest : TestCase() {
         // Given
         val uuid = uuid()
         val nameExpected = Random.nextInt().toString()
-        val listActions = generateArray {
+        val listActions = generateRandomArray {
             createUpdateAction(uuid, nameExpected)
         }
         val insertAction = createInsertAction(uuid, "dog")
@@ -444,7 +444,7 @@ class OperationDatabaseHelperTest : TestCase() {
             )
         )
 
-        val listActions = generateArray {
+        val listActions = generateRandomArray {
             DatabaseOperation.InsertRecord(
                 entityName,
                 listOf(
@@ -486,7 +486,7 @@ class OperationDatabaseHelperTest : TestCase() {
             )
         )
 
-        val listActions = generateArray {
+        val listActions = generateRandomArray {
             DatabaseOperation.InsertRecord(
                 entityName,
                 listOf(

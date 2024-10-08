@@ -94,7 +94,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     fun trySynchronizeDataPostQueueActionsIsFailure() = runBlocking {
 
         // Given
-        val actions = generateArray {
+        val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.INSERT,
                 "entity",
@@ -130,7 +130,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     @Test
     fun trySynchronizeDataCompleteActionsIsFailure() = runBlocking {
         // Given
-        val actions = generateArray {
+        val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.INSERT,
                 "entity",
@@ -165,7 +165,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     @Test
     fun trySynchronizeDataCompleteIsSuccess() = runBlocking {
         // Given
-        val actions = generateArray {
+        val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.UPDATE,
                 "entity",

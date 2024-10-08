@@ -25,6 +25,7 @@ import io.mockative.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.apptank.horus.client.config.HorusConfig
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -71,7 +72,7 @@ class ControlTaskManagerTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseDriverFactory)
-            setupBaseUrl("http://dev.horus.com")
+            setupConfig(HorusConfig("http://dev.horus.com"))
         }
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)

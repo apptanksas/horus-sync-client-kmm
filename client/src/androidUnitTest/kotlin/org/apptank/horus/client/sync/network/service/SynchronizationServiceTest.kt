@@ -12,7 +12,6 @@ import org.apptank.horus.client.ServiceTest
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.fold
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
@@ -96,7 +95,7 @@ class SynchronizationServiceTest : ServiceTest() {
     @Test
     fun getDataEntityWithIds() = runBlocking {
         // Given
-        val ids = generateArray { uuid() }.map { it }
+        val ids = generateRandomArray { uuid() }.map { it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
@@ -125,14 +124,14 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postQueueActions() = runBlocking {
 
         // Given
-        val actions = generateArray {
+        val actions = generateRandomArray {
             SyncDTO.Request.SyncActionRequest(
                 SyncControl.ActionType.INSERT.name, "products", mapOf(
                     "id" to uuid(),
                     "name" to "Product  ${uuid()}"
                 ), timestamp()
             )
-        } + generateArray {
+        } + generateRandomArray {
             SyncDTO.Request.SyncActionRequest(
                 SyncControl.ActionType.UPDATE.name, "products", mapOf(
                     "id" to uuid(),
@@ -213,7 +212,7 @@ class SynchronizationServiceTest : ServiceTest() {
     @Test
     fun getQueueActionsWithExclude() = runBlocking {
         // Given
-        val exclude = generateArray { timestamp() }
+        val exclude = generateRandomArray { timestamp() }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
@@ -228,7 +227,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getQueueActionsWithTimestampAfterAndExclude() = runBlocking {
         // Given
         val timestampAfter = timestamp()
-        val exclude = generateArray { timestamp() }
+        val exclude = generateRandomArray { timestamp() }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
