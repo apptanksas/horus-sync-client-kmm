@@ -23,7 +23,7 @@ class HorusConfigurator(
             setupConfig(config)
             setupDatabaseFactory(DatabaseDriverFactory())
             setupNetworkValidator(networkValidator)
-            if (isDebug) setupLogger(IOSLogger())
+            if (config.isDebug) setupLogger(IOSLogger())
         }
     }
 }
