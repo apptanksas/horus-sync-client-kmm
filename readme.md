@@ -6,18 +6,19 @@
 <img src="https://img.shields.io/github/license/apptanksas/horus-sync-client-kmm" alt="License">
 </p>  
 
-**Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile, it could have breaking changes in the API. 
+**Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile,
+it could have breaking changes in the API.
 
 # Horusync client KMM
 
-Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to store data locally and synchronize it with a remote server, ensuring data security and integrity.
+Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to
+store data locally and synchronize it with a remote server, ensuring data security and integrity.
 
 ## Features
 
 - Easy-to-use interface.
 - It is safety.
 - Validates data integrity across clients.
-
 
 # 1. How to start
 
@@ -58,47 +59,50 @@ Horusync needs the *INTERNET* and *ACCESS_NETWORK_STATE* permissions to be imple
 *AndroidManifest.xml* of your application.
 
 ```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<uses-permission android:name="android.permission.INTERNET" /><uses-permission
+android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```   
 
 ### Initialization
 
-In the **Application** of your app configure horus using the **HorusConfigurator** class passing a 
+In the **Application** of your app configure horus using the **HorusConfigurator** class passing a
 **HorusConfig** object with the base server URL and the configuration of the pending actions.
 
-The `PushPendingActionsConfig` class defines the settings for managing pending actions before synchronization. 
+The `PushPendingActionsConfig` class defines the settings for managing pending actions before
+synchronization.
 It includes the size of batches and the time expiration threshold to do synchronization.
 
 * **batchSize**: Number of actions to synchronize in each batch.
-* **expirationTime**: The maximum time in seconds allowed between synchronizations before forcing one. Default is 12 hours.
+* **expirationTime**: The maximum time in seconds allowed between synchronizations before forcing
+  one. Default is 12 hours.
 
 It is also necessary to register **HorusActivityLifeCycle** to listen to the
 application's life cycle.
 
 ```kotlin 
 class MainApplication : Application() {
-  override fun onCreate() {
-    super.onCreate()
-    setupHorus()
-  }
+    override fun onCreate() {
+        super.onCreate()
+        setupHorus()
+    }
 
-  private fun setupHorus() {
+    private fun setupHorus() {
 
-    val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
+        val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
 
-    // Configure Horus      
-    val config = HorusConfig(
-      BASE_SERVER_URL,
-      PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
-      isDebug = true
-    )
-    
-    HorusConfigurator(config).configure(this)
+        // Configure Horus      
+        val config = HorusConfig(
+            BASE_SERVER_URL,
+            PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
+            isDebug = true
+        )
 
-    // Register the activity lifecycle callbacks      
-    registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
-  }
+        HorusConfigurator(config).configure(this)
+
+        // Register the activity lifecycle callbacks      
+        registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
+    }
 }   
 ```   
 
@@ -213,30 +217,34 @@ you will manage all data operations of your application.
 ### Initialization validation
 
 Horus requires an internal validation and check before starting to be used, to ensure that Horus is
-ready to operate, use the **onReady** method of the **HorusDataFacade** class to know when this happens.
+ready to operate, use the **onReady** method of the **HorusDataFacade** class to know when this
+happens.
 
 ```kotlin  
 HorusDataFacade.onReady {
-  /** PUT YOUR CODE **/
+    /** PUT YOUR CODE **/
 }  
 ```  
+
 ### Subscribe to data changes
 
-To know when a record is inserted, updated or deleted in an entity, subscribe to data changes by adding a **DataChangeListener** using the **addDataChangeListener** method of the **HorusDataFacade** class.
+To know when a record is inserted, updated or deleted in an entity, subscribe to data changes by
+adding a **DataChangeListener** using the **addDataChangeListener** method of the **HorusDataFacade
+** class.
 
 ```kotlin 
 HorusDataFacade.addDataChangeListener(object : DataChangeListener {
 
-  override fun onInsert(entity: String, id: String, data: DataMap) {
-    /** WHEN IS INSERTED A NEW RECORD **/
-  }
-  override fun onUpdate(entity: String, id: String, data: DataMap) {
-    /** WHEN IS UPDATED A RECORD **/
-  }
+    override fun onInsert(entity: String, id: String, data: DataMap) {
+        /** WHEN IS INSERTED A NEW RECORD **/
+    }
+    override fun onUpdate(entity: String, id: String, data: DataMap) {
+        /** WHEN IS UPDATED A RECORD **/
+    }
 
-  override fun onDelete(entity: String, id: String) {
-    /** WHEN IS DELETED A RECORD **/
-  }
+    override fun onDelete(entity: String, id: String) {
+        /** WHEN IS DELETED A RECORD **/
+    }
 })  
 ```  
 
@@ -254,7 +262,8 @@ HorusDataFacade.removeAllDataChangeListeners()
 
 ## Data management
 
-Horus internally validates whether there is an internet connection or not to synchronize the information
+Horus internally validates whether there is an internet connection or not to synchronize the
+information
 with the server. The operations do not depend on an internet connection, Horus will always first
 register in the local database of the device.
 
@@ -269,7 +278,8 @@ successful.
 
 #### Attention
 
-* Horus always generates the record ID internally, so it should not be given as a parameter within the
+* Horus always generates the record ID internally, so it should not be given as a parameter within
+  the
   attributes.
 
 ```kotlin  
@@ -280,16 +290,16 @@ val newData = mapOf("name":"Aston", "lastname":"Coleman")
 val result = HorusDataFacade.insert(entityName, newData)
 
 when (result) {
-  is DataResult.Success -> {
-    val entityId = result.data
-    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-  }
-  is DataResult.Failure -> {
-    /** YOUR CODE HERE WHEN INSERT FAILS */
-  }
-  is DataResult.NotAuthorized -> {
-    /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
-  }
+    is DataResult.Success -> {
+        val entityId = result.data
+        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+    }
+    is DataResult.Failure -> {
+        /** YOUR CODE HERE WHEN INSERT FAILS */
+    }
+    is DataResult.NotAuthorized -> {
+        /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
+    }
 }  
 ```  
 
@@ -297,16 +307,17 @@ Alternative result validation
 
 ```kotlin  
 result.fold(
-  onSuccess = {
-    val entityId = result.data
-    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-  },
-  onFailure = {
-    /** YOUR CODE HERE WHEN INSERT FAILS */
-  })  
+    onSuccess = {
+        val entityId = result.data
+        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+    },
+    onFailure = {
+        /** YOUR CODE HERE WHEN INSERT FAILS */
+    })  
 ```  
 
 ### Actualizar datos de un registro
+
 ### Update data of a record
 
 To update a record, use the **update** method passing the entity name, the record ID, and a map with
@@ -316,22 +327,22 @@ the attributes to update.
 val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val newName = "Elton"
 val result = HorusDataFacade.update(
-  "users", userId, mapOf(
-    "name" to newName
-  )
+    "users", userId, mapOf(
+        "name" to newName
+    )
 )
 when (result) {
-  is DataResult.Success -> {
-    /** YOUR CODE HERE WHEN SUCCESS */
-  }
+    is DataResult.Success -> {
+        /** YOUR CODE HERE WHEN SUCCESS */
+    }
 
-  is DataResult.Failure -> {
-    /** YOUR CODE HERE WHEN FAILURE */
-  }
+    is DataResult.Failure -> {
+        /** YOUR CODE HERE WHEN FAILURE */
+    }
 
-  is DataResult.NotAuthorized -> {
-    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-  }
+    is DataResult.NotAuthorized -> {
+        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+    }
 }  
 ```  
 
@@ -346,15 +357,15 @@ val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val result = HorusDataFacade.delete("users", userId)
 
 when (result) {
-  is DataResult.Success -> {
-    /** YOUR CODE HERE WHEN SUCCESS */
-  }
-  is DataResult.Failure -> {
-    /** YOUR CODE HERE WHEN FAILURE */
-  }
-  is DataResult.NotAuthorized -> {
-    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-  }
+    is DataResult.Success -> {
+        /** YOUR CODE HERE WHEN SUCCESS */
+    }
+    is DataResult.Failure -> {
+        /** YOUR CODE HERE WHEN FAILURE */
+    }
+    is DataResult.NotAuthorized -> {
+        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+    }
 }  
 ```  
 
@@ -371,16 +382,16 @@ Optional parameters:
 
 ```kotlin  
 val whereConditions = listOf(
-  SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
+    SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
 )
 HorusDataFacade.querySimple("users", whereConditions, orderBy = "name")
-  .fold(
-    onSuccess = { users ->
-      //** YOUR CODE HERE WHEN SUCCESS */ 
-    },
-    onFailure = {
-      //** YOUR CODE HERE WHEN FAILURE */ 
-    })
+    .fold(
+        onSuccess = { users ->
+            //** YOUR CODE HERE WHEN SUCCESS */ 
+        },
+        onFailure = {
+            //** YOUR CODE HERE WHEN FAILURE */ 
+        })
 
 ```  
 
@@ -415,11 +426,11 @@ val entityNames = HorusDataFacade.getEntityNames()
 To force the synchronization of the data with the server, use the **forceSync** method.
 
 ```kotlin
-HorusDataFacade.forceSync(onSuccess={
-      /** YOUR CODE HERE WHEN SUCCESS */
-    }, onFailure={
-        /** YOUR CODE HERE WHEN FAILURE */ 
-    })
+HorusDataFacade.forceSync(onSuccess = {
+    /** YOUR CODE HERE WHEN SUCCESS */
+}, onFailure = {
+    /** YOUR CODE HERE WHEN FAILURE */
+})
 ```
 
 ### Validate if exists data to synchronize
@@ -428,6 +439,15 @@ To validate if there is data to synchronize, use the **hasDataToSync** method.
 
 ```kotlin
 val hasDataToSync = HorusDataFacade.hasDataToSync()
+```
+
+### Get the last synchronization date
+
+To get the last synchronization date, use the **getLastSyncDate** method. This method will return a
+timestamp in seconds.
+
+```kotlin
+val lastSyncDate = HorusDataFacade.getLastSyncDate()
 ```
 
 ## Authentication
