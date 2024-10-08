@@ -92,9 +92,15 @@ abstract class TestCase {
         }, 0).value
     }
 
-    protected fun <T> generateArray(size: Int = 10, creator: () -> T): List<T> {
+    protected fun <T> generateRandomArray(size: Int = 10, creator: () -> T): List<T> {
         val sizeList = Random.nextInt(1, size)
         return List(sizeList) { Random.nextInt(0, size) }.map {
+            creator()
+        }
+    }
+
+    protected fun <T> generateArray(size: Int = 10, creator: () -> T): List<T> {
+        return List(size) { Random.nextInt(0, size) }.map {
             creator()
         }
     }

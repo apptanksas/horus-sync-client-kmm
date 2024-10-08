@@ -20,7 +20,7 @@ class HorusConfigurator(
             setupSettings(
                 NSUserDefaultsSettings(NSUserDefaults.standardUserDefaults)
             )
-            setupBaseUrl(baseUrl)
+            setupConfig(baseUrl)
             setupDatabaseFactory(DatabaseDriverFactory())
             setupNetworkValidator(networkValidator)
             if (isDebug) setupLogger(IOSLogger())

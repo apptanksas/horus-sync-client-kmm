@@ -6,16 +6,16 @@ import org.apptank.horus.client.di.ILifeCycle
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
-import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.tasks.ControlTaskManager
 
 
 object HorusLifeCycle : ILifeCycle {
 
-    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+    private val dispenserManager: DispenserManager by lazy { HorusContainer.getDispenserManager() }
 
     private var callbackEventActionCreated: CallbackEvent = {
-        remoteSynchronizatorManager?.trySynchronizeData()
+        dispenserManager.processBatch()
     }
 
     private var callbackSetupChanged: CallbackEvent = {
@@ -24,11 +24,7 @@ object HorusLifeCycle : ILifeCycle {
 
     private val networkValidator: INetworkValidator by lazy { HorusContainer.getNetworkValidator() }
 
-    override fun onCreate() {
-        remoteSynchronizatorManager = HorusContainer.getRemoteSynchronizatorManager().also {
-            it.trySynchronizeData()
-        }
-    }
+    override fun onCreate() = Unit
 
     override fun onResume() {
 

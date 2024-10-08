@@ -35,6 +35,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.database.IOperationDatabaseHelper
@@ -87,7 +88,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseFactory)
-            setupBaseUrl("http://dev.horus.com")
+            setupConfig(HorusConfig("http://dev.horus.com"))
         }
     }
 
@@ -456,7 +457,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private suspend fun validateGetEntities() = prepareInternalTest {
         // Given
-        val attributesList = generateArray {
+        val attributesList = generateRandomArray {
             createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
         }
 
