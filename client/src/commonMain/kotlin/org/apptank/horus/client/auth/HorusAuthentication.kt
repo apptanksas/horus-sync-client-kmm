@@ -1,5 +1,8 @@
 package org.apptank.horus.client.auth
 
+import org.apptank.horus.client.eventbus.EventBus
+import org.apptank.horus.client.eventbus.EventType
+
 /**
  * HorusAuthentication is responsible for managing user authentication sessions,
  * including setting up user tokens, handling "acting as" functionality,
@@ -20,6 +23,7 @@ object HorusAuthentication {
      */
     fun setupUserAccessToken(token: String) {
         userAuthentication = UserAuthentication(token)
+        EventBus.emit(EventType.SETUP_CHANGED)
     }
 
     /**

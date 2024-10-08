@@ -1,7 +1,6 @@
 package org.apptank.horus.client.eventbus
 
-
-typealias CallbackEvent = (Event) -> Unit
+import org.apptank.horus.client.base.CallbackEvent
 
 
 /**
@@ -33,7 +32,7 @@ internal object EventBus {
      */
     fun unregister(eventType: EventType, listener: CallbackEvent) {
         val eventListeners = listeners[eventType]
-        eventListeners?.remove(listener as (Event) -> Unit)
+        eventListeners?.remove(listener)
     }
 
     /**
@@ -43,8 +42,18 @@ internal object EventBus {
      * @param event The event data to pass to the listeners (default is an empty Event).
      */
     fun emit(eventType: EventType, event: Event = Event()) {
-        listeners[eventType]?.forEach { listener ->
+        listeners[eventType]?.toList()?.forEach { listener ->
             listener(event)
         }
+    }
+
+    /**
+     * [TestOnly] Gets the number of listeners for a specific event type.
+     *
+     * @param eventType The type of event to count listeners for.
+     * @return The number of listeners for the event type.
+     */
+    fun getCountListeners(eventType: EventType): Int {
+        return listeners[eventType]?.size ?: 0
     }
 }

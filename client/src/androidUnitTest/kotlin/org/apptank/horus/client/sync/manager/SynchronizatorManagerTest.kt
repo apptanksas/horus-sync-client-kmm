@@ -628,7 +628,7 @@ class SynchronizatorManagerTest : TestCase() {
         type: SyncControl.ActionType,
         actionedAt: Long = Clock.System.now().epochSeconds
     ): List<SyncControl.Action> {
-        return generateArray {
+        return generateRandomArray {
 
             val data = when (type) {
                 SyncControl.ActionType.INSERT -> mapOf("id" to uuid(), "name" to "name")

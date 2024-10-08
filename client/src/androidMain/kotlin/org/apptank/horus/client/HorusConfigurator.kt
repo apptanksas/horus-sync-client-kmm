@@ -3,6 +3,7 @@ package org.apptank.horus.client
 import android.content.Context
 import org.apptank.horus.client.di.HorusContainer
 import com.russhwolf.settings.SharedPreferencesSettings
+import org.apptank.horus.client.config.HorusConfig
 
 /**
  * HorusConfigurator is a class that allows you to configure the Horus SDK.
@@ -10,8 +11,7 @@ import com.russhwolf.settings.SharedPreferencesSettings
  * @param baseUrl The base URL of the API.
  */
 class HorusConfigurator(
-    private val baseUrl: String,
-    private val isDebug: Boolean = false
+    private val config: HorusConfig
 ) {
 
     /**
@@ -28,10 +28,10 @@ class HorusConfigurator(
                     )
                 )
             )
-            setupBaseUrl(baseUrl)
+            setupConfig(config)
             setupDatabaseFactory(DatabaseDriverFactory(context))
             setupNetworkValidator(NetworkValidator(context))
-            if (isDebug) setupLogger(AndroidLogger())
+            if (config.isDebug) setupLogger(AndroidLogger())
         }
     }
 }

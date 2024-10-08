@@ -2,21 +2,28 @@ package org.apptank.horus.client
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.base.CallbackEvent
+import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.control.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.DatabaseOperation
+import org.apptank.horus.client.database.IOperationDatabaseHelper
 import org.apptank.horus.client.database.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
+import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.removeIf
+import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.tasks.ControlTaskManager
 import org.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -32,13 +39,39 @@ object HorusDataFacade {
 
     private var changeListeners: MutableList<DataChangeListener> = mutableListOf()
 
-    private val operationDatabaseHelper by lazy {
-        HorusContainer.getOperationDatabaseHelper()
-    }
+    private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getOperationDatabaseHelper()
+            }
+            return field
+        }
 
-    private val syncControlDatabaseHelper by lazy {
-        HorusContainer.getSyncControlDatabaseHelper()
-    }
+    private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSyncControlDatabaseHelper()
+            }
+            return field
+        }
+
+    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getRemoteSynchronizatorManager()
+            }
+            return field
+        }
+
+    private val controlTaskManager by lazy { ControlTaskManager }
+
+    private var networkValidator: INetworkValidator? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getNetworkValidator()
+            }
+            return field
+        }
 
     init {
         registerEntityEventListeners()
@@ -81,14 +114,14 @@ object HorusDataFacade {
         )
 
         return runCatching {
-            val result = operationDatabaseHelper.insertWithTransaction(
+            val result = operationDatabaseHelper!!.insertWithTransaction(
                 listOf(
                     DatabaseOperation.InsertRecord(
                         entity, attributesPrepared.mapToDBColumValue()
                     )
                 )
             ) {
-                syncControlDatabaseHelper.addActionInsert(
+                syncControlDatabaseHelper!!.addActionInsert(
                     entity,
                     mutableListOf<Horus.Attribute<*>>(id).apply { addAll(attributes) })
             }
@@ -167,7 +200,7 @@ object HorusDataFacade {
                 })
 
         return runCatching {
-            val result = operationDatabaseHelper.updateWithTransaction(
+            val result = operationDatabaseHelper!!.updateWithTransaction(
                 listOf(
                     DatabaseOperation.UpdateRecord(
                         entity, attributesPrepared.mapToDBColumValue(),
@@ -180,7 +213,7 @@ object HorusDataFacade {
                     )
                 )
             ) {
-                syncControlDatabaseHelper.addActionUpdate(
+                syncControlDatabaseHelper!!.addActionUpdate(
                     entity,
                     attrId,
                     attributes
@@ -242,7 +275,7 @@ object HorusDataFacade {
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
         return runCatching {
-            val result = operationDatabaseHelper.deleteWithTransaction(
+            val result = operationDatabaseHelper!!.deleteWithTransaction(
                 listOf(
                     DatabaseOperation.DeleteRecord(
                         entity,
@@ -255,7 +288,7 @@ object HorusDataFacade {
                     )
                 )
             ) {
-                syncControlDatabaseHelper.addActionDelete(entity, attrId)
+                syncControlDatabaseHelper!!.addActionDelete(entity, attrId)
             }
 
             if (result) {
@@ -300,7 +333,7 @@ object HorusDataFacade {
             }
         }
 
-        val result = operationDatabaseHelper.queryRecords(queryBuilder).map {
+        val result = operationDatabaseHelper!!.queryRecords(queryBuilder).map {
             Horus.Entity(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
@@ -330,12 +363,87 @@ object HorusDataFacade {
             )
         }
 
-        return operationDatabaseHelper.queryRecords(queryBuilder).map {
+        return operationDatabaseHelper?.queryRecords(queryBuilder)?.map {
             Horus.Entity(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
             )
-        }.firstOrNull()
+        }?.firstOrNull()
+    }
+
+    /**
+     * Gets the list of entities available in the database.
+     */
+    fun getEntityNames(): List<String> {
+        return syncControlDatabaseHelper?.getEntityNames() ?: emptyList()
+    }
+
+    /**
+     * Forces a synchronization of data with the remote server. Validating if the network is available.
+     *
+     * @param onSuccess The callback to be invoked when the synchronization is successful.
+     * @param onFailure The callback to be invoked when the synchronization fails.
+     */
+    fun forceSync(onSuccess: CallbackNullable = null, onFailure: CallbackNullable = null) {
+
+        if (networkValidator?.isNetworkAvailable() == false) {
+            onFailure?.invoke()
+            return
+        }
+
+        var callbackSyncPushSuccess: CallbackEvent? = null
+        var callbackSyncPushFailure: CallbackEvent? = null
+        val removeListeners: Callback = {
+            callbackSyncPushSuccess?.let { callback ->
+                EventBus.unregister(
+                    EventType.SYNC_PUSH_SUCCESS,
+                    callback
+                )
+            }
+            callbackSyncPushFailure?.let { callback ->
+                EventBus.unregister(
+                    EventType.SYNC_PUSH_FAILED,
+                    callback
+                )
+            }
+        }
+        callbackSyncPushSuccess = { onSuccess?.invoke();removeListeners.invoke() }
+        callbackSyncPushFailure = { onFailure?.invoke();removeListeners.invoke() }
+
+        with(controlTaskManager) {
+            setOnCallbackStatusListener {
+                if (it === ControlTaskManager.Status.FAILED) {
+                    onFailure?.invoke()
+                }
+            }
+            setOnCompleted {
+
+                EventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
+                EventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
+
+                remoteSynchronizatorManager?.trySynchronizeData()
+            }
+            start()
+        }
+    }
+
+    /**
+     * Checks if there are pending actions to synchronize.
+     *
+     * @return `true` if there are pending actions to synchronize, `false` otherwise.
+     */
+    fun hasDataToSync(): Boolean {
+        return syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+    }
+
+
+    /**
+     * Gets the last synchronization timestamp.
+     *
+     * @return The last synchronization timestamp, or `null` if no synchronization has occurred.
+     */
+    fun getLastSyncDate(): Long? {
+        return syncControlDatabaseHelper?.getLastDatetimeCheckpoint()
     }
 
     /**
@@ -362,6 +470,7 @@ object HorusDataFacade {
     fun removeAllDataChangeListeners() {
         changeListeners.clear()
     }
+
 
     /**
      * Validates the constraints for the facade.
@@ -393,12 +502,12 @@ object HorusDataFacade {
      * Validates if the entity exists in the database.
      */
     private fun validateIsEntityExists(entity: String) {
-        syncControlDatabaseHelper.getEntityNames().find { it == entity }
+        syncControlDatabaseHelper?.getEntityNames()?.find { it == entity }
             ?: throw EntityNotExistsException(entity)
     }
 
     private fun validateIsCanWriteIntoEntity(entity: String) {
-        if (syncControlDatabaseHelper.isEntityCanBeWritable(entity)) {
+        if (syncControlDatabaseHelper!!.isEntityCanBeWritable(entity)) {
             return
         }
         throw EntityNotWritableException(entity)
@@ -469,5 +578,9 @@ object HorusDataFacade {
         isReady = false
         onCallbackReady = null
         changeListeners.clear()
+        networkValidator = null
+        operationDatabaseHelper = null
+        syncControlDatabaseHelper = null
+        remoteSynchronizatorManager = null
     }
 }

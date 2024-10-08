@@ -12,6 +12,8 @@ import org.apptank.horus.client.sync.network.service.SynchronizationService
 import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
+import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.sync.manager.DispenserManager
 
 
 /**
@@ -21,13 +23,14 @@ import io.ktor.client.plugins.HttpTimeout
  */
 object HorusContainer {
 
+    private var config: HorusConfig? = null
+
     private var settings: Settings? = null
     private var databaseFactory: IDatabaseDriverFactory? = null
-    private var baseUrl: String? = null
 
     private val httpClient by lazy {
-        HttpClient(){
-            install(HttpTimeout){
+        HttpClient() {
+            install(HttpTimeout) {
                 requestTimeoutMillis = 60L * 1000 // 60 secs
             }
         }
@@ -44,6 +47,10 @@ object HorusContainer {
     private var networkValidator: INetworkValidator? = null
 
     private var logger: ILogger? = null
+
+    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+
+    private var dispenserManager: DispenserManager? = null
 
     // ------------------------------------------------------------------------
     // Setters
@@ -68,6 +75,42 @@ object HorusContainer {
     }
 
     /**
+     * Sets up the remote synchronizator manager.
+     *
+     * @param manager The [RemoteSynchronizatorManager] instance to set up.
+     */
+    internal fun setupRemoteSynchronizatorManager(manager: RemoteSynchronizatorManager) {
+        remoteSynchronizatorManager = manager
+    }
+
+    /**
+     * Sets up the dispenser manager.
+     *
+     * @param manager The [DispenserManager] instance to set up.
+     */
+    internal fun setupDispenserManager(manager: DispenserManager) {
+        dispenserManager = manager
+    }
+
+    /**
+     * Sets up the sync control database helper.
+     *
+     * @param helper The [ISyncControlDatabaseHelper] instance to set up.
+     */
+    internal fun setupSyncControlDatabaseHelper(helper: ISyncControlDatabaseHelper) {
+        syncControlDatabaseHelper = helper
+    }
+
+    /**
+     * Sets up the operation database helper.
+     *
+     * @param helper The [IOperationDatabaseHelper] instance to set up.
+     */
+    internal fun setupOperationDatabaseHelper(helper: IOperationDatabaseHelper) {
+        operationDatabaseHelper = helper
+    }
+
+    /**
      * Sets up the database factory and initializes database helpers.
      *
      * @param factory The [IDatabaseDriverFactory] instance to set up.
@@ -89,8 +132,8 @@ object HorusContainer {
      *
      * @param url The base URL to set up.
      */
-    fun setupBaseUrl(url: String) {
-        baseUrl = url
+    fun setupConfig(config: HorusConfig) {
+        this.config = config
     }
 
     /**
@@ -132,7 +175,7 @@ object HorusContainer {
      * @throws IllegalStateException if the migration service is not set.
      */
     internal fun getMigrationService(): IMigrationService {
-        return migrationService ?: MigrationService(httpClient.engine, baseUrl!!)
+        return migrationService ?: MigrationService(httpClient.engine, getConfig().baseUrl)
     }
 
     /**
@@ -142,7 +185,10 @@ object HorusContainer {
      * @throws IllegalStateException if the synchronization service is not set.
      */
     internal fun getSynchronizationService(): ISynchronizationService {
-        return synchronizationService ?: SynchronizationService(httpClient.engine, baseUrl!!)
+        if (synchronizationService == null) {
+            synchronizationService = SynchronizationService(httpClient.engine, getConfig().baseUrl)
+        }
+        return synchronizationService!!
     }
 
     /**
@@ -163,6 +209,15 @@ object HorusContainer {
      */
     internal fun getSettings(): Settings {
         return settings ?: throw IllegalStateException("Settings not set")
+    }
+
+    /** Retrieves the configuration.
+     *
+     * @return The [HorusConfig] instance.
+     * @throws IllegalStateException if the configuration is not set.
+     */
+    internal fun getConfig(): HorusConfig {
+        return config ?: throw IllegalStateException("Config not set")
     }
 
     /**
@@ -208,16 +263,36 @@ object HorusContainer {
     }
 
     /**
-     * Create a new instance of remote synchronizator manager.
+     * Retrieves the remote synchronizator manager.
      *
      * @return A new instance of [RemoteSynchronizatorManager].
      */
-    internal fun createRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
-        return RemoteSynchronizatorManager(
-            getNetworkValidator(),
-            getSyncControlDatabaseHelper(),
-            getSynchronizationService()
-        )
+    internal fun getRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
+        if (remoteSynchronizatorManager == null) {
+            remoteSynchronizatorManager = RemoteSynchronizatorManager(
+                getNetworkValidator(),
+                getSyncControlDatabaseHelper(),
+                getSynchronizationService()
+            )
+        }
+        return remoteSynchronizatorManager!!
+    }
+
+    /**
+     * Retrieves the dispenser manager.
+     *
+     * @return A new instance of [DispenserManager].
+     */
+    internal fun getDispenserManager(): DispenserManager {
+        if (dispenserManager == null) {
+            dispenserManager = DispenserManager(
+                getConfig().pushPendingActionsConfig.batchSize,
+                getConfig().pushPendingActionsConfig.expirationTime,
+                getSyncControlDatabaseHelper(),
+                getRemoteSynchronizatorManager()
+            )
+        }
+        return dispenserManager!!
     }
 
     // ------------------------------------------------------------------------
@@ -230,7 +305,7 @@ object HorusContainer {
     internal fun clear() {
         settings = null
         databaseFactory = null
-        baseUrl = null
+        config = null
         migrationService = null
         synchronizationService = null
         syncControlDatabaseHelper = null

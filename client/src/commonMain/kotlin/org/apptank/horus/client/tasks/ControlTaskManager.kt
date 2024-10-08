@@ -97,6 +97,7 @@ internal object ControlTaskManager {
 
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated to start the horus task manager")
+            onStatus(Status.FAILED)
             return
         }
 
