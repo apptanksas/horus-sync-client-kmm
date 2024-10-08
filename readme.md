@@ -6,7 +6,7 @@
 <img src="https://img.shields.io/github/license/apptanksas/horus-sync-client-kmm" alt="License">
 </p>  
 
-**Please note:** This library currently is testing stage until publish the version 1.0.0.
+**Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile, it could have breaking changes in the API. 
 
 # Horusync client KMM
 
@@ -64,8 +64,14 @@ Horusync needs the *INTERNET* and *ACCESS_NETWORK_STATE* permissions to be imple
 
 ### Initialization
 
-In the **Application** of your app configure horus using the **HorusConfigurator** class indicating
-the base URL where your Horus server is configured and if you want to use horus in debug mode.
+In the **Application** of your app configure horus using the **HorusConfigurator** class passing a 
+**HorusConfig** object with the base server URL and the configuration of the pending actions.
+
+The `PushPendingActionsConfig` class defines the settings for managing pending actions before synchronization. 
+It includes the size of batches and the time expiration threshold to do synchronization.
+
+* **batchSize**: Number of actions to synchronize in each batch.
+* **expirationTime**: The maximum time in seconds allowed between synchronizations before forcing one. Default is 12 hours.
 
 It is also necessary to register **HorusActivityLifeCycle** to listen to the
 application's life cycle.
@@ -82,7 +88,13 @@ class MainApplication : Application() {
     val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
 
     // Configure Horus      
-    HorusConfigurator(BASE_SERVER_URL, isDebug = true).configure(this)
+    val config = HorusConfig(
+      BASE_SERVER_URL,
+      PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
+      isDebug = true
+    )
+    
+    HorusConfigurator(config).configure(this)
 
     // Register the activity lifecycle callbacks      
     registerActivityLifecycleCallbacks(HorusActivityLifeCycle())

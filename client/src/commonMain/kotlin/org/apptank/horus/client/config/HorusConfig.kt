@@ -17,13 +17,13 @@ data class HorusConfig(
 
 /**
  * The `PushPendingActionsConfig` class defines the settings for managing pending actions before synchronization.
- * It includes the size of batches and the time expiration threshold to force synchronization.
+ * It includes the size of batches and the time expiration threshold to do synchronization.
  *
- * @property batchSize The number of pending actions required to trigger synchronization. Default is `20`.
+ * @property batchSize The number of pending actions required to trigger synchronization. Default is `10`.
  * @property expirationTime The maximum time in seconds allowed between synchronizations before forcing one.
- *                          Default is 12 hours (`1000L * 60 * 60 * 12`).
+ *                          Default is 12 hours .
  */
 data class PushPendingActionsConfig(
-    val batchSize: Int = 20,
+    val batchSize: Int = 10,
     val expirationTime: Long = 60 * 60 * 12 // 12 hours
 )
