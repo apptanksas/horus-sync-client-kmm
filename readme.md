@@ -60,8 +60,9 @@ Horusync needs the *INTERNET* and *ACCESS_NETWORK_STATE* permissions to be imple
 
 ```xml
 
-<uses-permission android:name="android.permission.INTERNET" /><uses-permission
-android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
 ```   
 
 ### Initialization
