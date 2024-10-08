@@ -3,11 +3,11 @@ package org.apptank.horus.client
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.INetworkValidator
 import com.russhwolf.settings.NSUserDefaultsSettings
+import org.apptank.horus.client.config.HorusConfig
 import platform.Foundation.NSUserDefaults
 
 class HorusConfigurator(
-    private val baseUrl: String,
-    private val isDebug: Boolean = false
+   private val config: HorusConfig
 ) {
 
     /**
@@ -20,7 +20,7 @@ class HorusConfigurator(
             setupSettings(
                 NSUserDefaultsSettings(NSUserDefaults.standardUserDefaults)
             )
-            setupConfig(baseUrl)
+            setupConfig(config)
             setupDatabaseFactory(DatabaseDriverFactory())
             setupNetworkValidator(networkValidator)
             if (isDebug) setupLogger(IOSLogger())
