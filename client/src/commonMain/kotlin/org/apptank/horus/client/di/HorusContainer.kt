@@ -1,8 +1,8 @@
 package org.apptank.horus.client.di
 
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
-import org.apptank.horus.client.control.SyncControlDatabaseHelper
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.OperationDatabaseHelper
 import org.apptank.horus.client.migration.network.service.IMigrationService
 import org.apptank.horus.client.migration.network.service.MigrationService

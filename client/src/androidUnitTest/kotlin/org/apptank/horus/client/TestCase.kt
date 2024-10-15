@@ -4,9 +4,9 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.Callback
-import org.apptank.horus.client.control.EntitiesTable
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.prepareSQLValueAsString

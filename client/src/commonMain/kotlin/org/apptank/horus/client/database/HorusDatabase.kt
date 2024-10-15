@@ -2,12 +2,11 @@ package org.apptank.horus.client.database
 
 import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import org.apptank.horus.client.control.EntitiesTable
+import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.QueueActionsTable
-import org.apptank.horus.client.control.SyncControlTable
+import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.handle

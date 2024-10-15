@@ -1,5 +1,6 @@
-package org.apptank.horus.client.control
+package org.apptank.horus.client.control.helper
 
+import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.data.Horus
 
 

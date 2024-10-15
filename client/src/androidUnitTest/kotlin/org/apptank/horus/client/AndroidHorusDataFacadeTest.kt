@@ -15,7 +15,7 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.di.IDatabaseDriverFactory
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.database.HorusDatabase
-import org.apptank.horus.client.database.SQL
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.extensions.execute
@@ -36,9 +36,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.config.HorusConfig
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After

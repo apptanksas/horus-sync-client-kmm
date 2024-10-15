@@ -3,7 +3,10 @@ package org.apptank.horus.client.database
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataMap
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.QueryBuilder
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
 import org.apptank.horus.client.extensions.log
 

@@ -1,13 +1,10 @@
-package org.apptank.horus.client.control
+package org.apptank.horus.client.database
 
 
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.data.Horus
-import org.apptank.horus.client.database.Cursor
-import org.apptank.horus.client.database.SQLiteHelper
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.database.SQL
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.getRequireLong
 import org.apptank.horus.client.extensions.handle
@@ -17,6 +14,12 @@ import org.apptank.horus.client.eventbus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.control.QueueActionsTable
+import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.scheme.SyncControlTable
+import org.apptank.horus.client.database.struct.Cursor
+import org.apptank.horus.client.database.struct.SQL
 
 /**
  * Implementation of the `ISyncControlDatabaseHelper` interface for managing synchronization control data

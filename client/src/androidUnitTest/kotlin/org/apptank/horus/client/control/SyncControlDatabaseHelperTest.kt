@@ -3,14 +3,15 @@ package org.apptank.horus.client.control
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
+import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.SQLiteHelper
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.execute
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import kotlin.random.Random
 
 
 class SyncControlDatabaseHelperTest : TestCase() {

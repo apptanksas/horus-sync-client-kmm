@@ -1,4 +1,4 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.database.struct
 
 import org.apptank.horus.client.data.Horus
 import kotlin.random.Random

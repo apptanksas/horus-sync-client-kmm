@@ -1,4 +1,4 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.database.struct
 
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.serialization.AnySerializer

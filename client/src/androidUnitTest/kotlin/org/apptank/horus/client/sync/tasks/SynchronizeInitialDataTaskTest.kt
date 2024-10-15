@@ -8,12 +8,11 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.buildEntitiesDataFromJSON
 import org.apptank.horus.client.buildEntitiesSchemeFromJSON
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.control.SyncControlDatabaseHelper
-import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.database.HorusDatabase
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.OperationDatabaseHelper
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.extensions.execute

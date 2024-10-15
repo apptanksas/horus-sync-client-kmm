@@ -4,6 +4,8 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate

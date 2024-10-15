@@ -3,7 +3,7 @@ package org.apptank.horus.client.sync.manager
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.coFold
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus

@@ -158,7 +158,7 @@ sealed class SyncDTO {
             @SerialName("id") val id: String? = null,
             @SerialName("url") val url: String? = null,
             @SerialName("mime_type") val mimeType: String? = null,
-            @SerialName("status") val status: String? = null
+            @SerialName("status") val status: Int? = null
         )
     }
 }

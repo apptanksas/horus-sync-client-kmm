@@ -1,6 +1,6 @@
 package org.apptank.horus.client.database.builder
 
-import org.apptank.horus.client.database.SQL
+import org.apptank.horus.client.database.struct.SQL
 import org.junit.Assert
 import org.junit.Test
 

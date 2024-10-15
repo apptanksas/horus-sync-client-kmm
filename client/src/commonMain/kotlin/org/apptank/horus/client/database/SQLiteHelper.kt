@@ -5,9 +5,13 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.DataMap
-import org.apptank.horus.client.control.EntitiesTable
+import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.Column
+import org.apptank.horus.client.database.struct.Cursor
+import org.apptank.horus.client.database.struct.CursorValue
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireDouble

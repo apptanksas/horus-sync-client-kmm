@@ -1,7 +1,9 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.control.helper
 
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataMap
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.QueryBuilder
 
 interface IOperationDatabaseHelper {

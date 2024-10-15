@@ -1,7 +1,7 @@
 package org.apptank.horus.client.sync.network.service
 
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 
 /**

@@ -3,7 +3,7 @@ package org.apptank.horus.client.sync.network.service
 import io.ktor.client.engine.HttpClientEngine
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
-import org.apptank.horus.client.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 
 internal class FileSynchronizationService(

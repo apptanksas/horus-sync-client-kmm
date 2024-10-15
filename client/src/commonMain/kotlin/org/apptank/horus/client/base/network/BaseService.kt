@@ -15,7 +15,6 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
-import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -29,7 +28,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.apptank.horus.client.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileData
 
 /**
  * BaseService provides a foundational layer for making HTTP requests with a shared HttpClient.

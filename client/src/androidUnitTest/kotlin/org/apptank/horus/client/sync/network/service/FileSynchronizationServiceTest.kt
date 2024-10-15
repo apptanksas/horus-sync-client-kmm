@@ -6,7 +6,7 @@ import org.apptank.horus.client.MOCK_RESPONSE_FILE_INFO
 import org.apptank.horus.client.ServiceTest
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.fold
-import org.apptank.horus.client.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.junit.Assert
 import org.junit.Test
