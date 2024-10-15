@@ -304,12 +304,22 @@ abstract class SQLiteHelper(
      */
     protected fun buildWhereEvaluation(
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): String {
         return conditions.joinToString(
             operator.name,
             transform = { " ${it.columnValue.column} ${it.comparator.value} ${it.columnValue.value.prepareSQLValueAsString()} " }
         ).trim()
+    }
+
+    /**
+     * Checks if an operation was successful based on the result.
+     *
+     * @param result The result of the operation.
+     * @return True if the operation was successful, false otherwise.
+     */
+    protected fun isOperationIsSuccessful(result: Long): Boolean {
+        return result > 0
     }
 
     /**

@@ -88,7 +88,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseFactory)
-            setupConfig(HorusConfig("http://dev.horus.com"))
+            setupConfig(HorusConfig("http://dev.horus.com","local/path"))
         }
     }
 

@@ -6,11 +6,13 @@ package org.apptank.horus.client.config
  * to enable or disable debug mode.
  *
  * @property baseUrl The base URL of the remote server used for synchronization.
+ * @property baseStoragePath The base path for storing files.
  * @property pushPendingActionsConfig Configuration for managing the batch size and expiration time for pending actions.
  * @property isDebug Flag to enable or disable debug mode. Default is `false`.
  */
 data class HorusConfig(
     val baseUrl: String,
+    val baseStoragePath: String,
     val pushPendingActionsConfig: PushPendingActionsConfig = PushPendingActionsConfig(),
     val isDebug: Boolean = false
 )

@@ -73,6 +73,26 @@ abstract class QueryBuilder {
     }
 
     /**
+     * Adds an `IN` condition to the query.
+     *
+     * @param column The column to filter by.
+     * @param values The list of values to filter by.
+     * @param joinOperator The logic operator to use when joining multiple conditions (default is `AND`).
+     * @return The current instance of [QueryBuilder] for method chaining.
+     */
+    fun whereIn(
+        column: String,
+        values: List<Any>,
+        joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
+    ): QueryBuilder {
+        val condition = SQL.WhereCondition(
+            SQL.ColumnValue(column, values),
+            SQL.Comparator.IN
+        )
+        return addWhere(joinOperator, SQL.LogicOperator.AND, condition)
+    }
+
+    /**
      * Specifies the attributes (columns) to select in the query.
      *
      * @param attributes The list of attributes to select.
@@ -151,7 +171,9 @@ abstract class QueryBuilder {
             var conditionGrouped = if (hasGroups) "(" else ""
 
             conditionGrouped += conditions.second.joinToString(" ${conditions.first.name} ",
-                transform = { "${it.columnValue.column} ${it.comparator.value} ${it.columnValue.value.prepareSQLValueAsString()}" })
+                transform = {
+                    "${it.columnValue.column} ${it.comparator.value} ${it.columnValue.value.prepareSQLValueAsString()}"
+                })
 
             if (hasGroups) {
                 conditionGrouped += ")" // Close group

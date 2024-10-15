@@ -45,6 +45,16 @@ internal data class Cursor(
     }
 
     /**
+     * Retrieves the value of a specified column or null if the column does not exist.
+     *
+     * @param attribute The name of the column to retrieve the value from.
+     * @return The value of the specified column or null if the column does not exist.
+     */
+    fun <T> getValueOrNull(attribute: String): T? {
+        return values.firstOrNull { it.column.name == attribute }?.value as T?
+    }
+
+    /**
      * Retrieves the value of a specified column and converts it to a [DataMap] using JSON decoding.
      *
      * @param attributeName The name of the column to retrieve the value from.

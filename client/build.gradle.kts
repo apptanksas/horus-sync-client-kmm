@@ -60,6 +60,7 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlin.crypto)
             implementation(libs.storage.settings)
+            implementation(libs.storage.files)
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)

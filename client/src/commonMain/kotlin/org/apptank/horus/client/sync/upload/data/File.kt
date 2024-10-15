@@ -50,3 +50,4 @@ enum class SyncFileStatus(val id: Int) {
      */
     DELETED(2)
 }
+

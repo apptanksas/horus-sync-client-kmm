@@ -1,5 +1,8 @@
 package org.apptank.horus.client.data
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
 
 /**
  * A sealed class representing various elements related to entities in the Horus system.
@@ -108,4 +111,15 @@ sealed class Horus {
         val entity: String,
         val hash: String
     )
+
+    /**
+     * Represents a file reference object containing the file ID.
+     */
+    data class FileReference
+    @OptIn(ExperimentalUuidApi::class)
+    internal constructor(private val id: String = Uuid.random().toString()) {
+        override fun toString(): String {
+            return id
+        }
+    }
 }
