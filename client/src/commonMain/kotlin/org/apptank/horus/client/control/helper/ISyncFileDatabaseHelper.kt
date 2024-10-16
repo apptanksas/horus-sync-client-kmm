@@ -4,28 +4,30 @@ import org.apptank.horus.client.control.SyncControl
 
 interface ISyncFileDatabaseHelper {
 
+
     /**
      * Inserts a file into the database.
      *
-     * @param file The file to insert.
+     * @param files The files to insert.
      */
-    fun insert(file: SyncControl.File)
+    fun insert(vararg files: SyncControl.File)
+
 
     /**
      * Updates a file in the database.
      *
-     * @param file The file to update.
+     * @param files The files to update.
      * @return `true` if the operation is successful, `false` otherwise.
      */
-    fun update(file: SyncControl.File): Boolean
+    fun update(vararg files: SyncControl.File): Boolean
 
     /**
      * Deletes a file from the database.
      *
-     * @param file The file to delete.
+     * @param files The files to delete.
      * @return `true` if the operation is successful, `false` otherwise.
      */
-    fun delete(file: SyncControl.File): Boolean
+    fun delete(vararg files: SyncControl.File): Boolean
 
     /**
      * Searches for a file in the database.

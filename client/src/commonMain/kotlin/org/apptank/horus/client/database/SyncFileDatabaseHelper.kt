@@ -25,70 +25,92 @@ class SyncFileDatabaseHelper(
     /**
      * Inserts a file into the database.
      *
-     * @param file The file to insert.
+     * @param files The files to insert.
      */
-    override fun insert(file: SyncControl.File) {
-        driver.handle {
-            insertOrThrow(
-                SyncFileTable.TABLE_NAME, SyncFileTable.mapToCreate(file)
-            )
+    override fun insert(vararg files: SyncControl.File) {
+        transaction {
+            files.forEach { file ->
+                insertOrThrow(
+                    SyncFileTable.TABLE_NAME,
+                    SyncFileTable.mapToCreate(file)
+                )
+            }
         }
     }
 
     /**
      * Updates a file in the database.
      *
-     * @param file The file to update.
+     * @param files The files to update.
      * @return `true` if the operation is successful, `false` otherwise.
      */
-    override fun update(file: SyncControl.File): Boolean {
+    override fun update(vararg files: SyncControl.File): Boolean {
         driver.handle {
-            val whereClause = buildWhereEvaluation(
-                listOf(
-                    SQL.WhereCondition(
-                        SQL.ColumnValue(
-                            SyncFileTable.ATTR_REFERENCE,
-                            file.reference
+            runCatching {
+                transaction {
+                    files.forEach { file ->
+                        val whereClause = buildWhereEvaluation(
+                            listOf(
+                                SQL.WhereCondition(
+                                    SQL.ColumnValue(
+                                        SyncFileTable.ATTR_REFERENCE,
+                                        file.reference
+                                    )
+                                )
+                            )
                         )
-                    )
-                )
-            )
-            return isOperationIsSuccessful(
-                update(
-                    SyncFileTable.TABLE_NAME,
-                    SyncFileTable.mapToCreate(file),
-                    whereClause
-                )
-            )
+                        val result = isOperationIsSuccessful(
+                            update(
+                                SyncFileTable.TABLE_NAME,
+                                SyncFileTable.mapToCreate(file),
+                                whereClause
+                            )
+                        )
+                        if (!result) throw IllegalStateException("Update operation failed")
+                    }
+                }
+            }.getOrElse {
+                return false
+            }
         }
+        return true
     }
 
     /**
-     * Deletes a file from the database.
+     * Deletes files from the database.
      *
-     * @param file The file to delete.
+     * @param files The files to delete.
      * @return `true` if the operation is successful, `false` otherwise.
      */
-    override fun delete(file: SyncControl.File): Boolean {
+    override fun delete(vararg files: SyncControl.File): Boolean {
         driver.handle {
-            val whereClause = buildWhereEvaluation(
-                listOf(
-                    SQL.WhereCondition(
-                        SQL.ColumnValue(
-                            SyncFileTable.ATTR_REFERENCE,
-                            file.reference
+            runCatching {
+                transaction {
+                    files.forEach { file ->
+                        val whereClause = buildWhereEvaluation(
+                            listOf(
+                                SQL.WhereCondition(
+                                    SQL.ColumnValue(
+                                        SyncFileTable.ATTR_REFERENCE,
+                                        file.reference
+                                    )
+                                )
+                            )
                         )
-                    )
-                )
-            )
-
-            return isOperationIsSuccessful(
-                delete(
-                    SyncFileTable.TABLE_NAME,
-                    whereClause
-                )
-            )
+                        val result =isOperationIsSuccessful(
+                            delete(
+                                SyncFileTable.TABLE_NAME,
+                                whereClause
+                            )
+                        )
+                        if (!result) throw IllegalStateException("Delete operation failed")
+                    }
+                }
+            }.getOrElse {
+                return false
+            }
         }
+        return true
     }
 
     /**
