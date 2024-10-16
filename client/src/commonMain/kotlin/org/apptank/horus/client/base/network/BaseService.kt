@@ -11,6 +11,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -116,12 +117,14 @@ internal abstract class BaseService(
      * @param path The endpoint path to make the request to.
      * @param data The data to be sent as the request body.
      * @param onResponse A lambda function to process the response body into the expected type.
+     * @param onProgressUpload A lambda function to track the progress of the upload.
      * @return A DataResult containing either the result of the request or an error.
      */
     protected suspend inline fun <reified T : Any> postWithMultipartFormData(
         path: String,
         data: Map<String, Any>,
-        onResponse: (response: String) -> T
+        onResponse: (response: String) -> T,
+        crossinline onProgressUpload: (Int) -> Unit = {}
     ): DataResult<T> {
         return handleResponse(client.post(buildUrl(path)) {
             contentType(ContentType.Application.Json)
@@ -129,6 +132,7 @@ internal abstract class BaseService(
                 parseFormData(data)
             }))
             setupHeaders(this)
+            onUpload { bytesSentTotal, contentLength -> onProgressUpload(((bytesSentTotal / contentLength) * 100).toInt()) }
         }, onResponse)
     }
 

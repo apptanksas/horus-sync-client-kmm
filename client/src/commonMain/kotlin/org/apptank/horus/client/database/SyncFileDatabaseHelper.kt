@@ -119,7 +119,7 @@ class SyncFileDatabaseHelper(
      * @param reference The reference of the file to search for.
      * @return The file if found, `null` otherwise.
      */
-    override fun search(reference: String): SyncControl.File? {
+    override fun search(reference: CharSequence): SyncControl.File? {
 
         val query = SimpleQueryBuilder(SyncFileTable.TABLE_NAME)
             .where(
@@ -142,7 +142,7 @@ class SyncFileDatabaseHelper(
      * @param references The references of the files to search for.
      * @return A list of files if found, an empty list otherwise.
      */
-    override fun searchBatch(references: List<String>): List<SyncControl.File> {
+    override fun searchBatch(references: List<CharSequence>): List<SyncControl.File> {
         val query = SimpleQueryBuilder(SyncFileTable.TABLE_NAME).whereIn(
             SyncFileTable.ATTR_REFERENCE,
             references

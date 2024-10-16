@@ -152,7 +152,7 @@ sealed class SyncControl {
      * @param mimeType The MIME type of the file.
      */
     data class File(
-        val reference: String,
+        val reference: CharSequence,
         val type: FileType,
         val status: FileStatus,
         val mimeType: String,

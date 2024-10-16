@@ -19,8 +19,7 @@ internal class FileSynchronizationService(
             "upload/file", mapOf(
                 "id" to referenceId,
                 "file" to file
-            )
-        ) { it.serialize() }
+            ), { it.serialize() })
     }
 
     override suspend fun getFileInfo(referenceId: String): DataResult<SyncDTO.Response.FileInfoUploaded> {

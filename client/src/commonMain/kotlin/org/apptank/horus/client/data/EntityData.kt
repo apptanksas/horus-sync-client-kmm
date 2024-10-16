@@ -117,9 +117,26 @@ sealed class Horus {
      */
     data class FileReference
     @OptIn(ExperimentalUuidApi::class)
-    internal constructor(private val id: String = Uuid.random().toString()) {
+    internal constructor(
+        private val id: CharSequence = Uuid.random().toString(),
+        override val length: Int = id.length
+    ) :
+        Comparable<FileReference>, CharSequence {
+
+        override fun compareTo(other: FileReference): Int {
+            return id.toString().compareTo(id.toString())
+        }
+
+        override fun get(index: Int): Char {
+            return id[index]
+        }
+
+        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+            return id.subSequence(startIndex, endIndex)
+        }
+
         override fun toString(): String {
-            return id
+            return id.toString()
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.apptank.horus.client.sync.upload.data
 
+import org.apptank.horus.client.data.Horus
+
 
 /**
  * Represents a file data object containing the file data, filename, and MIME type.
@@ -12,7 +14,25 @@ data class FileData(
     val data: ByteArray,
     val filename: String,
     val mimeType: String
-)
+) {
+    /**
+     * Checks if the file is an image based on the MIME type.
+     *
+     * @return `true` if the file is an image, `false` otherwise.
+     */
+    fun isImage(): Boolean {
+        return mimeType.startsWith("image/")
+    }
+
+    /**
+     * Gets the extension of the file.
+     *
+     * @return The extension of the file.
+     */
+    fun getExtension(): String {
+        return filename.substringAfterLast(".")
+    }
+}
 
 /**
  * Represents a file uploaded object containing the file ID, URL, status, and MIME type.
@@ -49,5 +69,11 @@ enum class SyncFileStatus(val id: Int) {
      * The file was deleted.
      */
     DELETED(2)
+}
+
+
+sealed class SyncFileResult {
+    data class Success(val fileReference: CharSequence) : SyncFileResult()
+    data class Failure(val fileReference: CharSequence) : SyncFileResult()
 }
 

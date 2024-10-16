@@ -35,7 +35,7 @@ interface ISyncFileDatabaseHelper {
      * @param reference The reference of the file to search for.
      * @return The file if found, `null` otherwise.
      */
-    fun search(reference: String): SyncControl.File?
+    fun search(reference: CharSequence): SyncControl.File?
 
     /**
      * Searches for a batch of files in the database.
@@ -43,7 +43,7 @@ interface ISyncFileDatabaseHelper {
      * @param references The references of the files to search for.
      * @return A list of files if found, an empty list otherwise.
      */
-    fun searchBatch(references: List<String>): List<SyncControl.File>
+    fun searchBatch(references: List<CharSequence>): List<SyncControl.File>
 
     /**
      * Queries the database for files with a specific status.
