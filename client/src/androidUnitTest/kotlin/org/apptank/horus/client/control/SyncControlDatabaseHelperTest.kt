@@ -5,6 +5,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.database.ControlDatabaseCache
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.SQLiteHelper
 import org.apptank.horus.client.database.SyncControlDatabaseHelper
@@ -25,7 +26,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
         HorusDatabase.Schema.create(driver)
-        SQLiteHelper.flushCache()
+        ControlDatabaseCache.flushCache()
     }
 
 

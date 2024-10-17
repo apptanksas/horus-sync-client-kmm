@@ -31,7 +31,7 @@ class OperationDatabaseHelperTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         databaseHelper = OperationDatabaseHelper("database", driver)
 
-        SQLiteHelper.flushCache()
+        ControlDatabaseCache.flushCache()
 
         driver.createTable(
             entityName,

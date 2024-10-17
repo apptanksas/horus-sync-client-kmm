@@ -92,7 +92,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            flushCache()
+            ControlDatabaseCache.flushCache()
             return QueryResult.Value(Unit)
         }
 
@@ -144,7 +144,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            flushCache()
+            ControlDatabaseCache.flushCache()
             callbacks.forEach {
                 if (newVersion >= it.afterVersion) {
                     it.block(driver)

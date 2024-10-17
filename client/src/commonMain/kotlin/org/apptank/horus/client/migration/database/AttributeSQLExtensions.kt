@@ -1,7 +1,6 @@
 package org.apptank.horus.client.migration.database
 
 import org.apptank.horus.client.migration.domain.Attribute
-import org.apptank.horus.client.migration.domain.AttributeNameMasker
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.migration.domain.Constraint
 import org.apptank.horus.client.migration.domain.ConstraintType

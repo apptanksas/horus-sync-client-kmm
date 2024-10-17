@@ -42,8 +42,8 @@ abstract class SQLiteHelper(
      */
     internal fun getTableEntities(): List<InternalModel.TableEntity> {
 
-        if (CACHE_TABLES[databaseName]?.isNotEmpty() == true) {
-            return CACHE_TABLES[databaseName] ?: emptyList()
+        if (ControlDatabaseCache.hasTables(databaseName)) {
+            return ControlDatabaseCache.getTables(databaseName) ?: emptyList()
         }
 
         val tables = mutableListOf<InternalModel.TableEntity>()
@@ -64,7 +64,10 @@ abstract class SQLiteHelper(
         }
 
         return tables.also {
-            CACHE_TABLES[databaseName] = it
+            ControlDatabaseCache.setTables(
+                databaseName,
+                it
+            )
         }
     }
 
@@ -92,9 +95,10 @@ abstract class SQLiteHelper(
      */
     internal fun getColumns(tableName: String): List<Column> {
 
-        if (CACHE_COLUMN_NAMES[databaseName]?.contains(tableName) == true) {
-            return CACHE_COLUMN_NAMES[databaseName]?.get(tableName) ?: emptyList()
+        if (ControlDatabaseCache.hasTableColumnNames(databaseName, tableName)) {
+            return ControlDatabaseCache.getTableColumnNames(databaseName, tableName) ?: emptyList()
         }
+
         val query = "PRAGMA table_info($tableName);" // Query columns
 
         val columns = driver.handle {
@@ -109,9 +113,11 @@ abstract class SQLiteHelper(
         }
 
         return columns.also {
-            if (CACHE_COLUMN_NAMES[databaseName] == null)
-                CACHE_COLUMN_NAMES[databaseName] = mutableMapOf()
-            CACHE_COLUMN_NAMES[databaseName]?.set(tableName, it)
+            ControlDatabaseCache.setTableColumnNames(
+                databaseName,
+                tableName,
+                it
+            )
         }
     }
 
@@ -334,16 +340,5 @@ abstract class SQLiteHelper(
 
     companion object {
         private val TABLES_SYSTEM = listOf("android_metadata", "sqlite_sequence")
-        private var CACHE_TABLES = mutableMapOf<String, List<InternalModel.TableEntity>>()
-        private var CACHE_COLUMN_NAMES =
-            mutableMapOf<String, MutableMap<String, List<Column>>>()
-
-        /**
-         * Clears the cached tables and column names.
-         */
-        fun flushCache() {
-            CACHE_TABLES = mutableMapOf()
-            CACHE_COLUMN_NAMES = mutableMapOf()
-        }
     }
 }
