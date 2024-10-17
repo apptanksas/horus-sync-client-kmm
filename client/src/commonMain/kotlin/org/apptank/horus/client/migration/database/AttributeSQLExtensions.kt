@@ -31,6 +31,7 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         AttributeType.Enum -> "TEXT CHECK ($name IN (${this.options.joinToString(", ") { "'$it'" }}))"
         AttributeType.Timestamp -> "TEXT"
         AttributeType.UUID -> "TEXT"
+        AttributeType.RefFile -> "TEXT"
         else -> throw IllegalArgumentException("Attribute type ${this.type} not defined")
     }
 

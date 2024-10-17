@@ -13,7 +13,11 @@ import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.sync.manager.DispenserManager
+import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
+import org.apptank.horus.client.sync.upload.repository.UploadFileRepository
 
 
 /**
@@ -40,9 +44,15 @@ object HorusContainer {
 
     private var synchronizationService: ISynchronizationService? = null
 
+    private var fileSynchronizationService: IFileSynchronizationService? = null
+
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
 
     private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+
+    private var syncFilesDatabaseHelper: ISyncFileDatabaseHelper? = null
+
+    private var uploadFileRepository: IUploadFileRepository? = null
 
     private var networkValidator: INetworkValidator? = null
 
@@ -72,6 +82,15 @@ object HorusContainer {
      */
     internal fun setupSynchronizationService(service: ISynchronizationService) {
         synchronizationService = service
+    }
+
+    /**
+     * Sets up the file synchronization service.
+     *
+     * @param service The [IFileSynchronizationService] instance to set up.
+     */
+    internal fun setupFileSynchronizationService(service: IFileSynchronizationService) {
+        fileSynchronizationService = service
     }
 
     /**
@@ -108,6 +127,24 @@ object HorusContainer {
      */
     internal fun setupOperationDatabaseHelper(helper: IOperationDatabaseHelper) {
         operationDatabaseHelper = helper
+    }
+
+    /**
+     * Sets up the sync files database helper.
+     *
+     * @param helper The [ISyncFileDatabaseHelper] instance to set up.
+     */
+    internal fun setupSyncFilesDatabaseHelper(helper: ISyncFileDatabaseHelper) {
+        syncFilesDatabaseHelper = helper
+    }
+
+    /**
+     * Sets up the upload file repository.
+     *
+     * @param repository The [IUploadFileRepository] instance to set up.
+     */
+    internal fun setupUploadFileRepository(repository: IUploadFileRepository) {
+        uploadFileRepository = repository
     }
 
     /**
@@ -192,6 +229,17 @@ object HorusContainer {
     }
 
     /**
+     * Retrieves the file synchronization service.
+     *
+     * @return The [IFileSynchronizationService] instance.
+     * @throws IllegalStateException if the file synchronization service is not set.
+     */
+    internal fun getFileSynchronizationService(): IFileSynchronizationService {
+        return fileSynchronizationService
+            ?: throw IllegalStateException("FileSynchronizationService not set")
+    }
+
+    /**
      * Retrieves the database factory.
      *
      * @return The [IDatabaseDriverFactory] instance.
@@ -240,6 +288,11 @@ object HorusContainer {
     internal fun getOperationDatabaseHelper(): IOperationDatabaseHelper {
         return operationDatabaseHelper
             ?: throw IllegalStateException("OperationDatabaseHelper not set")
+    }
+
+    internal fun getSyncFilesDatabaseHelper(): ISyncFileDatabaseHelper {
+        return syncFilesDatabaseHelper
+            ?: throw IllegalStateException("SyncFilesDatabaseHelper not set")
     }
 
     /**
@@ -293,6 +346,22 @@ object HorusContainer {
             )
         }
         return dispenserManager!!
+    }
+
+    /**
+     * Retrieves the upload file repository.
+     *
+     * @return A new instance of [IUploadFileRepository].
+     */
+    internal fun getUploadFileRepository(): IUploadFileRepository {
+        if (uploadFileRepository == null) {
+            uploadFileRepository = UploadFileRepository(
+                getConfig(),
+                getSyncFilesDatabaseHelper(),
+                getFileSynchronizationService()
+            )
+        }
+        return uploadFileRepository!!
     }
 
     // ------------------------------------------------------------------------

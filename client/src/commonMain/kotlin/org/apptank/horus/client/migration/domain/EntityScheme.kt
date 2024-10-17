@@ -85,6 +85,7 @@ enum class AttributeType {
     Enum,
     Timestamp,
     UUID,
+    RefFile,
     RelationOneOfMany,
     RelationOneOfOne
 }

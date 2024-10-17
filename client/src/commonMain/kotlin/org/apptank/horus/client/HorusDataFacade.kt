@@ -21,8 +21,11 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
+import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.upload.data.FileData
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
 import org.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
@@ -63,6 +66,15 @@ object HorusDataFacade {
             return field
         }
 
+    private var uploadFileRepository: IUploadFileRepository? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getUploadFileRepository()
+            }
+            return field
+        }
+
+
     private val controlTaskManager by lazy { ControlTaskManager }
 
     private var networkValidator: INetworkValidator? = null
@@ -99,7 +111,7 @@ object HorusDataFacade {
      */
     fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -177,7 +189,7 @@ object HorusDataFacade {
         attributes: List<Horus.Attribute<*>>
     ): DataResult<Unit> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -270,7 +282,7 @@ object HorusDataFacade {
      */
     fun delete(entity: String, id: String): DataResult<Unit> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
@@ -436,7 +448,6 @@ object HorusDataFacade {
         return syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
     }
 
-
     /**
      * Gets the last synchronization timestamp.
      *
@@ -471,11 +482,41 @@ object HorusDataFacade {
         changeListeners.clear()
     }
 
+    /**
+     * Uploads a file to synchronize with the remote server.
+     *
+     * @param fileData The file data to upload.
+     * @return A [Horus.FileReference] object representing the uploaded file.
+     */
+    fun uploadFile(fileData: FileData): Horus.FileReference {
+        validateIsReady()
+        return uploadFileRepository!!.createFileLocal(fileData)
+    }
+
+    /**
+     * Retrieves the URL of an image based on its reference.
+     * If the network is not available, the local URL is returned.
+     *
+     * @param reference The reference of the image.
+     * @return The URL of the image if found, `null` otherwise.
+     */
+    fun getImageUri(reference: CharSequence): String? {
+
+        if (networkValidator?.isNetworkAvailable().isFalse()) {
+            return uploadFileRepository?.getImageUrlLocal(reference)
+        }
+
+        return uploadFileRepository?.getImageUrl(Horus.FileReference(reference))
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Private methods
+    // ---------------------------------------------------------------------------------------------
 
     /**
      * Validates the constraints for the facade.
      */
-    private fun validateConstraints(entity: String) {
+    private fun validateConstraintsEntity(entity: String) {
         validateIsReady()
         validateIsEntityExists(entity)
         validateIsCanWriteIntoEntity(entity)

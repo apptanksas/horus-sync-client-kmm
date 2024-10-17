@@ -1,4 +1,4 @@
-package org.apptank.horus.client.sync.upload
+package org.apptank.horus.client.sync.upload.repository
 
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.absolutePath
@@ -21,7 +21,7 @@ class UploadFileRepository(
     private val config: HorusConfig,
     private val databaseHelper: ISyncFileDatabaseHelper,
     private val service: IFileSynchronizationService
-) {
+) : IUploadFileRepository {
 
     /**
      * Creates a file in the local storage and inserts it into the database.
@@ -29,7 +29,7 @@ class UploadFileRepository(
      * @param fileData The file data to create the file from.
      * @return The reference of the created file.
      */
-    fun createFileLocal(fileData: FileData): Horus.FileReference {
+    override fun createFileLocal(fileData: FileData): Horus.FileReference {
 
         val fileReference = Horus.FileReference()
         val type = if (fileData.isImage()) SyncControl.FileType.IMAGE else SyncControl.FileType.FILE
@@ -51,7 +51,7 @@ class UploadFileRepository(
         return fileReference
     }
 
-    suspend fun uploadFiles(): List<SyncFileResult> {
+    override suspend fun uploadFiles(): List<SyncFileResult> {
 
         val output = mutableListOf<SyncFileResult>()
         val queryResult = databaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL)
@@ -89,7 +89,7 @@ class UploadFileRepository(
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    fun getImageUrl(reference: Horus.FileReference): String? {
+    override fun getImageUrl(reference: CharSequence): String? {
         val file = databaseHelper.search(reference) ?: return null
         return when (file.status) {
             SyncControl.FileStatus.LOCAL -> {
@@ -116,7 +116,7 @@ class UploadFileRepository(
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    fun getImageUrlLocal(reference: Horus.FileReference): String? {
+    override fun getImageUrlLocal(reference: CharSequence): String? {
         return databaseHelper.search(reference)?.urlLocal
     }
 

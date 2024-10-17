@@ -1,4 +1,4 @@
-package org.apptank.horus.client.sync.upload
+package org.apptank.horus.client.sync.upload.repository
 
 import io.mockative.Mock
 import io.mockative.any
