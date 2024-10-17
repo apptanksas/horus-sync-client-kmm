@@ -5,8 +5,10 @@ import org.apptank.horus.client.DATA_MIGRATION_VERSION_1
 import org.apptank.horus.client.DATA_MIGRATION_VERSION_2
 import org.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import org.apptank.horus.client.DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE
+import org.apptank.horus.client.KotlinLogger
 import org.apptank.horus.client.buildEntitiesSchemeFromJSON
 import org.apptank.horus.client.database.HorusDatabase
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.extensions.notContains
 import org.apptank.horus.client.migration.domain.getLastVersion
 import org.apptank.horus.client.migration.network.toScheme
@@ -26,6 +28,8 @@ class HorusDatabaseSchemaTest {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         schema = HorusDatabase.Schema
         database = HorusDatabase("databaseName", driver)
+
+        HorusContainer.setupLogger(KotlinLogger())
     }
 
     @Test
@@ -162,7 +166,9 @@ class HorusDatabaseSchemaTest {
         Assert.assertNull(tableProductsColumnsV2.find { it.name == "destination" })
         Assert.assertTrue(tableProductsColumnsV3.isNotEmpty())
         Assert.assertNotNull(tableProductsColumnsV3.find { it.name == "destination" })
-        Assert.assertFalse(tableProductsColumnsV3.find { it.name == "destination" }?.nullable ?: true)
+        Assert.assertFalse(
+            tableProductsColumnsV3.find { it.name == "destination" }?.nullable ?: true
+        )
 
 
         // Validate that the column "product_id" was added in the version 3

@@ -4,6 +4,7 @@ import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.serialization.AnySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
+import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
  * Represents a column in a database table.
@@ -12,12 +13,14 @@ import kotlinx.serialization.modules.serializersModuleOf
  * @property name The name of the column.
  * @property type The data type of the column.
  * @property nullable Indicates whether the column can have null values.
+ * @property format The format of the column value.
  */
 internal data class Column(
     val position: Int,
     val name: String,
     val type: String,
-    val nullable: Boolean
+    val nullable: Boolean,
+    val format: AttributeType? = null
 )
 
 /**

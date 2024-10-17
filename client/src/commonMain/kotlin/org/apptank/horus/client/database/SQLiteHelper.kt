@@ -7,6 +7,8 @@ import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.CallbackOnParseStringNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.Column
@@ -22,6 +24,7 @@ import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.notContains
+import org.apptank.horus.client.migration.domain.AttributeType
 import kotlin.random.Random
 
 /**
@@ -48,8 +51,7 @@ abstract class SQLiteHelper(
 
         val tables = mutableListOf<InternalModel.TableEntity>()
 
-        val simpleQuery = SimpleQueryBuilder(EntitiesTable.TABLE_NAME)
-            .build()
+        val simpleQuery = SimpleQueryBuilder(EntitiesTable.TABLE_NAME).build()
 
         this.driver.handle {
             // Query tables
@@ -102,12 +104,15 @@ abstract class SQLiteHelper(
         val query = "PRAGMA table_info($tableName);" // Query columns
 
         val columns = driver.handle {
+
             rawQuery(query) { cursor ->
+                val name = cursor.getRequireString(1)
                 Column(
                     cursor.getRequireInt(0),
-                    cursor.getRequireString(1),
+                    name,
                     cursor.getRequireString(2),
                     cursor.getRequireBoolean(3).not(),
+                    getQueryColumnAttributeType(tableName, name)
                 )
             }
         }
@@ -257,7 +262,15 @@ abstract class SQLiteHelper(
     ): List<Column> {
         return columns.filter { column ->
             (attributesSelected.isNotEmpty() && attributesSelected.contains(column.name)) || attributesSelected.isEmpty()
-        }.mapIndexed { index, column -> Column(index, column.name, column.type, column.nullable) }
+        }.mapIndexed { index, column ->
+            Column(
+                index,
+                column.name,
+                column.type,
+                column.nullable,
+                column.format
+            )
+        }
     }
 
     /**
@@ -300,6 +313,27 @@ abstract class SQLiteHelper(
 
     private fun executeDelete(query: String): Long {
         return driver.execute(null, query, 0).value
+    }
+
+    private fun getQueryColumnAttributeType(
+        entityName: String,
+        attributeName: String
+    ): AttributeType? {
+
+        val query = SimpleQueryBuilder(EntityAttributesTable.TABLE_NAME).where(
+            SQL.WhereCondition(
+                SQL.ColumnValue(EntityAttributesTable.ATTR_ENTITY_NAME, entityName)
+            ),
+            SQL.WhereCondition(
+                SQL.ColumnValue(EntityAttributesTable.ATTR_ATTRIBUTE_NAME, attributeName)
+            )
+        )
+
+        return transactionWithResult {
+            rawQuery(query.build()) { cursor ->
+                AttributeType.valueOf(cursor.getRequireString(3))
+            }.firstOrNull()
+        }
     }
 
     /**
