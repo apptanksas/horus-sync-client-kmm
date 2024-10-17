@@ -11,6 +11,8 @@ import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.eventbus.EventBus
+import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.extensions.toFileUri
 import org.apptank.horus.client.extensions.toPath
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
@@ -47,6 +49,8 @@ class UploadFileRepository(
                 urlLocal = urlLocal,
             )
         )
+
+        EventBus.emit(EventType.FILE_QUEUED_FOR_UPLOAD)
 
         return fileReference
     }

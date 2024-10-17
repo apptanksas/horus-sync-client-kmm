@@ -22,6 +22,18 @@ typealias Callback = () -> Unit
  */
 typealias CallbackNullable = Callback?
 
+
+/**
+ * Typealias for a callback function that takes a [String] as an argument and returns a [String].
+ */
+typealias CallbackOnParseString = (String) -> String
+
+/**
+ * Typealias for a nullable callback function that takes a string as an argument and returns a string.
+ */
+typealias CallbackOnParseStringNullable = CallbackOnParseString?
+
+
 /**
  * Typealias for a callback function that takes an [Event] as an argument and returns no value.
  */

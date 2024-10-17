@@ -270,6 +270,20 @@ internal class SyncControlDatabaseHelper(
             .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
+    suspend fun getEntitiesWithFileReferences(): List<String> {
+        val entities = getEntityNames()
+        val output = mutableListOf<String>()
+
+        for (entity in entities) {
+            val columns = getColumns(entity)
+            for (column in columns) {
+                TODO("Implement logic to check if column is a file reference")
+            }
+        }
+
+        return output
+    }
+
     /**
      * Checks if an entity can be written to.
      *

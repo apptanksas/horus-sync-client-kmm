@@ -15,6 +15,7 @@ import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.sync.manager.DispenserManager
+import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.sync.upload.repository.UploadFileRepository
@@ -60,6 +61,8 @@ object HorusContainer {
 
     private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
 
+    private var syncFileUploadedManager: SyncFileUploadedManager? = null
+
     private var dispenserManager: DispenserManager? = null
 
     // ------------------------------------------------------------------------
@@ -100,6 +103,15 @@ object HorusContainer {
      */
     internal fun setupRemoteSynchronizatorManager(manager: RemoteSynchronizatorManager) {
         remoteSynchronizatorManager = manager
+    }
+
+    /**
+     * Sets up the sync file uploaded manager.
+     *
+     * @param manager The [SyncFileUploadedManager] instance to set up.
+     */
+    internal fun setupSyncFileUploadedManager(manager: SyncFileUploadedManager) {
+        syncFileUploadedManager = manager
     }
 
     /**
@@ -329,6 +341,21 @@ object HorusContainer {
             )
         }
         return remoteSynchronizatorManager!!
+    }
+
+    /**
+     * Retrieves the sync file uploaded manager.
+     *
+     * @return A new instance of [SyncFileUploadedManager].
+     */
+    internal fun getSyncFileUploadedManager(): SyncFileUploadedManager {
+        if (syncFileUploadedManager == null) {
+            syncFileUploadedManager = SyncFileUploadedManager(
+                getNetworkValidator(),
+                getUploadFileRepository()
+            )
+        }
+        return syncFileUploadedManager!!
     }
 
     /**

@@ -4,6 +4,7 @@ import app.cash.sqldelight.TransacterImpl
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import org.apptank.horus.client.base.CallbackOnParseStringNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.data.InternalModel
@@ -327,8 +328,8 @@ abstract class SQLiteHelper(
      *
      * @return A map of column names to values.
      */
-    protected fun List<SQL.ColumnValue>.prepareMap(): DataMap {
-        return associate { it.column to it.value }
+    protected fun List<SQL.ColumnValue>.prepareMap(onParseColumn: CallbackOnParseStringNullable = null): DataMap {
+        return associate { (onParseColumn?.invoke(it.column) ?: it.column) to it.value }
     }
 
     companion object {

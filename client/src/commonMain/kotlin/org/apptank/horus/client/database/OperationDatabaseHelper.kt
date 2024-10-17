@@ -232,7 +232,9 @@ internal class OperationDatabaseHelper(
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         log("[Update] table: $table Values: $values Conditions: $whereEvaluation")
 
-        val result = update(table, values.prepareMap(), whereEvaluation)
+        val result = update(table, values.prepareMap({ column ->
+            column
+        }), whereEvaluation)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
 }

@@ -51,5 +51,10 @@ enum class EventType {
     /**
      * Event type indicating that the user setup has changed.
      */
-    SETUP_CHANGED
+    SETUP_CHANGED,
+
+    /**
+     * Event type indicating that a file has been queued for upload.
+     */
+    FILE_QUEUED_FOR_UPLOAD
 }
