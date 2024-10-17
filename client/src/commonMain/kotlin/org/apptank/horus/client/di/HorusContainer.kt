@@ -385,6 +385,7 @@ object HorusContainer {
             uploadFileRepository = UploadFileRepository(
                 getConfig(),
                 getSyncFilesDatabaseHelper(),
+                getSyncControlDatabaseHelper(),
                 getFileSynchronizationService()
             )
         }

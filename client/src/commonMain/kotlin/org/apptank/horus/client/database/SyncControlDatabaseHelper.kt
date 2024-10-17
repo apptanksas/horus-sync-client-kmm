@@ -20,6 +20,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
  * Implementation of the `ISyncControlDatabaseHelper` interface for managing synchronization control data
@@ -265,23 +266,50 @@ internal class SyncControlDatabaseHelper(
             .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
+    /**
+     * Retrieves a list of all entity names from the database that can be written to.
+     *
+     * @return A list of entity names.
+     */
     override fun getWritableEntityNames(): List<String> {
         return getTableEntities().filter { it.isWritable }.map { it.name }
             .filterNot { it == SyncControlTable.TABLE_NAME || it == QueueActionsTable.TABLE_NAME }
     }
 
-    suspend fun getEntitiesWithFileReferences(): List<String> {
+    /**
+     * Retrieves a list of all entity names that have a specified attribute type.
+     *
+     * @param type The attribute type to filter entities by.
+     * @return A list of entity names.
+     */
+    override fun getEntitiesWithAttributeType(type: AttributeType): List<String> {
         val entities = getEntityNames()
         val output = mutableListOf<String>()
 
         for (entity in entities) {
             val columns = getColumns(entity)
             for (column in columns) {
-                TODO("Implement logic to check if column is a file reference")
+                if (column.format == type) {
+                    output.add(entity)
+                    break
+                }
             }
         }
-
         return output
+    }
+
+    /**
+     * Retrieves a list of all attribute names from entity that have a specified attribute type.
+     *
+     * @param entityName The name of the entity to filter attributes by.
+     * @param type The attribute type to filter attributes by.
+     * @return A list of entity names.
+     */
+    override fun getEntityAttributesWithType(
+        entityName: String,
+        type: AttributeType
+    ): List<String> {
+        return getColumns(entityName).filter { it.format == type }.map { it.name }
     }
 
     /**

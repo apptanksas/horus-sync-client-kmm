@@ -13,6 +13,11 @@ interface IUploadFileRepository {
      */
     fun createFileLocal(fileData: FileData): Horus.FileReference
 
+    /**
+     * Uploads all files that are in the local status.
+     *
+     * @return A list of [SyncFileResult] objects representing the result of the upload operation.
+     */
     suspend fun uploadFiles(): List<SyncFileResult>
 
     /**

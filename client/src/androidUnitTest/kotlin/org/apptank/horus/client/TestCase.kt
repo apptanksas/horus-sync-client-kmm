@@ -28,7 +28,9 @@ import io.mockative.classOf
 import io.mockative.matchers.Matcher
 import io.mockative.mock
 import kotlinx.datetime.Clock
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
+import org.apptank.horus.client.migration.domain.AttributeType
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
@@ -184,6 +186,19 @@ abstract class TestCase {
             createSQLInsert(
                 EntitiesTable.TABLE_NAME,
                 EntitiesTable.mapToCreate(entity, isWritable)
+            )
+        )
+    }
+
+    protected fun SqlDriver.registerEntityAttribute(
+        entity: String,
+        attributeName: String,
+        attributeType: AttributeType
+    ) {
+        execute(
+            createSQLInsert(
+                EntityAttributesTable.TABLE_NAME,
+                EntityAttributesTable.mapToCreate(entity, attributeName, attributeType)
             )
         )
     }

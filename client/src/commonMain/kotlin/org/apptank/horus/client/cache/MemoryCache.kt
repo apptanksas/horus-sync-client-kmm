@@ -1,9 +1,9 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.cache
 
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.struct.Column
 
-internal object ControlDatabaseCache {
+internal object MemoryCache {
 
     private var CACHE_TABLES = mutableMapOf<String, List<InternalModel.TableEntity>>()
     private var CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<Column>>>()

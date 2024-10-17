@@ -9,6 +9,7 @@ import org.apptank.horus.client.base.coFold
 import io.matthewnelson.kmp.file.File as KmpFile
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.eventbus.EventBus
@@ -21,7 +22,8 @@ import org.apptank.horus.client.sync.upload.data.SyncFileResult
 
 class UploadFileRepository(
     private val config: HorusConfig,
-    private val databaseHelper: ISyncFileDatabaseHelper,
+    private val fileDatabaseHelper: ISyncFileDatabaseHelper,
+    private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val service: IFileSynchronizationService
 ) : IUploadFileRepository {
 
@@ -40,7 +42,7 @@ class UploadFileRepository(
         val filename = "$fileReference.${fileData.getExtension()}"
         val urlLocal = createFileInLocalStorage(fileData, filename, basePathFile)
 
-        databaseHelper.insert(
+        fileDatabaseHelper.insert(
             SyncControl.File(
                 fileReference.toString(),
                 type,
@@ -55,17 +57,22 @@ class UploadFileRepository(
         return fileReference
     }
 
+    /**
+     * Uploads all files that are in the local status.
+     *
+     * @return A list of [SyncFileResult] indicating the result of the upload operation.
+     */
     override suspend fun uploadFiles(): List<SyncFileResult> {
 
         val output = mutableListOf<SyncFileResult>()
-        val queryResult = databaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL)
+        val queryResult = fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL)
 
         queryResult.forEach { recordFile ->
             recordFile.createFileData()?.let { fileData ->
                 // Upload file to service
                 service.uploadFile(recordFile.reference.toString(), fileData).coFold(
                     onSuccess = { response ->
-                        val resultUpdate = databaseHelper.update(
+                        val resultUpdate = fileDatabaseHelper.update(
                             SyncControl.File(
                                 recordFile.reference,
                                 recordFile.type,
@@ -87,6 +94,13 @@ class UploadFileRepository(
     }
 
 
+    fun syncFileReferences() {
+
+        //val entities = controlDatabaseHelper.getEntitiesWithFileReferences()
+
+    }
+
+
     /**
      * Get the URL of a file based on its reference.
      *
@@ -94,7 +108,7 @@ class UploadFileRepository(
      * @return The URL of the file if found, `null` otherwise.
      */
     override fun getImageUrl(reference: CharSequence): String? {
-        val file = databaseHelper.search(reference) ?: return null
+        val file = fileDatabaseHelper.search(reference) ?: return null
         return when (file.status) {
             SyncControl.FileStatus.LOCAL -> {
                 file.urlLocal
@@ -121,7 +135,7 @@ class UploadFileRepository(
      * @return The URL of the file if found, `null` otherwise.
      */
     override fun getImageUrlLocal(reference: CharSequence): String? {
-        return databaseHelper.search(reference)?.urlLocal
+        return fileDatabaseHelper.search(reference)?.urlLocal
     }
 
     /**

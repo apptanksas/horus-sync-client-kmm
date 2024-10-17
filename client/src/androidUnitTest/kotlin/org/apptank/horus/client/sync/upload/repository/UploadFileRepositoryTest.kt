@@ -12,6 +12,7 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.extensions.toPath
@@ -28,7 +29,12 @@ import org.junit.Test
 class UploadFileRepositoryTest : TestCase() {
 
     @Mock
-    private val databaseHelper: ISyncFileDatabaseHelper = mock(classOf<ISyncFileDatabaseHelper>())
+    private val controlDatabaseHelper: ISyncControlDatabaseHelper =
+        mock(classOf<ISyncControlDatabaseHelper>())
+
+    @Mock
+    private val fileDatabaseHelper: ISyncFileDatabaseHelper =
+        mock(classOf<ISyncFileDatabaseHelper>())
 
     @Mock
     private val service: IFileSynchronizationService = mock(classOf<IFileSynchronizationService>())
@@ -39,7 +45,7 @@ class UploadFileRepositoryTest : TestCase() {
     fun setUp() {
         repository = UploadFileRepository(
             HorusConfig("http://dev.api", getLocalTestPath()),
-            databaseHelper, service
+            fileDatabaseHelper, controlDatabaseHelper, service
         )
     }
 
@@ -57,7 +63,7 @@ class UploadFileRepositoryTest : TestCase() {
             result.toString()
                 .matches(Regex("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"))
         )
-        verify { databaseHelper.insert(any()) }.wasInvoked()
+        verify { fileDatabaseHelper.insert(any()) }.wasInvoked()
     }
 
     @Test
@@ -66,7 +72,7 @@ class UploadFileRepositoryTest : TestCase() {
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.REMOTE)
 
-        every { databaseHelper.search(fileReference) }.returns(recordFile)
+        every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
         val result = repository.getImageUrl(fileReference)
@@ -81,7 +87,7 @@ class UploadFileRepositoryTest : TestCase() {
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
 
-        every { databaseHelper.search(fileReference) }.returns(recordFile)
+        every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
         val result = repository.getImageUrl(fileReference)
@@ -96,7 +102,7 @@ class UploadFileRepositoryTest : TestCase() {
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED)
 
-        every { databaseHelper.search(fileReference) }.returns(recordFile)
+        every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
         val result = repository.getImageUrl(fileReference)
@@ -110,7 +116,7 @@ class UploadFileRepositoryTest : TestCase() {
         // Given
         val fileReference = Horus.FileReference()
 
-        every { databaseHelper.search(fileReference) }.returns(null)
+        every { fileDatabaseHelper.search(fileReference) }.returns(null)
 
         // When
         val result = repository.getImageUrl(fileReference)
@@ -125,7 +131,7 @@ class UploadFileRepositoryTest : TestCase() {
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
 
-        every { databaseHelper.search(fileReference) }.returns(recordFile)
+        every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
         val result = repository.getImageUrlLocal(fileReference)
@@ -139,7 +145,7 @@ class UploadFileRepositoryTest : TestCase() {
         // Given
         val fileReference = Horus.FileReference()
 
-        every { databaseHelper.search(fileReference) }.returns(null)
+        every { fileDatabaseHelper.search(fileReference) }.returns(null)
 
         // When
         val result = repository.getImageUrlLocal(fileReference)
@@ -160,9 +166,9 @@ class UploadFileRepositoryTest : TestCase() {
         }
         val fileResponse = SyncDTO.Response.FileInfoUploaded()
 
-        every { databaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(recordFiles)
+        every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(recordFiles)
         coEvery { service.uploadFile(any(), any()) }.returns(DataResult.Success(fileResponse))
-        every { databaseHelper.update(any()) }.returns(true)
+        every { fileDatabaseHelper.update(any()) }.returns(true)
 
         // When
         val result = repository.uploadFiles()

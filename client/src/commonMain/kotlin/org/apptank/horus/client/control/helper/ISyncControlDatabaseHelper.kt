@@ -2,6 +2,8 @@ package org.apptank.horus.client.control.helper
 
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.database.struct.Column
+import org.apptank.horus.client.migration.domain.AttributeType
 
 
 /**
@@ -114,6 +116,23 @@ interface ISyncControlDatabaseHelper {
      * @return A list of entity names.
      */
     fun getWritableEntityNames(): List<String>
+
+    /**
+     * Retrieves a list of all entity names that have a specified attribute type.
+     *
+     * @param type The attribute type to filter entities by.
+     * @return A list of entity names.
+     */
+    fun getEntitiesWithAttributeType(type: AttributeType): List<String>
+
+    /**
+     * Retrieves a list of all attribute names from entity that have a specified attribute type.
+     *
+     * @param entityName The name of the entity to filter attributes by.
+     * @param type The attribute type to filter attributes by.
+     * @return A list of entity names.
+     */
+    fun getEntityAttributesWithType(entityName: String, type: AttributeType): List<String>
 
     /**
      * Checks if an entity can be written to.

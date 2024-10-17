@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
@@ -94,7 +95,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            ControlDatabaseCache.flushCache()
+            MemoryCache.flushCache()
             return QueryResult.Value(Unit)
         }
 
@@ -156,7 +157,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            ControlDatabaseCache.flushCache()
+            MemoryCache.flushCache()
             callbacks.forEach {
                 if (newVersion >= it.afterVersion) {
                     it.block(driver)

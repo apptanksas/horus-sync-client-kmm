@@ -6,9 +6,9 @@ import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.CallbackOnParseStringNullable
 import org.apptank.horus.client.base.DataMap
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
-import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.Column
@@ -45,8 +45,8 @@ abstract class SQLiteHelper(
      */
     internal fun getTableEntities(): List<InternalModel.TableEntity> {
 
-        if (ControlDatabaseCache.hasTables(databaseName)) {
-            return ControlDatabaseCache.getTables(databaseName) ?: emptyList()
+        if (MemoryCache.hasTables(databaseName)) {
+            return MemoryCache.getTables(databaseName) ?: emptyList()
         }
 
         val tables = mutableListOf<InternalModel.TableEntity>()
@@ -66,7 +66,7 @@ abstract class SQLiteHelper(
         }
 
         return tables.also {
-            ControlDatabaseCache.setTables(
+            MemoryCache.setTables(
                 databaseName,
                 it
             )
@@ -97,8 +97,8 @@ abstract class SQLiteHelper(
      */
     internal fun getColumns(tableName: String): List<Column> {
 
-        if (ControlDatabaseCache.hasTableColumnNames(databaseName, tableName)) {
-            return ControlDatabaseCache.getTableColumnNames(databaseName, tableName) ?: emptyList()
+        if (MemoryCache.hasTableColumnNames(databaseName, tableName)) {
+            return MemoryCache.getTableColumnNames(databaseName, tableName) ?: emptyList()
         }
 
         val query = "PRAGMA table_info($tableName);" // Query columns
@@ -118,7 +118,7 @@ abstract class SQLiteHelper(
         }
 
         return columns.also {
-            ControlDatabaseCache.setTableColumnNames(
+            MemoryCache.setTableColumnNames(
                 databaseName,
                 tableName,
                 it
