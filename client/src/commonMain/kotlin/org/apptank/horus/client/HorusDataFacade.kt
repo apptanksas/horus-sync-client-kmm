@@ -506,7 +506,7 @@ object HorusDataFacade {
             return uploadFileRepository?.getImageUrlLocal(reference)
         }
 
-        return uploadFileRepository?.getImageUrl(Horus.FileReference(reference))
+        return uploadFileRepository?.getImageUrl(reference)
     }
 
     // ---------------------------------------------------------------------------------------------

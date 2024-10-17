@@ -40,6 +40,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After
 import org.junit.Assert
@@ -73,6 +74,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
     @Mock
+    val uploadFileRepository = mock(classOf<IUploadFileRepository>())
+
+    @Mock
     val storageSettings = mock(classOf<Settings>())
 
     @Before
@@ -88,7 +92,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseFactory)
-            setupConfig(HorusConfig("http://dev.horus.com","local/path"))
+            setupConfig(HorusConfig("http://dev.horus.com", "local/path"))
+            setupUploadFileRepository(uploadFileRepository)
         }
     }
 
@@ -327,10 +332,77 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateGetEntitiesWithWhereConditions()
         validateGetEntitiesWithLimitAndOffset()
         validateGetEntitiesName()
+        whenUploadFileIsSuccess()
+        whenGetImageUriNetworkIsNotAvailableThenReturnUrlLocal()
+        whenGetImageUriNetworkIsNotAvailableThenReturnNull()
+        whenGetImageUriNetworkIsAvailableThenReturnUrl()
 
         assert(invokedInsert)
         assert(invokedUpdate)
         assert(invokedDelete)
+    }
+
+
+    @Test
+    fun `when uploadFile is Failure by is not ready`(): Unit = runBlocking {
+        Assert.assertThrows(IllegalStateException::class.java) {
+            HorusDataFacade.uploadFile(generateFileDataImage())
+        }
+    }
+
+   private fun whenUploadFileIsSuccess() = prepareInternalTest {
+        // Given
+        val fileReference = Horus.FileReference()
+        val fileData = generateFileDataImage()
+
+        every { uploadFileRepository.createFileLocal(fileData) }.returns(fileReference)
+
+        // When
+        val result = HorusDataFacade.uploadFile(fileData)
+
+        // Then
+        Assert.assertEquals(fileReference, result)
+    }
+
+    fun whenGetImageUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+        val urlLocal = "local/path"
+
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { uploadFileRepository.getImageUrlLocal(fileReference) }.returns(urlLocal)
+
+        // When
+        val result = HorusDataFacade.getImageUri(fileReference)
+
+        // Then
+        Assert.assertEquals(urlLocal, result)
+    }
+
+    fun whenGetImageUriNetworkIsNotAvailableThenReturnNull(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { uploadFileRepository.getImageUrlLocal(fileReference) }.returns(null)
+
+        // When
+        val result = HorusDataFacade.getImageUri(fileReference)
+
+        // Then
+        Assert.assertNull(result)
+    }
+
+    fun whenGetImageUriNetworkIsAvailableThenReturnUrl(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+        val urlRemote = "remote/path"
+
+        every { networkValidator.isNetworkAvailable() }.returns(true)
+        every { uploadFileRepository.getImageUrl(fileReference) }.returns(urlRemote)
+
+        // When
+        val result = HorusDataFacade.getImageUri(fileReference)
+
+        // Then
+        Assert.assertEquals(urlRemote, result)
     }
 
     private fun validateEntityIsNotWritable() = prepareInternalTest {
