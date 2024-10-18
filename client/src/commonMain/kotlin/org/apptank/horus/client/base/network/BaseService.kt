@@ -208,7 +208,7 @@ internal abstract class BaseService(
      * @param path The path to append to the base URL.
      * @return The full URL as a String.
      */
-    private fun buildUrl(path: String): String {
+    protected fun buildUrl(path: String): String {
         return "$baseUrl/$path"
     }
 

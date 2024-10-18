@@ -42,4 +42,12 @@ interface IFileSynchronizationService {
         request: SyncDTO.Request.FilesInfoRequest
     ): DataResult<List<SyncDTO.Response.FileInfoUploaded>>
 
+    /**
+     * Downloads a file from the server.
+     *
+     * @param referenceId The reference identifier for the file.
+     * @return [DataResult] containing the file data as a byte array if successful.
+     */
+    suspend fun downloadFile(referenceId: String): DataResult<ByteArray>
+
 }
