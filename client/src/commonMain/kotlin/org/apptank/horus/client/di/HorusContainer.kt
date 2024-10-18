@@ -386,6 +386,7 @@ object HorusContainer {
                 getConfig(),
                 getSyncFilesDatabaseHelper(),
                 getSyncControlDatabaseHelper(),
+                getOperationDatabaseHelper(),
                 getFileSynchronizationService()
             )
         }

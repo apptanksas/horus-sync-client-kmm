@@ -28,9 +28,10 @@ internal fun buildEntitiesDataFromJSON(json: String): List<SyncDTO.Response.Enti
 @OptIn(ExperimentalUuidApi::class)
 internal fun generateSyncControlFile(
     status: SyncControl.FileStatus? = null,
-    baseLocalPath: String? = null
+    baseLocalPath: String? = null,
+    id: String = Horus.FileReference().toString()
 ) = SyncControl.File(
-    Horus.FileReference().toString(),
+    id,
     SyncControl.FileType.IMAGE,
     status ?: SyncControl.FileStatus.LOCAL,
     "image/png",

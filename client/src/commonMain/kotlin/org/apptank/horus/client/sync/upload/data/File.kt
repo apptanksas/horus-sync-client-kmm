@@ -47,7 +47,16 @@ data class FileUploaded(
     val url: String,
     val status: SyncFileStatus,
     val mimeType: String
-)
+) {
+    /**
+     * Checks if the file is an image based on the MIME type.
+     *
+     * @return `true` if the file is an image, `false` otherwise.
+     */
+    fun isImage(): Boolean {
+        return mimeType.startsWith("image/")
+    }
+}
 
 /**
  * Represents the status of a file synchronization.
@@ -68,7 +77,19 @@ enum class SyncFileStatus(val id: Int) {
     /**
      * The file was deleted.
      */
-    DELETED(2)
+    DELETED(2);
+
+    companion object {
+        /**
+         * Gets the [SyncFileStatus] based on the ID.
+         *
+         * @param id The ID of the status.
+         * @return The [SyncFileStatus] if found, `null` otherwise.
+         */
+        fun fromId(id: Int): SyncFileStatus {
+            return entries.find { it.id == id } ?: throw IllegalArgumentException("Invalid ID")
+        }
+    }
 }
 
 

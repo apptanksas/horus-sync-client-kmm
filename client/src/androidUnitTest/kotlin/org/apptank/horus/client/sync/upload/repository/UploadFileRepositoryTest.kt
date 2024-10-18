@@ -12,18 +12,22 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.extensions.toPath
 import org.apptank.horus.client.generateFileDataImage
 import org.apptank.horus.client.generateSyncControlFile
+import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
+import org.apptank.horus.client.sync.upload.data.SyncFileStatus
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
 
 
 class UploadFileRepositoryTest : TestCase() {
@@ -31,6 +35,10 @@ class UploadFileRepositoryTest : TestCase() {
     @Mock
     private val controlDatabaseHelper: ISyncControlDatabaseHelper =
         mock(classOf<ISyncControlDatabaseHelper>())
+
+    @Mock
+    private val operationDatabaseHelper: IOperationDatabaseHelper =
+        mock(classOf<IOperationDatabaseHelper>())
 
     @Mock
     private val fileDatabaseHelper: ISyncFileDatabaseHelper =
@@ -45,7 +53,7 @@ class UploadFileRepositoryTest : TestCase() {
     fun setUp() {
         repository = UploadFileRepository(
             HorusConfig("http://dev.api", getLocalTestPath()),
-            fileDatabaseHelper, controlDatabaseHelper, service
+            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service
         )
     }
 
@@ -178,4 +186,111 @@ class UploadFileRepositoryTest : TestCase() {
         Assert.assertTrue(result.all { it is SyncFileResult.Success })
     }
 
+    @Test
+    fun testSyncFileReferencesIsSuccess() = runBlocking {
+        // Given
+        val entities = generateRandomArray { "entity_" + Random.nextInt(1, 999999) }
+        val columns = generateRandomArray { "column_" + Random.nextInt(1, 999999) }
+        val fileReferencesFound = generateArray {
+            mutableMapOf<String, String>().apply {
+                columns.forEach {
+                    put(it, Horus.FileReference().toString())
+                }
+            }
+        }
+        val fileReferencesInDatabase = generateRandomArray(fileReferencesFound.size) {
+            generateSyncControlFile(id = fileReferencesFound.random().values.first())
+        }.distinctBy { it.reference }
+
+        val countFileReferencesToInsert = fileReferencesFound.size - fileReferencesInDatabase.size
+
+        val filesFromServices = generateArray(countFileReferencesToInsert) {
+            SyncDTO.Response.FileInfoUploaded(
+                Horus.FileReference().toString(),
+                "http://test/${Horus.FileReference()}.png",
+                "image/png",
+                SyncFileStatus.LINKED.id
+            )
+        }
+
+        every { controlDatabaseHelper.getEntitiesWithAttributeType(AttributeType.RefFile) }
+            .returns(entities)
+        every { controlDatabaseHelper.getEntityAttributesWithType(any(), any()) }
+            .returns(columns)
+        every { operationDatabaseHelper.queryRecords(any()) }.returns(fileReferencesFound)
+        every { fileDatabaseHelper.searchBatch(any()) }.returns(fileReferencesInDatabase)
+        coEvery { service.getFilesInfo(any()) }.returns(DataResult.Success(filesFromServices))
+
+        // When
+        val result = repository.syncFileReferencesInfo()
+
+        // Then
+        verify { fileDatabaseHelper.insert(any()) }.wasInvoked(countFileReferencesToInsert)
+        Assert.assertTrue(result)
+    }
+
+    @Test
+    fun testSyncFileReferencesIsFailureByService() = runBlocking {
+        // Given
+        val entities = generateRandomArray(2) { "entity_" + Random.nextInt(1, 999999) }
+        val columns = generateRandomArray(2) { "column_" + Random.nextInt(1, 999999) }
+        val fileReferencesFound = generateArray(100) {
+            mutableMapOf<String, String>().apply {
+                columns.forEach {
+                    put(it, Horus.FileReference().toString())
+                }
+            }
+        }
+        every { controlDatabaseHelper.getEntitiesWithAttributeType(AttributeType.RefFile) }
+            .returns(entities)
+        every { controlDatabaseHelper.getEntityAttributesWithType(any(), any()) }
+            .returns(columns)
+        every { operationDatabaseHelper.queryRecords(any()) }.returns(fileReferencesFound)
+        every { fileDatabaseHelper.searchBatch(any()) }.returns(emptyList())
+        coEvery { service.getFilesInfo(any()) }.returns(DataResult.Failure(Exception()))
+
+        // When
+        val result = repository.syncFileReferencesInfo()
+
+        // Then
+        verify { fileDatabaseHelper.insert(any()) }.wasNotInvoked()
+        Assert.assertFalse(result)
+    }
+
+    @Test
+    fun testSyncFileReferencesIsFailureByInsert() = runBlocking {
+        // Given
+        val entities = generateRandomArray(2) { "entity_" + Random.nextInt(1, 999999) }
+        val columns = generateRandomArray(2) { "column_" + Random.nextInt(1, 999999) }
+        val fileReferencesFound = generateArray(100) {
+            mutableMapOf<String, String>().apply {
+                columns.forEach {
+                    put(it, Horus.FileReference().toString())
+                }
+            }
+        }
+        every { controlDatabaseHelper.getEntitiesWithAttributeType(AttributeType.RefFile) }
+            .returns(entities)
+        every { controlDatabaseHelper.getEntityAttributesWithType(any(), any()) }
+            .returns(columns)
+        every { operationDatabaseHelper.queryRecords(any()) }.returns(fileReferencesFound)
+        every { fileDatabaseHelper.searchBatch(any()) }.returns(emptyList())
+        coEvery { service.getFilesInfo(any()) }.returns(DataResult.Success(
+            generateArray {
+                SyncDTO.Response.FileInfoUploaded(
+                    Horus.FileReference().toString(),
+                    "http://test/${Horus.FileReference()}.png",
+                    "image/png",
+                    SyncFileStatus.LINKED.id
+                )
+            }
+        ))
+        every { fileDatabaseHelper.insert(any()) }.throws(Exception())
+
+        // When
+        val result = repository.syncFileReferencesInfo()
+
+        // Then
+        Assert.assertFalse(result)
+    }
 }

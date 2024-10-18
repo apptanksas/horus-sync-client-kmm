@@ -20,6 +20,14 @@ interface IUploadFileRepository {
      */
     suspend fun uploadFiles(): List<SyncFileResult>
 
+
+    /**
+     * Synchronizes the file references info between the local and remote storage.
+     *
+     * @return `true` if the synchronization was successful, `false` otherwise.
+     */
+    suspend fun syncFileReferencesInfo(): Boolean
+
     /**
      * Get the URL of a file based on its reference.
      *
