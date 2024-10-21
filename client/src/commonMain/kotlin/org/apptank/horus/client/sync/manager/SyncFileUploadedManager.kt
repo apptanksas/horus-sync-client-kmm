@@ -12,12 +12,13 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.warn
+import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 
 class SyncFileUploadedManager(
     private val networkValidator: INetworkValidator,
     private val uploadFileRepository: IUploadFileRepository,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
@@ -54,19 +55,44 @@ class SyncFileUploadedManager(
 
             val job = launch {
                 takeProcess()
+
                 // 1 -> Upload pending files
-                uploadFileRepository.uploadFiles()
+                info("[SyncFiles] Uploading files...")
+                if (uploadFileRepository.uploadFiles().isSuccess()) {
+                    info("[SyncFiles] Files uploaded successfully")
+                    // 2 -> Sync file references info
+                    info("[SyncFiles] Syncing file references info...")
+                    if (uploadFileRepository.syncFileReferencesInfo()) {
+                        info("[SyncFiles] File references info synced successfully")
+                        // 3 -> download files
+                        info("[SyncFiles] Downloading files...")
+                        if (uploadFileRepository.downloadRemoteFiles().isSuccess()) {
+                            info("[SyncFiles] Files downloaded successfully")
+                        } else {
+                            logException("[SyncFiles] Error while downloading files")
+                        }
+                    } else {
+                        logException("[SyncFiles] Error while syncing file references info")
+                    }
+
+                } else {
+                    logException("[SyncFiles] Error while uploading files")
+                }
             }
 
             job.invokeOnCompletion {
                 it?.let {
                     logException("[SyncFiles] Error while uploading files", it)
-                }
+                } ?: info("[SyncFiles] Sync files completed")
                 job.cancel()
                 releaseProcess()
             }
         }
 
+    }
+
+    private fun List<SyncFileResult>.isSuccess(): Boolean {
+        return this.all { it is SyncFileResult.Success }
     }
 
     private fun takeProcess() {
