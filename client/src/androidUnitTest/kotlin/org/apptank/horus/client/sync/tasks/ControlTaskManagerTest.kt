@@ -72,7 +72,7 @@ class ControlTaskManagerTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseDriverFactory)
-            setupConfig(HorusConfig("http://dev.horus.com","local/path"))
+            setupConfig(getHorusConfigTest())
         }
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)

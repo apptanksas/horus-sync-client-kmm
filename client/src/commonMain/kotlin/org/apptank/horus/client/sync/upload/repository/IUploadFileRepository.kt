@@ -22,6 +22,13 @@ interface IUploadFileRepository {
 
 
     /**
+     * Downloads all files that are in the remote status.
+     *
+     * @return A list of [SyncFileResult] objects representing the result of the download operation.
+     */
+    suspend fun downloadRemoteFiles(): List<SyncFileResult>
+
+    /**
      * Synchronizes the file references info between the local and remote storage.
      *
      * @return `true` if the synchronization was successful, `false` otherwise.

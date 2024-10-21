@@ -5,7 +5,6 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import io.mockative.coEvery
 import kotlinx.coroutines.runBlocking
 import org.apptank.horus.client.MOCK_RESPONSE_FILES_INFO
 import org.apptank.horus.client.MOCK_RESPONSE_FILE_INFO
@@ -16,7 +15,6 @@ import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.generateFileDataImage
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
-import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.junit.Assert
 import org.junit.Test
 
@@ -123,13 +121,24 @@ class FileSynchronizationServiceTest : ServiceTest() {
         val service = FileSynchronizationService(mockEngine, BASE_URL)
 
         // When
-        val result = service.downloadFile(fileReference.toString())
+        val result = service.downloadFileByReferenceId(fileReference.toString())
+        val result2 = service.downloadFileByUrl("https://example.com/image.png")
 
         // Then
         Assert.assertTrue(result is DataResult.Success)
+        Assert.assertTrue(result2 is DataResult.Success)
         result.fold(
             onSuccess = {
-                Assert.assertArrayEquals(fileImage.data, it)
+                Assert.assertArrayEquals(fileImage.data, it.data)
+                Assert.assertEquals(fileImage.mimeType, it.mimeType)
+            },
+            onFailure = {
+                assert(false)
+            }
+        )
+        result2.fold(
+            onSuccess = {
+                Assert.assertArrayEquals(fileImage.data, it.data)
             },
             onFailure = {
                 assert(false)
@@ -152,9 +161,11 @@ class FileSynchronizationServiceTest : ServiceTest() {
         val service = FileSynchronizationService(mockEngine, BASE_URL)
 
         // When
-        val result = service.downloadFile(fileReference.toString())
+        val result = service.downloadFileByReferenceId(fileReference.toString())
+        val result2 = service.downloadFileByUrl("https://example.com/image.png")
 
         // Then
         Assert.assertTrue(result is DataResult.Failure)
+        Assert.assertTrue(result2 is DataResult.Failure)
     }
 }

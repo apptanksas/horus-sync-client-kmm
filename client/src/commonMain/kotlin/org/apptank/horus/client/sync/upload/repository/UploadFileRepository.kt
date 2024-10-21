@@ -16,6 +16,8 @@ import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
+import org.apptank.horus.client.exception.FileSizeExceededException
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.toFileUri
 import org.apptank.horus.client.extensions.toPath
@@ -23,6 +25,7 @@ import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileMimeType
 import org.apptank.horus.client.sync.upload.data.FileUploaded
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.data.SyncFileStatus
@@ -43,12 +46,24 @@ class UploadFileRepository(
      */
     override fun createFileLocal(fileData: FileData): Horus.FileReference {
 
+        fileData.getMimeType().let {
+            // Validate if the MIME type is allowed
+            if (!config.uploadFilesConfig.mimeTypesAllowed.contains(it)) {
+                throw FileMimeTypeNotAllowedException(it)
+            }
+        }
+
+        // Validate if the file size is exceeded
+        if (fileData.data.size > config.uploadFilesConfig.maxFileSize) {
+            throw FileSizeExceededException(config.uploadFilesConfig.maxFileSize)
+        }
+
         val fileReference = Horus.FileReference()
         val type = if (fileData.isImage()) SyncControl.FileType.IMAGE else SyncControl.FileType.FILE
 
         val basePathFile = getBasePathFile()
         val filename = "$fileReference.${fileData.getExtension()}"
-        val urlLocal = createFileInLocalStorage(fileData, filename, basePathFile)
+        val urlLocal = createFileInLocalStorage(fileData.data, filename, basePathFile)
 
         fileDatabaseHelper.insert(
             SyncControl.File(
@@ -76,25 +91,34 @@ class UploadFileRepository(
         val queryResult = fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL)
 
         queryResult.forEach { recordFile ->
-            recordFile.createFileData()?.let { fileData ->
-                // Upload file to service
-                service.uploadFile(recordFile.reference.toString(), fileData).coFold(
-                    onSuccess = { response ->
-                        val resultUpdate = fileDatabaseHelper.update(
-                            SyncControl.File(
-                                recordFile.reference,
-                                recordFile.type,
-                                SyncControl.FileStatus.SYNCED,
-                                recordFile.mimeType,
-                                urlRemote = response.url
+
+            runCatching {
+                recordFile.createFileData()?.let { fileData ->
+                    // Upload file to service
+                    service.uploadFile(recordFile.reference.toString(), fileData).coFold(
+                        onSuccess = { response ->
+                            val resultUpdate = fileDatabaseHelper.update(
+                                SyncControl.File(
+                                    recordFile.reference,
+                                    recordFile.type,
+                                    SyncControl.FileStatus.SYNCED,
+                                    recordFile.mimeType,
+                                    urlRemote = response.url
+                                )
                             )
-                        )
-                        output.add(if (resultUpdate) recordFile.reference.toSuccess() else recordFile.reference.toFailure())
-                    },
-                    onFailure = { _ ->
-                        output.add(recordFile.reference.toFailure())
-                    }
-                )
+                            output.add(
+                                if (resultUpdate) recordFile.reference.toSuccess() else recordFile.reference.toFailure(
+                                    Exception("Error updating file")
+                                )
+                            )
+                        },
+                        onFailure = { e ->
+                            output.add(recordFile.reference.toFailure(e))
+                        }
+                    )
+                }
+            }.getOrElse { e ->
+                output.add(recordFile.reference.toFailure(e))
             }
         }
 
@@ -133,6 +157,10 @@ class UploadFileRepository(
             fileReferencesFound.filter { fileReferencesInDatabase.none { file -> file.reference == it } }
         var isSuccessful = false
 
+        if (fileReferencesInRemote.isEmpty()) {
+            return true
+        }
+
         // 3. GET all file references status from the service and insert them into the database
         service.getFilesInfo(SyncDTO.Request.FilesInfoRequest(fileReferencesInRemote)).coFold(
             onSuccess = { response ->
@@ -164,6 +192,66 @@ class UploadFileRepository(
 
 
     /**
+     * Downloads all files that are in the remote status.
+     *
+     * @return A list of [SyncFileResult] indicating the result of the download operation.
+     */
+    override suspend fun downloadRemoteFiles(): List<SyncFileResult> {
+
+        val result = mutableListOf<SyncFileResult>()
+
+        fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.REMOTE).forEach { recordFile ->
+            runCatching {
+
+                recordFile.urlRemote?.let { url ->
+
+                    service.downloadFileByUrl(url).coFold(
+                        onSuccess = { fileData ->
+                            val mimeType =
+                                FileMimeType.fromType(fileData.mimeType)
+                                    ?: throw IllegalStateException(
+                                        "Mime type not found"
+                                    )
+                            val filename = "${recordFile.reference}.${mimeType.extension}"
+                            val fileLocalUri =
+                                createFileInLocalStorage(fileData.data, filename, getBasePathFile())
+
+                            val updateResult = fileDatabaseHelper.update(
+                                SyncControl.File(
+                                    recordFile.reference,
+                                    recordFile.type,
+                                    SyncControl.FileStatus.SYNCED,
+                                    mimeType.type,
+                                    urlLocal = fileLocalUri,
+                                    urlRemote = recordFile.urlRemote
+                                )
+                            )
+
+                            result.add(
+                                if (updateResult) recordFile.reference.toSuccess() else recordFile.reference.toFailure(
+                                    Exception("Error updating file")
+                                )
+                            )
+                        },
+                        onFailure = { e ->
+                            result.add(
+                                SyncFileResult.Failure(
+                                    recordFile.reference,
+                                    e
+                                )
+                            )
+                        })
+                }
+            }.getOrElse {
+                result.add(recordFile.reference.toFailure(it))
+            }
+        }
+
+        return result
+    }
+
+
+    /**
      * Get the URL of a file based on its reference.
      *
      * @param reference The reference of the file.
@@ -188,9 +276,6 @@ class UploadFileRepository(
         return fileDatabaseHelper.search(reference)?.urlLocal
     }
 
-    private fun downloadFiles(filesReferences: List<FileUploaded>) {
-        TODO()
-    }
 
     /**
      * Get the URL remote of a file based on its reference.
@@ -210,18 +295,18 @@ class UploadFileRepository(
     /**
      * Creates a file in the local storage and returns the URL.
      *
-     * @param fileData The file data to create the file from.
+     * @param data The data to create the file from.
      * @param filename The name of the file.
      * @param path The path to create the file in.
      * @return The URL of the created file.
      */
     private fun createFileInLocalStorage(
-        fileData: FileData,
+        data: ByteArray,
         filename: String,
         path: KmpFile
     ): String {
         val file = path.resolve(filename)
-        file.writeBytes(fileData.data)
+        file.writeBytes(data)
         return file.absolutePath.toFileUri()
     }
 
@@ -230,7 +315,8 @@ class UploadFileRepository(
      * If the path does not exist, it will be created.
      */
     private fun getBasePathFile(): KmpFile {
-        val basePath = KmpFile(normalizePath(config.baseStoragePath + HORUS_PATH_FILES))
+        val basePath =
+            KmpFile(normalizePath(config.uploadFilesConfig.baseStoragePath + HORUS_PATH_FILES))
 
         if (!basePath.exists()) {
             basePath.mkdirs()
@@ -267,8 +353,8 @@ class UploadFileRepository(
         return SyncFileResult.Success(Horus.FileReference(this))
     }
 
-    private fun CharSequence.toFailure(): SyncFileResult.Failure {
-        return SyncFileResult.Failure(Horus.FileReference(this))
+    private fun CharSequence.toFailure(e: Throwable): SyncFileResult.Failure {
+        return SyncFileResult.Failure(Horus.FileReference(this), e)
     }
 
     companion object {

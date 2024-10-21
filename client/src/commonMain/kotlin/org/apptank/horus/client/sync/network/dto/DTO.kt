@@ -160,5 +160,16 @@ sealed class SyncDTO {
             @SerialName("mime_type") val mimeType: String? = null,
             @SerialName("status") val status: Int? = null
         )
+
+        /**
+         * Response containing the data of a file.
+         *
+         * @param data The data of the file.
+         * @param mimeType The MIME type of the file.
+         */
+        data class FileData(
+            val data: ByteArray,
+            val mimeType: String,
+        )
     }
 }

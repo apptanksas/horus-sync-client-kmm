@@ -1,7 +1,5 @@
 package org.apptank.horus.client.sync.upload.data
 
-import org.apptank.horus.client.data.Horus
-
 
 /**
  * Represents a file data object containing the file data, filename, and MIME type.
@@ -31,6 +29,35 @@ data class FileData(
      */
     fun getExtension(): String {
         return filename.substringAfterLast(".")
+    }
+
+    /**
+     * Gets the MIME type of the file.
+     *
+     * @return The MIME type of the file.
+     */
+    fun getMimeType(): FileMimeType {
+
+        val mimeType = FileMimeType.fromType(mimeType)
+
+        if (mimeType != null) {
+            return mimeType
+        }
+
+        FileMimeType.fromExtension(getExtension())?.let {
+            return it
+        }
+
+        throw IllegalArgumentException("Invalid MIME type")
+    }
+
+    /**
+     * Gets the size of the file data.
+     *
+     * @return The size of the file data.
+     */
+    fun getSize(): Int {
+        return data.size
     }
 }
 
@@ -95,6 +122,6 @@ enum class SyncFileStatus(val id: Int) {
 
 sealed class SyncFileResult {
     data class Success(val fileReference: CharSequence) : SyncFileResult()
-    data class Failure(val fileReference: CharSequence) : SyncFileResult()
+    data class Failure(val fileReference: CharSequence, val exception: Throwable) : SyncFileResult()
 }
 

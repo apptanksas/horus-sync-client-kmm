@@ -28,9 +28,12 @@ import io.mockative.classOf
 import io.mockative.matchers.Matcher
 import io.mockative.mock
 import kotlinx.datetime.Clock
+import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.config.UploadFilesConfig
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
+import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
@@ -72,6 +75,16 @@ abstract class TestCase {
             throw IllegalStateException("File not created")
         }
         return file.absolutePath
+    }
+
+    protected fun getHorusConfigTest(): HorusConfig {
+        return HorusConfig(
+            "http://dev.horus.com", UploadFilesConfig(
+                "local/path",
+                FileMimeTypeGroup.IMAGES_PNG + FileMimeTypeGroup.IMAGES_JPEG,
+                1024 * 5 // 5MB
+            )
+        )
     }
 
     internal fun getMockValidateHashingTask(): ValidateHashingTask {

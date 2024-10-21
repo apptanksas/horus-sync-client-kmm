@@ -11,17 +11,22 @@ import kotlinx.coroutines.runBlocking
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.config.UploadFilesConfig
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
+import org.apptank.horus.client.exception.FileSizeExceededException
 import org.apptank.horus.client.extensions.toPath
 import org.apptank.horus.client.generateFileDataImage
 import org.apptank.horus.client.generateSyncControlFile
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
+import org.apptank.horus.client.sync.upload.data.FileData
+import org.apptank.horus.client.sync.upload.data.FileMimeType
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.data.SyncFileStatus
 import org.junit.Assert
@@ -52,7 +57,7 @@ class UploadFileRepositoryTest : TestCase() {
     @Before
     fun setUp() {
         repository = UploadFileRepository(
-            HorusConfig("http://dev.api", getLocalTestPath()),
+            getHorusConfigTest(),
             fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service
         )
     }
@@ -72,6 +77,43 @@ class UploadFileRepositoryTest : TestCase() {
                 .matches(Regex("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"))
         )
         verify { fileDatabaseHelper.insert(any()) }.wasInvoked()
+    }
+
+    @Test
+    fun testCreateFileLocalIsFailureByMimeTypeNotAllowed() {
+        // Given
+        val fileDataVideo = FileData(
+            byteArrayOf(0, 1, 2, 3),
+            "file." + FileMimeType.VIDEO_MPEG_4_VIDEO.extension,
+            FileMimeType.VIDEO_MPEG_4_VIDEO.type
+        )
+
+        // When
+        Assert.assertThrows(FileMimeTypeNotAllowedException::class.java) {
+            repository.createFileLocal(fileDataVideo)
+        }
+    }
+
+    @Test
+    fun testCreateFileLocalIsFailureBySizeExceeded() {
+        // Given
+        val repository = UploadFileRepository(
+            HorusConfig(
+                "http://test",
+                UploadFilesConfig("test", listOf(FileMimeType.IMAGE_PORTABLE_NETWORK_GRAPHICS), 1)
+            ),
+            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service
+        )
+        val fileData = FileData(
+            byteArrayOf(0, 1, 2, 3),
+            "file.png",
+            "image/png"
+        )
+
+        // When
+        Assert.assertThrows(FileSizeExceededException::class.java) {
+            repository.createFileLocal(fileData)
+        }
     }
 
     @Test
@@ -292,5 +334,29 @@ class UploadFileRepositoryTest : TestCase() {
 
         // Then
         Assert.assertFalse(result)
+    }
+
+    @Test
+    fun testDownloadFilesIsSuccess() = runBlocking {
+        val filesUploadedInRemote =
+            generateRandomArray { generateSyncControlFile(SyncControl.FileStatus.REMOTE) }
+        val fileDownloaded = SyncDTO.Response.FileData(byteArrayOf(0, 1, 2, 3), "image/png")
+
+        every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.REMOTE) }.returns(
+            filesUploadedInRemote
+        )
+        coEvery { service.downloadFileByUrl(any()) }.returns(DataResult.Success(fileDownloaded))
+        every { fileDatabaseHelper.update(any()) }.returns(true)
+
+        // When
+        val result = repository.downloadRemoteFiles()
+
+        // Then
+        verify { fileDatabaseHelper.update(any()) }.wasInvoked(filesUploadedInRemote.size)
+        Assert.assertEquals(
+            filesUploadedInRemote.size,
+            result.filter { it is SyncFileResult.Success }.size
+        )
+        Assert.assertEquals(0, result.filter { it is SyncFileResult.Failure }.size)
     }
 }
