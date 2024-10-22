@@ -509,6 +509,15 @@ object HorusDataFacade {
         return uploadFileRepository?.getImageUrl(reference)
     }
 
+    /**
+     * Retrieves if horus is ready for operations.
+     *
+     * @return `true` if horus is ready, `false` otherwise.
+     */
+    fun isReady(): Boolean {
+        return isReady
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Private methods
     // ---------------------------------------------------------------------------------------------

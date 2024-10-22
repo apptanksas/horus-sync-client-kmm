@@ -22,6 +22,10 @@ typealias Callback = () -> Unit
  */
 typealias CallbackNullable = Callback?
 
+/**
+ * Typealias for a simple suspend callback function that takes no arguments and returns no value.
+ */
+typealias SuspendedCallback = suspend () -> Unit
 
 /**
  * Typealias for a callback function that takes a [String] as an argument and returns a [String].

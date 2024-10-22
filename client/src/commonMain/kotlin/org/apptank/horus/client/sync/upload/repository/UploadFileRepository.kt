@@ -103,6 +103,7 @@ class UploadFileRepository(
                                     recordFile.type,
                                     SyncControl.FileStatus.SYNCED,
                                     recordFile.mimeType,
+                                    urlLocal = recordFile.urlLocal,
                                     urlRemote = response.url
                                 )
                             )

@@ -6,10 +6,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.base.SuspendedCallback
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
@@ -31,6 +34,7 @@ class SyncFileUploadedManager(
 
         EventBus.register(EventType.ON_READY) {
             isReady = true
+            syncFiles()
         }
     }
 
@@ -55,29 +59,7 @@ class SyncFileUploadedManager(
 
             val job = launch {
                 takeProcess()
-
-                // 1 -> Upload pending files
-                info("[SyncFiles] Uploading files...")
-                if (uploadFileRepository.uploadFiles().isSuccess()) {
-                    info("[SyncFiles] Files uploaded successfully")
-                    // 2 -> Sync file references info
-                    info("[SyncFiles] Syncing file references info...")
-                    if (uploadFileRepository.syncFileReferencesInfo()) {
-                        info("[SyncFiles] File references info synced successfully")
-                        // 3 -> download files
-                        info("[SyncFiles] Downloading files...")
-                        if (uploadFileRepository.downloadRemoteFiles().isSuccess()) {
-                            info("[SyncFiles] Files downloaded successfully")
-                        } else {
-                            logException("[SyncFiles] Error while downloading files")
-                        }
-                    } else {
-                        logException("[SyncFiles] Error while syncing file references info")
-                    }
-
-                } else {
-                    logException("[SyncFiles] Error while uploading files")
-                }
+                uploadFiles { syncFileReferencesInfo { downloadFiles { releaseProcess() } } }
             }
 
             job.invokeOnCompletion {
@@ -88,11 +70,73 @@ class SyncFileUploadedManager(
                 releaseProcess()
             }
         }
-
     }
 
-    private fun List<SyncFileResult>.isSuccess(): Boolean {
-        return this.all { it is SyncFileResult.Success }
+    private suspend fun uploadFiles(onContinue: SuspendedCallback) {
+        info("[SyncFiles] Uploading files...")
+
+        val uploadFilesResult = uploadFileRepository.uploadFiles()
+
+        if (uploadFilesResult.isFailure()) {
+            logException("[SyncFiles] Error while uploading files")
+            return
+        }
+
+        printLogUploadFilesResult(uploadFilesResult)
+        onContinue()
+    }
+
+    private suspend fun syncFileReferencesInfo(onContinue: SuspendedCallback) {
+        info("[SyncFiles] Syncing file references info...")
+
+        if (uploadFileRepository.syncFileReferencesInfo().isFalse()) {
+            logException("[SyncFiles] Error while syncing file references info")
+            return
+        }
+
+        info("[SyncFiles] File references info synced successfully")
+        onContinue()
+    }
+
+    private suspend fun downloadFiles(onContinue: SuspendedCallback) {
+        info("[SyncFiles] Downloading files...")
+        val downloadFilesResult = uploadFileRepository.downloadRemoteFiles()
+
+        if (downloadFilesResult.isFailure()) {
+            logException("[SyncFiles] Error while downloading files")
+            return
+        }
+
+        printLogDownloadFilesResult(downloadFilesResult)
+        onContinue()
+    }
+
+    private fun printLogUploadFilesResult(uploadFilesResult: List<SyncFileResult>) {
+        if (uploadFilesResult.countSuccess() > 0) {
+            info("[SyncFiles] Files uploaded successfully. [Success: ${uploadFilesResult.countSuccess()}]")
+        } else {
+            info("[SyncFiles] No files to upload.")
+        }
+    }
+
+    private fun printLogDownloadFilesResult(downloadFilesResult: List<SyncFileResult>) {
+        if (downloadFilesResult.countSuccess() > 0) {
+            info("[SyncFiles] Files downloaded successfully. [Success: ${downloadFilesResult.countSuccess()}]")
+        } else {
+            info("[SyncFiles] No files to download.")
+        }
+    }
+
+    private fun List<SyncFileResult>.isFailure(): Boolean {
+        return this.any { it is SyncFileResult.Failure }
+    }
+
+    private fun List<SyncFileResult>.countSuccess(): Int {
+        return this.count { it is SyncFileResult.Success }
+    }
+
+    private fun List<SyncFileResult>.countFailures(): Int {
+        return this.count { it is SyncFileResult.Failure }
     }
 
     private fun takeProcess() {
