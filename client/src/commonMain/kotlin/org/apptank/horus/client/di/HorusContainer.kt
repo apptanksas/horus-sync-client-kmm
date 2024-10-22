@@ -16,6 +16,7 @@ import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.database.SyncFileDatabaseHelper
 import org.apptank.horus.client.sync.manager.DispenserManager
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.sync.network.service.FileSynchronizationService
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
@@ -63,7 +64,7 @@ object HorusContainer {
 
     private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
 
-    private var syncFileUploadedManager: SyncFileUploadedManager? = null
+    private var syncFileUploadedManager: ISyncFileUploadedManager? = null
 
     private var dispenserManager: DispenserManager? = null
 
@@ -112,7 +113,7 @@ object HorusContainer {
      *
      * @param manager The [SyncFileUploadedManager] instance to set up.
      */
-    internal fun setupSyncFileUploadedManager(manager: SyncFileUploadedManager) {
+    internal fun setupSyncFileUploadedManager(manager: ISyncFileUploadedManager) {
         syncFileUploadedManager = manager
     }
 
@@ -356,7 +357,7 @@ object HorusContainer {
      *
      * @return A new instance of [SyncFileUploadedManager].
      */
-    internal fun getSyncFileUploadedManager(): SyncFileUploadedManager {
+    internal fun getSyncFileUploadedManager(): ISyncFileUploadedManager {
         if (syncFileUploadedManager == null) {
             syncFileUploadedManager = SyncFileUploadedManager(
                 getNetworkValidator(),
@@ -417,5 +418,6 @@ object HorusContainer {
         syncControlDatabaseHelper = null
         operationDatabaseHelper = null
         networkValidator = null
+        uploadFileRepository = null
     }
 }

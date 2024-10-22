@@ -14,12 +14,18 @@ interface IUploadFileRepository {
     fun createFileLocal(fileData: FileData): Horus.FileReference
 
     /**
+     * Validates if there are files to upload.
+     *
+     * @return `true` if there are files to upload, `false` otherwise.
+     */
+    fun hasFilesToUpload(): Boolean
+
+    /**
      * Uploads all files that are in the local status.
      *
      * @return A list of [SyncFileResult] objects representing the result of the upload operation.
      */
     suspend fun uploadFiles(): List<SyncFileResult>
-
 
     /**
      * Downloads all files that are in the remote status.

@@ -7,6 +7,7 @@ import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.sync.manager.DispenserManager
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.tasks.ControlTaskManager
 
@@ -14,14 +15,16 @@ import org.apptank.horus.client.tasks.ControlTaskManager
 object HorusLifeCycle : ILifeCycle {
 
     private val dispenserManager: DispenserManager by lazy { HorusContainer.getDispenserManager() }
-    private val syncFileUploadedManager: SyncFileUploadedManager by lazy { HorusContainer.getSyncFileUploadedManager() }
+    private val syncFileUploadedManager: ISyncFileUploadedManager by lazy { HorusContainer.getSyncFileUploadedManager() }
 
     private var callbackEventActionCreated: CallbackEvent = {
         dispenserManager.processBatch()
     }
 
     private var callbackSetupChanged: CallbackEvent = {
-        ControlTaskManager.start()
+        syncFileUploadedManager.syncFiles {
+            ControlTaskManager.start()
+        }
     }
 
     private val networkValidator: INetworkValidator by lazy { HorusContainer.getNetworkValidator() }
@@ -36,8 +39,9 @@ object HorusLifeCycle : ILifeCycle {
         }
 
         networkValidator.registerNetworkCallback()
-        ControlTaskManager.start()
-        syncFileUploadedManager.syncFiles()
+        syncFileUploadedManager.syncFiles {
+            ControlTaskManager.start()
+        }
     }
 
     override fun onPause() {

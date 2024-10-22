@@ -23,7 +23,9 @@ import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.removeIf
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
@@ -62,6 +64,14 @@ object HorusDataFacade {
         get() {
             if (field == null) {
                 field = HorusContainer.getRemoteSynchronizatorManager()
+            }
+            return field
+        }
+
+    private var syncFileUploadedManager: ISyncFileUploadedManager? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSyncFileUploadedManager()
             }
             return field
         }
@@ -435,17 +445,22 @@ object HorusDataFacade {
 
                 remoteSynchronizatorManager?.trySynchronizeData()
             }
-            start()
+            syncFileUploadedManager?.syncFiles {
+                start()
+            }
         }
     }
 
     /**
-     * Checks if there are pending actions to synchronize.
+     * Checks if there are pending actions to synchronize or files to upload.
      *
      * @return `true` if there are pending actions to synchronize, `false` otherwise.
      */
     fun hasDataToSync(): Boolean {
-        return syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasDataPending = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
+
+        return hasDataPending || hasFilesPending
     }
 
     /**
@@ -484,6 +499,7 @@ object HorusDataFacade {
 
     /**
      * Uploads a file to synchronize with the remote server.
+     * The synchronization is
      *
      * @param fileData The file data to upload.
      * @return A [Horus.FileReference] object representing the uploaded file.
@@ -632,5 +648,6 @@ object HorusDataFacade {
         operationDatabaseHelper = null
         syncControlDatabaseHelper = null
         remoteSynchronizatorManager = null
+        uploadFileRepository = null
     }
 }

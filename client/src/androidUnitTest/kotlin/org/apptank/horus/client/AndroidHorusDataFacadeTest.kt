@@ -27,6 +27,7 @@ import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf
 import io.mockative.coEvery
+import io.mockative.doesNothing
 import io.mockative.every
 import io.mockative.mock
 import io.mockative.verify
@@ -35,10 +36,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
@@ -79,6 +81,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
     @Mock
     val storageSettings = mock(classOf<Settings>())
 
+    @Mock
+    val fileUploadManager = mock(classOf<ISyncFileUploadedManager>())
+
     @Before
     fun setUp() {
 
@@ -94,6 +99,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             setupDatabaseFactory(databaseFactory)
             setupConfig(getHorusConfigTest())
             setupUploadFileRepository(uploadFileRepository)
+            setupSyncFileUploadedManager(fileUploadManager)
         }
     }
 
@@ -127,9 +133,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `when hasDataToSync return true`(): Unit = runBlocking {
         // Given
         val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
         with(HorusContainer) {
             setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+            setupUploadFileRepository(mockUploadFileRepository)
         }
 
         every {
@@ -147,6 +155,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 )
             )
         )
+        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
         // When
         val result = HorusDataFacade.hasDataToSync()
@@ -158,14 +167,18 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `when hasDataToSync return false`(): Unit = runBlocking {
         // Given
         val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
         with(HorusContainer) {
             setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+            setupUploadFileRepository(mockUploadFileRepository)
         }
 
         every {
             mockSyncControlDatabaseHelper.getPendingActions()
         }.returns(emptyList())
+
+        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
         // When
         val result = HorusDataFacade.hasDataToSync()
@@ -227,9 +240,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val mockSettings = mock(classOf<Settings>())
             val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
             val mockOperationDatabaseHelper = mock(classOf<IOperationDatabaseHelper>())
+            val mockSyncUploadFileManager = mock(classOf<ISyncFileUploadedManager>())
 
             HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
             HorusContainer.setupLogger(KotlinLogger())
+            HorusContainer
             every { mockNetworkValidator.isNetworkAvailable() }.returns(true)
             coEvery { mockMigrationService.getMigration() }.returns(
                 DataResult.Success(
@@ -266,6 +281,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
             coEvery { mockSyncService.postQueueActions(any()) }.returns(DataResult.Success(Unit))
             every { mockSyncControlDatabaseHelper.completeActions(any()) }.returns(true)
+            every { mockSyncUploadFileManager.syncFiles(any()) }.invokes {
+                (it[0] as Callback).invoke()
+            }
 
             with(HorusContainer) {
                 setupMigrationService(mockMigrationService)
@@ -281,6 +299,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
                         mockSyncService
                     )
                 )
+                setupSyncFileUploadedManager(mockSyncUploadFileManager)
             }
 
             // When

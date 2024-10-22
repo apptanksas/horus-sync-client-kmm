@@ -81,6 +81,16 @@ class UploadFileRepository(
     }
 
     /**
+     * Validates if there are files to upload.
+     *
+     * @return `true` if there are files to upload, `false` otherwise.
+     */
+    override fun hasFilesToUpload(): Boolean {
+        return fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL).isNotEmpty()
+    }
+
+
+    /**
      * Uploads all files that are in the local status.
      *
      * @return A list of [SyncFileResult] indicating the result of the upload operation.

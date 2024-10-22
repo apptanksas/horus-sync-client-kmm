@@ -22,7 +22,7 @@ class SyncFileUploadedManager(
     private val networkValidator: INetworkValidator,
     private val uploadFileRepository: IUploadFileRepository,
     dispatcher: CoroutineDispatcher = Dispatchers.IO,
-) {
+) : ISyncFileUploadedManager {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private var isReady: Boolean = false
@@ -38,7 +38,7 @@ class SyncFileUploadedManager(
         }
     }
 
-    fun syncFiles() {
+    override fun syncFiles(onCompleted: Callback) {
 
         if (!isReady) {
             info("[SyncFiles] Horus is not ready")
@@ -64,10 +64,11 @@ class SyncFileUploadedManager(
 
             job.invokeOnCompletion {
                 it?.let {
-                    logException("[SyncFiles] Error while uploading files", it)
+                    logException("[SyncFiles] Error sync files", it)
                 } ?: info("[SyncFiles] Sync files completed")
                 job.cancel()
                 releaseProcess()
+                onCompleted()
             }
         }
     }

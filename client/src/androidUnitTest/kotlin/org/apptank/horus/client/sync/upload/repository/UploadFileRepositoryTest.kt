@@ -229,6 +229,38 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
+    fun testHasFilesToUploadIsTrue() {
+        // Given
+        val recordFiles = generateArray {
+            generateSyncControlFile(SyncControl.FileStatus.LOCAL, getLocalTestPath()).also {
+                it.urlLocal?.let {
+                    createFileInLocalStorage(it.toPath())
+                }
+            }
+        }
+
+        every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(recordFiles)
+
+        // When
+        val result = repository.hasFilesToUpload()
+
+        // Then
+        Assert.assertTrue(result)
+    }
+
+    @Test
+    fun testHasFilesToUploadIsFalse() {
+        // Given
+        every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(emptyList())
+
+        // When
+        val result = repository.hasFilesToUpload()
+
+        // Then
+        Assert.assertFalse(result)
+    }
+
+    @Test
     fun testSyncFileReferencesIsSuccess() = runBlocking {
         // Given
         val entities = generateRandomArray { "entity_" + Random.nextInt(1, 999999) }
