@@ -17,6 +17,7 @@ import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,6 +34,9 @@ class DispenserManagerTest : TestCase() {
     @Mock
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
+    @Mock
+    val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
+
     private val eventBus = EventBus
 
     private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
@@ -47,6 +51,7 @@ class DispenserManagerTest : TestCase() {
             networkValidator,
             syncControlDatabaseHelper,
             synchronizationService,
+            mockUploadFileRepository,
             eventBus,
             Dispatchers.Default,
             0

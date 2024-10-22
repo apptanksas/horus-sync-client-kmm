@@ -22,9 +22,7 @@ object HorusLifeCycle : ILifeCycle {
     }
 
     private var callbackSetupChanged: CallbackEvent = {
-        syncFileUploadedManager.syncFiles {
-            ControlTaskManager.start()
-        }
+        ControlTaskManager.start()
     }
 
     private val networkValidator: INetworkValidator by lazy { HorusContainer.getNetworkValidator() }
@@ -39,9 +37,8 @@ object HorusLifeCycle : ILifeCycle {
         }
 
         networkValidator.registerNetworkCallback()
-        syncFileUploadedManager.syncFiles {
-            ControlTaskManager.start()
-        }
+        ControlTaskManager.start()
+        syncFileUploadedManager.syncFiles()
     }
 
     override fun onPause() {

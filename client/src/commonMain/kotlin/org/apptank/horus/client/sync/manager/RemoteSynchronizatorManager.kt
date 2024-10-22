@@ -22,6 +22,8 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 
 
 /**
@@ -42,6 +44,7 @@ internal class RemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
+    private val uploadFileRepository: IUploadFileRepository,
     private val event: EventBus = EventBus,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxAttempts: Int = 3
@@ -82,6 +85,11 @@ internal class RemoteSynchronizatorManager(
             val job = launch {
 
                 takeProcess()
+
+                if (uploadFileRepository.hasFilesToUpload()) {
+                    warn("There are files to upload")
+                    return@launch
+                }
 
                 val pendingActions = syncControlDatabaseHelper.getPendingActions()
 

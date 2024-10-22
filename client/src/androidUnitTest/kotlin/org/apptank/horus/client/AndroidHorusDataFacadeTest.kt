@@ -241,6 +241,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
             val mockOperationDatabaseHelper = mock(classOf<IOperationDatabaseHelper>())
             val mockSyncUploadFileManager = mock(classOf<ISyncFileUploadedManager>())
+            val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
             HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
             HorusContainer.setupLogger(KotlinLogger())
@@ -284,6 +285,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             every { mockSyncUploadFileManager.syncFiles(any()) }.invokes {
                 (it[0] as Callback).invoke()
             }
+            every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
             with(HorusContainer) {
                 setupMigrationService(mockMigrationService)
@@ -296,7 +298,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
                     RemoteSynchronizatorManager(
                         mockNetworkValidator,
                         mockSyncControlDatabaseHelper,
-                        mockSyncService
+                        mockSyncService,
+                        mockUploadFileRepository
                     )
                 )
                 setupSyncFileUploadedManager(mockSyncUploadFileManager)

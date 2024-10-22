@@ -346,7 +346,8 @@ object HorusContainer {
             remoteSynchronizatorManager = RemoteSynchronizatorManager(
                 getNetworkValidator(),
                 getSyncControlDatabaseHelper(),
-                getSynchronizationService()
+                getSynchronizationService(),
+                getUploadFileRepository()
             )
         }
         return remoteSynchronizatorManager!!
