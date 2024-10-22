@@ -85,6 +85,6 @@ internal data class Cursor(
  * @param T The type of the column value.
  */
 internal data class CursorValue<T>(
-    val value: T,
+    val value: T?,
     val column: Column
 )

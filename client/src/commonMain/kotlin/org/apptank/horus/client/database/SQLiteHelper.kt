@@ -236,13 +236,13 @@ abstract class SQLiteHelper(
             columns.forEach { column ->
                 cursorValues.add(
                     when (column.type) {
-                        "INTEGER" -> CursorValue(cursor.getRequireInt(column.position), column)
-                        "STRING" -> CursorValue(cursor.getRequireString(column.position), column)
-                        "TEXT" -> CursorValue(cursor.getRequireString(column.position), column)
-                        "REAL" -> CursorValue(cursor.getRequireDouble(column.position), column)
-                        "BOOLEAN" -> CursorValue(cursor.getRequireBoolean(column.position), column)
+                        "INTEGER" -> CursorValue(cursor.getLong(column.position), column)
+                        "STRING" -> CursorValue(cursor.getString(column.position), column)
+                        "TEXT" -> CursorValue(cursor.getString(column.position), column)
+                        "REAL" -> CursorValue(cursor.getDouble(column.position), column)
+                        "BOOLEAN" -> CursorValue(cursor.getBoolean(column.position), column)
                         "FLOAT" -> CursorValue(
-                            cursor.getRequireDouble(column.position).toFloat(),
+                            cursor.getDouble(column.position)?.toFloat(),
                             column
                         )
 

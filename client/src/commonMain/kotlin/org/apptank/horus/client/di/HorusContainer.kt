@@ -14,8 +14,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
+import org.apptank.horus.client.database.SyncFileDatabaseHelper
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
+import org.apptank.horus.client.sync.network.service.FileSynchronizationService
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.sync.upload.repository.UploadFileRepository
@@ -174,6 +176,10 @@ object HorusContainer {
             factory.getDatabaseName(),
             factory.getDriver()
         )
+        syncFilesDatabaseHelper = SyncFileDatabaseHelper(
+            factory.getDatabaseName(),
+            factory.getDriver()
+        )
     }
 
     /**
@@ -246,9 +252,11 @@ object HorusContainer {
      * @return The [IFileSynchronizationService] instance.
      * @throws IllegalStateException if the file synchronization service is not set.
      */
-    internal fun getFileSynchronizationService(): IFileSynchronizationService {
-        return fileSynchronizationService
-            ?: throw IllegalStateException("FileSynchronizationService not set")
+    internal fun getFileSynchronizationService(): IFileSynchronizationService{
+        if (fileSynchronizationService == null) {
+            fileSynchronizationService = FileSynchronizationService(httpClient.engine, getConfig().baseUrl)
+        }
+        return fileSynchronizationService!!
     }
 
     /**

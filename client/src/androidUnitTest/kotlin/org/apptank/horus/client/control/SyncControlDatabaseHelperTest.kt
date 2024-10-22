@@ -13,6 +13,7 @@ import org.apptank.horus.client.migration.domain.AttributeType
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
 
 
 class SyncControlDatabaseHelperTest : TestCase() {
@@ -222,9 +223,11 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val entity = "entity123"
         val attributes = listOf(
             Horus.Attribute("id", "1"),
-            Horus.Attribute("name", "name")
+            Horus.Attribute("name", "name"),
+            Horus.Attribute("flag", true),
+            Horus.Attribute("number", Random.nextInt()),
         )
-        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT, flag BOOLEAN)")
         driver.registerEntity(entity)
 
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -389,11 +392,11 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getEntityAttributesWithTypeIsSuccess(){
+    fun getEntityAttributesWithTypeIsSuccess() {
         // Given
         val anyEntity = "entity_123"
 
-        driver.createTable(anyEntity, mapOf("id" to "TEXT", "name" to "TEXT","age" to "INTEGER"))
+        driver.createTable(anyEntity, mapOf("id" to "TEXT", "name" to "TEXT", "age" to "INTEGER"))
 
         driver.registerEntity(anyEntity)
         driver.registerEntityAttribute(anyEntity, "id", AttributeType.Text)
@@ -401,7 +404,10 @@ class SyncControlDatabaseHelperTest : TestCase() {
         driver.registerEntityAttribute(anyEntity, "age", AttributeType.Integer)
 
         // When
-        val attributesInteger = controlManagerDatabaseHelper.getEntityAttributesWithType(anyEntity,AttributeType.Integer)
+        val attributesInteger = controlManagerDatabaseHelper.getEntityAttributesWithType(
+            anyEntity,
+            AttributeType.Integer
+        )
 
         // Then
         Assert.assertEquals(1, attributesInteger.size)

@@ -612,7 +612,6 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // When
         val entity =
             HorusDataFacade.getById("measures", uuid())
-
         // Then
         Assert.assertNull(entity)
     }

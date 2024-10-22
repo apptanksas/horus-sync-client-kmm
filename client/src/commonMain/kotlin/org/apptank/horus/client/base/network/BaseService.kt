@@ -241,7 +241,7 @@ internal abstract class BaseService(
                 is Boolean -> append(key, value)
                 is ByteArray -> append(key, value)
                 is FileData -> append(key, value.data, Headers.build {
-                    append(HttpHeaders.ContentType, value.mimeType)
+                    append(HttpHeaders.ContentType, "multipart/form-data")
                     append(HttpHeaders.ContentDisposition, "filename=\"${value.filename}\"")
                 })
 
