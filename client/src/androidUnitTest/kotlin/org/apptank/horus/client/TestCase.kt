@@ -80,7 +80,7 @@ abstract class TestCase {
     protected fun getHorusConfigTest(): HorusConfig {
         return HorusConfig(
             "http://dev.horus.com", UploadFilesConfig(
-                "local/path",
+                getLocalTestPath(),
                 FileMimeTypeGroup.IMAGES_PNG + FileMimeTypeGroup.IMAGES_JPEG,
                 1024 * 5 // 5MB
             )
