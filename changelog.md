@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0
+
+- Added support to upload files to the server and synchronize them.
+- Added method into `HorusDataFacade` to upload files.
+- Added method into `HorusDataFacade` to get the url of the file.
+- Added method into `HorusDataFacade` to validate if horus is ready.
+- [BreakingChange] HorusConfig now receives new param called `UploadFilesConfig` to configure the
+  upload files.
+
 ## v0.2.0
 
 - Added method into `HorusDataFacade` to force a synchronization.

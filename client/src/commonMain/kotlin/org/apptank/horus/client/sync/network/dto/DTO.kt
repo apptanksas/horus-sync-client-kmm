@@ -58,6 +58,17 @@ sealed class SyncDTO {
             val entity: String,
             val hash: String
         )
+
+        /**
+         * Request to retrieve information about files.
+         *
+         * @param referencesId The IDs of the files.
+         */
+        @Serializable
+        data class FilesInfoRequest(
+            @SerialName("ids")
+            val referencesId: List<String>
+        )
     }
 
     //----------------------------------------------------------------------------------------------
@@ -135,6 +146,30 @@ sealed class SyncDTO {
         data class EntityIdHash(
             val id: String? = null,
             @SerialName("sync_hash") val hash: String? = null
+        )
+
+        /**
+         * Response containing the URL of an uploaded file.
+         *
+         * @param url The URL of the uploaded file.
+         */
+        @Serializable
+        data class FileInfoUploaded(
+            @SerialName("id") val id: String? = null,
+            @SerialName("url") val url: String? = null,
+            @SerialName("mime_type") val mimeType: String? = null,
+            @SerialName("status") val status: Int? = null
+        )
+
+        /**
+         * Response containing the data of a file.
+         *
+         * @param data The data of the file.
+         * @param mimeType The MIME type of the file.
+         */
+        data class FileData(
+            val data: ByteArray,
+            val mimeType: String,
         )
     }
 }

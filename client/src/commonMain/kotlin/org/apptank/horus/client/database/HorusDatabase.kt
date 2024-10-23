@@ -2,12 +2,14 @@ package org.apptank.horus.client.database
 
 import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
-import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import org.apptank.horus.client.control.EntitiesTable
+import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.QueueActionsTable
-import org.apptank.horus.client.control.SyncControlTable
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlTable
+import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.handle
@@ -80,6 +82,8 @@ class HorusDatabase(
                 execute(EntitiesTable.SQL_CREATE_TABLE)
                 execute(SyncControlTable.SQL_CREATE_TABLE)
                 execute(QueueActionsTable.SQL_CREATE_TABLE)
+                execute(SyncFileTable.SQL_CREATE_TABLE)
+                execute(EntityAttributesTable.SQL_CREATE_TABLE)
 
                 databaseCreatorDelegate?.createTables {
                     execute(Random.nextInt(), it, 0)
@@ -91,7 +95,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            flushCache()
+            MemoryCache.flushCache()
             return QueryResult.Value(Unit)
         }
 
@@ -133,9 +137,19 @@ class HorusDatabase(
         ): QueryResult.Value<Unit> {
             driver.handle {
 
-                databaseUpgradeDelegate?.migrate(oldVersion, newVersion) {
-                    driver.execute(Random.nextInt(), it, 0)
-                    info("[Migration] Executed: $it")
+                databaseUpgradeDelegate?.migrate(oldVersion, newVersion) { sql, entity, attribute ->
+                    driver.execute(Random.nextInt(), sql, 0)
+                    info("[Migration: Alter] Executed: $sql")
+
+                    // Insert new attributes into the entity attributes table usually for new attributes
+                    attribute?.let {
+                        execute(
+                            createSQLInsert(
+                                EntityAttributesTable.TABLE_NAME,
+                                EntityAttributesTable.mapToCreate(entity, it.name, it.type)
+                            )
+                        )
+                    }
                 }
 
                 // Insert entities into the entities table indicating if they are writable
@@ -143,7 +157,7 @@ class HorusDatabase(
                     insertEntity(entity)
                 }
             }
-            flushCache()
+            MemoryCache.flushCache()
             callbacks.forEach {
                 if (newVersion >= it.afterVersion) {
                     it.block(driver)
@@ -161,6 +175,14 @@ class HorusDatabase(
                         EntitiesTable.mapToCreate(entity.name, entity.isWritable())
                     )
                 )
+                entity.attributes.forEach {
+                    execute(
+                        createSQLInsert(
+                            EntityAttributesTable.TABLE_NAME,
+                            EntityAttributesTable.mapToCreate(entity.name, it.name, it.type)
+                        )
+                    )
+                }
             } catch (e: Exception) {
                 // Ignore
                 logException("[Migration] Error insert entity", e)

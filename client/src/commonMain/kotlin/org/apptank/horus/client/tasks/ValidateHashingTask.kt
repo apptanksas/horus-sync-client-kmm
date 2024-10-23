@@ -1,7 +1,7 @@
 package org.apptank.horus.client.tasks
 
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.hashing.AttributeHasher

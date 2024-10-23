@@ -1,6 +1,6 @@
 package org.apptank.horus.client.database.builder
 
-import org.apptank.horus.client.database.SQL
+import org.apptank.horus.client.database.struct.SQL
 import org.junit.Assert
 import org.junit.Test
 
@@ -97,7 +97,7 @@ class SimpleQueryBuilderTest {
     @Test
     fun validateWithWhereAndJoinOrGrouped() {
         val expected = "SELECT * FROM category WHERE (id > 120 AND date = '2023') " +
-                "AND (is_male = 1 OR age < 10)"
+                "AND (is_male = 1 OR age < 10) AND (type IN ('A','B'))"
         val builder = SimpleQueryBuilder("category")
 
         builder
@@ -127,7 +127,34 @@ class SimpleQueryBuilderTest {
                         10
                     ), SQL.Comparator.LESS_THAN
                 ),
+            ).whereIn(
+                "type",
+                listOf("A", "B")
             )
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereInInteger() {
+        val expected = "SELECT * FROM category WHERE id IN (1,2,3)"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.whereIn("id", listOf(1, 2, 3))
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereInString() {
+        val expected = "SELECT * FROM category WHERE name IN ('John','Doe')"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.whereIn("name", listOf("John", "Doe"))
 
         val result = builder.build()
 

@@ -4,6 +4,7 @@ import org.apptank.horus.client.base.DataMap
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+
 /**
  * SyncControl is a sealed class that encapsulates various operations, statuses, and actions used for synchronization control.
  * It provides a structure for handling synchronization processes such as validations, initial syncs, and checkpoints.
@@ -94,6 +95,71 @@ sealed class SyncControl {
                 entries.find { it.id == id } ?: throw IllegalArgumentException("Invalid id")
         }
     }
+
+    /**
+     * Enum representing the status of a file.
+     *
+     * @param id The identifier for the file status.
+     */
+    enum class FileStatus(val id: Int) {
+        LOCAL(1),
+        REMOTE(2),
+        SYNCED(3);
+
+        companion object {
+            /**
+             * Retrieves the FileStatus enum based on its ID.
+             *
+             * @param id The identifier for the file status.
+             * @return The corresponding FileStatus enum.
+             * @throws IllegalArgumentException If the ID does not correspond to any valid file status.
+             */
+            fun fromId(id: Int): FileStatus =
+                entries.find { it.id == id } ?: throw IllegalArgumentException("Invalid id")
+        }
+    }
+
+    /**
+     * Enum representing the type of file.
+     *
+     * @param id The identifier for the file type.
+     */
+    enum class FileType(val id: Int) {
+        FILE(0),
+        IMAGE(1);
+
+        companion object {
+            /**
+             * Retrieves the FileType enum based on its ID.
+             *
+             * @param id The identifier for the file type.
+             * @return The corresponding FileType enum.
+             * @throws IllegalArgumentException If the ID does not correspond to any valid file type.
+             */
+            fun fromId(id: Int): FileType =
+                entries.find { it.id == id } ?: throw IllegalArgumentException("Invalid id")
+        }
+    }
+
+    /**
+     * Data class representing a file to be synchronized.
+     *
+     * @param reference The unique reference for the file.
+     * @param type The type of file.
+     * @param status The status of the file.
+     * @param urlLocal The local URL of the file.
+     * @param urlRemote The remote URL of the file.
+     * @param mimeType The MIME type of the file.
+     */
+    data class File(
+        val reference: CharSequence,
+        val type: FileType,
+        val status: FileStatus,
+        val mimeType: String,
+        val urlLocal: String? = null,
+        val urlRemote: String? = null
+    )
+
 
     /**
      * Data class representing an action performed during synchronization.

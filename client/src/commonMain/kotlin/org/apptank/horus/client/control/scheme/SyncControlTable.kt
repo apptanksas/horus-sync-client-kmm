@@ -1,5 +1,6 @@
-package org.apptank.horus.client.control
+package org.apptank.horus.client.control.scheme
 
+import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.utils.SystemTime
 
 /**

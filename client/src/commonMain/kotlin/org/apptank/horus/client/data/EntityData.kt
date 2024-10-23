@@ -1,5 +1,8 @@
 package org.apptank.horus.client.data
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
 
 /**
  * A sealed class representing various elements related to entities in the Horus system.
@@ -108,4 +111,37 @@ sealed class Horus {
         val entity: String,
         val hash: String
     )
+
+    /**
+     * Represents a file reference object containing the file ID.
+     *
+     * @property id The ID of the file.
+     * @property length The length of the ID.
+     * @constructor Creates a new file reference object with the given ID and length.
+     * @return A new file reference object.
+     */
+    data class FileReference
+    @OptIn(ExperimentalUuidApi::class)
+    internal constructor(
+        private val id: CharSequence = Uuid.random().toString(),
+        override val length: Int = id.length
+    ) :
+        Comparable<FileReference>, CharSequence {
+
+        override fun compareTo(other: FileReference): Int {
+            return id.toString().compareTo(id.toString())
+        }
+
+        override fun get(index: Int): Char {
+            return id[index]
+        }
+
+        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+            return id.subSequence(startIndex, endIndex)
+        }
+
+        override fun toString(): String {
+            return id.toString()
+        }
+    }
 }

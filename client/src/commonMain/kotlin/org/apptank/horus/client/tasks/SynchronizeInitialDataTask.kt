@@ -2,11 +2,11 @@ package org.apptank.horus.client.tasks
 
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.data.Horus
-import org.apptank.horus.client.database.IOperationDatabaseHelper
-import org.apptank.horus.client.database.toRecordsInsert
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.sync.network.dto.toListEntityData
 import org.apptank.horus.client.sync.network.service.ISynchronizationService

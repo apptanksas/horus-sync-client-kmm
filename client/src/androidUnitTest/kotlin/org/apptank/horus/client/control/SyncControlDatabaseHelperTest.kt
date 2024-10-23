@@ -3,10 +3,13 @@ package org.apptank.horus.client.control
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
+import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.database.HorusDatabase
-import org.apptank.horus.client.database.SQLiteHelper
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.execute
+import org.apptank.horus.client.migration.domain.AttributeType
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +27,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
         HorusDatabase.Schema.create(driver)
-        SQLiteHelper.flushCache()
+        MemoryCache.flushCache()
     }
 
 
@@ -220,9 +223,11 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val entity = "entity123"
         val attributes = listOf(
             Horus.Attribute("id", "1"),
-            Horus.Attribute("name", "name")
+            Horus.Attribute("name", "name"),
+            Horus.Attribute("flag", true),
+            Horus.Attribute("number", Random.nextInt()),
         )
-        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT, flag BOOLEAN)")
         driver.registerEntity(entity)
 
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -319,7 +324,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun validateIsEntitiesIsWritable(){
+    fun validateIsEntitiesIsWritable() {
 
         val entityWritable = "entity_writable_123"
         val entityReadOnly = "entity_read_only_423"
@@ -340,7 +345,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun getWritableEntitiesIsSuccess(){
+    fun getWritableEntitiesIsSuccess() {
         // Given
         val entityWritable = "entity_writable_123"
         val entityReadOnly = "entity_read_only_423"
@@ -358,5 +363,54 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(1, writableEntities.size)
         assert(writableEntities.contains(entityWritable))
         assert(!writableEntities.contains(entityReadOnly))
+    }
+
+    @Test
+    fun getEntitiesWithFileReferencesIsSuccess() {
+        // Given
+        val anyEntity = "entity_123"
+        val entityWithFileReferences = "entity_with_file_references_123"
+
+        driver.createTable(anyEntity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.createTable(entityWithFileReferences, mapOf("id" to "TEXT", "image" to "TEXT"))
+
+        driver.registerEntity(anyEntity)
+        driver.registerEntityAttribute(anyEntity, "id", AttributeType.Text)
+        driver.registerEntityAttribute(anyEntity, "name", AttributeType.Text)
+
+        driver.registerEntity(entityWithFileReferences)
+        driver.registerEntityAttribute(entityWithFileReferences, "id", AttributeType.Text)
+        driver.registerEntityAttribute(entityWithFileReferences, "image", AttributeType.RefFile)
+
+        // When
+        val entitiesWithFileReferences =
+            controlManagerDatabaseHelper.getEntitiesWithAttributeType(AttributeType.RefFile)
+
+        // Then
+        Assert.assertEquals(1, entitiesWithFileReferences.size)
+        assert(entitiesWithFileReferences.contains(entityWithFileReferences))
+    }
+
+    @Test
+    fun getEntityAttributesWithTypeIsSuccess() {
+        // Given
+        val anyEntity = "entity_123"
+
+        driver.createTable(anyEntity, mapOf("id" to "TEXT", "name" to "TEXT", "age" to "INTEGER"))
+
+        driver.registerEntity(anyEntity)
+        driver.registerEntityAttribute(anyEntity, "id", AttributeType.Text)
+        driver.registerEntityAttribute(anyEntity, "name", AttributeType.Text)
+        driver.registerEntityAttribute(anyEntity, "age", AttributeType.Integer)
+
+        // When
+        val attributesInteger = controlManagerDatabaseHelper.getEntityAttributesWithType(
+            anyEntity,
+            AttributeType.Integer
+        )
+
+        // Then
+        Assert.assertEquals(1, attributesInteger.size)
+        Assert.assertEquals("age", attributesInteger.first())
     }
 }

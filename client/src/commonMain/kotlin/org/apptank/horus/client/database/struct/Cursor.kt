@@ -1,9 +1,10 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.database.struct
 
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.serialization.AnySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
+import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
  * Represents a column in a database table.
@@ -12,12 +13,14 @@ import kotlinx.serialization.modules.serializersModuleOf
  * @property name The name of the column.
  * @property type The data type of the column.
  * @property nullable Indicates whether the column can have null values.
+ * @property format The format of the column value.
  */
 internal data class Column(
     val position: Int,
     val name: String,
     val type: String,
-    val nullable: Boolean
+    val nullable: Boolean,
+    val format: AttributeType? = null
 )
 
 /**
@@ -42,6 +45,16 @@ internal data class Cursor(
      */
     fun <T> getValue(attribute: String): T {
         return values.first { it.column.name == attribute }.value as T
+    }
+
+    /**
+     * Retrieves the value of a specified column or null if the column does not exist.
+     *
+     * @param attribute The name of the column to retrieve the value from.
+     * @return The value of the specified column or null if the column does not exist.
+     */
+    fun <T> getValueOrNull(attribute: String): T? {
+        return values.firstOrNull { it.column.name == attribute }?.value as T?
     }
 
     /**
@@ -72,6 +85,6 @@ internal data class Cursor(
  * @param T The type of the column value.
  */
 internal data class CursorValue<T>(
-    val value: T,
+    val value: T?,
     val column: Column
 )

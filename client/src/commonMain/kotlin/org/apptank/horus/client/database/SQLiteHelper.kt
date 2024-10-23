@@ -4,10 +4,17 @@ import app.cash.sqldelight.TransacterImpl
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import org.apptank.horus.client.base.CallbackOnParseStringNullable
 import org.apptank.horus.client.base.DataMap
-import org.apptank.horus.client.control.EntitiesTable
+import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.Column
+import org.apptank.horus.client.database.struct.Cursor
+import org.apptank.horus.client.database.struct.CursorValue
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireDouble
@@ -17,6 +24,7 @@ import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.notContains
+import org.apptank.horus.client.migration.domain.AttributeType
 import kotlin.random.Random
 
 /**
@@ -37,14 +45,13 @@ abstract class SQLiteHelper(
      */
     internal fun getTableEntities(): List<InternalModel.TableEntity> {
 
-        if (CACHE_TABLES[databaseName]?.isNotEmpty() == true) {
-            return CACHE_TABLES[databaseName] ?: emptyList()
+        if (MemoryCache.hasTables(databaseName)) {
+            return MemoryCache.getTables(databaseName) ?: emptyList()
         }
 
         val tables = mutableListOf<InternalModel.TableEntity>()
 
-        val simpleQuery = SimpleQueryBuilder(EntitiesTable.TABLE_NAME)
-            .build()
+        val simpleQuery = SimpleQueryBuilder(EntitiesTable.TABLE_NAME).build()
 
         this.driver.handle {
             // Query tables
@@ -59,7 +66,10 @@ abstract class SQLiteHelper(
         }
 
         return tables.also {
-            CACHE_TABLES[databaseName] = it
+            MemoryCache.setTables(
+                databaseName,
+                it
+            )
         }
     }
 
@@ -87,26 +97,32 @@ abstract class SQLiteHelper(
      */
     internal fun getColumns(tableName: String): List<Column> {
 
-        if (CACHE_COLUMN_NAMES[databaseName]?.contains(tableName) == true) {
-            return CACHE_COLUMN_NAMES[databaseName]?.get(tableName) ?: emptyList()
+        if (MemoryCache.hasTableColumnNames(databaseName, tableName)) {
+            return MemoryCache.getTableColumnNames(databaseName, tableName) ?: emptyList()
         }
+
         val query = "PRAGMA table_info($tableName);" // Query columns
 
         val columns = driver.handle {
+
             rawQuery(query) { cursor ->
+                val name = cursor.getRequireString(1)
                 Column(
                     cursor.getRequireInt(0),
-                    cursor.getRequireString(1),
+                    name,
                     cursor.getRequireString(2),
                     cursor.getRequireBoolean(3).not(),
+                    getQueryColumnAttributeType(tableName, name)
                 )
             }
         }
 
         return columns.also {
-            if (CACHE_COLUMN_NAMES[databaseName] == null)
-                CACHE_COLUMN_NAMES[databaseName] = mutableMapOf()
-            CACHE_COLUMN_NAMES[databaseName]?.set(tableName, it)
+            MemoryCache.setTableColumnNames(
+                databaseName,
+                tableName,
+                it
+            )
         }
     }
 
@@ -196,6 +212,12 @@ abstract class SQLiteHelper(
         return executeDelete(query)
     }
 
+    /**
+     * Executes an SQL query to insert data into a table.
+     *
+     * @param query The SQL query to execute.
+     * @throws IllegalStateException If the insertion fails.
+     */
     private fun executeInsertOrThrow(query: String) {
         driver.handle {
             if (execute(null, query, 0).value == 0L) {
@@ -204,6 +226,14 @@ abstract class SQLiteHelper(
         }
     }
 
+    /**
+     * Builds a list of [Cursor] objects from a SQL cursor.
+     *
+     * @param tableName The name of the table.
+     * @param attributesSelected The list of selected attributes.
+     * @param cursor The SQL cursor.
+     * @return A list of [Cursor] objects.
+     */
     private fun buildCursorValues(
         tableName: String,
         attributesSelected: List<String>,
@@ -220,13 +250,13 @@ abstract class SQLiteHelper(
             columns.forEach { column ->
                 cursorValues.add(
                     when (column.type) {
-                        "INTEGER" -> CursorValue(cursor.getRequireInt(column.position), column)
-                        "STRING" -> CursorValue(cursor.getRequireString(column.position), column)
-                        "TEXT" -> CursorValue(cursor.getRequireString(column.position), column)
-                        "REAL" -> CursorValue(cursor.getRequireDouble(column.position), column)
-                        "BOOLEAN" -> CursorValue(cursor.getRequireBoolean(column.position), column)
+                        "INTEGER" -> CursorValue(cursor.getLong(column.position), column)
+                        "STRING" -> CursorValue(cursor.getString(column.position), column)
+                        "TEXT" -> CursorValue(cursor.getString(column.position), column)
+                        "REAL" -> CursorValue(cursor.getDouble(column.position), column)
+                        "BOOLEAN" -> CursorValue(cursor.getBoolean(column.position), column)
                         "FLOAT" -> CursorValue(
-                            cursor.getRequireDouble(column.position).toFloat(),
+                            cursor.getDouble(column.position)?.toFloat(),
                             column
                         )
 
@@ -240,13 +270,28 @@ abstract class SQLiteHelper(
         return cursors
     }
 
+    /**
+     * Filters the columns based on the selected attributes.
+     *
+     * @param columns The list of columns.
+     * @param attributesSelected The list of selected attributes.
+     * @return The filtered list of columns.
+     */
     private fun filtrateColumns(
         columns: List<Column>,
         attributesSelected: List<String>
     ): List<Column> {
         return columns.filter { column ->
             (attributesSelected.isNotEmpty() && attributesSelected.contains(column.name)) || attributesSelected.isEmpty()
-        }.mapIndexed { index, column -> Column(index, column.name, column.type, column.nullable) }
+        }.mapIndexed { index, column ->
+            Column(
+                index,
+                column.name,
+                column.type,
+                column.nullable,
+                column.format
+            )
+        }
     }
 
     /**
@@ -292,6 +337,34 @@ abstract class SQLiteHelper(
     }
 
     /**
+     * Retrieves the attribute type of a column in a table.
+     *
+     * @param entityName The name of the entity.
+     * @param attributeName The name of the attribute.
+     * @return The attribute type.
+     */
+    private fun getQueryColumnAttributeType(
+        entityName: String,
+        attributeName: String
+    ): AttributeType? {
+
+        val query = SimpleQueryBuilder(EntityAttributesTable.TABLE_NAME).where(
+            SQL.WhereCondition(
+                SQL.ColumnValue(EntityAttributesTable.ATTR_ENTITY_NAME, entityName)
+            ),
+            SQL.WhereCondition(
+                SQL.ColumnValue(EntityAttributesTable.ATTR_ATTRIBUTE_NAME, attributeName)
+            )
+        )
+
+        return transactionWithResult {
+            rawQuery(query.build()) { cursor ->
+                AttributeType.valueOf(cursor.getRequireString(3))
+            }.firstOrNull()
+        }
+    }
+
+    /**
      * Builds a SQL WHERE clause from conditions and a logical operator.
      *
      * @param conditions The list of conditions.
@@ -300,7 +373,7 @@ abstract class SQLiteHelper(
      */
     protected fun buildWhereEvaluation(
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): String {
         return conditions.joinToString(
             operator.name,
@@ -309,26 +382,25 @@ abstract class SQLiteHelper(
     }
 
     /**
+     * Checks if an operation was successful based on the result.
+     *
+     * @param result The result of the operation.
+     * @return True if the operation was successful, false otherwise.
+     */
+    protected fun isOperationIsSuccessful(result: Long): Boolean {
+        return result > 0
+    }
+
+    /**
      * Converts a list of [SQL.ColumnValue] to a [DataMap].
      *
      * @return A map of column names to values.
      */
-    protected fun List<SQL.ColumnValue>.prepareMap(): DataMap {
-        return associate { it.column to it.value }
+    protected fun List<SQL.ColumnValue>.prepareMap(onParseColumn: CallbackOnParseStringNullable = null): DataMap {
+        return associate { (onParseColumn?.invoke(it.column) ?: it.column) to it.value }
     }
 
     companion object {
         private val TABLES_SYSTEM = listOf("android_metadata", "sqlite_sequence")
-        private var CACHE_TABLES = mutableMapOf<String, List<InternalModel.TableEntity>>()
-        private var CACHE_COLUMN_NAMES =
-            mutableMapOf<String, MutableMap<String, List<Column>>>()
-
-        /**
-         * Clears the cached tables and column names.
-         */
-        fun flushCache() {
-            CACHE_TABLES = mutableMapOf()
-            CACHE_COLUMN_NAMES = mutableMapOf()
-        }
     }
 }

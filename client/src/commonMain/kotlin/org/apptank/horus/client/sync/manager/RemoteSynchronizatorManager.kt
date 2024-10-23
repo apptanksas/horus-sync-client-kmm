@@ -3,7 +3,7 @@ package org.apptank.horus.client.sync.manager
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.coFold
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus
@@ -22,6 +22,8 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 
 
 /**
@@ -34,6 +36,7 @@ import kotlinx.coroutines.launch
  * @param netWorkValidator An instance of `INetworkValidator` to monitor network availability.
  * @param syncControlDatabaseHelper An instance of `ISyncControlDatabaseHelper` for accessing and updating the local sync control database.
  * @param synchronizationService An instance of `ISynchronizationService` for posting queued actions to the remote server.
+ * @param uploadFileRepository An instance of `IUploadFileRepository` for checking if there are files to upload.
  * @param event An instance of `EventBus` for emitting synchronization events.
  * @param dispatcher A coroutine dispatcher for background operations (default is `Dispatchers.IO`).
  * @param maxAttempts The maximum number of retry attempts for synchronization operations (default is 3).
@@ -42,6 +45,7 @@ internal class RemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
+    private val uploadFileRepository: IUploadFileRepository,
     private val event: EventBus = EventBus,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxAttempts: Int = 3
@@ -83,9 +87,15 @@ internal class RemoteSynchronizatorManager(
 
                 takeProcess()
 
+                if (uploadFileRepository.hasFilesToUpload()) {
+                    warn("There are files to upload")
+                    return@launch
+                }
+
                 val pendingActions = syncControlDatabaseHelper.getPendingActions()
 
                 if (pendingActions.isEmpty()) {
+                    event.emit(EventType.SYNC_PUSH_SUCCESS)
                     return@launch
                 }
 
@@ -189,6 +199,7 @@ internal class RemoteSynchronizatorManager(
 
         return result
     }
+
 
     private fun takeProcess() {
         isTakenProcess = true

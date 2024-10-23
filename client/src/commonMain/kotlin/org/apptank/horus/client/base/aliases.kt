@@ -23,6 +23,22 @@ typealias Callback = () -> Unit
 typealias CallbackNullable = Callback?
 
 /**
+ * Typealias for a simple suspend callback function that takes no arguments and returns no value.
+ */
+typealias SuspendedCallback = suspend () -> Unit
+
+/**
+ * Typealias for a callback function that takes a [String] as an argument and returns a [String].
+ */
+typealias CallbackOnParseString = (String) -> String
+
+/**
+ * Typealias for a nullable callback function that takes a string as an argument and returns a string.
+ */
+typealias CallbackOnParseStringNullable = CallbackOnParseString?
+
+
+/**
  * Typealias for a callback function that takes an [Event] as an argument and returns no value.
  */
 internal typealias CallbackEvent = (Event) -> Unit

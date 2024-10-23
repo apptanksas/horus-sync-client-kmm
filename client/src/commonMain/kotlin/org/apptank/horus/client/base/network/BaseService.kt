@@ -8,11 +8,14 @@ import org.apptank.horus.client.extensions.logException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.FormBuilder
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -20,12 +23,13 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HeadersBuilder
-import io.ktor.http.append
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.apptank.horus.client.sync.upload.data.FileData
 
 /**
  * BaseService provides a foundational layer for making HTTP requests with a shared HttpClient.
@@ -108,6 +112,32 @@ internal abstract class BaseService(
     }
 
     /**
+     * Makes a POST request to the specified path with the provided data and binary data.
+     *
+     * @param path The endpoint path to make the request to.
+     * @param data The data to be sent as the request body.
+     * @param onResponse A lambda function to process the response body into the expected type.
+     * @param onProgressUpload A lambda function to track the progress of the upload.
+     * @return A DataResult containing either the result of the request or an error.
+     */
+    protected suspend inline fun <reified T : Any> postWithMultipartFormData(
+        path: String,
+        data: Map<String, Any>,
+        onResponse: (response: String) -> T,
+        crossinline onProgressUpload: (Int) -> Unit = {}
+    ): DataResult<T> {
+        return handleResponse(client.post(buildUrl(path)) {
+            contentType(ContentType.Application.Json)
+            setBody(MultiPartFormDataContent(formData {
+                parseFormData(data)
+            }))
+            setupHeaders(this)
+            onUpload { bytesSentTotal, contentLength -> onProgressUpload(((bytesSentTotal / contentLength) * 100).toInt()) }
+        }, onResponse)
+    }
+
+
+    /**
      * Handles the HTTP response by checking for status codes, parsing the response body, and managing errors.
      *
      * @param response The HttpResponse object received from the network request.
@@ -134,7 +164,7 @@ internal abstract class BaseService(
                 return DataResult.Success(onResponse("[]"))
             }
 
-            if(responseText.responseIsEmpty()) {
+            if (responseText.responseIsEmpty()) {
                 return DataResult.Success(onResponse("{}"))
             }
 
@@ -178,7 +208,7 @@ internal abstract class BaseService(
      * @param path The path to append to the base URL.
      * @return The full URL as a String.
      */
-    private fun buildUrl(path: String): String {
+    protected fun buildUrl(path: String): String {
         return "$baseUrl/$path"
     }
 
@@ -198,5 +228,32 @@ internal abstract class BaseService(
      */
     private fun String.responseIsEmpty(): Boolean {
         return this.isBlank() || this == "{}" || this == "[]"
+    }
+
+    /**
+     * Extension function to parse a map of data into a FormBuilder for multipart form data.
+     *
+     * @param data The map of data to parse into the form.
+     * @return The FormBuilder with the data appended.
+     */
+    private fun FormBuilder.parseFormData(data: Map<String, Any>): FormBuilder {
+        data.forEach { (key, value) ->
+            when (value) {
+                is String -> append(key, value)
+                is Int -> append(key, value)
+                is Long -> append(key, value)
+                is Float -> append(key, value)
+                is Double -> append(key, value)
+                is Boolean -> append(key, value)
+                is ByteArray -> append(key, value)
+                is FileData -> append(key, value.data, Headers.build {
+                    append(HttpHeaders.ContentType, "multipart/form-data")
+                    append(HttpHeaders.ContentDisposition, "filename=\"${value.filename}\"")
+                })
+
+                else -> logException("Unsupported data type for key: $key")
+            }
+        }
+        return this
     }
 }

@@ -2959,3 +2959,32 @@ const val DATA_SYNC_INITIAL_DATA_TASK = """
     }
 ]
 """
+
+
+const val MOCK_RESPONSE_FILE_INFO = """
+{
+    "id": "3849a6d2-d8ed-4431-9502-717b8b4a888f",
+    "url": "http://dev.api.controlganadero.com/storage/horus/upload/pending/5160ea14-8676-3881-9b93-0859a7f59431/3849a6d2-d8ed-4431-9502-717b8b4a888f.png",
+    "mime_type": "image/png",
+    "status": "0"
+}
+"""
+
+const val MOCK_RESPONSE_FILES_INFO = """
+    [
+    {
+        "id": "68b1e65a-7626-4490-8ee4-0427adf43688",
+        "url": "http://dev.api.controlganadero.com/storage/horus/upload/pending/5160ea14-8676-3881-9b93-0859a7f59431/68b1e65a-7626-4490-8ee4-0427adf43688.jpg",
+        "mime_type": "image/jpeg",
+        "status": "0"
+    },
+    {
+        "id": "91205add-c035-49c5-9134-8f3c770d336a",
+        "url": "http://dev.api.controlganadero.com/storage/horus/upload/5160ea14-8676-3881-9b93-0859a7f59431/farms/7d00764c-9660-4f32-b9c0-00bc2ef0f6fb/animals/be655fd3-1549-49ce-9829-69a9fa345607/animal_images/c72594b4-d0df-4b20-8d16-ebc1ca1bd119/91205add-c035-49c5-9134-8f3c770d336a.jpg",
+        "mime_type": "image/jpeg",
+        "status": "1"
+    }
+]
+"""
+
+const val MOCK_RESPONSE_UPLOAD_FILE = MOCK_RESPONSE_FILE_INFO

@@ -22,7 +22,9 @@ internal fun Any?.prepareSQLValueAsString(): String {
 
     return when (val value = this) {
         is String -> "'$value'"
+        is CharSequence -> "'$value'"
         is Boolean -> if (value) BOOL_TRUE else BOOL_FALSE
+        is List<*> -> "(${value.joinToString(",") { it.prepareSQLValueAsString() }})"
         else -> value.toString()
     }
 }
