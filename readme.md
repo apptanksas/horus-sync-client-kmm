@@ -70,6 +70,11 @@ Horusync needs the *INTERNET* and *ACCESS_NETWORK_STATE* permissions to be imple
 In the **Application** of your app configure horus using the **HorusConfigurator** class passing a
 **HorusConfig** object with the base server URL and the configuration of the pending actions.
 
+The `UploadFilesConfig` class defines the settings for uploading files to the server.
+* **baseStoragePath**: The base path where the files will be stored.
+* **mimeTypesAllowed**: List of allowed mime types.
+* **maxFileSize**: Maximum file size allowed in bytes.
+
 The `PushPendingActionsConfig` class defines the settings for managing pending actions before
 synchronization.
 It includes the size of batches and the time expiration threshold to do synchronization.
@@ -92,9 +97,16 @@ class MainApplication : Application() {
 
         val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
 
+        val uploadFileConfig = UploadFilesConfig(
+          baseStoragePath = filesDir.absolutePath,
+          mimeTypesAllowed = listOf(FileMimeType.IMAGE_JPEG_IMAGE_JPG, FileMimeType.IMAGE_PORTABLE_NETWORK_GRAPHICS),
+          maxFileSize = 1024 * 1024 * 5 // 5MB
+        )
+      
         // Configure Horus      
         val config = HorusConfig(
             BASE_SERVER_URL,
+            uploadFileConfig,
             PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
             isDebug = true
         )
