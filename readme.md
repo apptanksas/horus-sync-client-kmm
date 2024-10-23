@@ -412,6 +412,19 @@ if (user != null) {
 
 ```  
 
+### Upload files
+
+To upload files to the server is simple, use the **uploadFile** method passing the file data in bytes and then use the **getFileUrl** method to get the file URL to use where you need it.
+
+```kotlin  
+
+val fileReference = HorusDataFacade.uploadFile(fileData)
+
+val fileUrl = HorusDataFacade.getFileUrl(fileReference)
+
+```  
+
+
 ## Utilities
 
 ### Get entities name

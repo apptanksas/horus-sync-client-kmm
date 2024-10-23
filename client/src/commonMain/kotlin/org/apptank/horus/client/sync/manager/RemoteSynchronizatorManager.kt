@@ -36,6 +36,7 @@ import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
  * @param netWorkValidator An instance of `INetworkValidator` to monitor network availability.
  * @param syncControlDatabaseHelper An instance of `ISyncControlDatabaseHelper` for accessing and updating the local sync control database.
  * @param synchronizationService An instance of `ISynchronizationService` for posting queued actions to the remote server.
+ * @param uploadFileRepository An instance of `IUploadFileRepository` for checking if there are files to upload.
  * @param event An instance of `EventBus` for emitting synchronization events.
  * @param dispatcher A coroutine dispatcher for background operations (default is `Dispatchers.IO`).
  * @param maxAttempts The maximum number of retry attempts for synchronization operations (default is 3).
@@ -94,6 +95,7 @@ internal class RemoteSynchronizatorManager(
                 val pendingActions = syncControlDatabaseHelper.getPendingActions()
 
                 if (pendingActions.isEmpty()) {
+                    event.emit(EventType.SYNC_PUSH_SUCCESS)
                     return@launch
                 }
 
@@ -197,6 +199,7 @@ internal class RemoteSynchronizatorManager(
 
         return result
     }
+
 
     private fun takeProcess() {
         isTakenProcess = true

@@ -117,7 +117,7 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
-    fun testGetImageUrlWhenIsRemoteIsSuccess() {
+    fun testGetFileUrlWhenIsRemoteIsSuccess() {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.REMOTE)
@@ -125,14 +125,14 @@ class UploadFileRepositoryTest : TestCase() {
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
-        val result = repository.getImageUrl(fileReference)
+        val result = repository.getFileUrl(fileReference)
 
         // Then
         Assert.assertEquals(recordFile.urlRemote, result)
     }
 
     @Test
-    fun testGetImageUrlWhenIsLocalIsSuccess() {
+    fun testGetFileUrlWhenIsLocalIsSuccess() {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
@@ -140,14 +140,14 @@ class UploadFileRepositoryTest : TestCase() {
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
-        val result = repository.getImageUrl(fileReference)
+        val result = repository.getFileUrl(fileReference)
 
         // Then
         Assert.assertEquals(recordFile.urlLocal, result)
     }
 
     @Test
-    fun testGetImageUrlWhenIsSyncedIsSuccess() {
+    fun testGetFileUrlWhenIsSyncedIsSuccess() {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED)
@@ -155,28 +155,28 @@ class UploadFileRepositoryTest : TestCase() {
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
-        val result = repository.getImageUrl(fileReference)
+        val result = repository.getFileUrl(fileReference)
 
         // Then
         Assert.assertEquals(recordFile.urlLocal, result)
     }
 
     @Test
-    fun testGetImageUrlIsNull() {
+    fun testGetFileUrlIsNull() {
         // Given
         val fileReference = Horus.FileReference()
 
         every { fileDatabaseHelper.search(fileReference) }.returns(null)
 
         // When
-        val result = repository.getImageUrl(fileReference)
+        val result = repository.getFileUrl(fileReference)
 
         // Then
         Assert.assertNull(result)
     }
 
     @Test
-    fun testGetImageUrlLocalIsSuccess() {
+    fun testGetFileUrlLocalIsSuccess() {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
@@ -184,21 +184,21 @@ class UploadFileRepositoryTest : TestCase() {
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
         // When
-        val result = repository.getImageUrlLocal(fileReference)
+        val result = repository.getFileUrlLocal(fileReference)
 
         // Then
         Assert.assertEquals(recordFile.urlLocal, result)
     }
 
     @Test
-    fun testGetImageUrlLocalIsNull() {
+    fun testGetFileUrlLocalIsNull() {
         // Given
         val fileReference = Horus.FileReference()
 
         every { fileDatabaseHelper.search(fileReference) }.returns(null)
 
         // When
-        val result = repository.getImageUrlLocal(fileReference)
+        val result = repository.getFileUrlLocal(fileReference)
 
         // Then
         Assert.assertNull(result)

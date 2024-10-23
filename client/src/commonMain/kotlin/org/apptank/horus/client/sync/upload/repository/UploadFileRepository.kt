@@ -268,7 +268,7 @@ class UploadFileRepository(
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    override fun getImageUrl(reference: CharSequence): String? {
+    override fun getFileUrl(reference: CharSequence): String? {
         val file = fileDatabaseHelper.search(reference) ?: return null
         return when (file.status) {
             SyncControl.FileStatus.LOCAL -> file.urlLocal
@@ -283,7 +283,7 @@ class UploadFileRepository(
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    override fun getImageUrlLocal(reference: CharSequence): String? {
+    override fun getFileUrlLocal(reference: CharSequence): String? {
         return fileDatabaseHelper.search(reference)?.urlLocal
     }
 

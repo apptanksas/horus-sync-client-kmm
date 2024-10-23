@@ -27,7 +27,6 @@ import io.mockative.Mock
 import io.mockative.any
 import io.mockative.classOf
 import io.mockative.coEvery
-import io.mockative.doesNothing
 import io.mockative.every
 import io.mockative.mock
 import io.mockative.verify
@@ -355,9 +354,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateGetEntitiesWithLimitAndOffset()
         validateGetEntitiesName()
         whenUploadFileIsSuccess()
-        whenGetImageUriNetworkIsNotAvailableThenReturnUrlLocal()
-        whenGetImageUriNetworkIsNotAvailableThenReturnNull()
-        whenGetImageUriNetworkIsAvailableThenReturnUrl()
+        whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal()
+        whenGetFileUriNetworkIsNotAvailableThenReturnNull()
+        whenGetFileUriNetworkIsAvailableThenReturnUrl()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -386,42 +385,42 @@ class AndroidHorusDataFacadeTest : TestCase() {
         Assert.assertEquals(fileReference, result)
     }
 
-    fun whenGetImageUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit = prepareInternalTest {
+    private fun whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit = prepareInternalTest {
         val fileReference = Horus.FileReference()
         val urlLocal = "local/path"
 
         every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { uploadFileRepository.getImageUrlLocal(fileReference) }.returns(urlLocal)
+        every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(urlLocal)
 
         // When
-        val result = HorusDataFacade.getImageUri(fileReference)
+        val result = HorusDataFacade.getFileUri(fileReference)
 
         // Then
         Assert.assertEquals(urlLocal, result)
     }
 
-    fun whenGetImageUriNetworkIsNotAvailableThenReturnNull(): Unit = prepareInternalTest {
+    private fun whenGetFileUriNetworkIsNotAvailableThenReturnNull(): Unit = prepareInternalTest {
         val fileReference = Horus.FileReference()
 
         every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { uploadFileRepository.getImageUrlLocal(fileReference) }.returns(null)
+        every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(null)
 
         // When
-        val result = HorusDataFacade.getImageUri(fileReference)
+        val result = HorusDataFacade.getFileUri(fileReference)
 
         // Then
         Assert.assertNull(result)
     }
 
-    fun whenGetImageUriNetworkIsAvailableThenReturnUrl(): Unit = prepareInternalTest {
+    private fun whenGetFileUriNetworkIsAvailableThenReturnUrl(): Unit = prepareInternalTest {
         val fileReference = Horus.FileReference()
         val urlRemote = "remote/path"
 
         every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { uploadFileRepository.getImageUrl(fileReference) }.returns(urlRemote)
+        every { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
 
         // When
-        val result = HorusDataFacade.getImageUri(fileReference)
+        val result = HorusDataFacade.getFileUri(fileReference)
 
         // Then
         Assert.assertEquals(urlRemote, result)

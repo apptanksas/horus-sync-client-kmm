@@ -25,7 +25,6 @@ import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
-import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
@@ -510,19 +509,19 @@ object HorusDataFacade {
     }
 
     /**
-     * Retrieves the URL of an image based on its reference.
+     * Retrieves the URL of an file based on its reference.
      * If the network is not available, the local URL is returned.
      *
      * @param reference The reference of the image.
-     * @return The URL of the image if found, `null` otherwise.
+     * @return The URL of the file if found, `null` otherwise.
      */
-    fun getImageUri(reference: CharSequence): String? {
+    fun getFileUri(reference: CharSequence): String? {
 
         if (networkValidator?.isNetworkAvailable().isFalse()) {
-            return uploadFileRepository?.getImageUrlLocal(reference)
+            return uploadFileRepository?.getFileUrlLocal(reference)
         }
 
-        return uploadFileRepository?.getImageUrl(reference)
+        return uploadFileRepository?.getFileUrl(reference)
     }
 
     /**
