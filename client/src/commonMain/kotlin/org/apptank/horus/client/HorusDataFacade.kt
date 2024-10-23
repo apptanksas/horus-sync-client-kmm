@@ -6,14 +6,14 @@ import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
-import org.apptank.horus.client.database.DatabaseOperation
-import org.apptank.horus.client.database.IOperationDatabaseHelper
-import org.apptank.horus.client.database.SQL
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.database.mapToDBColumValue
+import org.apptank.horus.client.database.struct.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
@@ -21,8 +21,12 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
+import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.removeIf
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.upload.data.FileData
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
 import org.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
@@ -63,6 +67,23 @@ object HorusDataFacade {
             return field
         }
 
+    private var syncFileUploadedManager: ISyncFileUploadedManager? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSyncFileUploadedManager()
+            }
+            return field
+        }
+
+    private var uploadFileRepository: IUploadFileRepository? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getUploadFileRepository()
+            }
+            return field
+        }
+
+
     private val controlTaskManager by lazy { ControlTaskManager }
 
     private var networkValidator: INetworkValidator? = null
@@ -99,7 +120,7 @@ object HorusDataFacade {
      */
     fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -177,7 +198,7 @@ object HorusDataFacade {
         attributes: List<Horus.Attribute<*>>
     ): DataResult<Unit> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -270,7 +291,7 @@ object HorusDataFacade {
      */
     fun delete(entity: String, id: String): DataResult<Unit> {
 
-        validateConstraints(entity)
+        validateConstraintsEntity(entity)
 
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
@@ -423,19 +444,23 @@ object HorusDataFacade {
 
                 remoteSynchronizatorManager?.trySynchronizeData()
             }
-            start()
+            syncFileUploadedManager?.syncFiles {
+                start()
+            }
         }
     }
 
     /**
-     * Checks if there are pending actions to synchronize.
+     * Checks if there are pending actions to synchronize or files to upload.
      *
      * @return `true` if there are pending actions to synchronize, `false` otherwise.
      */
     fun hasDataToSync(): Boolean {
-        return syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
-    }
+        val hasDataPending = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
 
+        return hasDataPending || hasFilesPending
+    }
 
     /**
      * Gets the last synchronization timestamp.
@@ -471,11 +496,51 @@ object HorusDataFacade {
         changeListeners.clear()
     }
 
+    /**
+     * Uploads a file to synchronize with the remote server.
+     * The synchronization is
+     *
+     * @param fileData The file data to upload.
+     * @return A [Horus.FileReference] object representing the uploaded file.
+     */
+    fun uploadFile(fileData: FileData): Horus.FileReference {
+        validateIsReady()
+        return uploadFileRepository!!.createFileLocal(fileData)
+    }
+
+    /**
+     * Retrieves the URL of an file based on its reference.
+     * If the network is not available, the local URL is returned.
+     *
+     * @param reference The reference of the image.
+     * @return The URL of the file if found, `null` otherwise.
+     */
+    fun getFileUri(reference: CharSequence): String? {
+
+        if (networkValidator?.isNetworkAvailable().isFalse()) {
+            return uploadFileRepository?.getFileUrlLocal(reference)
+        }
+
+        return uploadFileRepository?.getFileUrl(reference)
+    }
+
+    /**
+     * Retrieves if horus is ready for operations.
+     *
+     * @return `true` if horus is ready, `false` otherwise.
+     */
+    fun isReady(): Boolean {
+        return isReady
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Private methods
+    // ---------------------------------------------------------------------------------------------
 
     /**
      * Validates the constraints for the facade.
      */
-    private fun validateConstraints(entity: String) {
+    private fun validateConstraintsEntity(entity: String) {
         validateIsReady()
         validateIsEntityExists(entity)
         validateIsCanWriteIntoEntity(entity)
@@ -582,5 +647,6 @@ object HorusDataFacade {
         operationDatabaseHelper = null
         syncControlDatabaseHelper = null
         remoteSynchronizatorManager = null
+        uploadFileRepository = null
     }
 }

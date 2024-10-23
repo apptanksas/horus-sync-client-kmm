@@ -2,19 +2,19 @@ package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.data.toDTORequest
-import org.apptank.horus.client.database.DatabaseOperation
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.database.SQL
-import org.apptank.horus.client.database.toDeleteRecord
-import org.apptank.horus.client.database.toInsertRecord
-import org.apptank.horus.client.database.toRecordsInsert
-import org.apptank.horus.client.database.toUpdateRecord
+import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.database.struct.toDeleteRecord
+import org.apptank.horus.client.database.struct.toInsertRecord
+import org.apptank.horus.client.database.struct.toRecordsInsert
+import org.apptank.horus.client.database.struct.toUpdateRecord
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue

@@ -1,8 +1,8 @@
 package org.apptank.horus.client.di
 
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
-import org.apptank.horus.client.control.SyncControlDatabaseHelper
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.OperationDatabaseHelper
 import org.apptank.horus.client.migration.network.service.IMigrationService
 import org.apptank.horus.client.migration.network.service.MigrationService
@@ -13,7 +13,15 @@ import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
+import org.apptank.horus.client.database.SyncFileDatabaseHelper
 import org.apptank.horus.client.sync.manager.DispenserManager
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
+import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
+import org.apptank.horus.client.sync.network.service.FileSynchronizationService
+import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
+import org.apptank.horus.client.sync.upload.repository.UploadFileRepository
 
 
 /**
@@ -40,15 +48,23 @@ object HorusContainer {
 
     private var synchronizationService: ISynchronizationService? = null
 
+    private var fileSynchronizationService: IFileSynchronizationService? = null
+
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
 
     private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+
+    private var syncFilesDatabaseHelper: ISyncFileDatabaseHelper? = null
+
+    private var uploadFileRepository: IUploadFileRepository? = null
 
     private var networkValidator: INetworkValidator? = null
 
     private var logger: ILogger? = null
 
     private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+
+    private var syncFileUploadedManager: ISyncFileUploadedManager? = null
 
     private var dispenserManager: DispenserManager? = null
 
@@ -75,12 +91,30 @@ object HorusContainer {
     }
 
     /**
+     * Sets up the file synchronization service.
+     *
+     * @param service The [IFileSynchronizationService] instance to set up.
+     */
+    internal fun setupFileSynchronizationService(service: IFileSynchronizationService) {
+        fileSynchronizationService = service
+    }
+
+    /**
      * Sets up the remote synchronizator manager.
      *
      * @param manager The [RemoteSynchronizatorManager] instance to set up.
      */
     internal fun setupRemoteSynchronizatorManager(manager: RemoteSynchronizatorManager) {
         remoteSynchronizatorManager = manager
+    }
+
+    /**
+     * Sets up the sync file uploaded manager.
+     *
+     * @param manager The [SyncFileUploadedManager] instance to set up.
+     */
+    internal fun setupSyncFileUploadedManager(manager: ISyncFileUploadedManager) {
+        syncFileUploadedManager = manager
     }
 
     /**
@@ -111,6 +145,24 @@ object HorusContainer {
     }
 
     /**
+     * Sets up the sync files database helper.
+     *
+     * @param helper The [ISyncFileDatabaseHelper] instance to set up.
+     */
+    internal fun setupSyncFilesDatabaseHelper(helper: ISyncFileDatabaseHelper) {
+        syncFilesDatabaseHelper = helper
+    }
+
+    /**
+     * Sets up the upload file repository.
+     *
+     * @param repository The [IUploadFileRepository] instance to set up.
+     */
+    internal fun setupUploadFileRepository(repository: IUploadFileRepository) {
+        uploadFileRepository = repository
+    }
+
+    /**
      * Sets up the database factory and initializes database helpers.
      *
      * @param factory The [IDatabaseDriverFactory] instance to set up.
@@ -122,6 +174,10 @@ object HorusContainer {
             factory.getDriver()
         )
         syncControlDatabaseHelper = SyncControlDatabaseHelper(
+            factory.getDatabaseName(),
+            factory.getDriver()
+        )
+        syncFilesDatabaseHelper = SyncFileDatabaseHelper(
             factory.getDatabaseName(),
             factory.getDriver()
         )
@@ -192,6 +248,19 @@ object HorusContainer {
     }
 
     /**
+     * Retrieves the file synchronization service.
+     *
+     * @return The [IFileSynchronizationService] instance.
+     * @throws IllegalStateException if the file synchronization service is not set.
+     */
+    internal fun getFileSynchronizationService(): IFileSynchronizationService{
+        if (fileSynchronizationService == null) {
+            fileSynchronizationService = FileSynchronizationService(httpClient.engine, getConfig().baseUrl)
+        }
+        return fileSynchronizationService!!
+    }
+
+    /**
      * Retrieves the database factory.
      *
      * @return The [IDatabaseDriverFactory] instance.
@@ -242,6 +311,11 @@ object HorusContainer {
             ?: throw IllegalStateException("OperationDatabaseHelper not set")
     }
 
+    internal fun getSyncFilesDatabaseHelper(): ISyncFileDatabaseHelper {
+        return syncFilesDatabaseHelper
+            ?: throw IllegalStateException("SyncFilesDatabaseHelper not set")
+    }
+
     /**
      * Retrieves the network validator.
      *
@@ -272,10 +346,26 @@ object HorusContainer {
             remoteSynchronizatorManager = RemoteSynchronizatorManager(
                 getNetworkValidator(),
                 getSyncControlDatabaseHelper(),
-                getSynchronizationService()
+                getSynchronizationService(),
+                getUploadFileRepository()
             )
         }
         return remoteSynchronizatorManager!!
+    }
+
+    /**
+     * Retrieves the sync file uploaded manager.
+     *
+     * @return A new instance of [SyncFileUploadedManager].
+     */
+    internal fun getSyncFileUploadedManager(): ISyncFileUploadedManager {
+        if (syncFileUploadedManager == null) {
+            syncFileUploadedManager = SyncFileUploadedManager(
+                getNetworkValidator(),
+                getUploadFileRepository()
+            )
+        }
+        return syncFileUploadedManager!!
     }
 
     /**
@@ -295,6 +385,24 @@ object HorusContainer {
         return dispenserManager!!
     }
 
+    /**
+     * Retrieves the upload file repository.
+     *
+     * @return A new instance of [IUploadFileRepository].
+     */
+    internal fun getUploadFileRepository(): IUploadFileRepository {
+        if (uploadFileRepository == null) {
+            uploadFileRepository = UploadFileRepository(
+                getConfig(),
+                getSyncFilesDatabaseHelper(),
+                getSyncControlDatabaseHelper(),
+                getOperationDatabaseHelper(),
+                getFileSynchronizationService()
+            )
+        }
+        return uploadFileRepository!!
+    }
+
     // ------------------------------------------------------------------------
     // Clear
     // ------------------------------------------------------------------------
@@ -311,5 +419,6 @@ object HorusContainer {
         syncControlDatabaseHelper = null
         operationDatabaseHelper = null
         networkValidator = null
+        uploadFileRepository = null
     }
 }

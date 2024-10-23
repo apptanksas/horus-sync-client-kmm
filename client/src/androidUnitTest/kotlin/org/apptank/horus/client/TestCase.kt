@@ -4,9 +4,9 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.Callback
-import org.apptank.horus.client.control.EntitiesTable
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
@@ -20,16 +20,72 @@ import org.apptank.horus.client.tasks.ValidateHashingTask
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
+import io.matthewnelson.kmp.file.SysDirSep
+import io.matthewnelson.kmp.file.parentPath
+import io.matthewnelson.kmp.file.toFile
 import io.mockative.Matchers
 import io.mockative.classOf
 import io.mockative.matchers.Matcher
 import io.mockative.mock
 import kotlinx.datetime.Clock
+import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.extensions.normalizePath
+import org.apptank.horus.client.migration.domain.AttributeType
+import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
+import java.nio.file.Paths
 import java.util.UUID
 import kotlin.random.Random
 
 abstract class TestCase {
+
+    @After
+    fun tearDownEnd() {
+        clearLocalPathStorage()
+    }
+
+    private fun clearLocalPathStorage() {
+        val basePath = getLocalTestPath().toFile()
+        if (basePath.exists()) {
+            basePath.parentPath?.toFile()?.deleteRecursively()
+        }
+    }
+
+    internal fun createFileInLocalStorage(pathFile: String): String {
+        val filename = pathFile.substringAfterLast("/")
+        val path = pathFile.replace(filename, "")
+        val baseFilePath = if (pathFile.contains(getLocalTestPath().normalizePath())) {
+            path.toFile()
+        } else {
+            getLocalTestPath().toFile()
+        }
+
+        if (!baseFilePath.exists()) {
+            baseFilePath.mkdirs()
+        }
+
+        val file = baseFilePath.resolve(filename)
+
+        if (file.createNewFile() && file.setWritable(true)) {
+            file.writeBytes("test".toByteArray())
+        } else {
+            throw IllegalStateException("File not created")
+        }
+        return file.absolutePath
+    }
+
+    protected fun getHorusConfigTest(): HorusConfig {
+        return HorusConfig(
+            "http://dev.horus.com", UploadFilesConfig(
+                getLocalTestPath(),
+                FileMimeTypeGroup.IMAGES_PNG + FileMimeTypeGroup.IMAGES_JPEG,
+                1024 * 5 // 5MB
+            )
+        )
+    }
 
     internal fun getMockValidateHashingTask(): ValidateHashingTask {
         return ValidateHashingTask(
@@ -147,6 +203,19 @@ abstract class TestCase {
         )
     }
 
+    protected fun SqlDriver.registerEntityAttribute(
+        entity: String,
+        attributeName: String,
+        attributeType: AttributeType
+    ) {
+        execute(
+            createSQLInsert(
+                EntityAttributesTable.TABLE_NAME,
+                EntityAttributesTable.mapToCreate(entity, attributeName, attributeType)
+            )
+        )
+    }
+
     private fun sha256(input: String): String {
         val sha256 = SHA256()
         val hashBytes = sha256.digest(input.toByteArray())
@@ -155,9 +224,14 @@ abstract class TestCase {
 
     private fun Byte.toHex(): String = this.toUByte().toString(16).padStart(2, '0')
 
+    protected fun getLocalTestPath(): String {
+        return Paths.get("").toAbsolutePath().toString() + LOCAL_PATH
+    }
+
     companion object {
         const val USER_ACCESS_TOKEN =
             "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5Y2VhN2MyZS1jNTgwLTQ3ODEtYTYxOS01ZmQ3ZTMzODFlYTgiLCJqdGkiOiJhOTY1MTYyMDM4ZGVjMjdhMjNiYjM1MGNlMzAzYWJkNmRmMTFiMjQ1YjQ0MWFiYjIzOWI3Mjg1YjJkYzI1NWNmMmQ4YzczOTZjZGU1NTQxZiIsImlhdCI6MTcyNTMwOTE5OC4xNDkxNjUsIm5iZiI6MTcyNTMwOTE5OC4xNDkxNjYsImV4cCI6MTc1Njg0NTE5OC4xNDcwODQsInN1YiI6ImRiMDVmOTYwLWVlNWQtNDA0ZS05OTI5LTViZWI0OGE2MTJhMSIsInNjb3BlcyI6WyJ1c2VyLnNpZ251cCIsInVzZXIucHJvZmlsZS5yZWFkIiwidXNlci5hdXRoZW50aWNhdGUiLCJ1c2VyLmludml0YXRpb24uY3JlYXRlIiwidXNlci5wYXNzd29yZC5yZWNvdmVyeSIsInVzZXIucHJvZmlsZS5jcmVhdGUiLCJ1c2VyLnBhc3N3b3JkLnVwZGF0ZSIsInVzZXIucHJvZmlsZS51cGRhdGUiLCJ1c2VyLnByb2ZpbGUuZGVsZXRlIiwiZGF0YS5zeW5jIl0sImVudGl0aWVzX2dyYW50ZWQiOlt7InVzZXJfb3duZXJfaWQiOiI3YTc2ODQ3NC1kZTEyLTQzNjgtOWVkMS0zNzUyZGE4MDBkNjAiLCJlbnRpdHlfaWQiOiI2ZDc3NjdlYy0wOWJmLTRlZDgtOTZkOS05NTU2ZTRmMjExNDQiLCJlbnRpdHlfbmFtZSI6ImxldmkzNiIsImFjY2Vzc19sZXZlbCI6IlJDVUQifV19.D9ANGMsIvTnLFr5yn8PiuPWExZfofkgwoPibDsfVhJWZVT2wbU-N1K8qpFBsp_4PMopvelMZPyc28b8jU5ZZthY36FjM93oC0Xa9CtKc8cnY2qFSnP3XZ7tpYndloIkPqax53AApojCS3mJV_swbilTtisrS3bwoZzt8CKgTdHm0cpmPj06VGCbGBx-Rk1Y24KCMRONSRiJBiiTo7Oyi3kOw1Xv7G9r6WtR44wz2dEqK6PN9S2tK9tCLKVx1y_Wq6PZZXCuK83VFuycCBgLTXivNRTVgoOSxfTMwTcLVG_TtsVECdjpL4PpKoa3NAuTtiG9Xntx8wl-MNbWqfZpY5k3Kc33grsCkYHlJOysBgCjzRHkBivNK0Z6YUcTuAkR8Yz-2AwZ7eDm9ZJvjmafq5N_EKetNBegtw7jG_6UMbqLr9dSyxOi5FBUTeaoccckYxhoMiXSRRLq5Abi_DodMoBklF2P7ACG1pT-iMKECO8GynoaTknyO116NN0MJpoyUUJL1GeYW2p3wzWucV_Wf9g4JZHtwb_KTwvBJOK2rQCQ3ZvmaOwQQEQfwnSD2oRmlDIr0uGNf1_q9JvPvd3aXhSwLr34k7QEx1vpX0JNiiVx8Jyh4pJLYitZyuTh9DjvG1kciYniMDnqVpVKOdo7aNb-2MDUsS3zVckdLpxiDSy0"
         const val QUERY_TABLES = "SELECT name FROM sqlite_master WHERE type='table';"
+        const val LOCAL_PATH = "/test/path/"
     }
 }

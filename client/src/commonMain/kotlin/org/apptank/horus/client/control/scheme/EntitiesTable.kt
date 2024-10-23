@@ -1,4 +1,4 @@
-package org.apptank.horus.client.control
+package org.apptank.horus.client.control.scheme
 
 internal object EntitiesTable {
 

@@ -3,7 +3,7 @@ package org.apptank.horus.client.sync.manager
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.info
 
 private const val TAG = "DispenserManager"

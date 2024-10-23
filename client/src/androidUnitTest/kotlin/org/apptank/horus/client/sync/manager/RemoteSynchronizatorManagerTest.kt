@@ -3,7 +3,7 @@ package org.apptank.horus.client.sync.manager
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -42,6 +43,9 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     @Mock
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
+    @Mock
+    val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
+
     private val eventBus = EventBus
 
     private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
@@ -52,6 +56,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
             networkValidator,
             syncControlDatabaseHelper,
             synchronizationService,
+            mockUploadFileRepository,
             eventBus,
             Dispatchers.Default,
             0
@@ -187,6 +192,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         coEvery { synchronizationService.postQueueActions(any()) }.returns(
             DataResult.Success(Unit)
         )
+        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
         every { syncControlDatabaseHelper.completeActions(any()) }.returns(true)
 
         // When

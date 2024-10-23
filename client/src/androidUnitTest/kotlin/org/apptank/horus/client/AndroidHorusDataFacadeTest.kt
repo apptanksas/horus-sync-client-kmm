@@ -15,7 +15,7 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.di.IDatabaseDriverFactory
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.database.HorusDatabase
-import org.apptank.horus.client.database.SQL
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.extensions.execute
@@ -35,11 +35,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.apptank.horus.client.config.HorusConfig
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.database.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After
 import org.junit.Assert
@@ -73,7 +75,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
     val synchronizationService = mock(classOf<ISynchronizationService>())
 
     @Mock
+    val uploadFileRepository = mock(classOf<IUploadFileRepository>())
+
+    @Mock
     val storageSettings = mock(classOf<Settings>())
+
+    @Mock
+    val fileUploadManager = mock(classOf<ISyncFileUploadedManager>())
 
     @Before
     fun setUp() {
@@ -88,7 +96,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
             setupMigrationService(migrationService)
             setupSynchronizationService(synchronizationService)
             setupDatabaseFactory(databaseFactory)
-            setupConfig(HorusConfig("http://dev.horus.com"))
+            setupConfig(getHorusConfigTest())
+            setupUploadFileRepository(uploadFileRepository)
+            setupSyncFileUploadedManager(fileUploadManager)
         }
     }
 
@@ -122,9 +132,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `when hasDataToSync return true`(): Unit = runBlocking {
         // Given
         val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
         with(HorusContainer) {
             setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+            setupUploadFileRepository(mockUploadFileRepository)
         }
 
         every {
@@ -142,6 +154,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 )
             )
         )
+        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
         // When
         val result = HorusDataFacade.hasDataToSync()
@@ -153,14 +166,18 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `when hasDataToSync return false`(): Unit = runBlocking {
         // Given
         val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+        val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
         with(HorusContainer) {
             setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
+            setupUploadFileRepository(mockUploadFileRepository)
         }
 
         every {
             mockSyncControlDatabaseHelper.getPendingActions()
         }.returns(emptyList())
+
+        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
         // When
         val result = HorusDataFacade.hasDataToSync()
@@ -222,9 +239,12 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val mockSettings = mock(classOf<Settings>())
             val mockSyncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
             val mockOperationDatabaseHelper = mock(classOf<IOperationDatabaseHelper>())
+            val mockSyncUploadFileManager = mock(classOf<ISyncFileUploadedManager>())
+            val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
 
             HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
             HorusContainer.setupLogger(KotlinLogger())
+            HorusContainer
             every { mockNetworkValidator.isNetworkAvailable() }.returns(true)
             coEvery { mockMigrationService.getMigration() }.returns(
                 DataResult.Success(
@@ -261,6 +281,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
             coEvery { mockSyncService.postQueueActions(any()) }.returns(DataResult.Success(Unit))
             every { mockSyncControlDatabaseHelper.completeActions(any()) }.returns(true)
+            every { mockSyncUploadFileManager.syncFiles(any()) }.invokes {
+                (it[0] as Callback).invoke()
+            }
+            every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
 
             with(HorusContainer) {
                 setupMigrationService(mockMigrationService)
@@ -273,9 +297,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
                     RemoteSynchronizatorManager(
                         mockNetworkValidator,
                         mockSyncControlDatabaseHelper,
-                        mockSyncService
+                        mockSyncService,
+                        mockUploadFileRepository
                     )
                 )
+                setupSyncFileUploadedManager(mockSyncUploadFileManager)
             }
 
             // When
@@ -327,10 +353,77 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateGetEntitiesWithWhereConditions()
         validateGetEntitiesWithLimitAndOffset()
         validateGetEntitiesName()
+        whenUploadFileIsSuccess()
+        whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal()
+        whenGetFileUriNetworkIsNotAvailableThenReturnNull()
+        whenGetFileUriNetworkIsAvailableThenReturnUrl()
 
         assert(invokedInsert)
         assert(invokedUpdate)
         assert(invokedDelete)
+    }
+
+
+    @Test
+    fun `when uploadFile is Failure by is not ready`(): Unit = runBlocking {
+        Assert.assertThrows(IllegalStateException::class.java) {
+            HorusDataFacade.uploadFile(generateFileDataImage())
+        }
+    }
+
+   private fun whenUploadFileIsSuccess() = prepareInternalTest {
+        // Given
+        val fileReference = Horus.FileReference()
+        val fileData = generateFileDataImage()
+
+        every { uploadFileRepository.createFileLocal(fileData) }.returns(fileReference)
+
+        // When
+        val result = HorusDataFacade.uploadFile(fileData)
+
+        // Then
+        Assert.assertEquals(fileReference, result)
+    }
+
+    private fun whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+        val urlLocal = "local/path"
+
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(urlLocal)
+
+        // When
+        val result = HorusDataFacade.getFileUri(fileReference)
+
+        // Then
+        Assert.assertEquals(urlLocal, result)
+    }
+
+    private fun whenGetFileUriNetworkIsNotAvailableThenReturnNull(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(null)
+
+        // When
+        val result = HorusDataFacade.getFileUri(fileReference)
+
+        // Then
+        Assert.assertNull(result)
+    }
+
+    private fun whenGetFileUriNetworkIsAvailableThenReturnUrl(): Unit = prepareInternalTest {
+        val fileReference = Horus.FileReference()
+        val urlRemote = "remote/path"
+
+        every { networkValidator.isNetworkAvailable() }.returns(true)
+        every { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
+
+        // When
+        val result = HorusDataFacade.getFileUri(fileReference)
+
+        // Then
+        Assert.assertEquals(urlRemote, result)
     }
 
     private fun validateEntityIsNotWritable() = prepareInternalTest {
@@ -540,7 +633,6 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // When
         val entity =
             HorusDataFacade.getById("measures", uuid())
-
         // Then
         Assert.assertNull(entity)
     }

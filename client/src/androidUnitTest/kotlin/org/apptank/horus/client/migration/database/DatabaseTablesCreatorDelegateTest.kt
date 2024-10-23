@@ -38,6 +38,7 @@ class DatabaseTablesCreatorDelegateTest {
                         ),
                         Attribute("timestamp", AttributeType.Timestamp, false, version = 1),
                         Attribute("uuid", AttributeType.UUID, false, version = 1),
+                        Attribute("refFile", AttributeType.RefFile, false, version = 1)
                     ),
                     1,
                     emptyList()
@@ -57,7 +58,8 @@ class DatabaseTablesCreatorDelegateTest {
                 json TEXT NOT NULL,
                 type TEXT CHECK (type IN ('A', 'B', 'C')) NOT NULL,
                 timestamp TEXT NOT NULL,
-                uuid TEXT NOT NULL
+                uuid TEXT NOT NULL,
+                refFile TEXT NOT NULL
             )
         """.normalizeSQL()
 

@@ -24,6 +24,7 @@ import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.modules.serializersModuleOf
+import org.apptank.horus.client.data.Horus
 
 /**
  * Custom serializer for handling various types of data in JSON serialization and deserialization.
@@ -61,6 +62,7 @@ internal object AnySerializer : KSerializer<Any> {
             is Float -> JsonPrimitive(value)
             is Map<*, *> -> JsonObject(value.mapKeys { it.key.toString() }
                 .mapValues { decoderJSON.encodeToJsonElement(it.value) })
+            is Horus.FileReference -> JsonPrimitive(value.toString())
             else -> throw SerializationException("Unsupported type")
         }
         jsonEncoder.encodeJsonElement(jsonElement)

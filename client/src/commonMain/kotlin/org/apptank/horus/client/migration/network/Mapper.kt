@@ -73,6 +73,7 @@ private fun String?.toAttributeType(): AttributeType {
         "enum" -> AttributeType.Enum
         "timestamp" -> AttributeType.Timestamp
         "uuid" -> AttributeType.UUID
+        "ref_file" -> AttributeType.RefFile
         "relation_one_of_many" -> AttributeType.RelationOneOfMany
         "relation_one_of_one" -> AttributeType.RelationOneOfOne
         else -> throw InvalidDataSchemeException("Attribute type $this not defined")

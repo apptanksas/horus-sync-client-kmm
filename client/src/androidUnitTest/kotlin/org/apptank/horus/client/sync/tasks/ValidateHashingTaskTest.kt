@@ -2,7 +2,7 @@ package org.apptank.horus.client.sync.tasks
 
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService

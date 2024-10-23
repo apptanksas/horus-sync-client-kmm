@@ -3,7 +3,11 @@ package org.apptank.horus.client.database
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
+import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.DatabaseOperation
+import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.migration.database.DatabaseTablesCreatorDelegate
@@ -29,7 +33,7 @@ class OperationDatabaseHelperTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         databaseHelper = OperationDatabaseHelper("database", driver)
 
-        SQLiteHelper.flushCache()
+        MemoryCache.flushCache()
 
         driver.createTable(
             entityName,
@@ -38,6 +42,7 @@ class OperationDatabaseHelperTest : TestCase() {
                 "name" to "TEXT"
             )
         )
+        driver.execute(EntityAttributesTable.SQL_CREATE_TABLE)
     }
 
 

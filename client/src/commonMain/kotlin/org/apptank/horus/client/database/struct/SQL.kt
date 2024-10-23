@@ -1,4 +1,4 @@
-package org.apptank.horus.client.database
+package org.apptank.horus.client.database.struct
 
 import org.apptank.horus.client.data.Horus
 import kotlin.random.Random
@@ -49,7 +49,8 @@ sealed class SQL {
         GREATER_THAN(">"),
         LESS_THAN("<"),
         GREATER_THAN_OR_EQUALS(">="),
-        LESS_THAN_OR_EQUALS("<=")
+        LESS_THAN_OR_EQUALS("<="),
+        IN("IN"),
     }
 
     /**

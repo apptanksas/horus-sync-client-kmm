@@ -36,9 +36,13 @@ class DatabaseUpgradeDelegate(
      *
      * @param oldVersion The version of the database schema to migrate from.
      * @param currentVersion The version of the database schema to migrate to.
-     * @param onExecuteSql A lambda function that takes an SQL statement as a parameter and executes it. This function is called for each generated SQL statement.
+     * @param onExecuteSql A callback function that executes SQL statements and receives the SQL statement, entity name, and attribute name as parameters.
      */
-    fun migrate(oldVersion: Long, currentVersion: Long, onExecuteSql: (sql: String) -> Unit) {
+    fun migrate(
+        oldVersion: Long,
+        currentVersion: Long,
+        onExecuteSql: (sql: String, entity: String, attribute: Attribute?) -> Unit
+    ) {
         // Generate map of entity attributes for each version.
         mapSchemes()
 
@@ -50,7 +54,7 @@ class DatabaseUpgradeDelegate(
             // Create new tables (if applicable).
             versionMapEntities[version]?.forEach {
                 schemes.findByName(it)?.let {
-                    onExecuteSql(createCreateSQLTable(it))
+                    onExecuteSql(createCreateSQLTable(it), it.name, null)
                     newTablesAdded.add(it.name)
                     newEntitiesCreated.add(it)
                 }
@@ -69,7 +73,7 @@ class DatabaseUpgradeDelegate(
                         AlterTableSQLBuilder().setTableName(entityName).setAttribute(attribute)
                             .build()
                     // Execute SQL statement.
-                    onExecuteSql(sqlSentence)
+                    onExecuteSql(sqlSentence, entityName, attribute)
                 }
             }
         }
