@@ -230,6 +230,12 @@ internal abstract class BaseService(
         return this.isBlank() || this == "{}" || this == "[]"
     }
 
+    /**
+     * Extension function to parse a map of data into a FormBuilder for multipart form data.
+     *
+     * @param data The map of data to parse into the form.
+     * @return The FormBuilder with the data appended.
+     */
     private fun FormBuilder.parseFormData(data: Map<String, Any>): FormBuilder {
         data.forEach { (key, value) ->
             when (value) {

@@ -1,5 +1,8 @@
 package org.apptank.horus.client.extensions
 
+/**
+ * The file scheme.
+ */
 private const val SCHEME_FILE = "file://"
 
 /**
@@ -28,6 +31,11 @@ fun String.toFileUri(): String {
     }
 }
 
+/**
+ * Normalizes a path by replacing backslashes with forward slashes.
+ *
+ * @return The normalized path.
+ */
 fun String.normalizePath(): String {
     return this.replace("\\", "/")
 }

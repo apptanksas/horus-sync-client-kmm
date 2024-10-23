@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 val libGroupId = project.findProperty("lib.groupId") as String
 val libArtifactId = project.findProperty("lib.artifactId") as String
 val libVersion = project.findProperty("lib.version") as String
@@ -16,6 +18,7 @@ plugins {
     id("app.cash.sqldelight") version "2.0.2"
     id("com.google.devtools.ksp") version "2.0.20-1.0.24"
     // To publish the library to the maven repository
+    id("com.vanniktech.maven.publish") version "0.29.0"
 }
 
 kotlin {
@@ -102,4 +105,53 @@ dependencies {
         .forEach {
             add(it.name, libs.ksp.mockative)
         }
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// PUBLISH CONFIGURATION TO MAVEN REPOSITORY
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+mavenPublishing {
+    // Define coordinates for the published artifact
+    coordinates(
+        groupId = libGroupId,
+        artifactId = libArtifactId,
+        version = libVersion
+    )
+
+    // Configure POM metadata for the published artifact
+    pom {
+        name.set("Horus sync client library")
+        description.set("Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to store data locally and synchronize it with a remote server, ensuring data security and integrity.")
+        inceptionYear.set("2024")
+        url.set("https://github.com/apptanksas/horus-sync-client-kmm")
+
+
+        licenses {
+            license {
+                name.set("AGPL-3.0-only")
+                url.set("https://opensource.org/license/agpl-v3")
+            }
+        }
+
+        // Specify developer information
+        developers {
+            developer {
+                id.set("jhospina")
+                name.set("John Ospina")
+                email.set("johnospina.apptank@gmail.com")
+            }
+        }
+
+        // Specify SCM information
+        scm {
+            url.set("https://github.com/apptanksas/horus-sync-client-kmm")
+        }
+    }
+
+    // Configure publishing to Maven Central
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    // Enable GPG signing for all publications
+    signAllPublications()
 }

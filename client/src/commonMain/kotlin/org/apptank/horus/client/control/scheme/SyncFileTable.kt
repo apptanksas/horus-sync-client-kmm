@@ -4,6 +4,9 @@ import org.apptank.horus.client.control.SyncControl
 
 /**
  * Object that defines the schema and utility functions for the `sync_files` table in the database.
+ *
+ * @author John Ospina
+ * @year 2024
  */
 internal object SyncFileTable {
 

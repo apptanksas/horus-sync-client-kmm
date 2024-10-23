@@ -2,6 +2,11 @@ package org.apptank.horus.client.control.helper
 
 import org.apptank.horus.client.control.SyncControl
 
+/**
+ * ISyncFileDatabaseHelper provides an interface for managing files in a database.
+ *
+ * @see SyncControl.File
+ */
 interface ISyncFileDatabaseHelper {
 
 

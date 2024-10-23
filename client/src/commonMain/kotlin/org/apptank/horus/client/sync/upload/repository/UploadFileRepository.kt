@@ -30,6 +30,18 @@ import org.apptank.horus.client.sync.upload.data.FileUploaded
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.data.SyncFileStatus
 
+/**
+ * UploadFileRepository is responsible for creating, uploading, and downloading files.
+ *
+ * The repository interacts with the local and remote storage to manage file operations.
+ *
+ * @param config The Horus configuration.
+ * @param fileDatabaseHelper The helper for the file database.
+ * @param controlDatabaseHelper The helper for the control database.
+ * @param operationDatabaseHelper The helper for the operation database.
+ * @param service The service for file synchronization.
+ * @constructor Creates a repository with the required dependencies.
+ */
 class UploadFileRepository(
     private val config: HorusConfig,
     private val fileDatabaseHelper: ISyncFileDatabaseHelper,

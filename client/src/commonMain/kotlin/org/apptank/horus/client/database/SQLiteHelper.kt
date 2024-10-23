@@ -212,6 +212,12 @@ abstract class SQLiteHelper(
         return executeDelete(query)
     }
 
+    /**
+     * Executes an SQL query to insert data into a table.
+     *
+     * @param query The SQL query to execute.
+     * @throws IllegalStateException If the insertion fails.
+     */
     private fun executeInsertOrThrow(query: String) {
         driver.handle {
             if (execute(null, query, 0).value == 0L) {
@@ -220,6 +226,14 @@ abstract class SQLiteHelper(
         }
     }
 
+    /**
+     * Builds a list of [Cursor] objects from a SQL cursor.
+     *
+     * @param tableName The name of the table.
+     * @param attributesSelected The list of selected attributes.
+     * @param cursor The SQL cursor.
+     * @return A list of [Cursor] objects.
+     */
     private fun buildCursorValues(
         tableName: String,
         attributesSelected: List<String>,
@@ -256,6 +270,13 @@ abstract class SQLiteHelper(
         return cursors
     }
 
+    /**
+     * Filters the columns based on the selected attributes.
+     *
+     * @param columns The list of columns.
+     * @param attributesSelected The list of selected attributes.
+     * @return The filtered list of columns.
+     */
     private fun filtrateColumns(
         columns: List<Column>,
         attributesSelected: List<String>
@@ -315,6 +336,13 @@ abstract class SQLiteHelper(
         return driver.execute(null, query, 0).value
     }
 
+    /**
+     * Retrieves the attribute type of a column in a table.
+     *
+     * @param entityName The name of the entity.
+     * @param attributeName The name of the attribute.
+     * @return The attribute type.
+     */
     private fun getQueryColumnAttributeType(
         entityName: String,
         attributeName: String

@@ -114,6 +114,11 @@ sealed class Horus {
 
     /**
      * Represents a file reference object containing the file ID.
+     *
+     * @property id The ID of the file.
+     * @property length The length of the ID.
+     * @constructor Creates a new file reference object with the given ID and length.
+     * @return A new file reference object.
      */
     data class FileReference
     @OptIn(ExperimentalUuidApi::class)
