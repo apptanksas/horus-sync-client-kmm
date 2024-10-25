@@ -11,7 +11,7 @@ internal object AttributesPreparator {
 
     // List of restricted attribute names that should not be included in hashing or insertion.
     private val ATTRIBUTES_RESTRICTED =
-        listOf("id", "sync_owner_id", "sync_hash", "sync_created_at", "sync_updated_at")
+        listOf("sync_owner_id", "sync_hash", "sync_created_at", "sync_updated_at")
 
     /**
      * Checks if any attribute in the provided list contains a restricted name.
