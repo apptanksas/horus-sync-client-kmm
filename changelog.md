@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.1
+- Fixed version in gradle properties.
+
 ## v0.4.0
 - Added method into `HorusDataFacade` to insert multiple entities in batch.
 - Added method into `HorusDataFacade` to update multiple entities in batch.
