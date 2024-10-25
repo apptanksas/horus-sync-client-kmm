@@ -1,5 +1,6 @@
 package org.apptank.horus.client.data
 
+import org.apptank.horus.client.base.DataMap
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -8,6 +9,58 @@ import kotlin.uuid.Uuid
  * A sealed class representing various elements related to entities in the Horus system.
  */
 sealed class Horus {
+
+
+    /**
+     * Represents a batch of entities to be synchronized with the database.
+     *
+     * @property actions A list of actions to be performed on the entities.
+     */
+    sealed class Batch {
+        /**
+         * Represents a batch of entities to be inserted into the database.
+         *
+         * @property entity The name of the entity.
+         * @property attributes A list of attributes associated with the entity.
+         */
+        data class Insert(val entity: String, val attributes: List<Attribute<*>>){
+            constructor(entity: String, vararg attributes: Attribute<*>) : this(entity, attributes.toList())
+            constructor(entity:String, attributes: DataMap): this(entity, attributes.map { Attribute(it.key, it.value) })
+
+            /**
+             * Checks if the entity has an attribute with the given name.
+             *
+             * @param name The name of the attribute.
+             * @return True if the entity has the attribute, false otherwise.
+             */
+            fun hasAttribute(name: String): Boolean = attributes.any { it.name == name }
+
+            /**
+             * Retrieves an attribute by its name.
+             *
+             * @param name The name of the attribute.
+             * @return The attribute with the given name, or null if not found.
+             */
+            fun<T> getAttribute(name: String): T? = attributes.find { it.name == name }?.value as T?
+        }
+
+        /**
+         * Represents a batch of entities to be updated in the database.
+         *
+         * @property entity The name of the entity.
+         * @property id The ID of the entity.
+         * @property attributes A list of attributes associated with the entity.
+         */
+        data class Update(
+            val entity: String,
+            val id: String,
+            val attributes: List<Horus.Attribute<*>>
+        ){
+            constructor(entity: String, id: String, vararg attributes: Attribute<*>) : this(entity, id, attributes.toList())
+            constructor(entity: String, id: String, attributes: DataMap): this(entity, id, attributes.map { Attribute(it.key, it.value) })
+        }
+    }
+
 
     /**
      * Represents an entity with a name, attributes, and optional relations to other entities.
