@@ -36,6 +36,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -54,6 +55,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.random.Random
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 @RunWith(RobolectricTestRunner::class)
@@ -345,6 +347,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateEntityIsNotWritable()
         validatesOperationIsFailureByEntityNoExists()
         validateInsertTest()
+        validateInsertWithIdTest()
+        validateInsertBatchTest()
+        validateInsertBatchWithIdsTest()
+        validateUpdateBatchIsTest()
         validateInsertAndUpdateIsSuccess()
         validateInsertAndDeleteIsSuccess()
         validateGetEntityByIdReturnRecord()
@@ -371,7 +377,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         }
     }
 
-   private fun whenUploadFileIsSuccess() = prepareInternalTest {
+    private fun whenUploadFileIsSuccess() = prepareInternalTest {
         // Given
         val fileReference = Horus.FileReference()
         val fileData = generateFileDataImage()
@@ -385,19 +391,20 @@ class AndroidHorusDataFacadeTest : TestCase() {
         Assert.assertEquals(fileReference, result)
     }
 
-    private fun whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit = prepareInternalTest {
-        val fileReference = Horus.FileReference()
-        val urlLocal = "local/path"
+    private fun whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal(): Unit =
+        prepareInternalTest {
+            val fileReference = Horus.FileReference()
+            val urlLocal = "local/path"
 
-        every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(urlLocal)
+            every { networkValidator.isNetworkAvailable() }.returns(false)
+            every { uploadFileRepository.getFileUrlLocal(fileReference) }.returns(urlLocal)
 
-        // When
-        val result = HorusDataFacade.getFileUri(fileReference)
+            // When
+            val result = HorusDataFacade.getFileUri(fileReference)
 
-        // Then
-        Assert.assertEquals(urlLocal, result)
-    }
+            // Then
+            Assert.assertEquals(urlLocal, result)
+        }
 
     private fun whenGetFileUriNetworkIsNotAvailableThenReturnNull(): Unit = prepareInternalTest {
         val fileReference = Horus.FileReference()
@@ -466,6 +473,73 @@ class AndroidHorusDataFacadeTest : TestCase() {
             createDataInsertRecord()
         )
         assert(result is DataResult.Success)
+    }
+
+    private fun validateInsertWithIdTest() = prepareInternalTest {
+        val idExpected = uuid()
+        val result = HorusDataFacade.insert(
+            "measures",
+            createDataInsertRecord().toMutableMap().apply {
+                put("id", idExpected)
+            }
+        )
+        assert(result is DataResult.Success)
+        result.coFold(
+            { id ->
+                assertEquals(idExpected, id)
+            },
+            { exception ->
+                fail(exception.message)
+            })
+    }
+
+    private fun validateInsertBatchTest() = prepareInternalTest {
+
+        val result = HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord())
+            )
+        )
+        assert(result is DataResult.Success)
+    }
+
+    private fun validateInsertBatchWithIdsTest() = prepareInternalTest {
+
+        val result = HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId())
+            )
+        )
+        assert(result is DataResult.Success)
+    }
+
+    private fun validateUpdateBatchIsTest() = prepareInternalTest {
+
+        val resultInsert = HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
+                Horus.Batch.Insert("measures", createDataInsertRecordWithId())
+            )
+        )
+
+        val resultUpdate = HorusDataFacade.updateBatch(
+            (resultInsert as DataResult.Success).data.map {
+                Horus.Batch.Update(
+                    "measures",
+                    it,
+                    listOf(Horus.Attribute("value", Random.nextFloat()))
+                )
+            }
+        )
+
+        // Then
+        assert(resultInsert is DataResult.Success)
+        assert(resultUpdate is DataResult.Success)
     }
 
     private fun validateInsertAndUpdateIsSuccess() = prepareInternalTest {
@@ -651,6 +725,13 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
 
     private fun createDataInsertRecord() = mapOf(
+        "measure" to "w",
+        "unit" to "kg",
+        "value" to 10.0f
+    )
+
+    private fun createDataInsertRecordWithId() = mapOf(
+        "id" to uuid(),
         "measure" to "w",
         "unit" to "kg",
         "value" to 10.0f

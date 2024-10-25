@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.4.0
+- Added method into `HorusDataFacade` to insert multiple entities in batch.
+- Added method into `HorusDataFacade` to update multiple entities in batch.
 
 ## v0.3.0
 
