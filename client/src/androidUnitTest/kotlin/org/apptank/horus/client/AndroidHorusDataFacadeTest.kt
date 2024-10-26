@@ -619,7 +619,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // Then
         Assert.assertNotNull(entity)
-        Assert.assertTrue((entity?.getFloat("value") ?: 0F) > 0f)
+        Assert.assertTrue((entity?.getDouble("value") ?: 0.0) > 0.0)
     }
 
     private suspend fun validateGetEntities() = prepareInternalTest {
