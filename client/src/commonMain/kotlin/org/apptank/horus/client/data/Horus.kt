@@ -9,8 +9,6 @@ import kotlin.uuid.Uuid
  * A sealed class representing various elements related to entities in the Horus system.
  */
 sealed class Horus {
-
-
     /**
      * Represents a batch of entities to be synchronized with the database.
      *
@@ -23,9 +21,15 @@ sealed class Horus {
          * @property entity The name of the entity.
          * @property attributes A list of attributes associated with the entity.
          */
-        data class Insert(val entity: String, val attributes: List<Attribute<*>>){
-            constructor(entity: String, vararg attributes: Attribute<*>) : this(entity, attributes.toList())
-            constructor(entity:String, attributes: DataMap): this(entity, attributes.map { Attribute(it.key, it.value) })
+        data class Insert(val entity: String, val attributes: List<Attribute<*>>) {
+            constructor(entity: String, vararg attributes: Attribute<*>) : this(
+                entity,
+                attributes.toList()
+            )
+
+            constructor(entity: String, attributes: DataMap) : this(
+                entity,
+                attributes.map { Attribute(it.key, it.value) })
 
             /**
              * Checks if the entity has an attribute with the given name.
@@ -41,7 +45,8 @@ sealed class Horus {
              * @param name The name of the attribute.
              * @return The attribute with the given name, or null if not found.
              */
-            fun<T> getAttribute(name: String): T? = attributes.find { it.name == name }?.value as T?
+            fun <T> getAttribute(name: String): T? =
+                attributes.find { it.name == name }?.value as T?
         }
 
         /**
@@ -55,9 +60,17 @@ sealed class Horus {
             val entity: String,
             val id: String,
             val attributes: List<Horus.Attribute<*>>
-        ){
-            constructor(entity: String, id: String, vararg attributes: Attribute<*>) : this(entity, id, attributes.toList())
-            constructor(entity: String, id: String, attributes: DataMap): this(entity, id, attributes.map { Attribute(it.key, it.value) })
+        ) {
+            constructor(entity: String, id: String, vararg attributes: Attribute<*>) : this(
+                entity,
+                id,
+                attributes.toList()
+            )
+
+            constructor(entity: String, id: String, attributes: DataMap) : this(
+                entity,
+                id,
+                attributes.map { Attribute(it.key, it.value) })
         }
     }
 
@@ -86,53 +99,114 @@ sealed class Horus {
         }
 
         /**
-         * Retrieves an integer attribute value by its name.
+         * Retrieves an integer attribute nullable value by its name.
          *
          * @param name The name of the attribute.
          * @return The integer value of the attribute.
          */
-        fun getInt(name: String): Int = data[name] as Int
+        fun getInt(name: String): Int? = data[name] as Int?
 
         /**
-         * Retrieves a string attribute value by its name.
+         * Retrieves a string attribute nullable value by its name.
          *
          * @param name The name of the attribute.
          * @return The string value of the attribute.
          */
-        fun getString(name: String): String = data[name] as String
+        fun getString(name: String): String? = data[name] as String?
+
+        /**
+         * Retrieves a boolean attribute nullable value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The boolean value of the attribute.
+         */
+        fun getBoolean(name: String): Boolean? =
+            attributes.find { it.name == name }?.value as Boolean?
+
+        /**
+         * Retrieves a double attribute nullable value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The double value of the attribute.
+         */
+        fun getDouble(name: String): Double? = data[name] as Double?
+
+        /**
+         * Retrieves a float attribute nullable value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The float value of the attribute.
+         */
+        fun getFloat(name: String): Float? = data[name] as Float?
+
+        /**
+         * Retrieves a long attribute nullable value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The long value of the attribute.
+         */
+        fun getLong(name: String): Long? = data[name] as Long?
+
+        /**
+         * Retrieves an integer attribute value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The integer value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
+         */
+        fun getRequireInt(name: String): Int = data[name] as Int
+
+        /**
+         * Retrieves a String attribute value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The UUID value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
+         */
+        fun getRequireString(name: String): String = data[name] as String
 
         /**
          * Retrieves a boolean attribute value by its name.
          *
          * @param name The name of the attribute.
          * @return The boolean value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
          */
-        fun getBoolean(name: String): Boolean =
-            attributes.find { it.name == name }?.value as Boolean
+        fun getRequireBoolean(name: String): Boolean = data[name] as Boolean
 
         /**
          * Retrieves a double attribute value by its name.
          *
          * @param name The name of the attribute.
          * @return The double value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
          */
-        fun getDouble(name: String): Double = data[name] as Double
+        fun getRequireDouble(name: String): Double = data[name] as Double
 
         /**
          * Retrieves a float attribute value by its name.
          *
          * @param name The name of the attribute.
          * @return The float value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
          */
-        fun getFloat(name: String): Float = (data[name] as Double).toFloat()
+        fun getRequireFloat(name: String): Float = data[name] as Float
 
         /**
          * Retrieves a long attribute value by its name.
          *
          * @param name The name of the attribute.
          * @return The long value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
          */
-        fun getLong(name: String): Long = data[name] as Long
+        fun getRequireLong(name: String): Long = data[name] as Long
+
     }
 
     /**

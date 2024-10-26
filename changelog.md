@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.2
+- Added methods to get attributes safely from entities.
+
 ## v0.4.1
 - Fixed version in gradle properties.
 
