@@ -1,5 +1,6 @@
 package org.apptank.horus.client.auth
 
+import org.apptank.horus.client.HorusDataFacade
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 
@@ -22,6 +23,7 @@ object HorusAuthentication {
      * @param token The access token for user authentication.
      */
     fun setupUserAccessToken(token: String) {
+        HorusDataFacade.init()
         userAuthentication = UserAuthentication(token)
         EventBus.emit(EventType.SETUP_CHANGED)
     }

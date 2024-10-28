@@ -39,6 +39,7 @@ import kotlin.uuid.Uuid
 object HorusDataFacade {
 
     private var isReady = false
+    private var isInitialized = false
     private var onCallbackReady: Callback? = null
 
     private var changeListeners: MutableList<DataChangeListener> = mutableListOf()
@@ -100,6 +101,17 @@ object HorusDataFacade {
             isReady = true
             onCallbackReady?.invoke()
         }
+        isInitialized = true
+    }
+
+    /**
+     * Initializes the facade.
+     * This class is a singleton and should be initialized before use.
+     */
+    internal fun init() {
+        if (isInitialized) {
+            return
+        }
     }
 
     /**
@@ -109,6 +121,10 @@ object HorusDataFacade {
      */
     fun onReady(callback: Callback) {
         onCallbackReady = callback
+
+        if (isReady) {
+            onCallbackReady?.invoke()
+        }
     }
 
     /**
@@ -741,6 +757,7 @@ object HorusDataFacade {
      * Registers event listeners for entity creation, update, and deletion.
      */
     private fun registerEntityEventListeners() {
+
         // Notify listeners when an entity is created
         EventBus.register(EventType.ENTITY_CREATED) {
             changeListeners.forEach { listener ->
