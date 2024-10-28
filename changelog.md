@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.3
+- Fixed method onReady to invoke the callback when the horus is already ready.
+
 ## v0.4.2
 - Added methods to get attributes safely from entities.
 

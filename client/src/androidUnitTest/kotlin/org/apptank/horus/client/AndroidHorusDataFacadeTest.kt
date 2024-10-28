@@ -124,6 +124,28 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     @Test
+    fun `validate method onReady when already is ready`() {
+        var invoked = false
+        HorusDataFacade.init()
+        EventBus.emit(EventType.ON_READY)
+        HorusDataFacade.onReady {
+            invoked = true
+        }
+        assert(invoked)
+    }
+
+    @Test
+    fun `validate method onReady when already user token is setup`() {
+        var invoked = false
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+        EventBus.emit(EventType.ON_READY)
+        HorusDataFacade.onReady {
+            invoked = true
+        }
+        assert(invoked)
+    }
+
+    @Test
     fun `when is not ready then throw exception because is not ready`(): Unit = runBlocking {
         Assert.assertThrows(IllegalStateException::class.java) {
             HorusDataFacade.insert("table", mapOf("key" to "value"))

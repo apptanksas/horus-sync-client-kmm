@@ -8,7 +8,6 @@ import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
-import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.tasks.ControlTaskManager
 
 
