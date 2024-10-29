@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.4
+- Added method in Horus entity to get file reference.
+
 ## v0.4.3
 - Fixed method onReady to invoke the callback when the horus is already ready.
 
