@@ -9,6 +9,7 @@ class HorusTest : TestCase() {
     @Test
     fun validateGetAttributesFromEntity() {
         // Given
+        val fileReferenceId = uuid()
         val entity = Horus.Entity(
             "entity",
             listOf(
@@ -18,7 +19,8 @@ class HorusTest : TestCase() {
                 Horus.Attribute("double", 1.0),
                 Horus.Attribute("float", 1.0f),
                 Horus.Attribute("boolean", true),
-                Horus.Attribute("long", 1L)
+                Horus.Attribute("long", 1L),
+                Horus.Attribute("file", fileReferenceId)
             )
         )
 
@@ -29,18 +31,22 @@ class HorusTest : TestCase() {
         Assert.assertNull(entity.getDouble("nullable"))
         Assert.assertNull(entity.getFloat("nullable"))
         Assert.assertNull(entity.getLong("nullable"))
+        Assert.assertNull(entity.getFileReference("nullable"))
         Assert.assertEquals(1, entity.getInt("int"))
         Assert.assertEquals("string123", entity.getString("string"))
         Assert.assertEquals(1.0, entity.getDouble("double"))
         Assert.assertEquals(1.0f, entity.getFloat("float"))
         Assert.assertEquals(true, entity.getBoolean("boolean"))
         Assert.assertEquals(1L, entity.getLong("long"))
+        Assert.assertEquals(fileReferenceId, entity.getFileReference("file").toString())
         Assert.assertEquals(1, entity.getRequireInt("int"))
         Assert.assertEquals("string123", entity.getRequireString("string"))
         Assert.assertTrue(1.0 == entity.getRequireDouble("double"))
         Assert.assertEquals(1.0f, entity.getRequireFloat("float"))
         Assert.assertEquals(true, entity.getRequireBoolean("boolean"))
         Assert.assertEquals(1L, entity.getRequireLong("long"))
+        Assert.assertEquals(fileReferenceId, entity.getRequireString("file"))
+
         Assert.assertThrows(NullPointerException::class.java) {
             entity.getRequireInt("nullable")
         }
@@ -58,6 +64,9 @@ class HorusTest : TestCase() {
         }
         Assert.assertThrows(NullPointerException::class.java) {
             entity.getRequireLong("nullable")
+        }
+        Assert.assertThrows(NullPointerException::class.java) {
+            entity.getRequireString("nullable")
         }
     }
 }

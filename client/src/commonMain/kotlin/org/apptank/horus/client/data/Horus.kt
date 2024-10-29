@@ -148,6 +148,15 @@ sealed class Horus {
         fun getLong(name: String): Long? = data[name] as Long?
 
         /**
+         * Retrieves a file reference attribute nullable value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The file reference value of the attribute.
+         */
+        fun getFileReference(name: String): FileReference? =
+            (data[name] as String?)?.let { FileReference(it) }
+
+        /**
          * Retrieves an integer attribute value by its name.
          *
          * @param name The name of the attribute.
@@ -207,6 +216,16 @@ sealed class Horus {
          */
         fun getRequireLong(name: String): Long = data[name] as Long
 
+        /**
+         * Retrieves a FileReference attribute value by its name.
+         *
+         * @param name The name of the attribute.
+         * @return The UUID value of the attribute.
+         *
+         * @throws NullPointerException if the attribute is not found.
+         */
+        fun getRequireFileReference(name: String): FileReference =
+            FileReference(data[name] as String)
     }
 
     /**
