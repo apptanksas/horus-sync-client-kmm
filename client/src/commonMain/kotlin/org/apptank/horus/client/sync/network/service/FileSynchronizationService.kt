@@ -36,15 +36,11 @@ internal class FileSynchronizationService(
         referenceId: String,
         file: FileData
     ): DataResult<SyncDTO.Response.FileInfoUploaded> {
-        info("Uploading -> ${file.filename}")
-
         return postWithMultipartFormData(
             "upload/file", mapOf(
                 "id" to referenceId,
                 "file" to file
-            ), { it.serialize() }, onProgressUpload = {
-                info("Uploading --> $it")
-            })
+            ), { it.serialize() })
     }
 
     /**

@@ -154,8 +154,6 @@ internal abstract class BaseService(
     ): DataResult<T> {
         return kotlin.runCatching {
 
-            info("HandleResponse...")
-
             if (response.status.value == 401 || response.status.value == 403) {
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
             }
