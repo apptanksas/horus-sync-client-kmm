@@ -132,7 +132,11 @@ internal abstract class BaseService(
                 parseFormData(data)
             }))
             setupHeaders(this)
-            onUpload { bytesSentTotal, contentLength -> onProgressUpload(((bytesSentTotal / contentLength) * 100).toInt()) }
+            onUpload { bytesSentTotal, contentLength ->
+                if (contentLength > 0) {
+                    onProgressUpload(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
+                }
+            }
         }, onResponse)
     }
 
@@ -149,6 +153,8 @@ internal abstract class BaseService(
         onResponse: (response: String) -> T
     ): DataResult<T> {
         return kotlin.runCatching {
+
+            info("HandleResponse...")
 
             if (response.status.value == 401 || response.status.value == 403) {
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
