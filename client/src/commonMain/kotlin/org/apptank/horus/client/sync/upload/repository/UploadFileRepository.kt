@@ -18,6 +18,7 @@ import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
 import org.apptank.horus.client.exception.FileSizeExceededException
+import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.toFileUri
 import org.apptank.horus.client.extensions.toPath
@@ -112,6 +113,8 @@ class UploadFileRepository(
         val output = mutableListOf<SyncFileResult>()
         val queryResult = fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL)
 
+        info("Upload: ${queryResult.size} files")
+
         queryResult.forEach { recordFile ->
 
             runCatching {
@@ -139,6 +142,8 @@ class UploadFileRepository(
                             output.add(recordFile.reference.toFailure(e))
                         }
                     )
+                }?:{
+                    output.add(recordFile.reference.toFailure(Exception("Error file not found -> ${recordFile.urlLocal}")))
                 }
             }.getOrElse { e ->
                 output.add(recordFile.reference.toFailure(e))
@@ -361,8 +366,19 @@ class UploadFileRepository(
      * @return The file data if found, `null` otherwise.
      */
     private fun SyncControl.File.createFileData(): FileData? {
-        val absolutePathFile = urlLocal?.toPath() ?: return null
-        val file = KmpFile(absolutePathFile)
+        var absolutePathFile = urlLocal?.toPath() ?: return null
+        var file = KmpFile(absolutePathFile)
+
+        if (file.exists().not()) {
+            absolutePathFile = absolutePathFile.fallbackFileLocalUri()
+            file = KmpFile(absolutePathFile)
+        }
+
+        if (file.exists().not()) {
+            error("[createFileData] File doesn't exists -> $absolutePathFile")
+            return null
+        }
+
         val filename = absolutePathFile.substringAfterLast("/")
 
         return FileData(
@@ -370,6 +386,10 @@ class UploadFileRepository(
             filename,
             mimeType
         )
+    }
+
+    internal fun String.fallbackFileLocalUri(): String {
+        return config.uploadFilesConfig.baseStoragePath+this.substring(this.indexOf(HORUS_PATH_FILES))
     }
 
     private fun CharSequence.toSuccess(): SyncFileResult.Success {
@@ -380,7 +400,7 @@ class UploadFileRepository(
         return SyncFileResult.Failure(Horus.FileReference(this), e)
     }
 
-    companion object {
-        private const val HORUS_PATH_FILES = "horus/sync/files/"
+    internal companion object {
+        const val HORUS_PATH_FILES = "horus/sync/files/"
     }
 }

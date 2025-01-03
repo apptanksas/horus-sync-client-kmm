@@ -7,6 +7,7 @@ import io.ktor.http.isSuccess
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
 import org.apptank.horus.client.base.network.HttpHeader
+import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 

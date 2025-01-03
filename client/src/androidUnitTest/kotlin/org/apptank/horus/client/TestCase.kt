@@ -224,8 +224,12 @@ abstract class TestCase {
 
     private fun Byte.toHex(): String = this.toUByte().toString(16).padStart(2, '0')
 
-    protected fun getLocalTestPath(): String {
-        return Paths.get("").toAbsolutePath().toString() + LOCAL_PATH
+    protected fun getLocalTestPath(path: String? = null): String {
+        val basePath = Paths.get("").toAbsolutePath().toString() + LOCAL_PATH
+        if (path != null) {
+            return "$basePath$path"
+        }
+        return basePath
     }
 
     companion object {
