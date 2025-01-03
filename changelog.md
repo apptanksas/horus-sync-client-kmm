@@ -1,4 +1,5 @@
 # Changelog
+## v0.4.5
 
 ## v0.4.4
 - Added method in Horus entity to get file reference.
