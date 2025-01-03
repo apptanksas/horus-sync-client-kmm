@@ -35,7 +35,14 @@ internal fun generateSyncControlFile(
     SyncControl.FileType.IMAGE,
     status ?: SyncControl.FileStatus.LOCAL,
     "image/png",
-    "file://${baseLocalPath?.also { if (it.endsWith("/")) it else it.substring(-1) } ?: "test/"}${Uuid.random()}.png".normalizePath(),
+    "file://${
+        baseLocalPath?.also {
+            if (it.endsWith("/")) it else it.substring(
+                0,
+                it.length - 1
+            )
+        } ?: "test/"
+    }${Uuid.random()}.png".normalizePath(),
     "http://test/${Uuid.random()}.png"
 )
 

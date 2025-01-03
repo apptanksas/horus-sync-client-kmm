@@ -7,6 +7,7 @@ import io.ktor.http.isSuccess
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
 import org.apptank.horus.client.base.network.HttpHeader
+import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 
@@ -35,11 +36,15 @@ internal class FileSynchronizationService(
         referenceId: String,
         file: FileData
     ): DataResult<SyncDTO.Response.FileInfoUploaded> {
+        info("Uploading -> ${file.filename}")
+
         return postWithMultipartFormData(
             "upload/file", mapOf(
                 "id" to referenceId,
                 "file" to file
-            ), { it.serialize() })
+            ), { it.serialize() }, onProgressUpload = {
+                info("Uploading --> $it")
+            })
     }
 
     /**

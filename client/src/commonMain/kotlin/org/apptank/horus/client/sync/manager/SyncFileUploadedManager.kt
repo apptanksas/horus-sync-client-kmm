@@ -7,6 +7,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.apptank.horus.client.base.Callback
+import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.SuspendedCallback
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
@@ -107,7 +108,13 @@ class SyncFileUploadedManager(
         val uploadFilesResult = uploadFileRepository.uploadFiles()
 
         if (uploadFilesResult.isFailure()) {
-            logException("[SyncFiles] Error while uploading files")
+            uploadFilesResult.forEach {
+                val failure = it as SyncFileResult.Failure
+                logException(
+                    "[SyncFiles] Error while uploading files -> ${failure.exception.message}",
+                    failure.exception
+                )
+            }
             return
         }
 
@@ -142,7 +149,13 @@ class SyncFileUploadedManager(
         val downloadFilesResult = uploadFileRepository.downloadRemoteFiles()
 
         if (downloadFilesResult.isFailure()) {
-            logException("[SyncFiles] Error while downloading files")
+            downloadFilesResult.forEach {
+                val failure = it as SyncFileResult.Failure
+                logException(
+                    "[SyncFiles] Error while downloading files -> ${failure.exception.message}",
+                    failure.exception
+                )
+            }
             return
         }
 
