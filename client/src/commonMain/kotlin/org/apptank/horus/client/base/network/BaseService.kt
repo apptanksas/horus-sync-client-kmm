@@ -132,7 +132,11 @@ internal abstract class BaseService(
                 parseFormData(data)
             }))
             setupHeaders(this)
-            onUpload { bytesSentTotal, contentLength -> onProgressUpload(((bytesSentTotal / contentLength) * 100).toInt()) }
+            onUpload { bytesSentTotal, contentLength ->
+                if (contentLength > 0) {
+                    onProgressUpload(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
+                }
+            }
         }, onResponse)
     }
 

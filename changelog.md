@@ -1,4 +1,7 @@
 # Changelog
+## v0.4.5
+- Added fallback to find local sync file. 
+- Fix onUpload progress calculation.
 
 ## v0.4.4
 - Added method in Horus entity to get file reference.
