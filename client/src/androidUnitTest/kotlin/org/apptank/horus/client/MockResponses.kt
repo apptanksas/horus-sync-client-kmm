@@ -2261,6 +2261,12 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
         ]
       },
       {
+        "name": "nullable",
+        "version": 1,
+        "type": "int",
+        "nullable": true
+      },
+      {
         "name": "unit",
         "version": 1,
         "type": "enum",
