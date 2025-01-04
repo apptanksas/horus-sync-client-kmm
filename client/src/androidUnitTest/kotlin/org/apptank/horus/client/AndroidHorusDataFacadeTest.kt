@@ -55,6 +55,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.random.Random
+import kotlin.random.nextInt
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -554,7 +555,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 Horus.Batch.Update(
                     "measures",
                     it,
-                    listOf(Horus.Attribute("value", Random.nextFloat()))
+                    listOf(
+                        Horus.Attribute("value", Random.nextFloat()),
+                        Horus.Attribute("nullable", null)
+                    )
                 )
             }
         )
@@ -749,14 +753,16 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun createDataInsertRecord() = mapOf(
         "measure" to "w",
         "unit" to "kg",
-        "value" to 10.0f
+        "value" to 10.0f,
+        "nullable" to null
     )
 
     private fun createDataInsertRecordWithId() = mapOf(
         "id" to uuid(),
         "measure" to "w",
         "unit" to "kg",
-        "value" to 10.0f
+        "value" to 10.0f,
+        "nullable" to Random.nextInt(1..1000)
     )
 
     private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {

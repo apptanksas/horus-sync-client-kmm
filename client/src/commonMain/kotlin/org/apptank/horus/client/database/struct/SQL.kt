@@ -16,7 +16,7 @@ sealed class SQL {
      */
     data class ColumnValue(
         val column: String,
-        val value: Any
+        val value: Any?
     )
 
     /**
@@ -80,7 +80,7 @@ sealed class SQL {
  * @return An [SQL.ColumnValue] representation of the attribute.
  */
 fun Horus.Attribute<*>.toDBColumnValue(): SQL.ColumnValue {
-    return SQL.ColumnValue(name, value!!)
+    return SQL.ColumnValue(name, value)
 }
 
 /**

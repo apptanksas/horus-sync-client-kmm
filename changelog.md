@@ -1,4 +1,7 @@
 # Changelog
+## v0.4.6
+- Fixed issue when it tries to insert or update a entity with a null value.
+
 ## v0.4.5
 - Added fallback to find local sync file. 
 - Fix onUpload progress calculation.
