@@ -104,7 +104,11 @@ sealed class Horus {
          * @param name The name of the attribute.
          * @return The integer value of the attribute.
          */
-        fun getInt(name: String): Int? = data[name] as Int?
+        fun getInt(name: String): Int? = when (val value = data[name]) {
+            is Int -> value
+            is Long -> value.toInt()
+            else -> null
+        }
 
         /**
          * Retrieves a string attribute nullable value by its name.
@@ -129,7 +133,11 @@ sealed class Horus {
          * @param name The name of the attribute.
          * @return The double value of the attribute.
          */
-        fun getDouble(name: String): Double? = data[name] as Double?
+        fun getDouble(name: String): Double? = when (val value = data[name]) {
+            is Double -> value
+            is Float -> value.toDouble()
+            else -> null
+        }
 
         /**
          * Retrieves a float attribute nullable value by its name.
@@ -137,7 +145,11 @@ sealed class Horus {
          * @param name The name of the attribute.
          * @return The float value of the attribute.
          */
-        fun getFloat(name: String): Float? = data[name] as Float?
+        fun getFloat(name: String): Float? = when (val value = data[name]) {
+            is Float -> value
+            is Double -> value.toFloat()
+            else -> null
+        }
 
         /**
          * Retrieves a long attribute nullable value by its name.
@@ -145,7 +157,11 @@ sealed class Horus {
          * @param name The name of the attribute.
          * @return The long value of the attribute.
          */
-        fun getLong(name: String): Long? = data[name] as Long?
+        fun getLong(name: String): Long? = when (val value = data[name]) {
+            is Long -> value
+            is Int -> value.toLong()
+            else -> null
+        }
 
         /**
          * Retrieves a file reference attribute nullable value by its name.
@@ -164,7 +180,7 @@ sealed class Horus {
          *
          * @throws NullPointerException if the attribute is not found.
          */
-        fun getRequireInt(name: String): Int = data[name] as Int
+        fun getRequireInt(name: String): Int = getInt(name) as Int
 
         /**
          * Retrieves a String attribute value by its name.
@@ -194,7 +210,7 @@ sealed class Horus {
          *
          * @throws NullPointerException if the attribute is not found.
          */
-        fun getRequireDouble(name: String): Double = data[name] as Double
+        fun getRequireDouble(name: String): Double = getDouble(name) as Double
 
         /**
          * Retrieves a float attribute value by its name.
@@ -204,7 +220,7 @@ sealed class Horus {
          *
          * @throws NullPointerException if the attribute is not found.
          */
-        fun getRequireFloat(name: String): Float = data[name] as Float
+        fun getRequireFloat(name: String): Float = getFloat(name) as Float
 
         /**
          * Retrieves a long attribute value by its name.
@@ -214,7 +230,7 @@ sealed class Horus {
          *
          * @throws NullPointerException if the attribute is not found.
          */
-        fun getRequireLong(name: String): Long = data[name] as Long
+        fun getRequireLong(name: String): Long = getLong(name) as Long
 
         /**
          * Retrieves a FileReference attribute value by its name.
