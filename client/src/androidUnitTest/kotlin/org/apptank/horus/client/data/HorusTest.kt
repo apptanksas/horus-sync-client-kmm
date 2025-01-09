@@ -69,4 +69,28 @@ class HorusTest : TestCase() {
             entity.getRequireString("nullable")
         }
     }
+
+    @Test
+    fun validatePolymorphicAttributes() {
+        // Given
+        val entity = Horus.Entity(
+            "entity",
+            listOf(
+                Horus.Attribute("longAsInt", 10233L),
+                Horus.Attribute("doubleASFloat", 20.0)
+            )
+        )
+
+        // When
+        val longAsInt = entity.getInt("longAsInt")
+        val doubleAsFloat = entity.getFloat("doubleASFloat")
+        val longAsIntRequired = entity.getRequireInt("longAsInt")
+        val doubleAsFloatRequired = entity.getRequireFloat("doubleASFloat")
+
+        // Then
+        Assert.assertEquals(10233, longAsInt)
+        Assert.assertEquals(20f, doubleAsFloat)
+        Assert.assertEquals(10233, longAsIntRequired)
+        Assert.assertEquals(20f, doubleAsFloatRequired)
+    }
 }

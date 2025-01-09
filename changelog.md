@@ -1,4 +1,7 @@
 # Changelog
+## v0.4.7
+- Fixed issue in Entity get attributes polymorphic like getInt and getFloat.
+
 ## v0.4.6
 - Fixed issue when it tries to insert or update a entity with a null value.
 
