@@ -20,9 +20,13 @@ import org.apptank.horus.client.config.BOOL_TRUE
 internal fun Any?.prepareSQLValueAsString(): String {
     if (this == null) return "NULL"
 
+    val sanitize: (String) -> String = { value ->
+        value.replace("'", "''")
+    }
+
     return when (val value = this) {
-        is String -> "'$value'"
-        is CharSequence -> "'$value'"
+        is String -> "'${sanitize(value)}'"
+        is CharSequence -> "'${sanitize(value.toString())}'"
         is Boolean -> if (value) BOOL_TRUE else BOOL_FALSE
         is List<*> -> "(${value.joinToString(",") { it.prepareSQLValueAsString() }})"
         else -> value.toString()
@@ -40,6 +44,7 @@ internal fun Any?.prepareSQLValueAsString(): String {
 internal fun SqlDriver.createSQLInsert(table: String, values: DataMap): String {
     val columns = values.keys.joinToString(", ")
     val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
+    print("INSERT INTO $table ($columns) VALUES ($valuesString)")
     return "INSERT INTO $table ($columns) VALUES ($valuesString)"
 }
 

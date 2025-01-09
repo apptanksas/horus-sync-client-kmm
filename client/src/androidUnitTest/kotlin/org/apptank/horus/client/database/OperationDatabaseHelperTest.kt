@@ -496,7 +496,7 @@ class OperationDatabaseHelperTest : TestCase() {
                 entityName,
                 listOf(
                     SQL.ColumnValue("id", uuid()),
-                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("name", "dog 'Olin"),
                     SQL.ColumnValue("value", Random.nextInt()),
                     SQL.ColumnValue("float", Random.nextFloat()),
                     SQL.ColumnValue("boolean", Random.nextBoolean())
