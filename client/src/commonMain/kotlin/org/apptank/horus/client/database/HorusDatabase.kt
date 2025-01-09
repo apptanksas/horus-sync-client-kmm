@@ -12,6 +12,7 @@ import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.extensions.createSQLInsert
 import org.apptank.horus.client.extensions.execute
+import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
@@ -77,6 +78,8 @@ class HorusDatabase(
          * @return A [QueryResult.Value] indicating the result of the creation operation.
          */
         override fun create(driver: SqlDriver): QueryResult.Value<Unit> {
+
+
             driver.handle {
 
                 execute(EntitiesTable.SQL_CREATE_TABLE)
@@ -169,6 +172,11 @@ class HorusDatabase(
 
         private fun SqlDriver.insertEntity(entity: EntityScheme) {
             try {
+
+                if (entityNameExists(entity.name)) {
+                    return
+                }
+
                 execute(
                     createSQLInsert(
                         EntitiesTable.TABLE_NAME,
@@ -184,10 +192,31 @@ class HorusDatabase(
                     )
                 }
             } catch (e: Exception) {
-                // Ignore
                 logException("[Migration] Error insert entity", e)
             }
         }
+
+
+        /**
+         * Validates if an entity name exists in the database.
+         *
+         * @param entityName The name of the entity to validate.
+         * @return True if the entity name exists, false otherwise.
+         */
+        private fun SqlDriver.entityNameExists(entityName: String): Boolean {
+            return executeQuery(
+                null,
+                "SELECT COUNT(*) FROM ${EntitiesTable.TABLE_NAME} WHERE ${EntitiesTable.ATTR_NAME} = '$entityName'", {
+                    if (!it.next().value) {
+                        return@executeQuery QueryResult.Value(0)
+                    }
+                    val count = it.getLong(0) ?: 0
+                    QueryResult.Value(count)
+                },
+                0
+            ).value > 0
+        }
+
     }
 
     /**
