@@ -5,6 +5,7 @@
 
 ## v0.4.8
 - Fixed sanitize SQL sentence operations.
+- Fixed when to it sends dummy attributes in validation hashing.
 
 ## v0.4.7
 - Fixed exception when try to insert in horus_entities with a entity name exists.
