@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.9
+- Fixed issue when try serialize a entity with long values in AnySerializer.
+
 ## v0.4.8
 - Fixed sanitize SQL sentence operations.
 

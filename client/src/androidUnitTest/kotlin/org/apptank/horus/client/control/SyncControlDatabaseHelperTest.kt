@@ -252,9 +252,10 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val entity = "e9827733"
         val attributes = listOf(
             Horus.Attribute("id", "1"),
-            Horus.Attribute("name", "name")
+            Horus.Attribute("name", "name"),
+            Horus.Attribute("long", Random.nextLong())
         )
-        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT, long INTEGER)")
         driver.registerEntity(entity)
 
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
@@ -282,9 +283,10 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val entity = "e9827733"
         val attributes = listOf(
             Horus.Attribute("id", "1"),
-            Horus.Attribute("name", "name")
+            Horus.Attribute("name", "name"),
+            Horus.Attribute("long", Random.nextLong())
         )
-        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT, long INTEGER)")
         driver.registerEntity(entity)
 
         controlManagerDatabaseHelper.addActionInsert(entity, attributes)
