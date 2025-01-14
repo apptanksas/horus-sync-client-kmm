@@ -2,10 +2,10 @@
 
 ## v0.4.9
 - Fixed issue when try serialize a entity with long values in AnySerializer.
+- Fixed when to it sends dummy attributes in validation hashing.
 
 ## v0.4.8
 - Fixed sanitize SQL sentence operations.
-- Fixed when to it sends dummy attributes in validation hashing.
 
 ## v0.4.7
 - Fixed exception when try to insert in horus_entities with a entity name exists.
