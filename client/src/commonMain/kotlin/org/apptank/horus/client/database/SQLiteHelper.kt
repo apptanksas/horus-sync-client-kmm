@@ -135,6 +135,7 @@ abstract class SQLiteHelper(
      */
     protected fun <T> rawQuery(query: String, mapper: (SqlCursor) -> T?): List<T> {
         return transactionWithResult {
+            info("Select Query: $query")
             driver.executeQuery(Random.nextInt(), query, {
                 val resultList = mutableListOf<T>()
                 while (it.next().value) {
@@ -158,6 +159,8 @@ abstract class SQLiteHelper(
         return transactionWithResult {
             val tableName = getTableName(query)
             val attributes = extractSelectAttributes(query)
+
+            info("Select Query: $query")
 
             driver.executeQuery(null, query, {
                 val resultList = mutableListOf<T>()
