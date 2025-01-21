@@ -56,6 +56,9 @@ it could have breaking changes in the API.
 Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to
 store data locally and synchronize it with a remote server, ensuring data security and integrity.
 
+Use Horus in server side to synchronize the data with the clients.
+* [Horus PHP SDK](https://github.com/apptanksas/horus-sync-php)
+
 ## Features
 
 - Easy-to-use interface.
