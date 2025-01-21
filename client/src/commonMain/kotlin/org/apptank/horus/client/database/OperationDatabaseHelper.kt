@@ -5,9 +5,12 @@ import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.QueryBuilder
+import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
+import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.log
 
 /**
@@ -170,6 +173,21 @@ internal class OperationDatabaseHelper(
         }
         // Reverse the output list because the map of result to list the order in the inverse way
         return output.reversed()
+    }
+
+    /**
+     * Executes a query using the provided SimpleQueryBuilder and returns the count of records.
+     * @param builder the SimpleQueryBuilder used to build the SQL query.
+     *
+     * @return the count of records from the query result.
+     */
+    override fun countRecords(builder: SimpleQueryBuilder): Int {
+        val queryBuilder = builder.selectCount()
+        var count = 0
+        rawQuery(queryBuilder.build()) { cursor ->
+            count = cursor.getRequireInt(0)
+        }
+        return count
     }
 
     /**

@@ -15,6 +15,7 @@ import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.database.SyncFileDatabaseHelper
+import org.apptank.horus.client.restrictions.EntityRestrictionValidator
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
@@ -325,6 +326,15 @@ object HorusContainer {
     internal fun getNetworkValidator(): INetworkValidator {
         return networkValidator
             ?: throw IllegalStateException("NetworkValidator not set")
+    }
+
+    /**
+     * Retrieves the entity restriction validator.
+     *
+     * @return The [EntityRestrictionValidator] instance.
+     */
+    internal fun getEntityRestrictionValidator(): EntityRestrictionValidator {
+        return EntityRestrictionValidator(getOperationDatabaseHelper())
     }
 
     /**

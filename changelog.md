@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.0
+- Added support to entity restrictions when entity reaches a limit of records for a specific entity.
+
 ## v0.4.10
 - Added print log queries.
 

@@ -5,6 +5,7 @@ import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.QueryBuilder
+import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 
 interface IOperationDatabaseHelper {
     /**
@@ -79,4 +80,11 @@ interface IOperationDatabaseHelper {
      */
     fun queryRecords(builder: QueryBuilder): List<DataMap>
 
+    /**
+     * Executes a query using the provided SimpleQueryBuilder and returns the count of records.
+     * @param builder the SimpleQueryBuilder used to build the SQL query.
+     *
+     * @return the count of records from the query result.
+     */
+    fun countRecords(builder: SimpleQueryBuilder): Int
 }

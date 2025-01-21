@@ -11,7 +11,12 @@ internal object AttributesPreparator {
 
     // List of restricted attribute names that should not be included in hashing or insertion.
     private val ATTRIBUTES_RESTRICTED =
-        listOf("sync_owner_id", "sync_hash", "sync_created_at", "sync_updated_at")
+        listOf(
+            Horus.Attribute.HASH,
+            Horus.Attribute.OWNER_ID,
+            Horus.Attribute.CREATED_AT,
+            Horus.Attribute.UPDATED_AT
+        )
 
     /**
      * Checks if any attribute in the provided list contains a restricted name.
@@ -41,9 +46,9 @@ internal object AttributesPreparator {
 
         return attributes.toMutableList().apply {
             add(id)
-            add(Horus.Attribute("sync_owner_id", userId))
-            add(Horus.Attribute("sync_created_at", syncTime))
-            add(Horus.Attribute("sync_updated_at", syncTime))
+            add(Horus.Attribute(Horus.Attribute.OWNER_ID, userId))
+            add(Horus.Attribute(Horus.Attribute.CREATED_AT, syncTime))
+            add(Horus.Attribute(Horus.Attribute.UPDATED_AT, syncTime))
         }.toList()
     }
 
@@ -74,8 +79,8 @@ internal object AttributesPreparator {
 
         return attributes.toMutableList().apply {
             add(hash)
-            removeIf { it.name == "sync_updated_at" }
-            add(Horus.Attribute("sync_updated_at", syncTime))
+            removeIf { it.name == Horus.Attribute.UPDATED_AT }
+            add(Horus.Attribute(Horus.Attribute.UPDATED_AT, syncTime))
         }.toList()
     }
 

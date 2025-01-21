@@ -20,9 +20,11 @@ import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
+import org.apptank.horus.client.exception.OperationNotPermittedException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.removeIf
+import org.apptank.horus.client.restrictions.EntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.data.FileData
@@ -95,6 +97,8 @@ object HorusDataFacade {
             return field
         }
 
+    private val entityRestrictionValidator by lazy { HorusContainer.getEntityRestrictionValidator() }
+
     init {
         registerEntityEventListeners()
         EventBus.register(EventType.ON_READY) {
@@ -128,6 +132,15 @@ object HorusDataFacade {
     }
 
     /**
+     * Sets the entity restrictions for the facade.
+     *
+     * @param restrictions The list of entity restrictions to set.
+     */
+    fun setEntityRestrictions(restrictions: List<EntityRestriction>) {
+        entityRestrictionValidator.setRestrictions(restrictions)
+    }
+
+    /**
      * Inserts multiple records into the database with specified attributes.
      *
      * @param batch The list of batch to insert.
@@ -141,12 +154,20 @@ object HorusDataFacade {
         val insertIds =
             mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
 
+        // Start validation
+        entityRestrictionValidator.startValidation()
+
         batch.forEach { it ->
 
             val entity = it.entity
             val attributes = it.attributes
 
             validateConstraintsEntity(entity)
+            try {
+                entityRestrictionValidator.validate(entity, EntityRestriction.OperationType.INSERT)
+            } catch (e: OperationNotPermittedException) {
+                return DataResult.NotAuthorized(e)
+            }
 
             if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
                 return DataResult.Failure(IllegalStateException("Attribute restricted"))
@@ -157,7 +178,7 @@ object HorusDataFacade {
 
             val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
                 id,
-                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getUserId())
+                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
             )
 
             recordInserts.add(
@@ -168,6 +189,9 @@ object HorusDataFacade {
             )
             insertIds.add(Triple(id, entity, attributes))
         }
+
+        // Finish validation
+        entityRestrictionValidator.finishValidation()
 
         val onInsertActions: Callback = {
 
@@ -209,6 +233,17 @@ object HorusDataFacade {
 
         validateConstraintsEntity(entity)
 
+        // Validate entity restrictions
+        try {
+            with(entityRestrictionValidator) {
+                startValidation()
+                validate(entity, EntityRestriction.OperationType.INSERT)
+                entityRestrictionValidator.finishValidation()
+            }
+        } catch (e: OperationNotPermittedException) {
+            return DataResult.NotAuthorized(e)
+        }
+
         if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
         }
@@ -219,7 +254,7 @@ object HorusDataFacade {
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
             id,
-            AttributesPreparator.appendInsertSyncAttributes(id, attributes, getUserId())
+            AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
         )
 
         return runCatching {
@@ -516,6 +551,7 @@ object HorusDataFacade {
 
         validateConstraintsReadable(entity)
 
+
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(*conditions.toTypedArray())
             orderBy?.let {
@@ -798,8 +834,8 @@ object HorusDataFacade {
      * @return The user ID of the authenticated user.
      * @throws UserNotAuthenticatedException If no user is authenticated.
      */
-    private fun getUserId(): String {
-        return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
+    private fun getEffectiveUserId(): String {
+        return HorusAuthentication.getEffectiveUserId()
     }
 
     /**
