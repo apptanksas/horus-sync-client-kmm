@@ -3,12 +3,12 @@ name: Validate Release Branch
 on:
   push:
     branches:
-      - 'release/*' # Se activa para cualquier branch que empiece con release/
+      - 'release/*'
 
 jobs:
   validate-release-branch:
+    name: Validate Release Branch Name
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
