@@ -191,4 +191,14 @@ class SimpleQueryBuilderTest {
 
         Assert.assertEquals(expected, result)
     }
+
+    @Test
+    fun validateSelectCount() {
+        val expected = "SELECT COUNT(*) FROM category"
+        val builder = SimpleQueryBuilder("category")
+
+        val result = builder.selectCount().build()
+
+        Assert.assertEquals(expected, result)
+    }
 }

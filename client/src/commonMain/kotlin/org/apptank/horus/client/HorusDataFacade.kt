@@ -746,6 +746,10 @@ object HorusDataFacade {
             ?: throw EntityNotExistsException(entity)
     }
 
+    private fun validateEntityRestrictions(entity: String) {
+
+    }
+
     private fun validateIsCanWriteIntoEntity(entity: String) {
         if (syncControlDatabaseHelper!!.isEntityCanBeWritable(entity)) {
             return

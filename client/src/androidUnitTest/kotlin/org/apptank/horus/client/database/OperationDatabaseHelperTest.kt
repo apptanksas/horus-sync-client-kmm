@@ -19,6 +19,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import kotlin.random.Random
+import kotlin.test.assertEquals
 
 
 class OperationDatabaseHelperTest : TestCase() {
@@ -506,7 +507,7 @@ class OperationDatabaseHelperTest : TestCase() {
         databaseHelper.insertWithTransaction(listActions)
         // When
         val result = databaseHelper.queryRecords(SimpleQueryBuilder(entityName).apply {
-            select("name","boolean")
+            select("name", "boolean")
         })
 
         // Then
@@ -515,6 +516,64 @@ class OperationDatabaseHelperTest : TestCase() {
             Assert.assertTrue(it.containsKey("name"))
             Assert.assertTrue(it.containsKey("boolean"))
         }
+    }
+
+    @Test
+    fun validateCountRecordsIsSuccess() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        val listActions = generateRandomArray {
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "dog 'Olin"),
+                    SQL.ColumnValue("value", Random.nextInt()),
+                    SQL.ColumnValue("float", Random.nextFloat()),
+                    SQL.ColumnValue("boolean", Random.nextBoolean())
+                )
+            )
+        }
+        databaseHelper.insertWithTransaction(listActions)
+        // When
+        val result = databaseHelper.countRecords(SimpleQueryBuilder(entityName))
+
+        // Then
+        assertEquals(listActions.size, result)
+    }
+
+
+    @Test
+    fun validateCountRecordsIsZero() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        // When
+        val result = databaseHelper.countRecords(SimpleQueryBuilder(entityName))
+
+        // Then
+        assertEquals(0, result)
     }
 
     private fun getCountFromTable(table: String): Int {
