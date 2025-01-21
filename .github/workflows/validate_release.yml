@@ -2,11 +2,13 @@ name: Validate Release Branch
 
 on:
   pull_request:
-    branches: ["release/*"]
+    branches:
+      - release/*
     types:
       - opened
       - synchronize
       - reopened
+      - edited
 
 jobs:
   validate-release-branch:
