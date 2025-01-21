@@ -12,7 +12,6 @@ internal object AttributesPreparator {
     // List of restricted attribute names that should not be included in hashing or insertion.
     private val ATTRIBUTES_RESTRICTED =
         listOf(
-            Horus.Attribute.ID,
             Horus.Attribute.HASH,
             Horus.Attribute.OWNER_ID,
             Horus.Attribute.CREATED_AT,

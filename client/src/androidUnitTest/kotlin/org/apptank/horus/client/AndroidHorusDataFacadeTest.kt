@@ -40,6 +40,7 @@ import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
@@ -371,7 +372,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validatesOperationIsFailureByEntityNoExists()
         validateInsertTest()
         validateInsertWithIdTest()
+        validateInsertIsFailureByRestriction()
         validateInsertBatchTest()
+        validateInsertBatchIsFailureByMaxCountRestriction()
         validateInsertBatchWithIdsTest()
         validateUpdateBatchIsTest()
         validateInsertAndUpdateIsSuccess()
@@ -516,7 +519,41 @@ class AndroidHorusDataFacadeTest : TestCase() {
             })
     }
 
+    private fun validateInsertIsFailureByRestriction() = prepareInternalTest {
+        val idExpected = uuid()
+
+        // Set restriction
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 0)
+            )
+        )
+
+        val result = HorusDataFacade.insert(
+            "measures",
+            createDataInsertRecord().toMutableMap().apply {
+                put("id", idExpected)
+            }
+        )
+        assert(result is DataResult.NotAuthorized)
+        result.coFold(
+            onSuccess = { id ->
+                fail()
+            },
+            onFailure = { exception ->
+                fail(exception.message)
+            },
+            onNotAuthorized = { assert(true) }
+        )
+    }
+
     private fun validateInsertBatchTest() = prepareInternalTest {
+
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 3)
+            )
+        )
 
         val result = HorusDataFacade.insertBatch(
             listOf(
@@ -527,6 +564,25 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
         assert(result is DataResult.Success)
     }
+
+    private fun validateInsertBatchIsFailureByMaxCountRestriction() = prepareInternalTest {
+
+        // Set restriction
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 2)
+            )
+        )
+        val result = HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord())
+            )
+        )
+        assert(result is DataResult.NotAuthorized)
+    }
+
 
     private fun validateInsertBatchWithIdsTest() = prepareInternalTest {
 
@@ -750,6 +806,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
 
+    //---------------------------------------------
+
     private fun createDataInsertRecord() = mapOf(
         "measure" to "w",
         "unit" to "kg",
@@ -776,7 +834,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
         driver.execute("DELETE FROM measures")
         driver.execute("DELETE FROM product_breeds")
-
+        HorusDataFacade.setEntityRestrictions(emptyList())
         block()
     }
 

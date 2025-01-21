@@ -9,6 +9,48 @@
 **Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile,
 it could have breaking changes in the API.
 
+# Table of Contents
+
+- [Horusync client KMM](#horusync-client-kmm)
+  - [Features](#features)
+- [1. How to start](#1-how-to-start)
+  - [Install](#install)
+    - [Gradle](#gradle)
+  - [Android](#android)
+    - [Setup](#setup)
+      - [Permissions](#permissions)
+      - [Initialization](#initialization)
+  - [IOS](#ios)
+    - [Setup](#setup-1)
+      - [1. Create an app delegate to handle lifecycle events](#1-create-an-app-delegate-to-handle-lifecycle-events)
+      - [2. Implement a NetworkValidator to check the network status](#2-implement-a-networkvalidator-to-check-the-network-status)
+      - [3. Configure Horus in the initialization of the application](#3-configure-horus-in-the-initialization-of-the-application)
+- [2. How to use](#2-how-to-use)
+  - [Callbacks](#callbacks)
+    - [Initialization validation](#initialization-validation)
+    - [Subscribe to data changes](#subscribe-to-data-changes)
+      - [Remove the listener](#remove-the-listener)
+      - [Clear all listeners](#clear-all-listeners)
+  - [Data management](#data-management)
+    - [Insert data into an entity](#insert-data-into-an-entity)
+    - [Update data of a record](#update-data-of-a-record)
+    - [Delete a record](#delete-a-record)
+  - [Simple record query](#simple-record-query)
+    - [Get a record by ID](#get-a-record-by-id)
+    - [Upload files](#upload-files)
+- [Utilities](#utilities)
+  - [Get entities name](#get-entities-name)
+  - [Force synchronization](#force-synchronization)
+  - [Validate if exists data to synchronize](#validate-if-exists-data-to-synchronize)
+  - [Get the last synchronization date](#get-the-last-synchronization-date)
+- [Authentication](#authentication)
+  - [Setup access token](#setup-access-token)
+  - [Clear session](#clear-session)
+  - [Setup to act as a guest user by another user](#setup-to-act-as-a-guest-user-by-another-user)
+- [3. Local testing](#3-local-testing)
+  - [Publish locally](#publish-locally)
+
+
 # Horusync client KMM
 
 Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to
@@ -19,6 +61,9 @@ store data locally and synchronize it with a remote server, ensuring data securi
 - Easy-to-use interface.
 - It is safety.
 - Validates data integrity across clients.
+- Support for file uploads.
+- Support for entity restrictions.
+
 
 # 1. How to start
 
@@ -329,8 +374,6 @@ result.fold(
     })  
 ```  
 
-### Actualizar datos de un registro
-
 ### Update data of a record
 
 To update a record, use the **update** method passing the entity name, the record ID, and a map with
@@ -502,6 +545,23 @@ configured as follows:
 ```kotlin  
 HorusAuthentication.setUserActingAs("{USER_OWNER_ID}")  
 ```  
+
+## Entity restrictions
+
+You can add specific restrictions for an entity, for example, to limit the number of records that can be stored in an entity. If the restriction is reached, the operation will fail and data result will be **DataResult.NotAuthorized**.
+
+Use the **setEntityRestrictions** method of the **HorusDataFacade** class to set the restrictions.
+
+```kotlin
+ HorusDataFacade.setEntityRestrictions(
+  listOf(
+    MaxCountEntityRestriction("tasks", 100) // Limit to 100 records in the "tasks" entity
+  )
+)
+```
+
+### Restrictions supported
+- **MaxCountEntityRestriction**: Limit the number of records that can be stored in an entity.
 
 # 3. Local testing
 
