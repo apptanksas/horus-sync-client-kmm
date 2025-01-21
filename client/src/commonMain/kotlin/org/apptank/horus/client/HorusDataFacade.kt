@@ -157,7 +157,7 @@ object HorusDataFacade {
 
             val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
                 id,
-                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getUserId())
+                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
             )
 
             recordInserts.add(
@@ -219,7 +219,7 @@ object HorusDataFacade {
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
             id,
-            AttributesPreparator.appendInsertSyncAttributes(id, attributes, getUserId())
+            AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
         )
 
         return runCatching {
@@ -516,6 +516,7 @@ object HorusDataFacade {
 
         validateConstraintsReadable(entity)
 
+
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(*conditions.toTypedArray())
             orderBy?.let {
@@ -802,8 +803,8 @@ object HorusDataFacade {
      * @return The user ID of the authenticated user.
      * @throws UserNotAuthenticatedException If no user is authenticated.
      */
-    private fun getUserId(): String {
-        return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
+    private fun getEffectiveUserId(): String {
+        return HorusAuthentication.getEffectiveUserId()
     }
 
     /**
