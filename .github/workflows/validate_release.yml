@@ -12,9 +12,7 @@ on:
 
 jobs:
   validate-release-branch:
-    if: github.ref == 'refs/heads/master'  # Solo se ejecuta si el branch objetivo es master.
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
