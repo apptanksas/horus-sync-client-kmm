@@ -1,19 +1,15 @@
 name: Validate Release Branch
 
 on:
-  pull_request:
+  push:
     branches:
-      - release/*
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - edited
+      - 'release/*'
 
 jobs:
   validate-release-branch:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'  # Solo se ejecuta si el branch objetivo es master.
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
