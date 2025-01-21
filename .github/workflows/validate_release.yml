@@ -3,11 +3,10 @@ name: Validate Release Branch
 on:
   push:
     branches:
-      - 'release/*'
+      - 'release/*' # Se activa para cualquier branch que empiece con release/
 
 jobs:
   validate-release-branch:
-    if: github.ref == 'refs/heads/master'  # Solo se ejecuta si el branch objetivo es master.
     runs-on: ubuntu-latest
 
     steps:
