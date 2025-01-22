@@ -213,4 +213,15 @@ class SimpleQueryBuilderTest {
 
         Assert.assertEquals(expected, result)
     }
+
+    @Test
+    fun validateOrderByMultipleColumns() {
+        val expected = "SELECT * FROM category ORDER BY age DESC, name ASC"
+        val builder = SimpleQueryBuilder("category")
+
+        val result = builder.orderBy("age", SQL.OrderBy.DESC)
+            .orderBy("name", SQL.OrderBy.ASC).build()
+
+        Assert.assertEquals(expected, result)
+    }
 }
