@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.0
+- Added support to multiple order by in query.
+
 ## v0.5.0
 - Added workflow to validate release branch.
 - Added method to do query with more complex conditions.

@@ -42,7 +42,7 @@ abstract class QueryBuilder {
 
     private var offset: Int? = null
 
-    private var orderBy: Pair<String, SQL.OrderBy>? = null
+    private var orderBy: MutableList<Pair<String, SQL.OrderBy>>? = null
 
     /**
      * Adds `WHERE` conditions to the query with an `AND` join operator by default.
@@ -133,7 +133,10 @@ abstract class QueryBuilder {
      * @return The current instance of [QueryBuilder] for method chaining.
      */
     fun orderBy(column: String, orderBy: SQL.OrderBy = SQL.OrderBy.DESC): QueryBuilder {
-        this.orderBy = Pair(column, orderBy)
+        if (this.orderBy == null) {
+            this.orderBy = mutableListOf()
+        }
+        this.orderBy?.add(Pair(column, orderBy))
         return this
     }
 
@@ -216,7 +219,13 @@ abstract class QueryBuilder {
      */
     protected fun buildOrderBy(): String {
         orderBy ?: return ""
-        return " ORDER BY ${orderBy?.first} ${orderBy?.second?.name}"
+        var base = " ORDER BY"
+
+        orderBy?.forEach {
+            base += " ${it.first} ${it.second.name},"
+        }
+        
+        return base.removeSuffix(",")
     }
 
     /**
