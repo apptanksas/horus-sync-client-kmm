@@ -454,6 +454,21 @@ HorusDataFacade.querySimple("users", whereConditions, orderBy = "name")
 
 ```  
 
+### Complex query
+
+To do a query with more complex conditions, use the **query** method passing a query builder object.
+
+```kotlin
+
+val builder = SimpleQueryBuilder("entity").where(
+  SQL.WhereCondition(SQL.ColumnValue("name", "John%"), SQL.Comparator.LIKE)
+).whereOr(
+  SQL.WhereCondition(SQL.ColumnValue("lastname","John%"), SQL.Comparator.LIKE)
+)
+
+HorusDataFacade.query(builder)
+```
+
 ### Get a record by ID
 
 To get a record by its ID, use the **getById** method passing the entity name and the record ID.
@@ -470,6 +485,20 @@ if (user != null) {
 
 ```  
 
+### Get count records in a entity
+
+To get the number of records in an entity, use the **countRecordFromEntity** method passing the entity name.
+
+```kotlin
+HorusDataFacade.countRecordFromEntity("users").fold(
+    onSuccess = { count ->
+        //** YOUR CODE HERE WHEN SUCCESS */
+    },
+    onFailure = {
+        //** YOUR CODE HERE WHEN FAILURE */
+    }
+)
+``` 
 ### Upload files
 
 To upload files to the server is simple, use the **uploadFile** method passing the file data in bytes and then use the **getFileUrl** method to get the file URL to use where you need it.

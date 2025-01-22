@@ -220,6 +220,13 @@ abstract class QueryBuilder {
     }
 
     /**
+     * Returns a list of tables used in the query.
+     *
+     * @return A list of table names.
+     */
+    abstract fun getTables(): List<String>
+
+    /**
      * Constructs the final SQL query string.
      *
      * @return The complete SQL query string.

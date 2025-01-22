@@ -11,6 +11,7 @@ import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.database.builder.QueryBuilder
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.mapToDBColumValue
@@ -551,7 +552,6 @@ object HorusDataFacade {
 
         validateConstraintsReadable(entity)
 
-
         val queryBuilder = SimpleQueryBuilder(entity).apply {
             where(*conditions.toTypedArray())
             orderBy?.let {
@@ -573,6 +573,52 @@ object HorusDataFacade {
         }
 
         return DataResult.Success(result)
+    }
+
+    /**
+     * Queries the database based on the specified query builder.
+     *
+     * @param queryBuilder The query builder to use for the query.
+     * @return A [DataResult] containing a list of [Horus.Entity] objects.
+     */
+    suspend fun query(queryBuilder: QueryBuilder): DataResult<List<Horus.Entity>> {
+
+        return runCatching {
+
+            val entityName = queryBuilder.getTables().first()
+
+            validateConstraintsReadable(entityName)
+
+            val result = operationDatabaseHelper!!.queryRecords(queryBuilder).map {
+                Horus.Entity(
+                    entityName,
+                    it.map { Horus.Attribute(it.key, it.value) }
+                )
+            }
+
+            return DataResult.Success(result)
+
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
+    }
+
+    /**
+     * Retrieves the count of records from entity based on the specified conditions.
+     */
+    suspend fun countRecordFromEntity(entity: String, vararg whereCondition: SQL.WhereCondition): DataResult<Int> {
+
+        return kotlin.runCatching {
+
+            validateConstraintsReadable(entity)
+            val queryBuilder = SimpleQueryBuilder(entity).apply {
+                where(*whereCondition)
+            }
+            return DataResult.Success(operationDatabaseHelper!!.countRecords(queryBuilder))
+
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
     }
 
     /**
