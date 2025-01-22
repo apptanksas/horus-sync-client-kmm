@@ -1,4 +1,5 @@
 package org.apptank.horus.client.base
+
 /**
  * DataResult is a sealed class representing the result of an operation that can either succeed, fail, or result in unauthorized access.
  * It encapsulates the success data, failure with an exception, or an unauthorized error.
@@ -39,16 +40,18 @@ sealed class DataResult<out T : Any?> {
  * @param R The type of the return value.
  * @param onSuccess A function to execute if the result is successful.
  * @param onFailure A function to execute if the result is a failure or unauthorized.
+ * @param onNotAuthorized A function to execute if the result is unauthorized.
  * @return The result of executing the appropriate function.
  */
 fun <R, T : Any> DataResult<T>.fold(
     onSuccess: (T) -> R,
-    onFailure: (Throwable) -> R
+    onFailure: (Throwable) -> R,
+    onNotAuthorized: ((Throwable) -> R)? = null
 ): R {
     return when (val result = this) {
         is DataResult.Success -> onSuccess(result.data)
         is DataResult.Failure -> onFailure(result.exception)
-        is DataResult.NotAuthorized -> onFailure(result.exception)
+        is DataResult.NotAuthorized -> onNotAuthorized?.invoke(result.exception) ?: onFailure(result.exception)
     }
 }
 
@@ -58,12 +61,14 @@ fun <R, T : Any> DataResult<T>.fold(
  * @param R The type of the return value.
  * @param onSuccess A suspending function to execute if the result is successful.
  * @param onFailure A suspending function to execute if the result is a failure or unauthorized.
+ * @param onNotAuthorized A suspending function to execute if the result is unauthorized.
  * @param onComplete A suspending function to execute when processing is complete, regardless of success or failure.
  * @return The result of executing the appropriate suspending function.
  */
 suspend fun <R, T : Any> DataResult<T>.coFold(
     onSuccess: suspend (T) -> R,
     onFailure: suspend (Throwable) -> R,
+    onNotAuthorized: (suspend (Throwable) -> R)? = null,
     onComplete: suspend () -> Unit = {}
 ): R {
     return when (val result = this) {
@@ -72,13 +77,17 @@ suspend fun <R, T : Any> DataResult<T>.coFold(
                 onComplete.invoke()
             }
         }
+
         is DataResult.Failure -> {
             onFailure(result.exception).also {
                 onComplete.invoke()
             }
         }
+
         is DataResult.NotAuthorized -> {
-            onFailure(result.exception).also {
+            onNotAuthorized?.invoke(result.exception)?.also {
+                onComplete.invoke()
+            } ?: onFailure(result.exception).also {
                 onComplete.invoke()
             }
         }

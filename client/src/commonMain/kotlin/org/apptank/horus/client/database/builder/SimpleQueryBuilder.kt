@@ -4,19 +4,34 @@ class SimpleQueryBuilder(
     private val tableName: String
 ) : QueryBuilder() {
 
-   init {
+    private var selectCount = false
+
+    init {
         if (tableName.isEmpty()) {
             throw IllegalArgumentException("tableName cannot be empty")
         }
     }
 
-   override fun build(): String {
+    fun selectCount(): SimpleQueryBuilder {
+        selectCount = true
+        return this
+    }
+
+    override fun getTables(): List<String> {
+        return listOf(tableName)
+    }
+
+    override fun build(): String {
         // Default to selecting all columns
         var selection = "*"
 
         // If specific attributes are selected, join them into a comma-separated string
         if (attributeSelection.isNotEmpty()) {
             selection = attributeSelection.joinToString(",")
+        }
+
+        if (selectCount) {
+            selection = "COUNT(*)"
         }
 
         // Build the base SQL query with the selected columns and table name
@@ -31,5 +46,9 @@ class SimpleQueryBuilder(
         base.append(buildOffset())
         // Return the final query string trimmed of any extra spaces
         return base.toString().trim()
+    }
+
+    fun getTableName(): String {
+        return tableName
     }
 }

@@ -40,6 +40,8 @@ import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
@@ -56,6 +58,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.random.nextUInt
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -371,7 +374,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validatesOperationIsFailureByEntityNoExists()
         validateInsertTest()
         validateInsertWithIdTest()
+        validateInsertIsFailureByRestriction()
         validateInsertBatchTest()
+        validateInsertBatchIsFailureByMaxCountRestriction()
         validateInsertBatchWithIdsTest()
         validateUpdateBatchIsTest()
         validateInsertAndUpdateIsSuccess()
@@ -386,6 +391,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
         whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal()
         whenGetFileUriNetworkIsNotAvailableThenReturnNull()
         whenGetFileUriNetworkIsAvailableThenReturnUrl()
+        validateCountRecordFromEntity()
+        validateCountRecordFromEntityWithConditions()
+        validateQueryWithWhereLikeConditions()
+        validateQueryWithWhereLikeConditionsAlternative()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -516,7 +525,41 @@ class AndroidHorusDataFacadeTest : TestCase() {
             })
     }
 
+    private fun validateInsertIsFailureByRestriction() = prepareInternalTest {
+        val idExpected = uuid()
+
+        // Set restriction
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 0)
+            )
+        )
+
+        val result = HorusDataFacade.insert(
+            "measures",
+            createDataInsertRecord().toMutableMap().apply {
+                put("id", idExpected)
+            }
+        )
+        assert(result is DataResult.NotAuthorized)
+        result.coFold(
+            onSuccess = { id ->
+                fail()
+            },
+            onFailure = { exception ->
+                fail(exception.message)
+            },
+            onNotAuthorized = { assert(true) }
+        )
+    }
+
     private fun validateInsertBatchTest() = prepareInternalTest {
+
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 3)
+            )
+        )
 
         val result = HorusDataFacade.insertBatch(
             listOf(
@@ -527,6 +570,25 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
         assert(result is DataResult.Success)
     }
+
+    private fun validateInsertBatchIsFailureByMaxCountRestriction() = prepareInternalTest {
+
+        // Set restriction
+        HorusDataFacade.setEntityRestrictions(
+            listOf(
+                MaxCountEntityRestriction("measures", 2)
+            )
+        )
+        val result = HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord()),
+                Horus.Batch.Insert("measures", createDataInsertRecord())
+            )
+        )
+        assert(result is DataResult.NotAuthorized)
+    }
+
 
     private fun validateInsertBatchWithIdsTest() = prepareInternalTest {
 
@@ -750,6 +812,132 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
 
+    private suspend fun validateCountRecordFromEntity() = prepareInternalTest {
+        // Given
+        val entitiesAttributes = generateRandomArray {
+            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", *it.toTypedArray())
+        }
+
+        // When
+        val result =
+            HorusDataFacade.countRecordFromEntity("measures")
+
+        result.fold(
+            { count ->
+                Assert.assertEquals(entitiesAttributes.size, count)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateCountRecordFromEntityWithConditions() = prepareInternalTest {
+        // Given
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "value" to Random.nextBoolean(),
+                "nullable" to null
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        // When
+        val result =
+            HorusDataFacade.countRecordFromEntity(
+                "measures",
+                SQL.WhereCondition(SQL.ColumnValue("value", true))
+            )
+
+        result.fold(
+            { count ->
+                Assert.assertEquals(entitiesAttributes.count { it["value"] == true }, count)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+
+    private suspend fun validateQueryWithWhereLikeConditions() = prepareInternalTest {
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "nullable" to null,
+                "value" to "John " + Random.nextUInt(),
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        val builder = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("value", "John%"), SQL.Comparator.LIKE)
+        )
+
+        // When
+        val result =
+            HorusDataFacade.query(builder)
+
+        // Then
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(entitiesAttributes.size, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateQueryWithWhereLikeConditionsAlternative() = prepareInternalTest {
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "nullable" to null,
+                "value" to Random.nextUInt().toString() + " John " + Random.nextUInt(),
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        val builder = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("value", "%John%"), SQL.Comparator.LIKE)
+        )
+
+        // When
+        val result = HorusDataFacade.query(builder)
+
+        // Then
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(entitiesAttributes.size, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    //---------------------------------------------
+
     private fun createDataInsertRecord() = mapOf(
         "measure" to "w",
         "unit" to "kg",
@@ -776,7 +964,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
         driver.execute("DELETE FROM measures")
         driver.execute("DELETE FROM product_breeds")
-
+        HorusDataFacade.setEntityRestrictions(emptyList())
         block()
     }
 

@@ -9,16 +9,64 @@
 **Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile,
 it could have breaking changes in the API.
 
+# Table of Contents
+
+- [Horusync client KMM](#horusync-client-kmm)
+  - [Features](#features)
+- [1. How to start](#1-how-to-start)
+  - [Install](#install)
+    - [Gradle](#gradle)
+  - [Android](#android)
+    - [Setup](#setup)
+      - [Permissions](#permissions)
+      - [Initialization](#initialization)
+  - [IOS](#ios)
+    - [Setup](#setup-1)
+      - [1. Create an app delegate to handle lifecycle events](#1-create-an-app-delegate-to-handle-lifecycle-events)
+      - [2. Implement a NetworkValidator to check the network status](#2-implement-a-networkvalidator-to-check-the-network-status)
+      - [3. Configure Horus in the initialization of the application](#3-configure-horus-in-the-initialization-of-the-application)
+- [2. How to use](#2-how-to-use)
+  - [Callbacks](#callbacks)
+    - [Initialization validation](#initialization-validation)
+    - [Subscribe to data changes](#subscribe-to-data-changes)
+      - [Remove the listener](#remove-the-listener)
+      - [Clear all listeners](#clear-all-listeners)
+  - [Data management](#data-management)
+    - [Insert data into an entity](#insert-data-into-an-entity)
+    - [Update data of a record](#update-data-of-a-record)
+    - [Delete a record](#delete-a-record)
+  - [Simple record query](#simple-record-query)
+    - [Get a record by ID](#get-a-record-by-id)
+    - [Upload files](#upload-files)
+- [Utilities](#utilities)
+  - [Get entities name](#get-entities-name)
+  - [Force synchronization](#force-synchronization)
+  - [Validate if exists data to synchronize](#validate-if-exists-data-to-synchronize)
+  - [Get the last synchronization date](#get-the-last-synchronization-date)
+- [Authentication](#authentication)
+  - [Setup access token](#setup-access-token)
+  - [Clear session](#clear-session)
+  - [Setup to act as a guest user by another user](#setup-to-act-as-a-guest-user-by-another-user)
+- [3. Local testing](#3-local-testing)
+  - [Publish locally](#publish-locally)
+
+
 # Horusync client KMM
 
 Horus is a client library for Kotlin Multiplatform aimed at providing an easy and simple way to
 store data locally and synchronize it with a remote server, ensuring data security and integrity.
+
+Use Horus in server side to synchronize the data with the clients.
+* [Horus PHP SDK](https://github.com/apptanksas/horus-sync-php)
 
 ## Features
 
 - Easy-to-use interface.
 - It is safety.
 - Validates data integrity across clients.
+- Support for file uploads.
+- Support for entity restrictions.
+
 
 # 1. How to start
 
@@ -329,8 +377,6 @@ result.fold(
     })  
 ```  
 
-### Actualizar datos de un registro
-
 ### Update data of a record
 
 To update a record, use the **update** method passing the entity name, the record ID, and a map with
@@ -408,6 +454,21 @@ HorusDataFacade.querySimple("users", whereConditions, orderBy = "name")
 
 ```  
 
+### Complex query
+
+To do a query with more complex conditions, use the **query** method passing a query builder object.
+
+```kotlin
+
+val builder = SimpleQueryBuilder("entity").where(
+  SQL.WhereCondition(SQL.ColumnValue("name", "John%"), SQL.Comparator.LIKE)
+).whereOr(
+  SQL.WhereCondition(SQL.ColumnValue("lastname","John%"), SQL.Comparator.LIKE)
+)
+
+HorusDataFacade.query(builder)
+```
+
 ### Get a record by ID
 
 To get a record by its ID, use the **getById** method passing the entity name and the record ID.
@@ -424,6 +485,20 @@ if (user != null) {
 
 ```  
 
+### Get count records in a entity
+
+To get the number of records in an entity, use the **countRecordFromEntity** method passing the entity name.
+
+```kotlin
+HorusDataFacade.countRecordFromEntity("users").fold(
+    onSuccess = { count ->
+        //** YOUR CODE HERE WHEN SUCCESS */
+    },
+    onFailure = {
+        //** YOUR CODE HERE WHEN FAILURE */
+    }
+)
+``` 
 ### Upload files
 
 To upload files to the server is simple, use the **uploadFile** method passing the file data in bytes and then use the **getFileUrl** method to get the file URL to use where you need it.
@@ -502,6 +577,23 @@ configured as follows:
 ```kotlin  
 HorusAuthentication.setUserActingAs("{USER_OWNER_ID}")  
 ```  
+
+## Entity restrictions
+
+You can add specific restrictions for an entity, for example, to limit the number of records that can be stored in an entity. If the restriction is reached, the operation will fail and data result will be **DataResult.NotAuthorized**.
+
+Use the **setEntityRestrictions** method of the **HorusDataFacade** class to set the restrictions.
+
+```kotlin
+ HorusDataFacade.setEntityRestrictions(
+  listOf(
+    MaxCountEntityRestriction("tasks", 100) // Limit to 100 records in the "tasks" entity
+  )
+)
+```
+
+### Restrictions supported
+- **MaxCountEntityRestriction**: Limit the number of records that can be stored in an entity.
 
 # 3. Local testing
 

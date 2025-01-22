@@ -260,6 +260,15 @@ sealed class Horus {
 
             /** Constant for the attribute name representing the sync hash. */
             const val HASH = "sync_hash"
+
+            /** Constant for the attribute name representing the owner ID. */
+            const val OWNER_ID = "sync_owner_id"
+
+            /** Constant for the attribute name representing the created at timestamp. */
+            const val CREATED_AT = "sync_created_at"
+
+            /** Constant for the attribute name representing the updated at timestamp. */
+            const val UPDATED_AT = "sync_updated_at"
         }
     }
 

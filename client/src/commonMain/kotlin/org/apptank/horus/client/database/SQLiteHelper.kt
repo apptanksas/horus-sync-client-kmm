@@ -156,7 +156,9 @@ abstract class SQLiteHelper(
      * @return A list of mapped results.
      */
     internal fun <T> queryResult(query: String, mapper: (Cursor) -> T?): List<T> {
+
         return transactionWithResult {
+
             val tableName = getTableName(query)
             val attributes = extractSelectAttributes(query)
 

@@ -25,6 +25,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -76,19 +77,23 @@ internal abstract class BaseService(
     protected suspend inline fun <reified T : Any> get(
         path: String,
         queryParams: Map<String, String> = emptyMap(),
-        onResponse: (response: String) -> T
+        crossinline onResponse: (response: String) -> T
     ): DataResult<T> {
-        return handleResponse(
-            response = client.get(buildUrl(path)) {
-                contentType(ContentType.Application.Json)
-                url {
-                    queryParams.forEach { (key, value) ->
-                        parameters.append(key, value)
+        return kotlin.runCatching {
+            handleResponse(
+                response = client.get(buildUrl(path)) {
+                    contentType(ContentType.Application.Json)
+                    url {
+                        queryParams.forEach { (key, value) ->
+                            parameters.append(key, value)
+                        }
                     }
-                }
-                setupHeaders(this)
-            }, onResponse
-        )
+                    setupHeaders(this)
+                }, onResponse
+            )
+        }.getOrElse {
+            return getNetworkError(it)
+        }
     }
 
     /**
@@ -104,11 +109,15 @@ internal abstract class BaseService(
         data: Any,
         onResponse: (response: String) -> T
     ): DataResult<T> {
-        return handleResponse(client.post(buildUrl(path)) {
-            contentType(ContentType.Application.Json)
-            setBody(data)
-            setupHeaders(this)
-        }, onResponse)
+        return kotlin.runCatching {
+            handleResponse(client.post(buildUrl(path)) {
+                contentType(ContentType.Application.Json)
+                setBody(data)
+                setupHeaders(this)
+            }, onResponse)
+        }.getOrElse {
+            return getNetworkError(it)
+        }
     }
 
     /**
@@ -126,18 +135,22 @@ internal abstract class BaseService(
         onResponse: (response: String) -> T,
         crossinline onProgressUpload: (Int) -> Unit = {}
     ): DataResult<T> {
-        return handleResponse(client.post(buildUrl(path)) {
-            contentType(ContentType.Application.Json)
-            setBody(MultiPartFormDataContent(formData {
-                parseFormData(data)
-            }))
-            setupHeaders(this)
-            onUpload { bytesSentTotal, contentLength ->
-                if (contentLength > 0) {
-                    onProgressUpload(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
+        return kotlin.runCatching {
+            handleResponse(client.post(buildUrl(path)) {
+                contentType(ContentType.Application.Json)
+                setBody(MultiPartFormDataContent(formData {
+                    parseFormData(data)
+                }))
+                setupHeaders(this)
+                onUpload { bytesSentTotal, contentLength ->
+                    if (contentLength > 0) {
+                        onProgressUpload(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
+                    }
                 }
-            }
-        }, onResponse)
+            }, onResponse)
+        }.getOrElse {
+            return getNetworkError(it)
+        }
     }
 
 
@@ -154,7 +167,9 @@ internal abstract class BaseService(
     ): DataResult<T> {
         return kotlin.runCatching {
 
-            if (response.status.value == 401 || response.status.value == 403) {
+            if (response.status.value == HttpStatusCode.Unauthorized.value ||
+                response.status.value == HttpStatusCode.Forbidden.value
+            ) {
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
             }
 
@@ -259,5 +274,15 @@ internal abstract class BaseService(
             }
         }
         return this
+    }
+
+    /**
+     * Handles network errors by returning a DataResult.Failure with the exception message.
+     *
+     * @param exception The exception that occurred during the network request.
+     * @return A DataResult.Failure with the exception message.
+     */
+    private fun getNetworkError(exception: Throwable): DataResult.Failure {
+        return DataResult.Failure(IllegalStateException("Network error: ${exception.message}"))
     }
 }
