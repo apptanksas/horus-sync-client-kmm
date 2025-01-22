@@ -885,8 +885,6 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val builder = SimpleQueryBuilder("measures").where(
             SQL.WhereCondition(SQL.ColumnValue("value", "John%"), SQL.Comparator.LIKE)
-        ).whereOr(
-            SQL.WhereCondition(SQL.ColumnValue("boolean", true), SQL.Comparator.LIKE)
         )
 
         // When
@@ -919,12 +917,12 @@ class AndroidHorusDataFacadeTest : TestCase() {
             HorusDataFacade.insert("measures", it)
         }
 
+        val builder = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("value", "%John%"), SQL.Comparator.LIKE)
+        )
+
         // When
-        val result =
-            HorusDataFacade.querySimple(
-                "measures",
-                listOf(SQL.WhereCondition(SQL.ColumnValue("value", "%John%"), SQL.Comparator.LIKE))
-            )
+        val result = HorusDataFacade.query(builder)
 
         // Then
         result.fold(
