@@ -40,6 +40,7 @@ import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
@@ -57,6 +58,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.random.nextUInt
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -389,6 +391,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
         whenGetFileUriNetworkIsNotAvailableThenReturnUrlLocal()
         whenGetFileUriNetworkIsNotAvailableThenReturnNull()
         whenGetFileUriNetworkIsAvailableThenReturnUrl()
+        validateCountRecordFromEntity()
+        validateCountRecordFromEntityWithConditions()
+        validateQueryWithWhereLikeConditions()
+        validateQueryWithWhereLikeConditionsAlternative()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -805,6 +811,130 @@ class AndroidHorusDataFacadeTest : TestCase() {
         Assert.assertEquals(countEntitiesExpected, entitiesName.size)
     }
 
+
+    private suspend fun validateCountRecordFromEntity() = prepareInternalTest {
+        // Given
+        val entitiesAttributes = generateRandomArray {
+            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", *it.toTypedArray())
+        }
+
+        // When
+        val result =
+            HorusDataFacade.countRecordFromEntity("measures")
+
+        result.fold(
+            { count ->
+                Assert.assertEquals(entitiesAttributes.size, count)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateCountRecordFromEntityWithConditions() = prepareInternalTest {
+        // Given
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "value" to Random.nextBoolean(),
+                "nullable" to null
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        // When
+        val result =
+            HorusDataFacade.countRecordFromEntity(
+                "measures",
+                SQL.WhereCondition(SQL.ColumnValue("value", true))
+            )
+
+        result.fold(
+            { count ->
+                Assert.assertEquals(entitiesAttributes.count { it["value"] == true }, count)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+
+    private suspend fun validateQueryWithWhereLikeConditions() = prepareInternalTest {
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "nullable" to null,
+                "value" to "John " + Random.nextUInt(),
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        val builder = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("value", "John%"), SQL.Comparator.LIKE)
+        )
+
+        // When
+        val result =
+            HorusDataFacade.query(builder)
+
+        // Then
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(entitiesAttributes.size, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
+
+    private suspend fun validateQueryWithWhereLikeConditionsAlternative() = prepareInternalTest {
+        val entitiesAttributes = generateRandomArray {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "nullable" to null,
+                "value" to Random.nextUInt().toString() + " John " + Random.nextUInt(),
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        val builder = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("value", "%John%"), SQL.Comparator.LIKE)
+        )
+
+        // When
+        val result = HorusDataFacade.query(builder)
+
+        // Then
+        result.fold(
+            { entities ->
+                Assert.assertTrue(entities.isNotEmpty())
+                Assert.assertEquals(entitiesAttributes.size, entities.size)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
 
     //---------------------------------------------
 

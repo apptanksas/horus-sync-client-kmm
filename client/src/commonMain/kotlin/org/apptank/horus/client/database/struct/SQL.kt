@@ -51,6 +51,7 @@ sealed class SQL {
         GREATER_THAN_OR_EQUALS(">="),
         LESS_THAN_OR_EQUALS("<="),
         IN("IN"),
+        LIKE("LIKE")
     }
 
     /**

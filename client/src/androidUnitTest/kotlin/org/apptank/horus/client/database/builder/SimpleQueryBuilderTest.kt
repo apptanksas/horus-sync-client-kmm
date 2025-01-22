@@ -201,4 +201,16 @@ class SimpleQueryBuilderTest {
 
         Assert.assertEquals(expected, result)
     }
+
+    @Test
+    fun validateWhereLike() {
+        val expected = "SELECT * FROM category WHERE name LIKE '%John%'"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(SQL.WhereCondition(SQL.ColumnValue("name", "%John%"), SQL.Comparator.LIKE))
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
 }

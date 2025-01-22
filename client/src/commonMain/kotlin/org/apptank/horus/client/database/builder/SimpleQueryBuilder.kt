@@ -17,6 +17,10 @@ class SimpleQueryBuilder(
         return this
     }
 
+    override fun getTables(): List<String> {
+        return listOf(tableName)
+    }
+
     override fun build(): String {
         // Default to selecting all columns
         var selection = "*"
@@ -42,5 +46,9 @@ class SimpleQueryBuilder(
         base.append(buildOffset())
         // Return the final query string trimmed of any extra spaces
         return base.toString().trim()
+    }
+
+    fun getTableName(): String {
+        return tableName
     }
 }

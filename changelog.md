@@ -1,7 +1,12 @@
 # Changelog
 
 ## v0.5.0
+- Added workflow to validate release branch.
+- Added method to do query with more complex conditions.
+- Added method to get count records in a entity.
+- Added support query with like operator.
 - Added support to entity restrictions when entity reaches a limit of records for a specific entity.
+- Added handle network error in service when the connection is weak or lost.
 
 ## v0.4.10
 - Added print log queries.
