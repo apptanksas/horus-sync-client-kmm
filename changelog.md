@@ -1,8 +1,8 @@
 # Changelog
 
 ## v0.7.0
-- Added support to query IS NULL and IS NOT NULL in query builder comparator.
-- Added method to get count from a query builder.
+- Added support for querying IS NULL and IS NOT NULL in the query builder comparator.
+- Added a method to retrieve the count from a query builder.
 
 ## v0.6.0
 - Added support to multiple order by in query.
