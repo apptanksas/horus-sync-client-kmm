@@ -622,6 +622,17 @@ object HorusDataFacade {
     }
 
     /**
+     * Retrieves the count of records based on the specified query builder.
+     */
+    suspend fun countRecords(queryBuilder: SimpleQueryBuilder): DataResult<Int> {
+        return kotlin.runCatching {
+            return DataResult.Success(operationDatabaseHelper!!.countRecords(queryBuilder))
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
+    }
+
+    /**
      * Retrieves a single record from the database by its ID.
      *
      * @param entity The name of the entity to retrieve.

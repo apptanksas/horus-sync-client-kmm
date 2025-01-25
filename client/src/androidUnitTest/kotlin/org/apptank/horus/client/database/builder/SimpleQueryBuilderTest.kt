@@ -224,4 +224,28 @@ class SimpleQueryBuilderTest {
 
         Assert.assertEquals(expected, result)
     }
+
+    @Test
+    fun validateWhereIsNull() {
+        val expected = "SELECT * FROM category WHERE name IS NULL"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(SQL.WhereCondition(SQL.ColumnValue("name", null), SQL.Comparator.IS_NULL))
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereIsNotNull() {
+        val expected = "SELECT * FROM category WHERE name IS NOT NULL"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(SQL.WhereCondition(SQL.ColumnValue("name", null), SQL.Comparator.IS_NOT_NULL))
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
 }
