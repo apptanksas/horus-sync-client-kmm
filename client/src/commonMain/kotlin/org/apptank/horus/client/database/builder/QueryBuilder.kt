@@ -175,6 +175,9 @@ abstract class QueryBuilder {
 
             conditionGrouped += conditions.second.joinToString(" ${conditions.first.name} ",
                 transform = {
+                    if (it.comparator == SQL.Comparator.IS_NULL || it.comparator == SQL.Comparator.IS_NOT_NULL) {
+                        return@joinToString "${it.columnValue.column} ${it.comparator.value}"
+                    }
                     "${it.columnValue.column} ${it.comparator.value} ${it.columnValue.value.prepareSQLValueAsString()}"
                 })
 
@@ -224,7 +227,7 @@ abstract class QueryBuilder {
         orderBy?.forEach {
             base += " ${it.first} ${it.second.name},"
         }
-        
+
         return base.removeSuffix(",")
     }
 

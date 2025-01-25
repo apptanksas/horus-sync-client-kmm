@@ -393,6 +393,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         whenGetFileUriNetworkIsAvailableThenReturnUrl()
         validateCountRecordFromEntity()
         validateCountRecordFromEntityWithConditions()
+        validateCountRecordsWithConditions()
         validateQueryWithWhereLikeConditions()
         validateQueryWithWhereLikeConditionsAlternative()
 
@@ -868,6 +869,42 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
     }
 
+
+    private suspend fun validateCountRecordsWithConditions() = prepareInternalTest {
+        // Given
+        val entitiesAttributes = generateRandomArray(30) {
+            mapOf(
+                "measure" to "w",
+                "unit" to "kg",
+                "value" to Random.nextBoolean(),
+                "nullable" to if (Random.nextBoolean()) null else Random.nextInt(1..1000)
+            )
+        }
+
+        entitiesAttributes.forEach {
+            HorusDataFacade.insert("measures", it)
+        }
+
+        // When
+        val result =
+            HorusDataFacade.countRecords(
+                SimpleQueryBuilder("measures")
+                    .where(SQL.WhereCondition(SQL.ColumnValue("value", true)))
+                    .where(
+                        SQL.WhereCondition(SQL.ColumnValue("nullable"), SQL.Comparator.IS_NULL),
+                        joinOperator = SQL.LogicOperator.OR
+                    ) as SimpleQueryBuilder
+            )
+
+        result.fold(
+            { count ->
+                Assert.assertEquals(entitiesAttributes.count { it["value"] == true || it["nullable"] == null }, count)
+            },
+            { exception ->
+                Assert.fail(exception.message)
+            }
+        )
+    }
 
     private suspend fun validateQueryWithWhereLikeConditions() = prepareInternalTest {
         val entitiesAttributes = generateRandomArray {

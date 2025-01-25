@@ -16,7 +16,7 @@ sealed class SQL {
      */
     data class ColumnValue(
         val column: String,
-        val value: Any?
+        val value: Any? = null
     )
 
     /**
@@ -51,7 +51,9 @@ sealed class SQL {
         GREATER_THAN_OR_EQUALS(">="),
         LESS_THAN_OR_EQUALS("<="),
         IN("IN"),
-        LIKE("LIKE")
+        LIKE("LIKE"),
+        IS_NULL("IS NULL"),
+        IS_NOT_NULL("IS NOT NULL")
     }
 
     /**
