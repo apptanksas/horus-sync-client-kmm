@@ -16,6 +16,7 @@ import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsert
+import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireDouble
 import org.apptank.horus.client.extensions.getRequireInt
@@ -215,6 +216,17 @@ abstract class SQLiteHelper(
         val query = "DELETE FROM $table WHERE $where;"
         info("Delete query: $query")
         return executeDelete(query)
+    }
+
+    /**
+     * Deletes all tables in the database.
+     */
+    protected fun deleteAllTables() {
+        getTables().forEach { table ->
+            if (TABLES_SYSTEM.notContains(table)) {
+                executeDelete("DROP TABLE IF EXISTS $table")
+            }
+        }
     }
 
     /**

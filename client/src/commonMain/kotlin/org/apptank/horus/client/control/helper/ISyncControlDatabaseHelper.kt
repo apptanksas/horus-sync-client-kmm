@@ -141,4 +141,9 @@ interface ISyncControlDatabaseHelper {
      * @return True if the entity can be written to, false otherwise.
      */
     fun isEntityCanBeWritable(entityName: String): Boolean
+
+    /**
+     * Clears all data from the database.
+     */
+    fun clearDatabase()
 }

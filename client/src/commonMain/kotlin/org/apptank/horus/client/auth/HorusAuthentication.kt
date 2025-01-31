@@ -34,6 +34,7 @@ object HorusAuthentication {
      */
     fun clearSession() {
         userAuthentication = null
+        EventBus.emit(EventType.USER_SESSION_CLEARED)
     }
 
     /**

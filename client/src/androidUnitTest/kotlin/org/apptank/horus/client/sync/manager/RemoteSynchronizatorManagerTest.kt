@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.After
 import org.junit.Assert
@@ -63,6 +64,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         )
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
     }
 
     @After

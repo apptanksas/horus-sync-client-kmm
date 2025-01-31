@@ -56,5 +56,10 @@ enum class EventType {
     /**
      * Event type indicating that a file has been queued for upload.
      */
-    FILE_QUEUED_FOR_UPLOAD
+    FILE_QUEUED_FOR_UPLOAD,
+
+    /**
+     * Event type indicating that user has logged out.
+     */
+    USER_SESSION_CLEARED,
 }

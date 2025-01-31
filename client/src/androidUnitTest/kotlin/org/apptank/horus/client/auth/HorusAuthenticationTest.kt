@@ -1,13 +1,27 @@
 package org.apptank.horus.client.auth
 
+import io.mockative.Mock
+import io.mockative.classOf
+import io.mockative.mock
 import org.apptank.horus.client.TestCase
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 
 
 class HorusAuthenticationTest : TestCase() {
+
+    @Mock
+    val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+
+    @Before
+    fun setup() {
+        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+    }
 
     @Test
     fun testSetupUserAccessToken() {
@@ -27,11 +41,21 @@ class HorusAuthenticationTest : TestCase() {
 
     @Test
     fun testClearSession() {
+
+        var eventReceived = false
+
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+
+        EventBus.register(EventType.USER_SESSION_CLEARED){
+            eventReceived = true
+        }
+
         HorusAuthentication.clearSession()
+
         Assert.assertNull(HorusAuthentication.getUserAccessToken())
         Assert.assertFalse(HorusAuthentication.isUserAuthenticated())
         Assert.assertFalse(HorusAuthentication.isUserActingAs())
+        Assert.assertTrue(eventReceived)
     }
 
     @Test
@@ -42,6 +66,5 @@ class HorusAuthenticationTest : TestCase() {
         Assert.assertTrue(HorusAuthentication.isUserActingAs())
         Assert.assertEquals(userActingAs, HorusAuthentication.getActingAsUserId())
     }
-
 
 }
