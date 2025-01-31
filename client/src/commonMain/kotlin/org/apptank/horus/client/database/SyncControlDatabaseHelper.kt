@@ -17,6 +17,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
@@ -320,6 +321,15 @@ internal class SyncControlDatabaseHelper(
      */
     override fun isEntityCanBeWritable(entityName: String): Boolean {
         return getTableEntities().filter { it.isWritable }.any { it.name == entityName }
+    }
+
+    /**
+     * Clears all data from the database.
+     */
+    override fun clearDatabase() {
+        driver.handle {
+            deleteAllTables()
+        }
     }
 
     /**

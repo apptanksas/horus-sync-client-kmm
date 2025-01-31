@@ -27,11 +27,21 @@ class HorusAuthenticationTest : TestCase() {
 
     @Test
     fun testClearSession() {
+
+        var eventReceived = false
+
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+
+        EventBus.register(EventType.USER_SESSION_CLEARED){
+            eventReceived = true
+        }
+
         HorusAuthentication.clearSession()
+
         Assert.assertNull(HorusAuthentication.getUserAccessToken())
         Assert.assertFalse(HorusAuthentication.isUserAuthenticated())
         Assert.assertFalse(HorusAuthentication.isUserActingAs())
+        Assert.assertTrue(eventReceived)
     }
 
     @Test

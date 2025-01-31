@@ -415,4 +415,24 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(1, attributesInteger.size)
         Assert.assertEquals("age", attributesInteger.first())
     }
+
+    @Test
+    fun clearDatabaseIsSuccess() {
+        // Given
+        val anyEntity = "entity_123"
+        val entityWithFileReferences = "entity_with_file_references_123"
+
+        driver.createTable(anyEntity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.createTable(entityWithFileReferences, mapOf("id" to "TEXT", "image" to "TEXT"))
+
+        val countTables = controlManagerDatabaseHelper.getTables().size
+        Assert.assertTrue(countTables > 0)
+
+        // When
+        controlManagerDatabaseHelper.clearDatabase()
+
+        // Then
+        Assert.assertEquals(0, controlManagerDatabaseHelper.getTables().size)
+    }
+
 }
