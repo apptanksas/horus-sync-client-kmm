@@ -1,5 +1,6 @@
 package org.apptank.horus.client.sync.manager
 
+import com.russhwolf.settings.Settings
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
@@ -46,6 +47,8 @@ class RemoteSynchronizatorManagerTest : TestCase() {
 
     @Mock
     val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
+    @Mock
+    val storageSettings = mock(classOf<Settings>())
 
     private val eventBus = EventBus
 
@@ -65,6 +68,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+        HorusContainer.setupSettings(storageSettings)
     }
 
     @After

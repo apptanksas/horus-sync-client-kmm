@@ -1,5 +1,6 @@
 package org.apptank.horus.client
 
+import com.russhwolf.settings.Settings
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.CallbackEvent
@@ -96,6 +97,14 @@ object HorusDataFacade {
         get() {
             if (field == null) {
                 field = HorusContainer.getNetworkValidator()
+            }
+            return field
+        }
+
+    private var settings: Settings? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSettings()
             }
             return field
         }
@@ -895,6 +904,8 @@ object HorusDataFacade {
         EventBus.register(EventType.USER_SESSION_CLEARED) {
             syncControlDatabaseHelper?.clearDatabase()
             MemoryCache.flushCache()
+            settings?.clear()
+            clear()
         }
     }
 

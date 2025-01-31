@@ -176,6 +176,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             assert(countTables == 0)
         }
 
+        verify { storageSettings.clear() }.wasInvoked()
     }
 
     @Test
