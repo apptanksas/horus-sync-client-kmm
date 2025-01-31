@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.1
+- Added clear database when user clear session.
+
 ## v0.7.0
 - Added support for querying IS NULL and IS NOT NULL in the query builder comparator.
 - Added a method to retrieve the count from a query builder.
