@@ -6,6 +6,7 @@ import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
@@ -892,8 +893,8 @@ object HorusDataFacade {
      */
     private fun registerObserverEvents() {
         EventBus.register(EventType.USER_SESSION_CLEARED) {
-            if(syncControlDatabaseHelper!= null)
-                syncControlDatabaseHelper?.clearDatabase()
+            syncControlDatabaseHelper?.clearDatabase()
+            MemoryCache.flushCache()
         }
     }
 

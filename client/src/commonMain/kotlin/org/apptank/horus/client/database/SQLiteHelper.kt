@@ -24,6 +24,7 @@ import org.apptank.horus.client.extensions.getRequireString
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.notContains
 import org.apptank.horus.client.migration.domain.AttributeType
 import kotlin.random.Random
@@ -222,10 +223,16 @@ abstract class SQLiteHelper(
      * Deletes all tables in the database.
      */
     protected fun deleteAllTables() {
-        getTables().forEach { table ->
-            if (TABLES_SYSTEM.notContains(table)) {
-                executeDelete("DROP TABLE IF EXISTS $table")
+        try {
+            executeSql("PRAGMA foreign_keys = OFF;")
+            getTables().forEach { table ->
+                if (TABLES_SYSTEM.notContains(table)) {
+                    executeDelete("DROP TABLE IF EXISTS $table")
+                }
             }
+            executeSql("PRAGMA foreign_keys = ON;")
+        } catch (e: Exception) {
+            logException("[CLEAR_DATABASE] Error", e)
         }
     }
 
@@ -352,6 +359,11 @@ abstract class SQLiteHelper(
     private fun executeDelete(query: String): Long {
         return driver.execute(null, query, 0).value
     }
+
+    private fun executeSql(query: String) {
+        driver.execute(null, query, 0)
+    }
+
 
     /**
      * Retrieves the attribute type of a column in a table.
