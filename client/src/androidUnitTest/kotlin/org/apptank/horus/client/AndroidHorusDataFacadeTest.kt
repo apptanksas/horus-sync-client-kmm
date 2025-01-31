@@ -2,6 +2,7 @@ package org.apptank.horus.client
 
 import android.app.Activity
 import android.content.Context
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataMap
@@ -41,6 +42,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
@@ -147,6 +149,33 @@ class AndroidHorusDataFacadeTest : TestCase() {
             invoked = true
         }
         assert(invoked)
+    }
+
+    @Test
+    fun `validate clear database when user session is cleared`()  {
+
+        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+        HorusDataFacade.init()
+        EventBus.emit(EventType.ON_READY)
+
+        HorusDataFacade.onReady {
+
+            HorusAuthentication.clearSession()
+
+            val countTables = driver.executeQuery(
+                null,
+                "SELECT * FROM sqlite_master", {
+                    if (it.next().value) {
+                        return@executeQuery QueryResult.Value(it.getRequireInt(0))
+                    }
+                    QueryResult.Value(0)
+                },
+                0
+            ).value
+
+            assert(countTables == 0)
+        }
+
     }
 
     @Test

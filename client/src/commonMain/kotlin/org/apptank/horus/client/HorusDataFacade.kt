@@ -17,6 +17,7 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.EntityNotExistsException
@@ -102,6 +103,7 @@ object HorusDataFacade {
 
     init {
         registerEntityEventListeners()
+        registerObserverEvents()
         EventBus.register(EventType.ON_READY) {
             isReady = true
             onCallbackReady?.invoke()
@@ -882,6 +884,16 @@ object HorusDataFacade {
                     listener.onDelete(entity, it as String)
                 }
             }
+        }
+    }
+
+    /**
+     * Register Observer Events to do some actions when the event is triggered.
+     */
+    private fun registerObserverEvents() {
+        EventBus.register(EventType.USER_SESSION_CLEARED) {
+            if(syncControlDatabaseHelper!= null)
+                syncControlDatabaseHelper?.clearDatabase()
         }
     }
 
