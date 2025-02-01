@@ -105,6 +105,7 @@ internal class SynchronizatorManager(
 
         // EntityName -> List of corrupted ids
         val corruptedEntities = mutableMapOf<String, List<String>>()
+        val missingEntities = mutableMapOf<String, List<String>>()
 
         entitiesHashesValidated.forEach {
             val entity = it.first
@@ -113,11 +114,13 @@ internal class SynchronizatorManager(
             log("[SynchronizatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
 
             if (!isHashCorrect) {
-                corruptedEntities[it.first] = validateEntityDataCorrupted(it.first)
+                val (corrupted, missing) = validateEntityData(entity)
+                corruptedEntities[it.first] = corrupted
+                missingEntities[it.first] = missing
             }
         }
 
-        val resultsCorruptedData = mutableListOf<Boolean>()
+        val integrityDataRestoredResult = mutableListOf<Boolean>()
 
         // Stage 3: Restore corrupted data
         corruptedEntities.forEach { (entity, ids) ->
@@ -128,14 +131,29 @@ internal class SynchronizatorManager(
                 } else {
                     log("[SynchronizatorManager][entity:$entity] Error restoring corrupted data")
                 }
-                resultsCorruptedData.add(resultRestoreCorruptedData)
+                integrityDataRestoredResult.add(resultRestoreCorruptedData)
             } else {
                 log("[SynchronizatorManager][entity:$entity] No corrupted data to restore")
             }
         }
 
+        // Stage 4: Sync missing data
+        missingEntities.map { (entity, ids) ->
+            if (ids.isNotEmpty()) {
+                val resultSyncMissingData = syncEntitiesMissingData(entity, ids)
+                if (resultSyncMissingData) {
+                    log("[SynchronizatorManager][entity:$entity] Missing data synced successfully")
+                } else {
+                    log("[SynchronizatorManager][entity:$entity] Error restoring missing data")
+                }
+                integrityDataRestoredResult.add(resultSyncMissingData)
+            } else {
+                log("[SynchronizatorManager][entity:$entity] No missing data to restore")
+            }
+        }
+
         return onStatus(
-            resultsCorruptedData.all { it }.evaluate(
+            integrityDataRestoredResult.all { it }.evaluate(
                 SynchronizationStatus.SUCCESS,
                 SynchronizationStatus.FAILED
             ), true
@@ -226,31 +244,32 @@ internal class SynchronizatorManager(
     }
 
     /**
-     * Checks for corrupted data in the local database based on entity hashes.
+     * Checks the integrity of entity data.
      *
      * This method compares local data with remote hashes to find discrepancies.
      *
      * @param entity The name of the entity to check.
-     * @return A list of IDs with corrupted data.
+     * @return A pair of lists containing IDs with corrupted data and IDs with missing data. [Corrupted, Missing]
      */
-    private suspend fun validateEntityDataCorrupted(entity: String): List<String> {
+    private suspend fun validateEntityData(entity: String): Pair<List<String>, List<String>> {
         val remoteHashes = getRemoteEntitiesHashes(entity)
         return compareEntityHashesWithLocalData(entity, remoteHashes)
     }
 
     /**
-     * Compares local entity hashes with remote hashes to identify discrepancies.
+     * Compares local entity hashes with remote hashes to identify discrepancies and missing data.
      *
      * @param entity The name of the entity to check.
      * @param remoteHashes A list of remote entity hashes.
-     * @return A list of IDs with discrepancies.
+     * @return A list of IDs with corrupted data and a list of IDs with missing data. [Corrupted, Missing]
      */
     private fun compareEntityHashesWithLocalData(
         entity: String,
         remoteHashes: List<InternalModel.EntityIdHash>
-    ): List<String> {
+    ): Pair<List<String>, List<String>> {
 
-        val ids = mutableListOf<String>()
+        val corruptedIds = mutableListOf<String>()
+        val missingIds = mutableListOf<String>()
 
         val localIdsHashes = operationDatabaseHelper.queryRecords(
             SimpleQueryBuilder(entity).select(Horus.Attribute.ID, Horus.Attribute.HASH)
@@ -260,13 +279,20 @@ internal class SynchronizatorManager(
             val localHash = localIdsHashes[it.id]
             val entityExists = localHash != null
 
-            if (entityExists && localHash != it.hash) {
-                log("[SynchronizatorManager:compareEntityHashesWithLocalData] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
-                ids.add(it.id)
+            when {
+                entityExists && localHash != it.hash -> {
+                    log("[SynchronizatorManager:compareEntityHashesWithLocalData] Problem detected integrity -> Entity: $entity - Id: ${it.id} - Local: $localHash - Remote: ${it.hash}")
+                    corruptedIds.add(it.id)
+                }
+
+                entityExists.not() -> {
+                    log("[SynchronizatorManager:compareEntityHashesWithLocalData] Problem detected missing -> Entity: $entity - Id: ${it.id} - Remote: ${it.hash}")
+                    missingIds.add(it.id)
+                }
             }
         }
 
-        return ids
+        return Pair(corruptedIds, missingIds)
     }
 
     /**
@@ -291,7 +317,7 @@ internal class SynchronizatorManager(
                 )
 
                 if (!result.isSuccess) {
-                    log("[SynchronizatorManager] Error deleting corrupted data")
+                    log("[SynchronizatorManager:restoreCorruptedData] Error deleting corrupted data")
                     return false
                 }
 
@@ -302,14 +328,43 @@ internal class SynchronizatorManager(
 
             is DataResult.Failure -> {
                 dataEntitiesResponse.exception.printStackTrace()
-                log("[SynchronizatorManager] Error restoring corrupted data")
+                log("[SynchronizatorManager:restoreCorruptedData] Error restoring corrupted data")
             }
 
             is DataResult.NotAuthorized -> {
-                log("[SynchronizatorManager] Not authorized")
+                log("[SynchronizatorManager:restoreCorruptedData] Not authorized")
             }
         }
 
+        return false
+    }
+
+    /**
+     * Restores missing data for a specific entity.
+     *
+     * This method fetches data from the remote server and inserts missing local records.
+     *
+     * @param entity The name of the entity to restore.
+     * @param ids A list of IDs with missing data.
+     * @return `true` if the restoration was successful, `false` otherwise.
+     */
+    private suspend fun syncEntitiesMissingData(entity: String, ids: List<String>): Boolean {
+        when (val dataEntitiesResponse = synchronizationService.getDataEntity(entity, ids = ids)) {
+            is DataResult.Success -> {
+                return operationDatabaseHelper.insertWithTransaction(
+                    dataEntitiesResponse.data.map { it.toEntityData() }
+                        .flatMap { it.toRecordsInsert() })
+            }
+
+            is DataResult.Failure -> {
+                dataEntitiesResponse.exception.printStackTrace()
+                log("[SynchronizatorManager:syncEntitiesMissingData] Error restoring missing data")
+            }
+
+            is DataResult.NotAuthorized -> {
+                log("[SynchronizatorManager:syncEntitiesMissingData] Not authorized")
+            }
+        }
         return false
     }
 
