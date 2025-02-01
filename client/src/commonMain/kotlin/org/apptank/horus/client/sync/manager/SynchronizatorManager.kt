@@ -323,7 +323,7 @@ internal class SynchronizatorManager(
 
                 return operationDatabaseHelper.insertWithTransaction(
                     dataEntitiesResponse.data.map { it.toEntityData() }
-                        .flatMap { it.toRecordsInsert() })
+                        .flatMap { it.toRecordsInsert() }.reversed())
             }
 
             is DataResult.Failure -> {
@@ -353,7 +353,7 @@ internal class SynchronizatorManager(
             is DataResult.Success -> {
                 return operationDatabaseHelper.insertWithTransaction(
                     dataEntitiesResponse.data.map { it.toEntityData() }
-                        .flatMap { it.toRecordsInsert() })
+                        .flatMap { it.toRecordsInsert() }.reversed())
             }
 
             is DataResult.Failure -> {

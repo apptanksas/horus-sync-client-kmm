@@ -27,7 +27,7 @@ fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
 
     val relations =
         data?.filter { it.key.startsWith("_") }?.entries?.map {
-            it.key to (it.value as ArrayList<LinkedHashMap<String, Any>>).toListEntityResponse()
+            it.key to (it.value.toArrayListLinkedHashMap()).toListEntityResponse()
         }?.associate { it.first.substring(1) to it.second.toListEntityData() }
 
     return Horus.Entity(
@@ -37,6 +37,17 @@ fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
         } ?: emptyList(),
         relations
     )
+}
+
+/**
+ * Try to convert the object to an [ArrayList] of [LinkedHashMap].
+ */
+private fun Any?.toArrayListLinkedHashMap(): ArrayList<LinkedHashMap<String, Any>> {
+    return when (this) {
+        is ArrayList<*> -> this as ArrayList<LinkedHashMap<String, Any>>
+        is LinkedHashMap<*, *> -> arrayListOf(this as LinkedHashMap<String, Any>)
+        else -> arrayListOf()
+    }
 }
 
 /**
