@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.2
+- Improved to getting the file uri from service when could not get the file from the local storage.
+- Disposable on ready callback when the horus is ready.
+- Fixed integrity data when is missing data in the database.
+
 ## v0.7.1
 - Added clear database when user clear session.
 
@@ -19,7 +24,7 @@
 - Added handle network error in service when the connection is weak or lost.
 
 ## v0.4.10
-- Added print log queries.
+- Added print log queries.|
 
 ## v0.4.9
 - Fixed issue when try serialize a entity with long values in AnySerializer.

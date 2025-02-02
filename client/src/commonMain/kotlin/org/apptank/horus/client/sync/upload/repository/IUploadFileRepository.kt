@@ -47,7 +47,7 @@ interface IUploadFileRepository {
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    fun getFileUrl(reference: CharSequence): String?
+    suspend fun getFileUrl(reference: CharSequence): String?
 
     /**
      * Get the URL local of a file based on its reference.

@@ -47,6 +47,13 @@ object HorusAuthentication {
     }
 
     /**
+     * Clears the current "acting as" user status.
+     */
+    fun clearUserActingAs() {
+        userAuthentication?.clearUserActingAs()
+    }
+
+    /**
      * Checks if the user is currently acting as another user.
      *
      * @return `true` if the user is acting as another user, `false` otherwise.

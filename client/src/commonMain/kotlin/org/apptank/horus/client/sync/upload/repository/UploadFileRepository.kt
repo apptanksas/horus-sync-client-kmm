@@ -6,6 +6,7 @@ import io.matthewnelson.kmp.file.readBytes
 import io.matthewnelson.kmp.file.resolve
 import io.matthewnelson.kmp.file.writeBytes
 import org.apptank.horus.client.base.coFold
+import org.apptank.horus.client.base.fold
 import io.matthewnelson.kmp.file.File as KmpFile
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
@@ -142,7 +143,7 @@ class UploadFileRepository(
                             output.add(recordFile.reference.toFailure(e))
                         }
                     )
-                }?:{
+                } ?: {
                     output.add(recordFile.reference.toFailure(Exception("Error file not found -> ${recordFile.urlLocal}")))
                 }
             }.getOrElse { e ->
@@ -194,16 +195,7 @@ class UploadFileRepository(
             onSuccess = { response ->
                 runCatching {
                     response.forEach { item ->
-                        val file = item.toDomain()
-                        fileDatabaseHelper.insert(
-                            SyncControl.File(
-                                file.id,
-                                if (file.isImage()) SyncControl.FileType.IMAGE else SyncControl.FileType.FILE,
-                                SyncControl.FileStatus.REMOTE,
-                                file.mimeType,
-                                urlRemote = file.url
-                            )
-                        )
+                        insertFileUploadedIntoDatabase(item.toDomain())
                     }
                     isSuccessful = true
                 }.getOrElse { e ->
@@ -281,12 +273,24 @@ class UploadFileRepository(
 
     /**
      * Get the URL of a file based on its reference.
+     * First, it will try to get the file from the database, otherwise it will try to get it from the service.
      *
      * @param reference The reference of the file.
      * @return The URL of the file if found, `null` otherwise.
      */
-    override fun getFileUrl(reference: CharSequence): String? {
-        val file = fileDatabaseHelper.search(reference) ?: return null
+    override suspend fun getFileUrl(reference: CharSequence): String? {
+
+        val file = fileDatabaseHelper.search(reference) ?: let {
+            // Fallback to try to get the file from the service
+            service.getFileInfo(reference.toString()).fold(
+                onSuccess = {
+                    return@fold insertFileUploadedIntoDatabase(it.toDomain())
+                }, onFailure = {
+                    return@fold null
+                }
+            )
+        } ?: return null
+
         return when (file.status) {
             SyncControl.FileStatus.LOCAL -> file.urlLocal
             SyncControl.FileStatus.REMOTE -> file.urlRemote
@@ -304,6 +308,22 @@ class UploadFileRepository(
         return fileDatabaseHelper.search(reference)?.urlLocal
     }
 
+    /**
+     * Insert a file uploaded into the database.
+     * @param file The file to insert.
+     */
+    private fun insertFileUploadedIntoDatabase(file: FileUploaded): SyncControl.File {
+        val syncControlFile = SyncControl.File(
+            file.id,
+            if (file.isImage()) SyncControl.FileType.IMAGE else SyncControl.FileType.FILE,
+            SyncControl.FileStatus.REMOTE,
+            file.mimeType,
+            urlRemote = file.url
+        )
+        fileDatabaseHelper.insert(syncControlFile)
+
+        return syncControlFile
+    }
 
     /**
      * Get the URL remote of a file based on its reference.
@@ -389,7 +409,7 @@ class UploadFileRepository(
     }
 
     internal fun String.fallbackFileLocalUri(): String {
-        return config.uploadFilesConfig.baseStoragePath+this.substring(this.indexOf(HORUS_PATH_FILES))
+        return config.uploadFilesConfig.baseStoragePath + this.substring(this.indexOf(HORUS_PATH_FILES))
     }
 
     private fun CharSequence.toSuccess(): SyncFileResult.Success {

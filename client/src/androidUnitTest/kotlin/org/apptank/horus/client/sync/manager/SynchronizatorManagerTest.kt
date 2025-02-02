@@ -31,6 +31,7 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.random.Random
 import kotlinx.datetime.toInstant
+import org.apptank.horus.client.sync.network.dto.SyncDTO.Response.HashingValidation
 import org.junit.Assert
 
 class SynchronizatorManagerTest : TestCase() {
@@ -414,7 +415,8 @@ class SynchronizatorManagerTest : TestCase() {
     @Test
     fun `when exists data to sync and there is a checkpoint then synchronize data is failure`() =
 
-        runBlocking {2
+        runBlocking {
+            2
 
             // Given
             val insertActions = generateSyncActions(
@@ -623,6 +625,94 @@ class SynchronizatorManagerTest : TestCase() {
             coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         }
 
+    @Test
+    fun `when not exists data to sync and integrity data by missing data is bad then sync missing data`() =
+        runBlocking {
+            // Given
+            val checkpointTimestamp = Clock.System.now().toEpochMilliseconds()
+            val entityNames = listOf("entity1")
+            val entitiesHashes = mutableListOf<DataMap>()
+            val entitiesHashesValidation = mutableListOf<SyncDTO.Response.EntityHash>()
+            val entityIdHash = mutableListOf<SyncDTO.Response.EntityIdHash>()
+            val entityData = SyncDTO.Response.Entity(
+                "entity1",
+                mapOf("id" to uuid(), "name" to "name")
+            )
+
+            val entitiesIdHashesRemote = mutableListOf<SyncDTO.Response.EntityIdHash>()
+
+            entityNames.forEach { entityName ->
+                val hash = randomHash()
+                val uuid = uuid()
+                entitiesHashes.add(
+                    mapOf(
+                        Horus.Attribute.ID to uuid,
+                        Horus.Attribute.HASH to hash
+                    )
+                )
+                entitiesHashesValidation.add(
+                    SyncDTO.Response.EntityHash(entityName, HashingValidation(hash, hash, false))
+                )
+                entityIdHash.add(SyncDTO.Response.EntityIdHash(uuid, hash))
+            }
+
+            // Populate remote data
+            generateRandomArray {
+                entitiesIdHashesRemote.add(SyncDTO.Response.EntityIdHash(uuid(), randomHash()))
+            }
+
+            entityIdHash.forEach {
+                entitiesIdHashesRemote.add(it)
+            }
+
+
+            every { networkValidator.isNetworkAvailable() }.returns(true)
+            every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
+            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(
+                checkpointTimestamp
+            )
+            every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
+                emptyList()
+            )
+            coEvery {
+                synchronizationService.getQueueActions(
+                    checkpointTimestamp,
+                    emptyList()
+                )
+            }.returns(DataResult.Success(emptyList()))
+
+            // ---> Get entities name
+            every { syncControlDatabaseHelper.getWritableEntityNames() }.returns(entityNames)
+            // ---> Get entities hash
+            every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
+            // ---> Validate entities data
+            coEvery { synchronizationService.postValidateEntitiesData(any()) }.returns(
+                DataResult.Success(entitiesHashesValidation)
+            )
+            // ---> Get entity hashes
+            coEvery { synchronizationService.getEntityHashes(any()) }.returns(
+                DataResult.Success(entitiesIdHashesRemote)
+            )
+            // ---> Get entity data to restore
+            coEvery { synchronizationService.getDataEntity(any(), any(), any()) }.returns(
+                DataResult.Success(listOf(entityData))
+            )
+            // ---> Sync missing data
+            every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
+
+            // When
+            synchronizatorManager.start { status, isCompleted ->
+                if (isCompleted) {
+                    Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+                }
+            }
+
+            delay(50)
+            coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasInvoked(1)
+            coVerify { synchronizationService.getEntityHashes(any()) }.wasInvoked(1)
+            coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any()) }.wasNotInvoked()
+            coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
+        }
 
     private fun generateSyncActions(
         type: SyncControl.ActionType,

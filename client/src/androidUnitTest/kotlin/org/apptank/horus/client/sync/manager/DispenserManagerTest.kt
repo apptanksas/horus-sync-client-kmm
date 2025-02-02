@@ -14,6 +14,7 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -22,6 +23,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import kotlin.random.Random
+import com.russhwolf.settings.Settings
 
 class DispenserManagerTest : TestCase() {
 
@@ -36,6 +38,9 @@ class DispenserManagerTest : TestCase() {
 
     @Mock
     val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
+
+    @Mock
+    val storageSettings = mock(classOf<Settings>())
 
     private val eventBus = EventBus
 
@@ -64,6 +69,8 @@ class DispenserManagerTest : TestCase() {
         )
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+        HorusContainer.setupSettings(storageSettings)
     }
 
     @After

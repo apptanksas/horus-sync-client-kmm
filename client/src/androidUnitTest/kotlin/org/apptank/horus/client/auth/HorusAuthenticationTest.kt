@@ -1,5 +1,6 @@
 package org.apptank.horus.client.auth
 
+import com.russhwolf.settings.Settings
 import io.mockative.Mock
 import io.mockative.classOf
 import io.mockative.mock
@@ -8,6 +9,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -17,10 +19,16 @@ class HorusAuthenticationTest : TestCase() {
 
     @Mock
     val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
+    @Mock
+    val synchronizationService = mock(classOf<ISynchronizationService>())
+    @Mock
+    val storageSettings = mock(classOf<Settings>())
 
     @Before
     fun setup() {
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+        HorusContainer.setupSettings(storageSettings)
     }
 
     @Test

@@ -1,11 +1,13 @@
 package org.apptank.horus.client
 
+import com.russhwolf.settings.Settings
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
@@ -99,14 +101,21 @@ object HorusDataFacade {
             return field
         }
 
+    private var settings: Settings? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSettings()
+            }
+            return field
+        }
+
     private val entityRestrictionValidator by lazy { HorusContainer.getEntityRestrictionValidator() }
 
     init {
         registerEntityEventListeners()
         registerObserverEvents()
         EventBus.register(EventType.ON_READY) {
-            isReady = true
-            onCallbackReady?.invoke()
+            callOnReady()
         }
         isInitialized = true
     }
@@ -130,7 +139,7 @@ object HorusDataFacade {
         onCallbackReady = callback
 
         if (isReady) {
-            onCallbackReady?.invoke()
+            callOnReady()
         }
     }
 
@@ -785,7 +794,7 @@ object HorusDataFacade {
      * @param reference The reference of the image.
      * @return The URL of the file if found, `null` otherwise.
      */
-    fun getFileUri(reference: CharSequence): String? {
+    suspend fun getFileUri(reference: CharSequence): String? {
 
         if (networkValidator?.isNetworkAvailable().isFalse()) {
             return uploadFileRepository?.getFileUrlLocal(reference)
@@ -806,6 +815,13 @@ object HorusDataFacade {
     // ---------------------------------------------------------------------------------------------
     // Private methods
     // ---------------------------------------------------------------------------------------------
+
+    private fun callOnReady() {
+        isReady = true
+        onCallbackReady?.invoke()
+        onCallbackReady = null
+    }
+
 
     /**
      * Validates the constraints for the facade.
@@ -892,8 +908,10 @@ object HorusDataFacade {
      */
     private fun registerObserverEvents() {
         EventBus.register(EventType.USER_SESSION_CLEARED) {
-            if(syncControlDatabaseHelper!= null)
-                syncControlDatabaseHelper?.clearDatabase()
+            syncControlDatabaseHelper?.clearDatabase()
+            MemoryCache.flushCache()
+            settings?.clear()
+            clear()
         }
     }
 

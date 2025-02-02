@@ -120,7 +120,7 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
-    fun testGetFileUrlWhenIsRemoteIsSuccess() {
+    fun testGetFileUrlWhenIsRemoteIsSuccess() = runBlocking {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.REMOTE)
@@ -135,7 +135,7 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
-    fun testGetFileUrlWhenIsLocalIsSuccess() {
+    fun testGetFileUrlWhenIsLocalIsSuccess() = runBlocking {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
@@ -150,7 +150,7 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
-    fun testGetFileUrlWhenIsSyncedIsSuccess() {
+    fun testGetFileUrlWhenIsSyncedIsSuccess() = runBlocking {
         // Given
         val fileReference = Horus.FileReference()
         val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED)
@@ -165,11 +165,36 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
-    fun testGetFileUrlIsNull() {
+    fun testGetFileUrlFromRemoteWhenNotFoundInLocal() = runBlocking {
+        // Given
+        val fileReference = Horus.FileReference()
+        val fileUriExpected = "http://test/${fileReference}.png"
+        every { fileDatabaseHelper.search(fileReference) }.returns(null)
+        coEvery { service.getFileInfo(fileReference.toString()) }.returns(
+            DataResult.Success(
+                SyncDTO.Response.FileInfoUploaded(
+                    Horus.FileReference().toString(),
+                    fileUriExpected,
+                    "image/png",
+                    SyncFileStatus.LINKED.id
+                )
+            )
+        )
+
+        // When
+        val result = repository.getFileUrl(fileReference)
+
+        // Then
+        Assert.assertEquals(fileUriExpected, result)
+    }
+
+    @Test
+    fun testGetFileUrlIsNull() = runBlocking {
         // Given
         val fileReference = Horus.FileReference()
 
         every { fileDatabaseHelper.search(fileReference) }.returns(null)
+        coEvery { service.getFileInfo(fileReference.toString()) }.returns(DataResult.Failure(Exception()))
 
         // When
         val result = repository.getFileUrl(fileReference)
@@ -241,7 +266,7 @@ class UploadFileRepositoryTest : TestCase() {
         val originalPath = originalFile.urlLocal?.toPath()!!
         createFileInLocalStorage(originalPath)
 
-        val fakePath = originalPath.replace(UploadFileRepository.HORUS_PATH_FILES, "123/"+UploadFileRepository.HORUS_PATH_FILES)
+        val fakePath = originalPath.replace(UploadFileRepository.HORUS_PATH_FILES, "123/" + UploadFileRepository.HORUS_PATH_FILES)
         val file = SyncControl.File(
             originalFile.reference,
             SyncControl.FileType.IMAGE,

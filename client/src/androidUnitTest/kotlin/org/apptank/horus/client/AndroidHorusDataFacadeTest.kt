@@ -176,6 +176,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             assert(countTables == 0)
         }
 
+        verify { storageSettings.clear() }.wasInvoked()
     }
 
     @Test
@@ -486,7 +487,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         val urlRemote = "remote/path"
 
         every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
+        coEvery { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
 
         // When
         val result = HorusDataFacade.getFileUri(fileReference)
