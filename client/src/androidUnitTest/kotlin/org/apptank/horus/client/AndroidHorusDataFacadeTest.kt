@@ -487,7 +487,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         val urlRemote = "remote/path"
 
         every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
+        coEvery { uploadFileRepository.getFileUrl(fileReference) }.returns(urlRemote)
 
         // When
         val result = HorusDataFacade.getFileUri(fileReference)

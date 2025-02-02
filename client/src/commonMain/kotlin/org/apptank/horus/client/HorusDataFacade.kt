@@ -115,8 +115,7 @@ object HorusDataFacade {
         registerEntityEventListeners()
         registerObserverEvents()
         EventBus.register(EventType.ON_READY) {
-            isReady = true
-            onCallbackReady?.invoke()
+            callOnReady()
         }
         isInitialized = true
     }
@@ -140,7 +139,7 @@ object HorusDataFacade {
         onCallbackReady = callback
 
         if (isReady) {
-            onCallbackReady?.invoke()
+            callOnReady()
         }
     }
 
@@ -795,7 +794,7 @@ object HorusDataFacade {
      * @param reference The reference of the image.
      * @return The URL of the file if found, `null` otherwise.
      */
-    fun getFileUri(reference: CharSequence): String? {
+    suspend fun getFileUri(reference: CharSequence): String? {
 
         if (networkValidator?.isNetworkAvailable().isFalse()) {
             return uploadFileRepository?.getFileUrlLocal(reference)
@@ -816,6 +815,13 @@ object HorusDataFacade {
     // ---------------------------------------------------------------------------------------------
     // Private methods
     // ---------------------------------------------------------------------------------------------
+
+    private fun callOnReady() {
+        isReady = true
+        onCallbackReady?.invoke()
+        onCallbackReady = null
+    }
+
 
     /**
      * Validates the constraints for the facade.
