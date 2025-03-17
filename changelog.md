@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.3
+- Fixed issue when map to entity data with boolean and float values.
+
 ## v0.7.2
 - Improved to getting the file uri from service when could not get the file from the local storage.
 - Disposable on ready callback when the horus is ready.

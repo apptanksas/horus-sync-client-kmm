@@ -71,10 +71,11 @@ private fun mapAttributeValue(name: String, value: Any?): Horus.Attribute<*> {
     return Horus.Attribute(
         name,
         when (value) {
-            is Int, Float -> value
+            is Int, is Float -> value
             is Double -> value
             is String -> value
             is Long -> value
+            is Boolean -> value
             else -> throw IllegalArgumentException("Attribute value [" + if (value == null) "" else value::class.simpleName + "] not supported")
         }
     )
