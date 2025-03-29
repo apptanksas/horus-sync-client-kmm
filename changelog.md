@@ -1,6 +1,7 @@
 # Changelog
 
-## v0.7.4
+## v0.8.0
+- Added method `executeBatchOperations` in HorusDataFacade to execute a batch of operations.
 - Deprecated method `IOperationDatabaseHelper.executeOperations` without post operation callback.
 
 ## v0.7.3
