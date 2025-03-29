@@ -121,7 +121,7 @@ class OperationDatabaseHelperTest : TestCase() {
             0
         ).value
         Assert.assertEquals(0, count)
-        Assert.assertTrue(postOperationValidation)
+        Assert.assertFalse(postOperationValidation)
     }
 
     @Test

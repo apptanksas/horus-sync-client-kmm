@@ -161,7 +161,7 @@ class SynchronizatorManagerTest : TestCase() {
             coEvery { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
                 emptyList()
             )
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(true)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -210,7 +210,7 @@ class SynchronizatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(true)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -222,7 +222,7 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val insertInvokeExpected = 1
-            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.wasInvoked(
                 insertInvokeExpected
             )
             verify {
@@ -269,7 +269,7 @@ class SynchronizatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(true)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -281,7 +281,7 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val updateInvokeExpected = 1
-            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.wasInvoked(
                 updateInvokeExpected
             )
             verify {
@@ -322,7 +322,7 @@ class SynchronizatorManagerTest : TestCase() {
             coEvery { synchronizationService.getQueueActions(checkpointTimestamp) }
                 .returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(true)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -334,7 +334,7 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val deleteInvokeExpected = 1
-            coVerify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(
+            coVerify { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.wasInvoked(
                 deleteInvokeExpected
             )
             verify {
@@ -391,7 +391,7 @@ class SynchronizatorManagerTest : TestCase() {
                 )
             }.returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(true)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(true)
 
 
             // When
@@ -403,7 +403,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             // Then
             delay(50)
-            verify { operationDatabaseHelper.executeOperations(listOf(any())) }.wasInvoked(1)
+            verify { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.wasInvoked(1)
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -459,7 +459,7 @@ class SynchronizatorManagerTest : TestCase() {
                 )
             }.returns(DataResult.Success(responseActions))
 
-            every { operationDatabaseHelper.executeOperations(listOf(any())) }.returns(false)
+            every { operationDatabaseHelper.executeOperations(listOf(any()), any()) }.returns(false)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
