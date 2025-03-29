@@ -205,9 +205,9 @@ object HorusDataFacade {
             return DataResult.NotAuthorized(e)
         } catch (e: AttributeRestrictedException) {
             return DataResult.Failure(e)
+        } catch (e: Exception) {
+            return DataResult.Failure(e)
         }
-
-
     }
 
 
