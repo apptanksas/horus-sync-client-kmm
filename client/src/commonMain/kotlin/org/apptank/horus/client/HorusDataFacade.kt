@@ -22,6 +22,7 @@ import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.exception.AttributeRestrictedException
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.OperationNotPermittedException
@@ -152,6 +153,64 @@ object HorusDataFacade {
         entityRestrictionValidator.setRestrictions(restrictions)
     }
 
+
+    /**
+     * Executes a batch operation.
+     *
+     * @param batch The list of batch to execute.
+     *
+     * @return A [DataResult] indicating success or failure of the batch operation.
+     */
+    suspend fun executeBatchOperations(batch: List<Horus.Batch>): DataResult<Unit> {
+
+        try {
+            // --- Prepare batch: INSERT
+            val (recordInserts, insertIds) = prepareInsertBatch(batch.filterIsInstance<Horus.Batch.Insert>())
+            // --- Prepare batch: UPDATE
+            val (recordUpdates, updateIds) = prepareUpdateBatch(batch.filterIsInstance<Horus.Batch.Update>(),
+                insertIds.map { Horus.Entity(it.second, it.third) }
+                    .associateBy { it.getRequireString(Horus.Attribute.ID) })
+            // --- Prepare batch: DELETE
+            val deleteIds = batch.filterIsInstance<Horus.Batch.Delete>().associate { it.entity to it.id }
+            val recordDeletes = deleteIds.map { (entity, id) ->
+                DatabaseOperation.DeleteRecord(
+                    entity,
+                    listOf(
+                        SQL.WhereCondition(
+                            SQL.ColumnValue(Horus.Attribute.ID, id),
+                            SQL.Comparator.EQUALS
+                        )
+                    )
+                )
+            }
+
+            val operations = mutableListOf<DatabaseOperation>().apply {
+                addAll(recordInserts)
+                addAll(recordUpdates)
+                addAll(recordDeletes)
+            }
+
+            val result = operationDatabaseHelper?.executeOperations(operations) {
+                processPostInsertActions(insertIds)
+                processPostUpdateActions(updateIds)
+                deleteIds.forEach { (entity, id) ->
+                    syncControlDatabaseHelper?.addActionDelete(entity, Horus.Attribute(Horus.Attribute.ID, id))
+                }
+            }
+            if (result == true) {
+                return DataResult.Success(Unit)
+            }
+            return DataResult.Failure(IllegalStateException("Batch operation failure"))
+        } catch (e: OperationNotPermittedException) {
+            return DataResult.NotAuthorized(e)
+        } catch (e: AttributeRestrictedException) {
+            return DataResult.Failure(e)
+        } catch (e: Exception) {
+            return DataResult.Failure(e)
+        }
+    }
+
+
     /**
      * Inserts multiple records into the database with specified attributes.
      *
@@ -160,77 +219,29 @@ object HorusDataFacade {
      * @return A [DataResult] indicating success or failure of the insert operation with inserted IDs.
      */
     fun insertBatch(batch: List<Horus.Batch.Insert>): DataResult<List<String>> {
-
-        val recordInserts = mutableListOf<DatabaseOperation.InsertRecord>()
-        // ID, entity, attributes
-        val insertIds =
-            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
-
-        // Start validation
-        entityRestrictionValidator.startValidation()
-
-        batch.forEach { it ->
-
-            val entity = it.entity
-            val attributes = it.attributes
-
-            validateConstraintsEntity(entity)
-            try {
-                entityRestrictionValidator.validate(entity, EntityRestriction.OperationType.INSERT)
-            } catch (e: OperationNotPermittedException) {
-                return DataResult.NotAuthorized(e)
+        try {
+            val (recordInserts, insertIds) = prepareInsertBatch(batch)
+            val onInsertActions: Callback = {
+                processPostInsertActions(insertIds)
             }
 
-            if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
-                return DataResult.Failure(IllegalStateException("Attribute restricted"))
+            return runCatching {
+                val result =
+                    operationDatabaseHelper!!.insertWithTransaction(recordInserts, onInsertActions)
+
+                if (result) {
+                    return@runCatching DataResult.Success(insertIds.map { it.first.value })
+                }
+                return@runCatching DataResult.Failure(IllegalStateException("Insert entity failure"))
+
+            }.getOrElse {
+                DataResult.Failure(it)
             }
 
-            val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
-            val id = Horus.Attribute(Horus.Attribute.ID, uuid)
-
-            val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
-                id,
-                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
-            )
-
-            recordInserts.add(
-                DatabaseOperation.InsertRecord(
-                    entity,
-                    attributesPrepared.mapToDBColumValue()
-                )
-            )
-            insertIds.add(Triple(id, entity, attributes))
-        }
-
-        // Finish validation
-        entityRestrictionValidator.finishValidation()
-
-        val onInsertActions: Callback = {
-
-            insertIds.forEach {
-
-                val id = it.first
-                val entity = it.second
-                val attributes = it.third
-
-                syncControlDatabaseHelper!!.addActionInsert(
-                    entity,
-                    mutableListOf<Horus.Attribute<*>>(id).apply { addAll(attributes) }
-                )
-            }
-        }
-
-        return runCatching {
-            val result =
-                operationDatabaseHelper!!.insertWithTransaction(recordInserts, onInsertActions)
-
-            if (result) {
-                return@runCatching DataResult.Success(insertIds.map { it.first.value })
-            }
-            return@runCatching DataResult.Failure(IllegalStateException("Insert entity failure"))
-
-        }.getOrElse {
-            DataResult.Failure(it)
+        } catch (e: OperationNotPermittedException) {
+            return DataResult.NotAuthorized(e)
+        } catch (e: AttributeRestrictedException) {
+            return DataResult.Failure(e)
         }
     }
 
@@ -327,75 +338,16 @@ object HorusDataFacade {
      * @return A [DataResult] indicating success or failure of the update operation.
      */
     fun updateBatch(batch: List<Horus.Batch.Update>): DataResult<Unit> {
-
-        val recordUpdates = mutableListOf<DatabaseOperation.UpdateRecord>()
-        val updateIds =
-            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
-
         // Prepare update actions
-        batch.forEach { it ->
-
-            val entity = it.entity
-            val id = it.id
-            val attributes = it.attributes
-
-            validateConstraintsEntity(entity)
-
-            if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
-                return DataResult.Failure(IllegalStateException("Attribute restricted"))
-            }
-
-            val attrId = Horus.Attribute(Horus.Attribute.ID, id)
-            val currentData = getById(entity, id) ?: return DataResult.Failure(
-                IllegalStateException("Entity not found")
-            )
-
-            val attributesPrepared =
-                AttributesPreparator.appendHashAndUpdateAttributes(
-                    attrId,
-                    attributes.toMutableList().apply {
-                        currentData.attributes.filter { currentAttribute -> attributes.find { it.name == currentAttribute.name } == null }
-                            .forEach {
-                                add(it)
-                            }
-                        removeIf { it.name == "sync_hash" }
-                    })
-
-            recordUpdates.add(
-                DatabaseOperation.UpdateRecord(
-                    entity, attributesPrepared.mapToDBColumValue(),
-                    listOf(
-                        SQL.WhereCondition(
-                            SQL.ColumnValue(Horus.Attribute.ID, id),
-                            SQL.Comparator.EQUALS
-                        )
-                    )
-                )
-            )
-            updateIds.add(Triple(attrId, entity, attributes))
-        }
+        val (recordUpdates, updateIds) = prepareUpdateBatch(batch)
 
         // Add update actions to sync control
         val onUpdateActions: Callback = {
-
-            updateIds.forEach {
-
-                val id = it.first
-                val entity = it.second
-                val attributes = it.third
-
-                syncControlDatabaseHelper!!.addActionUpdate(
-                    entity,
-                    id,
-                    attributes
-                )
-            }
+            processPostUpdateActions(updateIds)
         }
 
         return runCatching {
-            val result =
-                operationDatabaseHelper!!.updateWithTransaction(recordUpdates, onUpdateActions)
-
+            val result = operationDatabaseHelper!!.updateWithTransaction(recordUpdates, onUpdateActions)
             if (result) {
                 return@runCatching DataResult.Success(Unit)
             }
@@ -816,12 +768,153 @@ object HorusDataFacade {
     // Private methods
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * Prepares a batch of insert operations.
+     *
+     * @param batch The list of batch to insert.
+     * @return A pair of the list of insert records and the list of insert IDs.
+     */
+    private fun prepareInsertBatch(
+        batch: List<Horus.Batch.Insert>
+    ): Pair<List<DatabaseOperation.InsertRecord>, List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>> {
+
+        val recordInserts = mutableListOf<DatabaseOperation.InsertRecord>()
+        // ID, entity, attributes
+        val insertIds =
+            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
+
+        // Start validation
+        entityRestrictionValidator.startValidation()
+
+        batch.forEach { it ->
+
+            val entity = it.entity
+            val attributes = it.attributes
+
+            validateConstraintsEntity(entity)
+
+            entityRestrictionValidator.validate(entity, EntityRestriction.OperationType.INSERT)
+
+            if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
+                throw AttributeRestrictedException()
+            }
+
+            val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
+            val id = Horus.Attribute(Horus.Attribute.ID, uuid)
+
+            val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
+                id,
+                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
+            )
+
+            recordInserts.add(
+                DatabaseOperation.InsertRecord(
+                    entity,
+                    attributesPrepared.mapToDBColumValue()
+                )
+            )
+            insertIds.add(Triple(id, entity, attributes))
+        }
+
+        // Finish validation
+        entityRestrictionValidator.finishValidation()
+
+        return Pair(recordInserts, insertIds)
+    }
+
+    /**
+     * Prepares a batch of update operations.
+     *
+     * @param batch The list of batch to update.
+     * @return A pair of the list of update records and the list of update IDs.
+     */
+    private fun prepareUpdateBatch(
+        batch: List<Horus.Batch.Update>,
+        pendingToInsert: Map<String, Horus.Entity> = mapOf()
+    ): Pair<List<DatabaseOperation.UpdateRecord>, List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>> {
+
+        val recordUpdates = mutableListOf<DatabaseOperation.UpdateRecord>()
+        val updateIds = mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
+
+        // Prepare update actions
+        batch.forEach { it ->
+
+            val entity = it.entity
+            val id = it.id
+            val attributes = it.attributes
+
+            validateConstraintsEntity(entity)
+
+            if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
+                throw AttributeRestrictedException()
+            }
+
+            val attrId = Horus.Attribute(Horus.Attribute.ID, id)
+            val currentData = getById(entity, id) ?: run {
+                // Fall back to search in pending to insert
+                return@run pendingToInsert[id]
+            } ?: throw IllegalStateException("Entity not found")
+
+            val attributesPrepared =
+                AttributesPreparator.appendHashAndUpdateAttributes(
+                    attrId,
+                    attributes.toMutableList().apply {
+                        currentData.attributes.filter { currentAttribute -> attributes.find { it.name == currentAttribute.name } == null }
+                            .forEach {
+                                add(it)
+                            }
+                        removeIf { it.name == "sync_hash" }
+                    })
+
+            recordUpdates.add(
+                DatabaseOperation.UpdateRecord(
+                    entity, attributesPrepared.mapToDBColumValue(),
+                    listOf(
+                        SQL.WhereCondition(
+                            SQL.ColumnValue(Horus.Attribute.ID, id),
+                            SQL.Comparator.EQUALS
+                        )
+                    )
+                )
+            )
+            updateIds.add(Triple(attrId, entity, attributes))
+        }
+
+        return Pair(recordUpdates, updateIds)
+    }
+
+    private fun processPostInsertActions(insertIds: List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>) {
+        insertIds.forEach {
+            val id = it.first
+            val entity = it.second
+            val attributes = it.third
+
+            syncControlDatabaseHelper!!.addActionInsert(
+                entity,
+                mutableListOf<Horus.Attribute<*>>(id).apply { addAll(attributes) }
+            )
+        }
+    }
+
+    private fun processPostUpdateActions(updateIds: List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>) {
+        updateIds.forEach {
+            val id = it.first
+            val entity = it.second
+            val attributes = it.third
+
+            syncControlDatabaseHelper!!.addActionUpdate(
+                entity,
+                id,
+                attributes
+            )
+        }
+    }
+
     private fun callOnReady() {
         isReady = true
         onCallbackReady?.invoke()
         onCallbackReady = null
     }
-
 
     /**
      * Validates the constraints for the facade.

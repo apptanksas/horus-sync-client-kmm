@@ -12,16 +12,22 @@ interface IOperationDatabaseHelper {
      * Executes a list of database operations (insert, update, delete) within a transaction.
      *
      * @param actions The list of actions to be performed on the database.
+     * @param postOperation The callback to be executed after the operation.
      * @return True if the transaction was successful, false otherwise.
      */
-    fun executeOperations(actions: List<DatabaseOperation>): Boolean
+    fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback = {}): Boolean
 
     /**
      * Executes a variable number of database operations (insert, update, delete) within a transaction.
      *
+     * @param postOperation The callback to be executed after the operation.
      * @param actions The vararg of actions to be performed on the database.
      * @return True if the transaction was successful, false otherwise.
      */
+    @Deprecated(
+        "Use executeOperations(actions: List<DatabaseOperation>, postOperation: Callback) instead, because not has postOperation parameter.",
+        ReplaceWith("executeOperations(actions.toList(), postOperation)")
+    )
     fun executeOperations(vararg actions: DatabaseOperation): Boolean
 
     /**

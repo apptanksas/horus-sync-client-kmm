@@ -78,8 +78,11 @@ class OperationDatabaseHelperTest : TestCase() {
             createInsertAction(uuid, "dog"),
             createDeleteAction(uuid),
         )
+        var postOperationValidation = false
         // When
-        val result = databaseHelper.executeOperations(actions)
+        val result = databaseHelper.executeOperations(actions){
+            postOperationValidation = true
+        }
         // Then
         assert(result)
         val count = driver.executeQuery(
@@ -90,6 +93,7 @@ class OperationDatabaseHelperTest : TestCase() {
             0
         ).value
         Assert.assertEquals(0, count)
+        Assert.assertTrue(postOperationValidation)
     }
 
     @Test
@@ -100,8 +104,11 @@ class OperationDatabaseHelperTest : TestCase() {
             createInsertAction(uuid, "dog"),
             createDeleteAction(uuid()),
         )
+        var postOperationValidation = false
         // When
-        val result = databaseHelper.executeOperations(actions)
+        val result = databaseHelper.executeOperations(actions){
+            postOperationValidation = true
+        }
         // Then
         Assert.assertFalse(result)
 
@@ -114,6 +121,7 @@ class OperationDatabaseHelperTest : TestCase() {
             0
         ).value
         Assert.assertEquals(0, count)
+        Assert.assertFalse(postOperationValidation)
     }
 
     @Test
@@ -263,8 +271,11 @@ class OperationDatabaseHelperTest : TestCase() {
     fun validateTransactionRollbackWhenFail() {
         // Given
         val uuid = uuid()
+        val uuid2 = uuid()
         val listActions = listOf(
             createInsertAction(uuid, "dog"),
+            createInsertAction(uuid2, "cat"),
+            createDeleteAction(uuid2),
             DatabaseOperation.InsertRecord(
                 entityName,
                 listOf(
@@ -272,7 +283,8 @@ class OperationDatabaseHelperTest : TestCase() {
                     SQL.ColumnValue("name", "cat"),
                     SQL.ColumnValue("column_to_force_error", "any")
                 )
-            )
+            ),
+
         )
         // When
         databaseHelper.executeOperations(listActions)

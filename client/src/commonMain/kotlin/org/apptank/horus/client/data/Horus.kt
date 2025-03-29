@@ -21,7 +21,7 @@ sealed class Horus {
          * @property entity The name of the entity.
          * @property attributes A list of attributes associated with the entity.
          */
-        data class Insert(val entity: String, val attributes: List<Attribute<*>>) {
+        data class Insert(val entity: String, val attributes: List<Attribute<*>>) : Batch() {
             constructor(entity: String, vararg attributes: Attribute<*>) : this(
                 entity,
                 attributes.toList()
@@ -60,7 +60,7 @@ sealed class Horus {
             val entity: String,
             val id: String,
             val attributes: List<Horus.Attribute<*>>
-        ) {
+        ) : Batch() {
             constructor(entity: String, id: String, vararg attributes: Attribute<*>) : this(
                 entity,
                 id,
@@ -72,6 +72,17 @@ sealed class Horus {
                 id,
                 attributes.map { Attribute(it.key, it.value) })
         }
+
+        /**
+         * Represents a batch of entities to be deleted from the database.
+         *
+         * @property entity The name of the entity.
+         * @property id The ID of the entity.
+         */
+        data class Delete(
+            val entity: String,
+            val id: String
+        ) : Batch()
     }
 
 
