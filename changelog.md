@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.4
+- Deprecated method `IOperationDatabaseHelper.executeOperations` without post operation callback.
+
 ## v0.7.3
 - Fixed issue when map to entity data with boolean and float values.
 

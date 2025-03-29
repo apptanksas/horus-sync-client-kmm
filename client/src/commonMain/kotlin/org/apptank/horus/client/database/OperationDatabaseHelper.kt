@@ -28,41 +28,45 @@ internal class OperationDatabaseHelper(
      * Executes a list of database operations in a transaction.
      *
      * @param actions List of [DatabaseOperation] to be executed.
+     * @param postOperation Callback to be executed after the operations.
      * @throws DatabaseOperationFailureException if any operation fails.
      */
-    override fun executeOperations(actions: List<DatabaseOperation>) = executeTransaction { _ ->
-        actions.forEach { action ->
-            val operationIsFailure: Boolean = when (action) {
-                // Insert operation
-                is DatabaseOperation.InsertRecord -> {
-                    insertOrThrow(
+    override fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback) =
+        executeTransaction { _ ->
+            actions.forEach { action ->
+                val operationIsFailure: Boolean = when (action) {
+                    // Insert operation
+                    is DatabaseOperation.InsertRecord -> {
+                        insertOrThrow(
+                            action.table,
+                            action.values.prepareMap()
+                        )
+                        false // Insert is always considered successful
+                    }
+                    // Update operation
+                    is DatabaseOperation.UpdateRecord -> executeUpdate(
                         action.table,
-                        action.values.prepareMap()
-                    )
-                    false // Insert is always considered successful
+                        action.values,
+                        action.conditions,
+                        action.operator
+                    ).isFailure
+                    // Delete operation
+                    is DatabaseOperation.DeleteRecord -> executeDelete(
+                        action.table,
+                        action.conditions,
+                        action.operator
+                    ).isFailure
+
+                    else -> throw IllegalStateException("Action not supported")
                 }
-                // Update operation
-                is DatabaseOperation.UpdateRecord -> executeUpdate(
-                    action.table,
-                    action.values,
-                    action.conditions,
-                    action.operator
-                ).isFailure
-                // Delete operation
-                is DatabaseOperation.DeleteRecord -> executeDelete(
-                    action.table,
-                    action.conditions,
-                    action.operator
-                ).isFailure
 
-                else -> throw IllegalStateException("Action not supported")
+                if (operationIsFailure) {
+                    throw DatabaseOperationFailureException("Operation database is failed")
+                }
             }
-
-            if (operationIsFailure) {
-                throw DatabaseOperationFailureException("Operation database is failed")
-            }
+            // Execute the post operation callback
+            postOperation()
         }
-    }
 
     /**
      * Executes a vararg list of database operations in a transaction.
@@ -70,8 +74,11 @@ internal class OperationDatabaseHelper(
      * @param actions Vararg list of [DatabaseOperation] to be executed.
      * @throws DatabaseOperationFailureException if any operation fails.
      */
-    override fun executeOperations(vararg actions: DatabaseOperation) =
-        executeOperations(actions.toList())
+    @Deprecated(
+        "Use executeOperations(actions: List<DatabaseOperation>, postOperation: Callback) instead, because not has postOperation parameter.",
+        replaceWith = ReplaceWith("executeOperations(actions.toList(), postOperation)")
+    )
+    override fun executeOperations(vararg actions: DatabaseOperation) = executeOperations(actions.toList())
 
     /**
      * Inserts records into the database within a transaction.

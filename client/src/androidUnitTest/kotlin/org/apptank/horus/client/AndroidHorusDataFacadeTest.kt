@@ -38,6 +38,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.coFold
+import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -152,7 +153,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     @Test
-    fun `validate clear database when user session is cleared`()  {
+    fun `validate clear database when user session is cleared`() {
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         HorusDataFacade.init()
@@ -411,6 +412,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateUpdateBatchIsTest()
         validateInsertAndUpdateIsSuccess()
         validateInsertAndDeleteIsSuccess()
+        validateExecuteBatchOperations()
         validateGetEntityByIdReturnRecord()
         validateGetByIdReturnNull()
         validateGetEntities()
@@ -717,6 +719,33 @@ class AndroidHorusDataFacadeTest : TestCase() {
             assert(driver.rawQuery("SELECT * FROM measures WHERE id= '" + resultInsert.data + "'") {
                 it.getString(0)
             }.isEmpty())
+        } else {
+            fail()
+        }
+    }
+
+    private fun validateExecuteBatchOperations() = prepareInternalTest {
+        // Given
+        val measure = createDataInsertRecordWithId()
+        val measureId = measure["id"] as String
+        val operations = listOf(
+            Horus.Batch.Insert("measures", measure),
+            Horus.Batch.Update("measures", measureId, listOf(Horus.Attribute("value", Random.nextFloat()))),
+            Horus.Batch.Delete("measures", measureId)
+        )
+
+        // When
+        val result = HorusDataFacade.executeBatchOperations(operations)
+
+        // Then
+        assert(result is DataResult.Success)
+        if (result is DataResult.Success) {
+            assert(driver.rawQuery("SELECT * FROM measures") {
+                it.getString(0)
+            }.isEmpty())
+            assertEquals(3, driver.rawQuery("SELECT * FROM ${QueueActionsTable.TABLE_NAME}") {
+                it.getString(0)
+            }.size)
         } else {
             fail()
         }
@@ -1031,6 +1060,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
         driver.execute("DELETE FROM measures")
         driver.execute("DELETE FROM product_breeds")
+        driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
         HorusDataFacade.setEntityRestrictions(emptyList())
         block()
     }
