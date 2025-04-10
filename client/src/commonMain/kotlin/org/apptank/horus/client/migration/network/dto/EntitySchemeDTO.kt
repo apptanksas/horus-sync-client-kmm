@@ -79,6 +79,7 @@ sealed class MigrationDTO {
         val nullable: Boolean? = null,
         val options: List<String>? = null,
         val related: List<Response.EntityScheme>? = null,
-        @SerialName("linked_entity") val linkedEntity: String? = null
+        @SerialName("linked_entity") val linkedEntity: String? = null,
+        @SerialName("delete_on_cascade") val deleteOnCascade: Boolean? = null,
     )
 }

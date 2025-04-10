@@ -269,7 +269,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -325,7 +326,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -432,7 +434,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -488,7 +491,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "date",
@@ -570,7 +574,8 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "country",
@@ -1157,7 +1162,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -1213,7 +1219,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "date",
@@ -1295,7 +1302,8 @@ const val DATA_MIGRATION_VERSION_1 ="""
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+"delete_on_cascade": true
               },
               {
                 "name": "country",
@@ -1453,7 +1461,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "version": 2,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -1554,7 +1563,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -1610,7 +1620,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "date",
@@ -1692,7 +1703,8 @@ const val DATA_MIGRATION_VERSION_2 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "country",
@@ -1869,7 +1881,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "version": 3,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -1925,7 +1938,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "version": 2,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+"delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -2032,7 +2046,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -2088,7 +2103,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "date",
@@ -2170,7 +2186,8 @@ const val DATA_MIGRATION_VERSION_3 = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "country",
@@ -2610,7 +2627,8 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -2666,7 +2684,8 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "name",
@@ -2826,7 +2845,8 @@ const val DATA_MIGRATION_INITIAL_DATA_TASK = """
                 "version": 1,
                 "type": "uuid",
                 "nullable": false,
-                "linked_entity": "products"
+                "linked_entity": "products",
+                "delete_on_cascade": true
               },
               {
                 "name": "country",

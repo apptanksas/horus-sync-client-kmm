@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.9.0
+- Added support to setup if a foreing entity is delete on cascade. 
+
 ## v0.8.0
 - Added method `executeBatchOperations` in HorusDataFacade to execute a batch of operations.
 - Deprecated method `IOperationDatabaseHelper.executeOperations` without post operation callback.

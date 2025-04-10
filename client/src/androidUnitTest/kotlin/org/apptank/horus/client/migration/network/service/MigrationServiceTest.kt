@@ -27,6 +27,15 @@ class MigrationServiceTest : ServiceTest() {
                     Assert.assertFalse(it.attributes?.isEmpty() ?: true)
                     Assert.assertNotNull(it.type)
                     Assert.assertNotNull(it.currentVersion)
+
+                    it.attributes?.forEach {
+                        Assert.assertNotNull(it.name)
+                        Assert.assertNotNull(it.type)
+                        if(it.linkedEntity!=null){
+                            Assert.assertNotNull(it.deleteOnCascade)
+                        }
+                        Assert.assertNotNull(it.version)
+                    }
                 }
                 Assert.assertTrue(it.get(1).getRelated().isNotEmpty())
             },

@@ -46,7 +46,8 @@ internal fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
         nullable ?: false,
         this.version ?: 1,
         this.options ?: listOf(),
-        this.linkedEntity
+        this.linkedEntity,
+        this.deleteOnCascade ?: true,
     )
 }
 
