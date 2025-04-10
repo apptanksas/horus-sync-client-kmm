@@ -191,6 +191,130 @@ class DatabaseTablesCreatorDelegateTest {
         }
     }
 
+    @Test
+    fun createTableWithRelationsWithNotDeleteCascade() {
+        // Given
+        val delegate = DatabaseTablesCreatorDelegate(
+            listOf(
+                EntityScheme(
+                    "users",
+                    EntityType.WRITABLE,
+                    listOf(
+                        Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                        Attribute("name", AttributeType.String, false, version = 1)
+                    ),
+                    1,
+                    listOf(
+                        // Addresses
+                        EntityScheme(
+                            "addresses",
+                            EntityType.WRITABLE,
+                            listOf(
+                                Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                                Attribute("street", AttributeType.String, false, version = 1),
+                                Attribute(
+                                    "user_id",
+                                    AttributeType.Text,
+                                    false,
+                                    version = 1,
+                                    linkedEntity = "users",
+                                    deleteOnCascade = false
+                                )
+                            ),
+                            1,
+                            listOf(
+                                // Addresses Objects
+                                EntityScheme(
+                                    "addresses_objects",
+                                    EntityType.WRITABLE,
+                                    listOf(
+                                        Attribute(
+                                            "id",
+                                            AttributeType.PrimaryKeyUUID,
+                                            false,
+                                            version = 1
+                                        ),
+                                        Attribute("name", AttributeType.String, false, version = 1),
+                                        Attribute(
+                                            "address_id",
+                                            AttributeType.Text,
+                                            false,
+                                            version = 1,
+                                            linkedEntity = "addresses",
+                                            deleteOnCascade = false
+                                        )
+                                    ),
+                                    1,
+                                    emptyList()
+                                )
+                            )
+                        ),
+                        // Phones
+                        EntityScheme(
+                            "phones",
+                            EntityType.WRITABLE,
+                            listOf(
+                                Attribute("id", AttributeType.PrimaryKeyUUID, false, version = 1),
+                                Attribute("number", AttributeType.String, false, version = 1),
+                                Attribute(
+                                    "user_id",
+                                    AttributeType.Text,
+                                    false,
+                                    version = 1,
+                                    linkedEntity = "users",
+                                    deleteOnCascade = false
+                                )
+                            ),
+                            1,
+                            emptyList()
+                        )
+                    )
+                )
+            )
+        )
+        val sqlExpected = listOf(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS phones (
+                id TEXT PRIMARY KEY NOT NULL,
+                number TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS addresses (
+                id TEXT PRIMARY KEY NOT NULL,
+                street TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS addresses_objects (
+                id TEXT PRIMARY KEY NOT NULL,
+                name TEXT NOT NULL,
+                address_id TEXT NOT NULL,
+                FOREIGN KEY (address_id) REFERENCES addresses(id)
+            )
+            """
+        )
+
+        // When
+        var index = 0
+        delegate.createTables { sql: String ->
+            val expected = sqlExpected[index].normalizeSQL()
+            // Then
+            Assert.assertEquals(expected, sql)
+            index++
+        }
+    }
+
     private fun String.normalizeSQL() = this.trimIndent().replace("\n", "")
         .replace("\t", "").replace(",  ", ", ").replace("  ", "")
 }

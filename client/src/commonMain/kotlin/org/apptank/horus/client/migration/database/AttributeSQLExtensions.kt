@@ -16,7 +16,6 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
 
     // Create a mutable list to hold any constraints
     val constraints = mutableListOf<Constraint>()
-    val masker = this.name
     val attributeName = this.name
 
     // Start building the SQL column definition
@@ -47,7 +46,11 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         constraints.add(
             Constraint(
                 ConstraintType.FOREIGN_KEY,
-                "FOREIGN KEY ($attributeName) REFERENCES $linkedEntity(id) ON DELETE CASCADE"
+                "FOREIGN KEY ($attributeName) REFERENCES $linkedEntity(id)" + if (deleteOnCascade) {
+                    " ON DELETE CASCADE"
+                } else {
+                    ""
+                }
             )
         )
     }

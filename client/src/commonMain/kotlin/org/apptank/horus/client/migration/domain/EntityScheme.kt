@@ -66,7 +66,8 @@ data class Attribute(
     val isNullable: Boolean,
     val version: Long,
     val options: List<String> = listOf(),
-    val linkedEntity: String? = null // Only for relation
+    val linkedEntity: String? = null, // Only for relation
+    val deleteOnCascade: Boolean = true // Only for relation
 )
 
 /**
