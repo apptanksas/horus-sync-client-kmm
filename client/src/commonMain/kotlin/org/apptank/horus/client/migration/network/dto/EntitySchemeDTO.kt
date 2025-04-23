@@ -69,6 +69,7 @@ sealed class MigrationDTO {
      * @param options Optional values for attributes of type Enum.
      * @param related A list of related entity schemes.
      * @param linkedEntity The name of the linked entity, if applicable (used for relations).
+     * @param deleteOnCascade Indicates if the attribute should be deleted on cascade.
      * @constructor Creates a new instance of `AttributeDTO` with the specified parameters.
      */
     @Serializable
@@ -81,5 +82,6 @@ sealed class MigrationDTO {
         val related: List<Response.EntityScheme>? = null,
         @SerialName("linked_entity") val linkedEntity: String? = null,
         @SerialName("delete_on_cascade") val deleteOnCascade: Boolean? = null,
+        @SerialName("regex") val regex: String? = null
     )
 }

@@ -29,6 +29,7 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         AttributeType.Boolean -> "BOOLEAN"
         AttributeType.Text -> "TEXT"
         AttributeType.Json -> "TEXT"
+        AttributeType.Custom -> "TEXT"
         AttributeType.Enum -> "TEXT CHECK ($attributeName IN (${this.options.joinToString(", ") { "'$it'" }}))"
         AttributeType.Timestamp -> "TEXT"
         AttributeType.UUID -> "TEXT"
