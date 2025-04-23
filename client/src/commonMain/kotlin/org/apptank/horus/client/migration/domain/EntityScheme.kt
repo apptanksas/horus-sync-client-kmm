@@ -67,7 +67,8 @@ data class Attribute(
     val version: Long,
     val options: List<String> = listOf(),
     val linkedEntity: String? = null, // Only for relation
-    val deleteOnCascade: Boolean = true // Only for relation
+    val deleteOnCascade: Boolean = true, // Only for relation
+    val regex: String? = null, // Only for custom type attribute
 )
 
 /**
@@ -84,6 +85,7 @@ enum class AttributeType {
     Text,
     Json,
     Enum,
+    Custom,
     Timestamp,
     UUID,
     RefFile,

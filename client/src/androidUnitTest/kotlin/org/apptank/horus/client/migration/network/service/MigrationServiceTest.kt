@@ -8,12 +8,13 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertNotNull
 
 
 class MigrationServiceTest : ServiceTest() {
 
     @Test
-    fun getMigrationIsSuccess() = runBlocking {
+    fun getMigrationIsSuccess(): Unit = runBlocking {
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_MIGRATION)
         val apiClient = MigrationService(mockEngine, BASE_URL)
         val response = apiClient.getMigration()
@@ -31,13 +32,14 @@ class MigrationServiceTest : ServiceTest() {
                     it.attributes?.forEach {
                         Assert.assertNotNull(it.name)
                         Assert.assertNotNull(it.type)
-                        if(it.linkedEntity!=null){
+                        if (it.linkedEntity != null) {
                             Assert.assertNotNull(it.deleteOnCascade)
                         }
                         Assert.assertNotNull(it.version)
                     }
                 }
                 Assert.assertTrue(it.get(1).getRelated().isNotEmpty())
+                assertNotNull(it.get(0).attributes?.find { it.name == "custom_uuid" && it.regex != null })
             },
             onFailure = {
                 Assert.fail("Error")

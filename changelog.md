@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.10.0
+- Added support to custom attribute types for entities.
+
 ## v0.9.0
 - Added support to setup if a foreing entity is delete on cascade. 
 

@@ -48,6 +48,7 @@ internal fun MigrationDTO.AttributeDTO.toScheme(): Attribute {
         this.options ?: listOf(),
         this.linkedEntity,
         this.deleteOnCascade ?: true,
+        this.regex
     )
 }
 
@@ -72,6 +73,7 @@ private fun String?.toAttributeType(): AttributeType {
         "text" -> AttributeType.Text
         "json" -> AttributeType.Json
         "enum" -> AttributeType.Enum
+        "custom" -> AttributeType.Custom
         "timestamp" -> AttributeType.Timestamp
         "uuid" -> AttributeType.UUID
         "ref_file" -> AttributeType.RefFile

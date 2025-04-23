@@ -37,6 +37,13 @@ const val MOCK_RESPONSE_GET_MIGRATION = """
         "nullable": false
       },
       {
+        "name": "custom_uuid",
+        "version": 1,
+        "type": "custom",
+        "nullable": true,
+        "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}${'$'}"
+        },
+      {
         "name": "measure",
         "version": 1,
         "type": "enum",
