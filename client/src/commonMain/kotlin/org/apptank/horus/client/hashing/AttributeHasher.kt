@@ -22,7 +22,7 @@ internal object AttributeHasher {
      * @return The SHA-256 hash of the concatenated string representation of attribute values.
      */
     fun generateHash(attributes: List<Horus.Attribute<*>>): String {
-        val inputString = attributes.sortedBy { it.name }
+        val inputString = attributes.sortedBy { it.name }.filter { it.value != null }
             .joinToString(separator = "", transform = { it.value.toString() })
         return sha256(inputString)
     }

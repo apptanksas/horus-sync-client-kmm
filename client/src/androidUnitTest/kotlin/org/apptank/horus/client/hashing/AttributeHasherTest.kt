@@ -32,5 +32,64 @@ class AttributeHasherTest{
         Assert.assertEquals(hashExpected, result)
     }
 
+    @Test
+    fun testHashingWithNullsAndBooleanWithTrue(){
+        // Given
+        val attributes = listOf(
+            Horus.Attribute("id", "43196d90-d8e1-4c24-bbac-76fdfe58a0eb"),
+            Horus.Attribute("name", "HHP Animal COW 5539"),
+            Horus.Attribute("code", "UUJYWNUMRG"),
+            Horus.Attribute("chip_code", "cbfa2352-bff9-4db9-8049-1168e4ee682b596472"),
+            Horus.Attribute("gender", "f"),
+            Horus.Attribute("type", 1),
+            Horus.Attribute("purpose", 2),
+            Horus.Attribute("branding_iron_id", null),
+            Horus.Attribute("sale_status", 1),
+            Horus.Attribute("stage", 4),
+            Horus.Attribute("reproductive_status", 1),
+            Horus.Attribute("health_status", 1),
+            Horus.Attribute("inside", true),
+            Horus.Attribute("notes", "5049c394-9445-45c9-9586-49d3690dabea434055"),
+            Horus.Attribute("farm_id", "4e1b860c-22dc-477a-a86e-69dde6071874"),
+            Horus.Attribute("breed_code", null)
+        )
+        val hashExpected = "4f707d4007e2ca5cb074f9c1b45b54b79dda8ad75419e50cfcd6a2d661c70b08"
+        // When
+        val result = AttributeHasher.generateHash(attributes)
+        // Then
+        Assert.assertEquals(hashExpected, result)
+    }
+
+    @Test
+    fun testHashingWithNullsAndBooleanWithFalse(){
+        // Given
+        val attributes = listOf(
+            Horus.Attribute("id", "43196d90-d8e1-4c24-bbac-76fdfe58a0eb"),
+            Horus.Attribute("name", "HHP Animal COW 5539"),
+            Horus.Attribute("code", "UUJYWNUMRG"),
+            Horus.Attribute("chip_code", "cbfa2352-bff9-4db9-8049-1168e4ee682b596472"),
+            Horus.Attribute("gender", "f"),
+            Horus.Attribute("type", 1),
+            Horus.Attribute("purpose", 2),
+            Horus.Attribute("branding_iron_id", null),
+            Horus.Attribute("sale_status", 1),
+            Horus.Attribute("stage", 4),
+            Horus.Attribute("reproductive_status", 1),
+            Horus.Attribute("health_status", 1),
+            Horus.Attribute("inside", false),
+            Horus.Attribute("notes", "5049c394-9445-45c9-9586-49d3690dabea434055"),
+            Horus.Attribute("farm_id", "4e1b860c-22dc-477a-a86e-69dde6071874"),
+            Horus.Attribute("breed_code", null)
+        )
+        val hashExpected = "3ed2ff2ed137d040c1400bc60b175c7ad0af2a5d3bdd2ac9ab2e995de723df00"
+        // When
+        val result = AttributeHasher.generateHash(attributes)
+        // Then
+        Assert.assertEquals(hashExpected, result)
+    }
+
+
+
+
 
 }
