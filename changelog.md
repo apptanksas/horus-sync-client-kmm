@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.10.1
+- Fixed hashing data with null and boolean values.
+
 ## v0.10.0
 - Added support to custom attribute types for entities.
 
