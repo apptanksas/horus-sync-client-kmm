@@ -57,7 +57,7 @@ class DatabaseTablesCreatorDelegateTest {
                 description TEXT NOT NULL,
                 json TEXT NOT NULL,
                 type TEXT CHECK (type IN ('A', 'B', 'C')) NOT NULL,
-                timestamp TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
                 uuid TEXT NOT NULL,
                 refFile TEXT NOT NULL
             )

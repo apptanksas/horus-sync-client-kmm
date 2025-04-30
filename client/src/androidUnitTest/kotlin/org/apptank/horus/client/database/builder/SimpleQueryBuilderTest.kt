@@ -1,5 +1,11 @@
 package org.apptank.horus.client.database.builder
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.database.struct.SQL
 import org.junit.Assert
 import org.junit.Test
@@ -243,6 +249,68 @@ class SimpleQueryBuilderTest {
         val builder = SimpleQueryBuilder("category")
 
         builder.where(SQL.WhereCondition(SQL.ColumnValue("name", null), SQL.Comparator.IS_NOT_NULL))
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereWithInstant() {
+        val currentDate = Clock.System.now()
+        val expected = "SELECT * FROM category WHERE created_at = ${currentDate.epochSeconds}"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(
+            SQL.WhereCondition(
+                SQL.ColumnValue(
+                    "created_at",
+                    currentDate
+                )
+            )
+        )
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereWithLocalDate() {
+        val currentDate = LocalDate(2023, 10, 1)
+        val instant = currentDate.atTime(12, 0, 0).toInstant(TimeZone.UTC)
+        val expected = "SELECT * FROM category WHERE created_at = ${instant.epochSeconds}"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(
+            SQL.WhereCondition(
+                SQL.ColumnValue(
+                    "created_at",
+                    currentDate
+                )
+            )
+        )
+
+        val result = builder.build()
+
+        Assert.assertEquals(expected, result)
+    }
+
+    @Test
+    fun validateWhereWithLocalDateTime(){
+        val currentDate = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        val instant = currentDate.toInstant(TimeZone.UTC)
+        val expected = "SELECT * FROM category WHERE created_at = ${instant.epochSeconds}"
+        val builder = SimpleQueryBuilder("category")
+
+        builder.where(
+            SQL.WhereCondition(
+                SQL.ColumnValue(
+                    "created_at",
+                    currentDate
+                )
+            )
+        )
 
         val result = builder.build()
 

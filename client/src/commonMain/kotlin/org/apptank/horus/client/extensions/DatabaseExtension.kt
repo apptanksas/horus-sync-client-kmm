@@ -2,6 +2,12 @@ package org.apptank.horus.client.extensions
 
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.config.BOOL_FALSE
 import org.apptank.horus.client.config.BOOL_TRUE
@@ -29,6 +35,9 @@ internal fun Any?.prepareSQLValueAsString(): String {
         is CharSequence -> "'${sanitize(value.toString())}'"
         is Boolean -> if (value) BOOL_TRUE else BOOL_FALSE
         is List<*> -> "(${value.joinToString(",") { it.prepareSQLValueAsString() }})"
+        is LocalDate -> value.atTime(12, 0, 0).toInstant(TimeZone.UTC).epochSeconds.toString()
+        is LocalDateTime -> value.toInstant(TimeZone.UTC).epochSeconds.toString()
+        is Instant -> value.epochSeconds.toString()
         else -> value.toString()
     }
 }
