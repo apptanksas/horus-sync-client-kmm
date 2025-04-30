@@ -1,5 +1,8 @@
 package org.apptank.horus.client.database.struct
 
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import org.apptank.horus.client.data.Horus
 import kotlin.random.Random
 
@@ -83,6 +86,9 @@ sealed class SQL {
  * @return An [SQL.ColumnValue] representation of the attribute.
  */
 fun Horus.Attribute<*>.toDBColumnValue(): SQL.ColumnValue {
+    if (value.isDateTime()) {
+        return SQL.ColumnValue(name, value.convertDateTimeToTimestamp())
+    }
     return SQL.ColumnValue(name, value)
 }
 
@@ -91,6 +97,34 @@ fun Horus.Attribute<*>.toDBColumnValue(): SQL.ColumnValue {
  *
  * @return A list of [SQL.ColumnValue] derived from the attributes.
  */
-fun List<Horus.Attribute<*>>.mapToDBColumValue(): List<SQL.ColumnValue> {
+internal fun List<Horus.Attribute<*>>.mapToDBColumValue(): List<SQL.ColumnValue> {
     return this.map { it.toDBColumnValue() }
+}
+
+private fun Any?.isDateTime(): Boolean {
+    if (this is String) {
+        val regex = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}".toRegex()
+        return regex.matches(this)
+    }
+    return false
+}
+
+private fun Any?.convertDateTimeToTimestamp(): Long {
+    if (this is String) {
+        val regex = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}".toRegex()
+
+        if (regex.matches(this)) {
+            val parts = this.split(" ", ":", "-")
+            val localDateTime = LocalDateTime(
+                year = parts[0].toInt(),
+                monthNumber = parts[1].toInt(),
+                dayOfMonth = parts[2].toInt(),
+                hour = parts[3].toInt(),
+                minute = parts[4].toInt(),
+                second = parts[5].toInt()
+            )
+            return localDateTime.toInstant(TimeZone.UTC).epochSeconds
+        }
+    }
+    error("Invalid date format [$this]")
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.10.2
+- Validate attributes datetime.
+- Changed attribute type as timestamp in SQLITE as Integer.
+
 ## v0.10.1
 - Fixed hashing data with null and boolean values.
 
