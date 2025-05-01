@@ -171,7 +171,7 @@ object HorusDataFacade {
                 insertIds.map { Horus.Entity(it.second, it.third) }
                     .associateBy { it.getRequireString(Horus.Attribute.ID) })
             // --- Prepare batch: DELETE
-            val deleteIds = batch.filterIsInstance<Horus.Batch.Delete>().associate { it.entity to it.id }
+            val deleteIds = batch.filterIsInstance<Horus.Batch.Delete>()
             val recordDeletes = deleteIds.map { (entity, id) ->
                 DatabaseOperation.DeleteRecord(
                     entity,
