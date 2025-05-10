@@ -4,6 +4,7 @@
 <img src="https://github.com/apptanksas/horus-sync-client-kmm/actions/workflows/unit_tests.yml/badge.svg" alt="Build Status">
 <img src="https://img.shields.io/maven-central/v/org.apptank.horus/client" alt="Latest Stable Version">
 <img src="https://img.shields.io/github/license/apptanksas/horus-sync-client-kmm" alt="License">
+<a href="https://deepwiki.com/apptanksas/horus-sync-client-kmm"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>  
 
 **Please note:** This library currently is testing stage until publish the version 1.0.0. Meanwhile,
@@ -136,34 +137,34 @@ application's life cycle.
 
 ```kotlin 
 class MainApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        setupHorus()
-    }
+  override fun onCreate() {
+    super.onCreate()
+    setupHorus()
+  }
 
-    private fun setupHorus() {
+  private fun setupHorus() {
 
-        val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
+    val BASE_SERVER_URL = "https://api.yourdomain.com/sync"
 
-        val uploadFileConfig = UploadFilesConfig(
-          baseStoragePath = filesDir.absolutePath,
-          mimeTypesAllowed = listOf(FileMimeType.IMAGE_JPEG_IMAGE_JPG, FileMimeType.IMAGE_PORTABLE_NETWORK_GRAPHICS),
-          maxFileSize = 1024 * 1024 * 5 // 5MB
-        )
-      
-        // Configure Horus      
-        val config = HorusConfig(
-            BASE_SERVER_URL,
-            uploadFileConfig,
-            PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
-            isDebug = true
-        )
+    val uploadFileConfig = UploadFilesConfig(
+      baseStoragePath = filesDir.absolutePath,
+      mimeTypesAllowed = listOf(FileMimeType.IMAGE_JPEG_IMAGE_JPG, FileMimeType.IMAGE_PORTABLE_NETWORK_GRAPHICS),
+      maxFileSize = 1024 * 1024 * 5 // 5MB
+    )
 
-        HorusConfigurator(config).configure(this)
+    // Configure Horus      
+    val config = HorusConfig(
+      BASE_SERVER_URL,
+      uploadFileConfig,
+      PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
+      isDebug = true
+    )
 
-        // Register the activity lifecycle callbacks      
-        registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
-    }
+    HorusConfigurator(config).configure(this)
+
+    // Register the activity lifecycle callbacks      
+    registerActivityLifecycleCallbacks(HorusActivityLifeCycle())
+  }
 }   
 ```   
 
@@ -283,7 +284,7 @@ happens.
 
 ```kotlin  
 HorusDataFacade.onReady {
-    /** PUT YOUR CODE **/
+  /** PUT YOUR CODE **/
 }  
 ```  
 
@@ -296,16 +297,16 @@ adding a **DataChangeListener** using the **addDataChangeListener** method of th
 ```kotlin 
 HorusDataFacade.addDataChangeListener(object : DataChangeListener {
 
-    override fun onInsert(entity: String, id: String, data: DataMap) {
-        /** WHEN IS INSERTED A NEW RECORD **/
-    }
-    override fun onUpdate(entity: String, id: String, data: DataMap) {
-        /** WHEN IS UPDATED A RECORD **/
-    }
+  override fun onInsert(entity: String, id: String, data: DataMap) {
+    /** WHEN IS INSERTED A NEW RECORD **/
+  }
+  override fun onUpdate(entity: String, id: String, data: DataMap) {
+    /** WHEN IS UPDATED A RECORD **/
+  }
 
-    override fun onDelete(entity: String, id: String) {
-        /** WHEN IS DELETED A RECORD **/
-    }
+  override fun onDelete(entity: String, id: String) {
+    /** WHEN IS DELETED A RECORD **/
+  }
 })  
 ```  
 
@@ -351,16 +352,16 @@ val newData = mapOf("name":"Aston", "lastname":"Coleman")
 val result = HorusDataFacade.insert(entityName, newData)
 
 when (result) {
-    is DataResult.Success -> {
-        val entityId = result.data
-        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-    }
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN INSERT FAILS */
-    }
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.Success -> {
+    val entityId = result.data
+    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+  }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN INSERT FAILS */
+  }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN INSERT FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -368,13 +369,13 @@ Alternative result validation
 
 ```kotlin  
 result.fold(
-    onSuccess = {
-        val entityId = result.data
-        /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
-    },
-    onFailure = {
-        /** YOUR CODE HERE WHEN INSERT FAILS */
-    })  
+  onSuccess = {
+    val entityId = result.data
+    /** YOUR CODE HERE WHEN INSERT IS SUCCESSFUL */
+  },
+  onFailure = {
+    /** YOUR CODE HERE WHEN INSERT FAILS */
+  })  
 ```  
 
 ### Update data of a record
@@ -386,22 +387,22 @@ the attributes to update.
 val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val newName = "Elton"
 val result = HorusDataFacade.update(
-    "users", userId, mapOf(
-        "name" to newName
-    )
+  "users", userId, mapOf(
+    "name" to newName
+  )
 )
 when (result) {
-    is DataResult.Success -> {
-        /** YOUR CODE HERE WHEN SUCCESS */
-    }
+  is DataResult.Success -> {
+    /** YOUR CODE HERE WHEN SUCCESS */
+  }
 
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN FAILURE */
-    }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN FAILURE */
+  }
 
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -416,15 +417,15 @@ val userId = "0ca2caa1-74f1-4e58-a6a7-29e79efedfe4"
 val result = HorusDataFacade.delete("users", userId)
 
 when (result) {
-    is DataResult.Success -> {
-        /** YOUR CODE HERE WHEN SUCCESS */
-    }
-    is DataResult.Failure -> {
-        /** YOUR CODE HERE WHEN FAILURE */
-    }
-    is DataResult.NotAuthorized -> {
-        /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
-    }
+  is DataResult.Success -> {
+    /** YOUR CODE HERE WHEN SUCCESS */
+  }
+  is DataResult.Failure -> {
+    /** YOUR CODE HERE WHEN FAILURE */
+  }
+  is DataResult.NotAuthorized -> {
+    /** YOUR CODE HERE WHEN UPDATE FAILS BECAUSE OF NOT AUTHORIZED */
+  }
 }  
 ```  
 
@@ -441,16 +442,16 @@ Optional parameters:
 
 ```kotlin  
 val whereConditions = listOf(
-    SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
+  SQL.WhereCondition(SQL.ColumnValue("age", 10), SQL.Comparator.GREATER_THAN_OR_EQUALS),
 )
 HorusDataFacade.querySimple("users", whereConditions, orderBy = "name")
-    .fold(
-        onSuccess = { users ->
-            //** YOUR CODE HERE WHEN SUCCESS */ 
-        },
-        onFailure = {
-            //** YOUR CODE HERE WHEN FAILURE */ 
-        })
+  .fold(
+    onSuccess = { users ->
+      //** YOUR CODE HERE WHEN SUCCESS */ 
+    },
+    onFailure = {
+      //** YOUR CODE HERE WHEN FAILURE */ 
+    })
 
 ```  
 
@@ -491,12 +492,12 @@ To get the number of records in an entity, use the **countRecordFromEntity** met
 
 ```kotlin
 HorusDataFacade.countRecordFromEntity("users").fold(
-    onSuccess = { count ->
-        //** YOUR CODE HERE WHEN SUCCESS */
-    },
-    onFailure = {
-        //** YOUR CODE HERE WHEN FAILURE */
-    }
+  onSuccess = { count ->
+    //** YOUR CODE HERE WHEN SUCCESS */
+  },
+  onFailure = {
+    //** YOUR CODE HERE WHEN FAILURE */
+  }
 )
 ``` 
 ### Upload files
@@ -528,9 +529,9 @@ To force the synchronization of the data with the server, use the **forceSync** 
 
 ```kotlin
 HorusDataFacade.forceSync(onSuccess = {
-    /** YOUR CODE HERE WHEN SUCCESS */
+  /** YOUR CODE HERE WHEN SUCCESS */
 }, onFailure = {
-    /** YOUR CODE HERE WHEN FAILURE */
+  /** YOUR CODE HERE WHEN FAILURE */
 })
 ```
 
