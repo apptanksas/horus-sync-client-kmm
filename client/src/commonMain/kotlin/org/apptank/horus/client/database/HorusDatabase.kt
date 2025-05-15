@@ -7,6 +7,7 @@ import app.cash.sqldelight.db.SqlSchema
 import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.QueueActionsTable
+import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
@@ -87,6 +88,7 @@ class HorusDatabase(
                 execute(QueueActionsTable.SQL_CREATE_TABLE)
                 execute(SyncFileTable.SQL_CREATE_TABLE)
                 execute(EntityAttributesTable.SQL_CREATE_TABLE)
+                execute(DataSharedTable.SQL_CREATE_TABLE)
 
                 databaseCreatorDelegate?.createTables {
                     execute(Random.nextInt(), it, 0)

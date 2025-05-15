@@ -6,6 +6,10 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.scheme.DataSharedTable
+import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.execute
@@ -38,6 +42,10 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         Assert.assertTrue(tablesNames.contains(SyncControlTable.TABLE_NAME))
         Assert.assertTrue(tablesNames.contains(QueueActionsTable.TABLE_NAME))
+        Assert.assertTrue(tablesNames.contains(EntitiesTable.TABLE_NAME))
+        Assert.assertTrue(tablesNames.contains(EntityAttributesTable.TABLE_NAME))
+        Assert.assertTrue(tablesNames.contains(SyncFileTable.TABLE_NAME))
+        Assert.assertTrue(tablesNames.contains(DataSharedTable.TABLE_NAME))
     }
 
     @Test
