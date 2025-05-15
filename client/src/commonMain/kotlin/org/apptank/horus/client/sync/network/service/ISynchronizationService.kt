@@ -81,4 +81,12 @@ interface ISynchronizationService {
      */
     suspend fun getEntityHashes(entity: String): DataResult<List<SyncDTO.Response.EntityIdHash>>
 
+
+    /**
+     * Retrieve the data shared for the another users
+     *
+     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     */
+    suspend fun getDataShared(): DataResult<List<SyncDTO.Response.Entity>>
+
 }

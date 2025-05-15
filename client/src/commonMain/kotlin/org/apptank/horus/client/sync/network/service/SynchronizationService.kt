@@ -116,4 +116,13 @@ internal class SynchronizationService(
     override suspend fun getEntityHashes(entity: String): DataResult<List<SyncDTO.Response.EntityIdHash>> {
         return get("entity/$entity/hashes") { it.serialize() }
     }
+
+    /**
+     * Retrieve the data shared for the another users
+     *
+     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     */
+    override suspend fun getDataShared(): DataResult<List<SyncDTO.Response.Entity>> {
+        return get("shared") { it.serialize() }
+    }
 }

@@ -958,6 +958,51 @@ const val MOCK_RESPONSE_GET_ENTITY_HASHES = """
 ]
 """
 
+const val MOCK_RESPONSE_GET_DATA_SHARED = """
+    [
+  {
+    "entity": "readable_fake_entity",
+    "data": {
+      "id": 1,
+      "name": "Douglas Haley",
+      "type": "type3"
+    }
+  },
+  {
+    "entity": "readable_fake_entity",
+    "data": {
+      "id": 2,
+      "name": "Dessie Hickle",
+      "type": "type2"
+    }
+  },
+  {
+    "entity": "readable_fake_entity",
+    "data": {
+      "id": 3,
+      "name": "Ralph Buckridge",
+      "type": "type2"
+    }
+  },
+  {
+    "entity": "readable_fake_entity",
+    "data": {
+      "id": 4,
+      "name": "Mrs. Nora Kihn III",
+      "type": "type2"
+    }
+  },
+  {
+    "entity": "readable_fake_entity",
+    "data": {
+      "id": 5,
+      "name": "Oceane Thiel",
+      "type": "type2"
+    }
+  }
+]
+"""
+
 // 6 Entities
 const val DATA_MIGRATION_VERSION_1 ="""
     [

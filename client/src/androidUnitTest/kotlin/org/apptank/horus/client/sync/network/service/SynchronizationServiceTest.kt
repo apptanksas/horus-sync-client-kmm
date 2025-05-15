@@ -17,6 +17,7 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_SHARED
 import org.junit.Assert
 import org.junit.Test
 
@@ -416,4 +417,19 @@ class SynchronizationServiceTest : ServiceTest() {
         }
     }
 
+    @Test
+    fun getDataSharedIsSuccess() = runBlocking {
+        // Given
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_SHARED)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.getDataShared()
+
+        // Then
+        assert(response is DataResult.Success)
+        if (response is DataResult.Success) {
+            Assert.assertTrue(response.data.isNotEmpty())
+        }
+    }
 }
