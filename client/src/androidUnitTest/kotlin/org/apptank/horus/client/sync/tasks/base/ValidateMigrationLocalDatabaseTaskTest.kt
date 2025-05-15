@@ -84,7 +84,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
             Assert.assertTrue(result is TaskResult.Success)
             Assert.assertEquals(
                 versionExpected,
-                settings.getLongOrNull(ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY)
+                settings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION)
             )
         }
 
@@ -96,7 +96,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         val entitiesScheme =
             buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         settings.putLong(
-            ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY,
+            ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION,
             entitiesScheme.getLastVersion()
         )
 

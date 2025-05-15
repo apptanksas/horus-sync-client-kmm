@@ -33,6 +33,7 @@ import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.apptank.horus.client.tasks.SynchronizeDataTask
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
@@ -117,6 +118,18 @@ abstract class TestCase {
             getMockValidateHashingTask()
         )
     }
+
+    internal fun getMockSynchronizeDataTask(): SynchronizeDataTask {
+        return SynchronizeDataTask(
+            mock(classOf<INetworkValidator>()),
+            mock(classOf<ISyncControlDatabaseHelper>()),
+            mock(classOf<IOperationDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>()),
+            getMockSynchronizeInitialDataTask()
+        )
+    }
+
+
 
 
     protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {

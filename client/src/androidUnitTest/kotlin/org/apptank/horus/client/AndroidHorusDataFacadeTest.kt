@@ -311,7 +311,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 )
             )
             every {
-                mockSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY)
+                mockSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION)
             }.returns(1)
 
             every {

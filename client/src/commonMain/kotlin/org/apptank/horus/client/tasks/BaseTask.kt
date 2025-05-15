@@ -40,7 +40,7 @@ internal abstract class BaseTask(
 /**
  * Sealed class representing the result of a task execution.
  */
-internal sealed class TaskResult {
+sealed class TaskResult {
     /**
      * Represents a successful task execution.
      *
