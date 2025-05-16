@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.11.0
+- Added support to shared entities.
+- Fixed issue when is delete corrupted data by foreign key constraint.
+
 ## v0.10.3
 - Fixed filter delete operations in batch.
 

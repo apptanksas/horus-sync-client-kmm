@@ -142,9 +142,16 @@ abstract class TestCase {
         }
     }
 
-    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>) {
+    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>, custom:List<String> = emptyList()) {
         val columnsString = columns.entries.joinToString(", ") { (name, type) -> "$name $type" }
-        val query = "CREATE TABLE $table ($columnsString);"
+        val customString = custom.joinToString(", ")
+        var query = "CREATE TABLE $table ($columnsString"
+
+        if (customString.isNotEmpty()) {
+            query += ", $customString"
+        }
+        query += ");"
+
         execute(null, query, 0)
     }
 

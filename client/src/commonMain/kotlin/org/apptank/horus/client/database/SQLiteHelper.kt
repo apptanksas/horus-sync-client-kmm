@@ -211,12 +211,27 @@ abstract class SQLiteHelper(
      *
      * @param table The name of the table.
      * @param where The SQL WHERE clause.
+     * @param disableForeignKeys Whether to disable foreign key constraints during deletion.
      * @return The number of rows affected.
      */
-    protected fun delete(table: String, where: String): Long {
+    protected fun delete(table: String, where: String, disableForeignKeys: Boolean = false): Long {
         val query = "DELETE FROM $table WHERE $where;"
+
+        // Function to execute the delete query without foreign key constraints
+        val executeWithoutForeignKeys: () -> Long = {
+            executeSql("PRAGMA foreign_keys = OFF;")
+            val result = executeDelete(query)
+            executeSql("PRAGMA foreign_keys = ON;")
+            result
+        }
+
         info("Delete query: $query")
-        return executeDelete(query)
+
+        return if (disableForeignKeys) {
+            executeWithoutForeignKeys()
+        } else {
+            executeDelete(query)
+        }
     }
 
     /**

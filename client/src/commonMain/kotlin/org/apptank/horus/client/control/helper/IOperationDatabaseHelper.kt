@@ -69,12 +69,14 @@ interface IOperationDatabaseHelper {
      * @param table The name of the table.
      * @param conditions The list of conditions for deletion.
      * @param operator The logical operator to combine conditions (AND/OR).
+     * @param disableForeignKeys Flag to disable foreign key checks during deletion.
      * @return The result of the operation.
      */
     fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator = SQL.LogicOperator.AND
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND,
+        disableForeignKeys: Boolean = false
     ): DatabaseOperation.Result
 
     /**

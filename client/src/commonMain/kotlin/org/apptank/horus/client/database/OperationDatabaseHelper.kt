@@ -131,14 +131,16 @@ internal class OperationDatabaseHelper(
      * @param table The name of the table from which records will be deleted.
      * @param conditions List of [SQL.WhereCondition] to filter records for deletion.
      * @param operator Logic operator used to combine conditions.
+     * @param disableForeignKeys Flag to disable foreign key checks during deletion.
      * @return A [DatabaseOperation.Result] indicating the result of the delete operation.
      */
     override fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator
+        operator: SQL.LogicOperator,
+        disableForeignKeys: Boolean
     ): DatabaseOperation.Result {
-        return executeDelete(table, conditions, operator)
+        return executeDelete(table, conditions, operator, disableForeignKeys)
     }
 
     /**
@@ -227,7 +229,8 @@ internal class OperationDatabaseHelper(
     private fun executeDelete(
         table: String,
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator = SQL.LogicOperator.AND
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND,
+        disableForeignKeys: Boolean = false
     ): DatabaseOperation.Result {
 
         if (conditions.isEmpty()) {
@@ -235,7 +238,7 @@ internal class OperationDatabaseHelper(
         }
 
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
-        val result = delete(table, whereEvaluation)
+        val result = delete(table, whereEvaluation, disableForeignKeys)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
 
