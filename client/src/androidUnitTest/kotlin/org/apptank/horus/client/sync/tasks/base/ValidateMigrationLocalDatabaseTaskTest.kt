@@ -51,7 +51,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     fun `when don't exists a database then create database scheme`() = runBlocking {
         // Given
         val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 12
+        val countEntitiesExpected = 13
 
         // When
         val result = task.execute(entitiesScheme)
