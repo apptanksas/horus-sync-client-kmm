@@ -29,10 +29,13 @@ import io.mockative.mock
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.apptank.horus.client.tasks.RetrieveDataSharedTask
+import org.apptank.horus.client.tasks.SynchronizeDataTask
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
@@ -118,6 +121,28 @@ abstract class TestCase {
         )
     }
 
+    internal fun getMockSynchronizeDataTask(): SynchronizeDataTask {
+        return SynchronizeDataTask(
+            mock(classOf<INetworkValidator>()),
+            mock(classOf<ISyncControlDatabaseHelper>()),
+            mock(classOf<IOperationDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>()),
+            getMockSynchronizeInitialDataTask()
+        )
+    }
+
+    internal fun getMockRetrieveDataSharedTask(): RetrieveDataSharedTask {
+        return RetrieveDataSharedTask(
+            MapSettings(),
+            mock(classOf<INetworkValidator>()),
+            mock(classOf<IDataSharedDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>()),
+            getMockSynchronizeDataTask()
+        )
+    }
+
+
+
 
     protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {
         val columns = values.keys.joinToString(", ")
@@ -129,9 +154,16 @@ abstract class TestCase {
         }
     }
 
-    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>) {
+    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>, custom:List<String> = emptyList()) {
         val columnsString = columns.entries.joinToString(", ") { (name, type) -> "$name $type" }
-        val query = "CREATE TABLE $table ($columnsString);"
+        val customString = custom.joinToString(", ")
+        var query = "CREATE TABLE $table ($columnsString"
+
+        if (customString.isNotEmpty()) {
+            query += ", $customString"
+        }
+        query += ");"
+
         execute(null, query, 0)
     }
 

@@ -6,11 +6,11 @@ import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.QueryBuilder
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
 import org.apptank.horus.client.extensions.getRequireInt
+import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.log
 
 /**
@@ -131,14 +131,16 @@ internal class OperationDatabaseHelper(
      * @param table The name of the table from which records will be deleted.
      * @param conditions List of [SQL.WhereCondition] to filter records for deletion.
      * @param operator Logic operator used to combine conditions.
+     * @param disableForeignKeys Flag to disable foreign key checks during deletion.
      * @return A [DatabaseOperation.Result] indicating the result of the delete operation.
      */
     override fun deleteRecords(
         table: String,
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator
+        operator: SQL.LogicOperator,
+        disableForeignKeys: Boolean
     ): DatabaseOperation.Result {
-        return executeDelete(table, conditions, operator)
+        return executeDelete(table, conditions, operator, disableForeignKeys)
     }
 
     /**
@@ -198,6 +200,24 @@ internal class OperationDatabaseHelper(
     }
 
     /**
+     * Truncates the specified entity from the database.
+     *
+     * @param entity The name of the entity to be truncated.
+     * @return True if the truncation was successful, false otherwise.
+     */
+    override fun truncate(entity: String) {
+        driver.handle {
+            executeDeleteWithNoForeignKeys("DELETE FROM $entity;")
+        }
+    }
+
+
+    //------------------------------------------------------------------
+    // PRIVATE METHODS
+    //------------------------------------------------------------------
+
+
+    /**
      * Executes a transaction with the provided body function.
      *
      * @param executeBody A function to be executed within the transaction.
@@ -227,7 +247,8 @@ internal class OperationDatabaseHelper(
     private fun executeDelete(
         table: String,
         conditions: List<SQL.WhereCondition>,
-        operator: SQL.LogicOperator = SQL.LogicOperator.AND
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND,
+        disableForeignKeys: Boolean = false
     ): DatabaseOperation.Result {
 
         if (conditions.isEmpty()) {
@@ -235,7 +256,7 @@ internal class OperationDatabaseHelper(
         }
 
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
-        val result = delete(table, whereEvaluation)
+        val result = delete(table, whereEvaluation, disableForeignKeys)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
 
@@ -257,9 +278,9 @@ internal class OperationDatabaseHelper(
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         log("[Update] table: $table Values: $values Conditions: $whereEvaluation")
 
-        val result = update(table, values.prepareMap({ column ->
+        val result = update(table, values.prepareMap { column ->
             column
-        }), whereEvaluation)
+        }, whereEvaluation)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
 }

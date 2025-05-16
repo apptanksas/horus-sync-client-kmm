@@ -142,6 +142,14 @@ interface ISyncControlDatabaseHelper {
      */
     fun isEntityCanBeWritable(entityName: String): Boolean
 
+
+    /**
+     * Retrieves a list of all entity names that are only readable.
+     *
+     * @return A list of entity names that are only readable.
+     */
+    fun getReadableEntityNames(): List<String>
+
     /**
      * Clears all data from the database.
      */

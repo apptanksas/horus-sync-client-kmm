@@ -90,7 +90,7 @@ internal class ValidateMigrationLocalDatabaseTask(
      * @return The current schema version, or null if not set.
      */
     private fun getCurrentSchemaVersion(): Long? {
-        return settings.getLongOrNull(SCHEMA_VERSION_KEY)
+        return settings.getLongOrNull(KEY_SCHEMA_VERSION)
     }
 
     /**
@@ -99,11 +99,11 @@ internal class ValidateMigrationLocalDatabaseTask(
      * @param version The version to be set.
      */
     private fun setSchemaVersion(version: Long) {
-        settings.putLong(SCHEMA_VERSION_KEY, version)
+        settings.putLong(KEY_SCHEMA_VERSION, version)
     }
 
     companion object {
         // Key used to store the schema version in settings.
-        const val SCHEMA_VERSION_KEY = "horus_db_schema_version"
+        const val KEY_SCHEMA_VERSION = "horus_db_schema_version"
     }
 }

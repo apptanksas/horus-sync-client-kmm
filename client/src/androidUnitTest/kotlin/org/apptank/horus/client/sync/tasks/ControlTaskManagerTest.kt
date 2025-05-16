@@ -25,7 +25,8 @@ import io.mockative.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
+import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -107,12 +108,13 @@ class ControlTaskManagerTest : TestCase() {
             )
         )
 
-        val taskExecutionCountExpected = 5
+        val taskExecutionCountExpected = 7
 
         coEvery { migrationService.getMigration() }.returns(DataResult.Success(entitiesScheme))
-        every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY) }.returns(
-            null
-        )
+        every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) }.returns(null)
+        every { storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
+        every { storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(null)
+
         coEvery { synchronizationService.postValidateHashing(any()) }.returns(
             DataResult.Success(
                 SyncDTO.Response.HashingValidation(
@@ -126,7 +128,9 @@ class ControlTaskManagerTest : TestCase() {
             synchronizationService.getData(any())
         }.returns(DataResult.Success(entitiesData))
 
-        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false)
+        coEvery { synchronizationService.getDataShared() }.returns(DataResult.Success(entitiesData))
+
+        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false, true, true)
 
         var isCompleted = false
 

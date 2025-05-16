@@ -604,7 +604,7 @@ class SynchronizatorManagerTest : TestCase() {
             )
             // ---> Restore corrupted data
             // --------> Delete corrupted data
-            every { operationDatabaseHelper.deleteRecords(any(), any(), any()) }.returns(
+            every { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.returns(
                 DatabaseOperation.Result(true, 1)
             )
             // --------> Insert new data
@@ -621,7 +621,7 @@ class SynchronizatorManagerTest : TestCase() {
             delay(50)
             coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasInvoked(1)
             coVerify { synchronizationService.getEntityHashes(any()) }.wasInvoked(1)
-            coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any()) }.wasInvoked(1)
+            coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.wasInvoked(1)
             coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         }
 
@@ -710,7 +710,7 @@ class SynchronizatorManagerTest : TestCase() {
             delay(50)
             coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasInvoked(1)
             coVerify { synchronizationService.getEntityHashes(any()) }.wasInvoked(1)
-            coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any()) }.wasNotInvoked()
+            coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.wasNotInvoked()
             coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         }
 

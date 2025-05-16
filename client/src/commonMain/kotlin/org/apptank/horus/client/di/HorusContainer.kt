@@ -13,7 +13,9 @@ import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
+import org.apptank.horus.client.database.DataSharedDatabaseHelper
 import org.apptank.horus.client.database.SyncFileDatabaseHelper
 import org.apptank.horus.client.restrictions.EntityRestrictionValidator
 import org.apptank.horus.client.sync.manager.DispenserManager
@@ -54,6 +56,8 @@ object HorusContainer {
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
 
     private var operationDatabaseHelper: IOperationDatabaseHelper? = null
+
+    private var dataSharedDatabaseHelper: IDataSharedDatabaseHelper? = null
 
     private var syncFilesDatabaseHelper: ISyncFileDatabaseHelper? = null
 
@@ -179,6 +183,10 @@ object HorusContainer {
             factory.getDriver()
         )
         syncFilesDatabaseHelper = SyncFileDatabaseHelper(
+            factory.getDatabaseName(),
+            factory.getDriver()
+        )
+        dataSharedDatabaseHelper = DataSharedDatabaseHelper(
             factory.getDatabaseName(),
             factory.getDriver()
         )
@@ -317,6 +325,11 @@ object HorusContainer {
             ?: throw IllegalStateException("SyncFilesDatabaseHelper not set")
     }
 
+    internal fun getDataSharedDatabaseHelper(): IDataSharedDatabaseHelper {
+        return dataSharedDatabaseHelper
+            ?: throw IllegalStateException("DataSharedDatabaseHelper not set")
+    }
+
     /**
      * Retrieves the network validator.
      *
@@ -428,6 +441,7 @@ object HorusContainer {
         synchronizationService = null
         syncControlDatabaseHelper = null
         operationDatabaseHelper = null
+        dataSharedDatabaseHelper = null
         networkValidator = null
         uploadFileRepository = null
     }

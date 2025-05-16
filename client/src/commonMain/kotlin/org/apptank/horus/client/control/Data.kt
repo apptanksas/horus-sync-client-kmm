@@ -209,6 +209,19 @@ sealed class SyncControl {
             return data["attributes"] as DataMap
         }
     }
+
+    /**
+     * Data class representing a shared entity.
+     *
+     * @param entityId The unique identifier for the entity.
+     * @param entityName The name of the entity.
+     * @param data A map of data related to the entity.
+     */
+    data class EntityShared(
+        val entityId: String,
+        val entityName: String,
+        val data: DataMap
+    )
 }
 
 

@@ -313,7 +313,8 @@ internal class SynchronizatorManager(
                 val result = operationDatabaseHelper.deleteRecords(
                     entity,
                     ids.map { SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, it)) },
-                    SQL.LogicOperator.OR
+                    SQL.LogicOperator.OR,
+                    disableForeignKeys = true
                 )
 
                 if (!result.isSuccess) {
@@ -323,7 +324,8 @@ internal class SynchronizatorManager(
 
                 return operationDatabaseHelper.insertWithTransaction(
                     dataEntitiesResponse.data.map { it.toEntityData() }
-                        .flatMap { it.toRecordsInsert() }.reversed())
+                        .flatMap { it.toRecordsInsert() }.reversed()
+                )
             }
 
             is DataResult.Failure -> {
@@ -353,7 +355,8 @@ internal class SynchronizatorManager(
             is DataResult.Success -> {
                 return operationDatabaseHelper.insertWithTransaction(
                     dataEntitiesResponse.data.map { it.toEntityData() }
-                        .flatMap { it.toRecordsInsert() }.reversed())
+                        .flatMap { it.toRecordsInsert() }.reversed()
+                )
             }
 
             is DataResult.Failure -> {

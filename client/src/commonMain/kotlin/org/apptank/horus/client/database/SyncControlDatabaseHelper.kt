@@ -17,7 +17,6 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
-import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
@@ -324,6 +323,15 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
+     * Retrieves a list of all entity names that are only readable.
+     *
+     * @return A list of entity names that are only readable.
+     */
+    override fun getReadableEntityNames(): List<String> {
+        return getTableEntities().filter { it.isWritable.not() }.map { it.name }
+    }
+
+    /**
      * Clears all data from the database.
      */
     override fun clearDatabase() {
@@ -345,8 +353,7 @@ internal class SyncControlDatabaseHelper(
             cursor.getValue("entity"),
             SyncControl.ActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
-            Instant.fromEpochSeconds(cursor.getValue("datetime"))
-                .toLocalDateTime(TimeZone.UTC)
+            Instant.fromEpochSeconds(cursor.getValue("datetime")).toLocalDateTime(TimeZone.UTC)
         )
     }
 

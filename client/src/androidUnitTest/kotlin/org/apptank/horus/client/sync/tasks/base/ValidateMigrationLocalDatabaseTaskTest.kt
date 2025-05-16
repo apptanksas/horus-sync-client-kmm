@@ -51,7 +51,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     fun `when don't exists a database then create database scheme`() = runBlocking {
         // Given
         val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
-        val countEntitiesExpected = 12
+        val countEntitiesExpected = 13
 
         // When
         val result = task.execute(entitiesScheme)
@@ -84,7 +84,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
             Assert.assertTrue(result is TaskResult.Success)
             Assert.assertEquals(
                 versionExpected,
-                settings.getLongOrNull(ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY)
+                settings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION)
             )
         }
 
@@ -96,7 +96,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         val entitiesScheme =
             buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
         settings.putLong(
-            ValidateMigrationLocalDatabaseTask.SCHEMA_VERSION_KEY,
+            ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION,
             entitiesScheme.getLastVersion()
         )
 

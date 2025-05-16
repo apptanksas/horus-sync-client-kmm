@@ -80,7 +80,7 @@ class OperationDatabaseHelperTest : TestCase() {
         )
         var postOperationValidation = false
         // When
-        val result = databaseHelper.executeOperations(actions){
+        val result = databaseHelper.executeOperations(actions) {
             postOperationValidation = true
         }
         // Then
@@ -106,7 +106,7 @@ class OperationDatabaseHelperTest : TestCase() {
         )
         var postOperationValidation = false
         // When
-        val result = databaseHelper.executeOperations(actions){
+        val result = databaseHelper.executeOperations(actions) {
             postOperationValidation = true
         }
         // Then
@@ -285,7 +285,7 @@ class OperationDatabaseHelperTest : TestCase() {
                 )
             ),
 
-        )
+            )
         // When
         databaseHelper.executeOperations(listActions)
 
@@ -586,6 +586,170 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // Then
         assertEquals(0, result)
+    }
+
+    @Test
+    fun validateDeleteRecordsWithConstraintsEnabled() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId = uuid()
+        val childId = uuid()
+        val listActions = listOf(
+            DatabaseOperation.InsertRecord(
+                parentEntityName,
+                listOf(
+                    SQL.ColumnValue("id", parentId),
+                    SQL.ColumnValue("name", "parent")
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                childEntityName,
+                listOf(
+                    SQL.ColumnValue("id", childId),
+                    SQL.ColumnValue("name", "child"),
+                    SQL.ColumnValue("parent_id", parentId)
+                )
+            )
+        )
+        databaseHelper.insertWithTransaction(listActions)
+
+        // When
+        try {
+
+            databaseHelper.deleteRecords(
+                parentEntityName,
+                listOf(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue("id", parentId)
+                    )
+                )
+            )
+
+            // Then
+            Assert.fail()
+        } catch (e: Throwable) {
+            Assert.assertEquals("[SQLITE_CONSTRAINT_FOREIGNKEY] A foreign key constraint failed (FOREIGN KEY constraint failed)", e.message)
+        }
+
+    }
+
+    @Test
+    fun validateDeleteRecordsWithConstraintsDisabled() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId = uuid()
+        val childId = uuid()
+        val listActions = listOf(
+            DatabaseOperation.InsertRecord(
+                parentEntityName,
+                listOf(
+                    SQL.ColumnValue("id", parentId),
+                    SQL.ColumnValue("name", "parent")
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                childEntityName,
+                listOf(
+                    SQL.ColumnValue("id", childId),
+                    SQL.ColumnValue("name", "child"),
+                    SQL.ColumnValue("parent_id", parentId)
+                )
+            )
+        )
+        databaseHelper.insertWithTransaction(listActions)
+
+        // When
+        val result = databaseHelper.deleteRecords(
+            parentEntityName,
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", parentId)
+                )
+            ),
+            disableForeignKeys = true
+        )
+
+        // Then
+        Assert.assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun validateTruncate() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        val listActions = generateRandomArray {
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "dog 'Olin"),
+                    SQL.ColumnValue("value", Random.nextInt()),
+                    SQL.ColumnValue("float", Random.nextFloat()),
+                    SQL.ColumnValue("boolean", Random.nextBoolean())
+                )
+            )
+        }
+        databaseHelper.insertWithTransaction(listActions)
+
+        // When
+        databaseHelper.truncate(entityName)
+
+        // Then
+        val count = getCountFromTable(entityName)
+        Assert.assertEquals(0, count)
     }
 
     private fun getCountFromTable(table: String): Int {
