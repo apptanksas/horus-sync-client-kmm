@@ -6,11 +6,11 @@ import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.QueryBuilder
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
 import org.apptank.horus.client.extensions.getRequireInt
+import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.log
 
 /**
@@ -200,6 +200,24 @@ internal class OperationDatabaseHelper(
     }
 
     /**
+     * Truncates the specified entity from the database.
+     *
+     * @param entity The name of the entity to be truncated.
+     * @return True if the truncation was successful, false otherwise.
+     */
+    override fun truncate(entity: String) {
+        driver.handle {
+            executeDeleteWithNoForeignKeys("DELETE FROM $entity;")
+        }
+    }
+
+
+    //------------------------------------------------------------------
+    // PRIVATE METHODS
+    //------------------------------------------------------------------
+
+
+    /**
      * Executes a transaction with the provided body function.
      *
      * @param executeBody A function to be executed within the transaction.
@@ -260,9 +278,9 @@ internal class OperationDatabaseHelper(
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         log("[Update] table: $table Values: $values Conditions: $whereEvaluation")
 
-        val result = update(table, values.prepareMap({ column ->
+        val result = update(table, values.prepareMap { column ->
             column
-        }), whereEvaluation)
+        }, whereEvaluation)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
 }

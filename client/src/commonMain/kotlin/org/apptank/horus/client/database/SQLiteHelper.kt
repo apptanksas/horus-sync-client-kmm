@@ -16,9 +16,7 @@ import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsert
-import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireBoolean
-import org.apptank.horus.client.extensions.getRequireDouble
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.getRequireString
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
@@ -216,19 +214,10 @@ abstract class SQLiteHelper(
      */
     protected fun delete(table: String, where: String, disableForeignKeys: Boolean = false): Long {
         val query = "DELETE FROM $table WHERE $where;"
-
-        // Function to execute the delete query without foreign key constraints
-        val executeWithoutForeignKeys: () -> Long = {
-            executeSql("PRAGMA foreign_keys = OFF;")
-            val result = executeDelete(query)
-            executeSql("PRAGMA foreign_keys = ON;")
-            result
-        }
-
         info("Delete query: $query")
 
         return if (disableForeignKeys) {
-            executeWithoutForeignKeys()
+            executeDeleteWithNoForeignKeys(query)
         } else {
             executeDelete(query)
         }
@@ -249,6 +238,19 @@ abstract class SQLiteHelper(
         } catch (e: Exception) {
             logException("[CLEAR_DATABASE] Error", e)
         }
+    }
+
+    /**
+     * Deletes records from a specified table without enforcing foreign key constraints.
+     *
+     * @param query The SQL DELETE query to execute.
+     * @return The number of rows affected.
+     */
+    protected fun executeDeleteWithNoForeignKeys(query: String): Long {
+        executeSql("PRAGMA foreign_keys = OFF;")
+        val result = executeDelete(query)
+        executeSql("PRAGMA foreign_keys = ON;")
+        return result
     }
 
     /**

@@ -443,4 +443,24 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(0, controlManagerDatabaseHelper.getTables().size)
     }
 
+    @Test
+    fun validateGetReadableEntitiesIsSuccess() {
+        // Given
+        val entityWritable = "entity_writable_123"
+        val entityReadOnly = "entity_read_only_423"
+
+        driver.createTable(entityWritable, mapOf("id" to "TEXT"))
+        driver.createTable(entityReadOnly, mapOf("id" to "TEXT"))
+
+        driver.registerEntity(entityWritable)
+        driver.registerEntity(entityReadOnly, false)
+
+        // When
+        val readableEntities = controlManagerDatabaseHelper.getReadableEntityNames()
+
+        // Then
+        Assert.assertEquals(1, readableEntities.size)
+        assert(readableEntities.contains(entityReadOnly))
+    }
+
 }

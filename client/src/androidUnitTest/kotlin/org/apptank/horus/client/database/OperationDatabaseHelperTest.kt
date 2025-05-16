@@ -715,6 +715,43 @@ class OperationDatabaseHelperTest : TestCase() {
         Assert.assertTrue(result.isSuccess)
     }
 
+    @Test
+    fun validateTruncate() {
+        // Given
+        val entityName = "my_entity"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "value" to "INTEGER",
+                "float" to "FLOAT",
+                "boolean" to "BOOLEAN"
+            )
+        )
+
+        val listActions = generateRandomArray {
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("name", "dog 'Olin"),
+                    SQL.ColumnValue("value", Random.nextInt()),
+                    SQL.ColumnValue("float", Random.nextFloat()),
+                    SQL.ColumnValue("boolean", Random.nextBoolean())
+                )
+            )
+        }
+        databaseHelper.insertWithTransaction(listActions)
+
+        // When
+        databaseHelper.truncate(entityName)
+
+        // Then
+        val count = getCountFromTable(entityName)
+        Assert.assertEquals(0, count)
+    }
+
     private fun getCountFromTable(table: String): Int {
         return driver.executeQuery(
             null,

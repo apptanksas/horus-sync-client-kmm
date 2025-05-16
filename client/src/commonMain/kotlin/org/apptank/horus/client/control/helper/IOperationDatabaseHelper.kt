@@ -95,4 +95,13 @@ interface IOperationDatabaseHelper {
      * @return the count of records from the query result.
      */
     fun countRecords(builder: SimpleQueryBuilder): Int
+
+
+    /**
+     * Truncates the specified entity from the database.
+     *
+     * @param entity The name of the entity to be truncated.
+     * @return True if the truncation was successful, false otherwise.
+     */
+    fun truncate(entity: String)
 }
