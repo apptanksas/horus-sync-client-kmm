@@ -6,10 +6,12 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.decodeToMapAttributes
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.scheme.DataSharedTable
+import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireInt
+import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -117,7 +119,7 @@ class DataSharedDatabaseHelperTest : TestCase() {
         }.toTypedArray()
 
         databaseHelper.insert(*records)
-        
+
         // Verify records were inserted
         val initialCount = getRecordCount()
         Assert.assertEquals(records.size, initialCount)
@@ -188,6 +190,55 @@ class DataSharedDatabaseHelperTest : TestCase() {
         }
     }
 
+    @Test
+    fun testQueryRecordsWithLike() {
+        // Given
+        val records = mutableListOf<SyncControl.EntityShared>()
+        val entityName = "test_entity"
+
+        for (i in 1..5) {
+            val entityId = "id_$i" // Use predictable IDs for testing order
+            val data = mapOf("index" to "value$i", "attr1" to "value2$i")
+            records.add(SyncControl.EntityShared(entityId, entityName, data))
+        }
+
+        databaseHelper.insert(*records.toTypedArray())
+
+        val attributeToSearch = Horus.Attribute("attr1", "value23")
+        val conditions = mutableListOf<SQL.WhereCondition>()
+        val queryBuilder = SimpleQueryBuilder(DataSharedTable.TABLE_NAME).apply {
+            // Attributes
+
+            conditions.add(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(DataSharedTable.ATTR_ENTITY_NAME, entityName),
+                    SQL.Comparator.EQUALS
+                )
+            )
+
+            conditions.add(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        DataSharedTable.ATTR_DATA,
+                        "%\"${attributeToSearch.name}\":%${attributeToSearch.value.prepareSQLValueAsString().replace("'", "")}%"
+                    ),
+                    SQL.Comparator.LIKE
+                )
+            )
+
+            where(*conditions.toTypedArray())
+        }
+
+        // When
+        val results = databaseHelper.queryRecords(queryBuilder)
+
+        // Then
+        Assert.assertEquals(1, results.size)
+        Assert.assertEquals("id_3", results[0][DataSharedTable.ATTR_ID])
+        Assert.assertEquals(entityName, results[0][DataSharedTable.ATTR_ENTITY_NAME])
+        Assert.assertEquals("{\"index\":\"value3\",\"attr1\":\"value23\"}", results[0][DataSharedTable.ATTR_DATA].toString())
+    }
+
     // Helper methods
     /**
      * Gets the total count of records in the data shared table.
@@ -211,7 +262,7 @@ class DataSharedDatabaseHelperTest : TestCase() {
      */
     private fun getRecordById(id: String): Map<String, Any>? {
         var result: Map<String, Any>? = null
-        
+
         driver.executeQuery(
             null,
             "SELECT * FROM ${DataSharedTable.TABLE_NAME} WHERE ${DataSharedTable.ATTR_ID} = '$id'",
@@ -225,7 +276,7 @@ class DataSharedDatabaseHelperTest : TestCase() {
             },
             0
         )
-        
+
         return result
     }
 } 

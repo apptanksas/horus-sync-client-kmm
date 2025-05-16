@@ -38,16 +38,19 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.coFold
+import org.apptank.horus.client.base.encodeToJSON
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
+import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After
 import org.junit.Assert
@@ -314,6 +317,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 mockSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION)
             }.returns(1)
 
+            every { mockSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }
+                .returns(Clock.System.now().epochSeconds - 1)
+
             every {
                 mockSyncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
             }.returns(true)
@@ -428,6 +434,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateCountRecordsWithConditions()
         validateQueryWithWhereLikeConditions()
         validateQueryWithWhereLikeConditionsAlternative()
+        queryDataSharedSuccess()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -1032,6 +1039,40 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
     }
 
+    private suspend fun queryDataSharedSuccess() = prepareInternalTest {
+
+        val entityName = "test_entity"
+
+        for (i in 1..5) {
+            val entityId = "id_$i" // Use predictable IDs for testing order
+            val data = mapOf(
+                "index" to "value$i",
+                "attr1" to "value2$i",
+                "float" to Random.nextFloat(),
+                "int" to Random.nextInt(1..1000),
+                "bool" to Random.nextBoolean(),
+            )
+            driver.insertOrThrow(
+                DataSharedTable.TABLE_NAME, mapOf(
+                    DataSharedTable.ATTR_ID to entityId,
+                    DataSharedTable.ATTR_ENTITY_NAME to entityName,
+                    DataSharedTable.ATTR_DATA to data.encodeToJSON()
+                )
+            )
+        }
+
+        // Then
+        val results = HorusDataFacade.queryDataShared(
+            entityName,
+            attributes = listOf(Horus.Attribute("attr1", "value23"))
+        )
+
+        // Then
+        Assert.assertEquals(1, results.size)
+        Assert.assertEquals("test_entity", results[0].name)
+        Assert.assertEquals("value23", results[0].getRequireString("attr1"))
+    }
+
     //---------------------------------------------
 
     private fun createDataInsertRecord() = mapOf(
@@ -1061,6 +1102,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         driver.execute("DELETE FROM measures")
         driver.execute("DELETE FROM product_breeds")
         driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+        driver.execute("DELETE FROM ${DataSharedTable.TABLE_NAME}")
         HorusDataFacade.setEntityRestrictions(emptyList())
         block()
     }

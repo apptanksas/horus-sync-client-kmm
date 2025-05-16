@@ -500,6 +500,20 @@ HorusDataFacade.countRecordFromEntity("users").fold(
   }
 )
 ``` 
+
+### Query Data shared
+
+To query data shared by another user, use the **queryShared** method passing the entity name, the entity ID and a list of attributes to filter the data.
+
+```kotlin
+HorusDataFacade.queryDataShared(
+  entityName,
+  entityId,
+  listOf(Horus.Attribute("attr", "value"))
+)
+```  
+
+
 ### Upload files
 
 To upload files to the server is simple, use the **uploadFile** method passing the file data in bytes and then use the **getFileUrl** method to get the file URL to use where you need it.

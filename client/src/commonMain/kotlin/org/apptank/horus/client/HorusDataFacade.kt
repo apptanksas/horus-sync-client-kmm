@@ -7,12 +7,15 @@ import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.base.CallbackNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.base.decodeToMapAttributes
 import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.database.builder.QueryBuilder
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
@@ -28,6 +31,7 @@ import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.OperationNotPermittedException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.isFalse
+import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.restrictions.EntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
@@ -63,6 +67,14 @@ object HorusDataFacade {
         get() {
             if (field == null) {
                 field = HorusContainer.getSyncControlDatabaseHelper()
+            }
+            return field
+        }
+
+    private var dataSharedDatabaseHelper: IDataSharedDatabaseHelper? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getDataSharedDatabaseHelper()
             }
             return field
         }
@@ -753,6 +765,73 @@ object HorusDataFacade {
         }
 
         return uploadFileRepository?.getFileUrl(reference)
+    }
+
+
+    /**
+     * Retrieves a list of records from data shared based on the specified conditions.
+     *
+     * @param entityName The name of the entity to retrieve.
+     * @param entityId The ID of the entity to retrieve.
+     * @param attributes The attributes to filter the results by.
+     * @param attributesConnector The logical operator to use for combining the attributes.
+     * @return A list of [Horus.Entity] objects matching the specified conditions.
+     */
+    suspend fun queryDataShared(
+        entityName: String,
+        entityId: String? = null,
+        attributes: List<Horus.Attribute<Any>> = listOf(),
+        attributesConnector: SQL.LogicOperator = SQL.LogicOperator.AND,
+    ): List<Horus.Entity> {
+
+        val queryBuilder = SimpleQueryBuilder(DataSharedTable.TABLE_NAME).apply {
+
+            val conditionsAnd = mutableListOf<SQL.WhereCondition>()
+            val conditions = mutableListOf<SQL.WhereCondition>()
+
+            // ID Attribute
+            entityId?.let {
+                conditionsAnd.contains(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(DataSharedTable.ATTR_ID, it),
+                        SQL.Comparator.EQUALS
+                    )
+                )
+            }
+
+            conditionsAnd.add(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(DataSharedTable.ATTR_ENTITY_NAME, entityName),
+                    SQL.Comparator.EQUALS
+                )
+            )
+
+
+            // Attributes
+            attributes.forEach { attribute ->
+                conditions.add(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            DataSharedTable.ATTR_DATA,
+                            "%\"${attribute.name}\":%${attribute.value.prepareSQLValueAsString().replace("'", "")}%"
+                        ),
+                        SQL.Comparator.LIKE
+                    )
+                )
+            }
+
+            where(*conditionsAnd.toTypedArray())
+            where(*conditions.toTypedArray(), joinOperator = attributesConnector)
+        }
+
+        return dataSharedDatabaseHelper?.queryRecords(queryBuilder)?.map {
+            Horus.Entity(
+                entityName,
+                it.get(DataSharedTable.ATTR_DATA).toString().decodeToMapAttributes().map {
+                    Horus.Attribute(it.key, it.value)
+                }
+            )
+        } ?: emptyList()
     }
 
     /**
