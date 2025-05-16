@@ -50,6 +50,7 @@ import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
+import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import org.junit.After
@@ -318,6 +319,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
             }.returns(1)
 
             every { mockSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }
+                .returns(Clock.System.now().epochSeconds - 1)
+
+            every { mockSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }
                 .returns(Clock.System.now().epochSeconds - 1)
 
             every {
