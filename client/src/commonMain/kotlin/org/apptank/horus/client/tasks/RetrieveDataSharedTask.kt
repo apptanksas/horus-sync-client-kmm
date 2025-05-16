@@ -54,7 +54,7 @@ internal class RetrieveDataSharedTask(
         val lastDateDownload = getLastDateDownload()
 
         // Skip if last download is within the TTL window
-        if ((lastDateDownload?.diffInHoursFromNow() ?: 99) < REFRESH_TTL) {
+        if ((lastDateDownload?.diffInHoursFromNow() ?: Int.MAX_VALUE) < REFRESH_TTL) {
             return TaskResult.success()
         }
 

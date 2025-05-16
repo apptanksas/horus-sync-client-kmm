@@ -4,54 +4,113 @@ import com.russhwolf.settings.Settings
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.extensions.diffInHoursFromNow
+import org.apptank.horus.client.extensions.logException
+import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 
-
+/**
+ * Task responsible for refreshing all readable entities by fetching their latest
+ * data from the synchronization service and updating the local operation store.
+ *
+ * This task depends on [RetrieveDataSharedTask] to ensure shared data has been
+ * retrieved before refreshing individual entities.
+ *
+ * @property settings                    Provides persistent storage for the last-refresh timestamp.
+ * @property networkValidator            Validates current network connectivity.
+ * @property syncService                 Service to fetch entity data from the server.
+ * @property operationDatabaseHelper     Helper for CRUD operations on per-entity operation tables.
+ * @property syncControlDatabaseHelper   Helper for retrieving the list of entities to refresh.
+ * @param dependsOnTask                   Previous task that this task depends on.
+ */
 internal class RefreshReadableEntitiesTask(
     private val settings: Settings,
     private val networkValidator: INetworkValidator,
     private val syncService: ISynchronizationService,
+    private val operationDatabaseHelper: IOperationDatabaseHelper,
+    private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     dependsOnTask: RetrieveDataSharedTask
 ) : BaseTask(dependsOnTask) {
 
-       override suspend fun execute(previousDataTask: Any?): TaskResult {
+    /**
+     * Executes the refresh process.
+     *
+     * Steps performed:
+     * 1. If offline, abort and return success.
+     * 2. Check the time elapsed since the last successful refresh; if within TTL, skip.
+     * 3. For each registered readable entity name:
+     *    a. Fetch latest data via [syncService.getDataEntity].
+     *    b. On success, clear the local operation table for that entity.
+     *    c. Map and batch-insert the new entity records in reverse order.
+     *    d. On failure or unauthorized, log and skip further processing.
+     * 4. Update the last-refresh timestamp.
+     *
+     * @param previousDataTask  Result or output of the dependent task (unused).
+     * @return [TaskResult.success] always, even on no-op or after completion.
+     */
+    override suspend fun execute(previousDataTask: Any?): TaskResult {
         // Skip if offline
         if (networkValidator.isNetworkAvailable().not()) {
             return TaskResult.success()
         }
 
+        val lastDate = getLastRefreshDate()
 
+        // Skip if within TTL window
+        if ((lastDate?.diffInHoursFromNow() ?: Int.MAX_VALUE) < REFRESH_TTL) {
+            return TaskResult.success()
+        }
 
-           // syncService.getDataEntity()
+        // Refresh each readable entity
+        syncControlDatabaseHelper.getReadableEntityNames().forEach { entityName ->
+            when (val response = syncService.getDataEntity(entityName)) {
+                is DataResult.Success -> {
+                    // Remove existing records and insert fresh data
+                    operationDatabaseHelper.truncate(entityName)
+                    val records = response.data
+                        .map { it.toEntityData() }
+                        .flatMap { it.toRecordsInsert() }
+                        .reversed()
+                    operationDatabaseHelper.insertWithTransaction(records)
+                }
+
+                is DataResult.Failure, is DataResult.NotAuthorized -> {
+                    logException("Failed to retrieve data for entity: $entityName")
+                    return TaskResult.success()
+                }
+            }
+        }
+
+        updateLastRefreshDate()
 
         return TaskResult.success()
     }
 
     /**
-     * Retrieves the timestamp of the last successful shared-data download.
+     * Retrieves the timestamp of the last successful readable-entities refresh.
      *
-     * @return An [Instant] representing the last download time, or null if not set.
+     * @return An [Instant] representing the last refresh time, or null if not set.
      */
-    private fun getLastDateDownload(): Instant? =
-        settings.getLongOrNull(KEY_LAST_DATE_DATA_SHARED)
+    private fun getLastRefreshDate(): Instant? =
+        settings.getLongOrNull(KEY_LAST_DATE_READABLE_ENTITIES)
             ?.let { Instant.fromEpochSeconds(it) }
 
     /**
-     * Persists the current time as the last successful shared-data download timestamp.
+     * Persists the current time as the last successful readable-entities refresh timestamp.
      */
-    private fun updateLastDateDownload() {
-        settings.putLong(KEY_LAST_DATE_DATA_SHARED, Clock.System.now().epochSeconds)
+    private fun updateLastRefreshDate() {
+        settings.putLong(KEY_LAST_DATE_READABLE_ENTITIES, Clock.System.now().epochSeconds)
     }
 
     companion object {
-        /** Key under which the last download timestamp is stored in [Settings]. */
-        const val KEY_LAST_DATE_DATA_SHARED = "last_date_data_shared"
+        /** Key under which the last refresh timestamp is stored in [Settings]. */
+        const val KEY_LAST_DATE_READABLE_ENTITIES = "last_date_readable_entities"
 
-        /** Time-to-live for shared-data refresh, in hours. */
+        /** Time-to-live for readable-entities refresh, in hours. */
         const val REFRESH_TTL = 24
     }
 }

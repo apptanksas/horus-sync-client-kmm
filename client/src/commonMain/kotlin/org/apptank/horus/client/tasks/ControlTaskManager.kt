@@ -73,6 +73,15 @@ internal object ControlTaskManager {
         synchronizeDataTask
     )
 
+    private val refreshReadableEntitiesTask = RefreshReadableEntitiesTask(
+        HorusContainer.getSettings(),
+        HorusContainer.getNetworkValidator(),
+        HorusContainer.getSynchronizationService(),
+        HorusContainer.getOperationDatabaseHelper(),
+        HorusContainer.getSyncControlDatabaseHelper(),
+        retrieveDataSharedTask
+    )
+
 
     // The initial task to be executed at startup.
     private val startupTask = retrieveDatabaseSchemeTask
@@ -84,7 +93,8 @@ internal object ControlTaskManager {
         validateMigrationLocalDatabaseTask,
         synchronizeInitialDataTask,
         synchronizeDataTask,
-        retrieveDataSharedTask
+        retrieveDataSharedTask,
+        refreshReadableEntitiesTask
     )
 
     // Counter for tracking the number of tasks executed.

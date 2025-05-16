@@ -29,10 +29,12 @@ import io.mockative.mock
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.SynchronizeDataTask
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
@@ -126,6 +128,16 @@ abstract class TestCase {
             mock(classOf<IOperationDatabaseHelper>()),
             mock(classOf<ISynchronizationService>()),
             getMockSynchronizeInitialDataTask()
+        )
+    }
+
+    internal fun getMockRetrieveDataSharedTask(): RetrieveDataSharedTask {
+        return RetrieveDataSharedTask(
+            MapSettings(),
+            mock(classOf<INetworkValidator>()),
+            mock(classOf<IDataSharedDatabaseHelper>()),
+            mock(classOf<ISynchronizationService>()),
+            getMockSynchronizeDataTask()
         )
     }
 
