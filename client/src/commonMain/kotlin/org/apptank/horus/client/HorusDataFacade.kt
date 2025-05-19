@@ -230,7 +230,7 @@ object HorusDataFacade {
      *
      * @return A [DataResult] indicating success or failure of the insert operation with inserted IDs.
      */
-    fun insertBatch(batch: List<Horus.Batch.Insert>): DataResult<List<String>> {
+    suspend fun insertBatch(batch: List<Horus.Batch.Insert>): DataResult<List<String>> {
         try {
             val (recordInserts, insertIds) = prepareInsertBatch(batch)
             val onInsertActions: Callback = {
@@ -264,7 +264,7 @@ object HorusDataFacade {
      * @param attributes The attributes to insert with the entity.
      * @return A [DataResult] indicating success or failure of the insert operation.
      */
-    fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
+    suspend fun insert(entity: String, attributes: List<Horus.Attribute<*>>): DataResult<String> {
 
         validateConstraintsEntity(entity)
 
@@ -321,7 +321,7 @@ object HorusDataFacade {
      * @param attributes The attributes to insert with the entity.
      * @return A [DataResult] indicating success or failure of the insert operation.
      */
-    fun insert(
+    suspend fun insert(
         entity: String,
         vararg attributes: Horus.Attribute<*>
     ): DataResult<String> {
@@ -335,7 +335,7 @@ object HorusDataFacade {
      * @param attributes The attributes to insert with the entity.
      * @return A [DataResult] indicating success or failure of the insert operation.
      */
-    fun insert(
+    suspend fun insert(
         entity: String,
         attributes: Map<String, Any?>,
     ): DataResult<String> {
@@ -853,7 +853,7 @@ object HorusDataFacade {
      * @param batch The list of batch to insert.
      * @return A pair of the list of insert records and the list of insert IDs.
      */
-    private fun prepareInsertBatch(
+    private suspend fun prepareInsertBatch(
         batch: List<Horus.Batch.Insert>
     ): Pair<List<DatabaseOperation.InsertRecord>, List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>> {
 
