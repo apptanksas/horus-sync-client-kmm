@@ -186,7 +186,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     @Test
     fun `when is not ready then throw exception because is not ready`(): Unit = runBlocking {
-        Assert.assertThrows(IllegalStateException::class.java) {
+        coAssertThrows(IllegalStateException::class.java) {
             HorusDataFacade.insert("table", mapOf("key" to "value"))
         }
     }
@@ -448,7 +448,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     @Test
     fun `when uploadFile is Failure by is not ready`(): Unit = runBlocking {
-        Assert.assertThrows(IllegalStateException::class.java) {
+        coAssertThrows(IllegalStateException::class.java) {
             HorusDataFacade.uploadFile(generateFileDataImage())
         }
     }
@@ -510,7 +510,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     }
 
     private fun validateEntityIsNotWritable() = prepareInternalTest {
-        Assert.assertThrows(EntityNotWritableException::class.java) {
+        coAssertThrows(EntityNotWritableException::class.java) {
             HorusDataFacade.insert("product_breeds", mapOf("key" to "value"))
         }
     }
@@ -519,23 +519,23 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val entityName = "any_table_" + Random.nextInt()
 
-        Assert.assertThrows(EntityNotExistsException::class.java) {
+        coAssertThrows(EntityNotExistsException::class.java) {
             HorusDataFacade.insert(entityName, mapOf("key" to "value"))
         }
 
-        Assert.assertThrows(EntityNotExistsException::class.java) {
+        coAssertThrows(EntityNotExistsException::class.java) {
             HorusDataFacade.update(entityName, "id", mapOf("key" to "value"))
         }
 
-        Assert.assertThrows(EntityNotExistsException::class.java) {
+        coAssertThrows(EntityNotExistsException::class.java) {
             HorusDataFacade.delete(entityName, "id")
         }
 
-        Assert.assertThrows(EntityNotExistsException::class.java) {
+        coAssertThrows(EntityNotExistsException::class.java) {
             HorusDataFacade.getById(entityName, "id")
         }
 
-        Assert.assertThrows(EntityNotExistsException::class.java) {
+        coAssertThrows(EntityNotExistsException::class.java) {
             runBlocking {
                 HorusDataFacade.querySimple(entityName)
             }

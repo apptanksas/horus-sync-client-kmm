@@ -1,5 +1,6 @@
 package org.apptank.horus.client.restrictions
 
+import kotlinx.coroutines.sync.Mutex
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.data.Horus
@@ -18,6 +19,10 @@ import org.apptank.horus.client.exception.OperationNotPermittedException
 internal class EntityRestrictionValidator(
     private val operationDatabaseHelper: IOperationDatabaseHelper
 ) {
+    /**
+     * A mutex to ensure thread-safe access to the validator's state.
+     */
+    private val mutex = Mutex()
     /**
      * A list of restrictions to be validated. [EntityName -> List[EntityRestriction]]
      */
@@ -50,7 +55,8 @@ internal class EntityRestrictionValidator(
     /**
      * Starts the validation process.
      */
-    fun startValidation() {
+    suspend fun startValidation() {
+        mutex.lock()
         if (validationStarted) {
             throw IllegalStateException("Validation has already started.")
         }
@@ -66,7 +72,7 @@ internal class EntityRestrictionValidator(
      * @param entityName The name of the entity to validate against the defined restrictions.
      * @throws OperationNotPermittedException if any restriction is violated.
      */
-    fun validate(entityName: String, operationType: EntityRestriction.OperationType) {
+    suspend fun validate(entityName: String, operationType: EntityRestriction.OperationType) {
 
         if (!validationStarted) {
             throw IllegalStateException("Validation has not been started.")
@@ -87,13 +93,14 @@ internal class EntityRestrictionValidator(
     /**
      * Finishes the validation process.
      */
-    fun finishValidation() {
+    suspend fun finishValidation() {
         if (!validationStarted) {
             throw IllegalStateException("Validation has not been started.")
         }
         validationStarted = false
         queueOperations.clear()
         countQueryCache.clear()
+        mutex.unlock()
     }
 
     /**
@@ -107,7 +114,7 @@ internal class EntityRestrictionValidator(
      * @param operationType The type of operation being performed.
      * @throws OperationNotPermittedException if the maximum count is exceeded.
      */
-    private fun validateEntityMaxCount(entityName: String, maxCount: Int, operationType: EntityRestriction.OperationType) {
+    private suspend fun validateEntityMaxCount(entityName: String, maxCount: Int, operationType: EntityRestriction.OperationType) {
 
         if (operationType != EntityRestriction.OperationType.INSERT) {
             return
@@ -130,7 +137,7 @@ internal class EntityRestrictionValidator(
     }
 
 
-    private fun throwNotPermitted(message: String) {
+    private suspend fun throwNotPermitted(message: String) {
         finishValidation()
         throw OperationNotPermittedException(message)
     }

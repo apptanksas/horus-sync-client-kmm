@@ -26,11 +26,13 @@ import io.mockative.Matchers
 import io.mockative.classOf
 import io.mockative.matchers.Matcher
 import io.mockative.mock
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
@@ -41,6 +43,7 @@ import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
 import java.util.UUID
 import kotlin.random.Random
+import kotlin.test.assertTrue
 
 abstract class TestCase {
 
@@ -142,8 +145,6 @@ abstract class TestCase {
     }
 
 
-
-
     protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
@@ -154,7 +155,7 @@ abstract class TestCase {
         }
     }
 
-    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>, custom:List<String> = emptyList()) {
+    protected fun SqlDriver.createTable(table: String, columns: Map<String, String>, custom: List<String> = emptyList()) {
         val columnsString = columns.entries.joinToString(", ") { (name, type) -> "$name $type" }
         val customString = custom.joinToString(", ")
         var query = "CREATE TABLE $table ($columnsString"
@@ -261,6 +262,21 @@ abstract class TestCase {
             return "$basePath$path"
         }
         return basePath
+    }
+
+    protected fun coAssertThrows(clazz: Class<out Throwable>, block: suspend () -> Unit) {
+        runBlocking {
+            try {
+                block()
+                throw AssertionError("Expected exception of type ${clazz.simpleName} but none was thrown")
+            } catch (e: Throwable) {
+                if (clazz.isInstance(e)) {
+                    assertTrue(clazz.isInstance(e))
+                    return@runBlocking
+                }
+                throw AssertionError("Expected exception of type ${clazz.simpleName} but got ${e::class.simpleName}")
+            }
+        }
     }
 
     companion object {

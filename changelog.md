@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.1
+- Added mutex in entity restriction validator to handle concurrent access.
+
 # v0.11.0
 - Added support to shared entities.
 - Fixed issue when is delete corrupted data by foreign key constraint.

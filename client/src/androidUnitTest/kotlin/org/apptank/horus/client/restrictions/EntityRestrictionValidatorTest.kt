@@ -6,6 +6,9 @@ import io.mockative.classOf
 import io.mockative.every
 import io.mockative.mock
 import io.mockative.verify
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -29,7 +32,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     }
 
     @Test(expected = OperationNotPermittedException::class)
-    fun validateIsFailureWhenEntityMaxCountIsExceeded() {
+    fun validateIsFailureWhenEntityMaxCountIsExceeded() = runBlocking {
         val entityName = "entity"
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
@@ -48,7 +51,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     }
 
     @Test
-    fun validateIsFailureWhenEntityMaxCountIsExceededWithMultiplesInserts() {
+    fun validateIsFailureWhenEntityMaxCountIsExceededWithMultiplesInserts() = runBlocking {
         val entityName = "entity"
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val countInserts = Random.nextInt(1, 10)
@@ -61,7 +64,6 @@ class EntityRestrictionValidatorTest : TestCase() {
 
         // When
         try {
-
             with(entityRestrictionValidator) {
                 startValidation()
                 repeat(countInserts) {
@@ -79,7 +81,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     }
 
     @Test
-    fun validateIsSuccessWhenEntityMaxCountIsNotExceeded() {
+    fun validateIsSuccessWhenEntityMaxCountIsNotExceeded() = runBlocking {
         val entityName = "entity"
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
@@ -98,7 +100,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     }
 
     @Test
-    fun validateIsSuccessWhenEntityMaxCountIsReached() {
+    fun validateIsSuccessWhenEntityMaxCountIsReached() = runBlocking {
         val entityName = "entity"
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val countInserts = Random.nextInt(1, 10)
@@ -120,7 +122,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     }
 
     @Test
-    fun validateIsSuccessWhenEntityIsNotHaveRestrictions() {
+    fun validateIsSuccessWhenEntityIsNotHaveRestrictions() = runBlocking {
         val entityName = "entity"
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
@@ -135,6 +137,17 @@ class EntityRestrictionValidatorTest : TestCase() {
             startValidation()
             validate("anotherEntity", EntityRestriction.OperationType.INSERT)
             finishValidation()
+        }
+    }
+
+    @Test(timeout = 10000L)
+    fun validateValidationMutex() = runBlocking {
+        coroutineScope {
+            repeat(10) {
+                entityRestrictionValidator.startValidation()
+                delay(10)
+                entityRestrictionValidator.finishValidation()
+            }
         }
     }
 }
