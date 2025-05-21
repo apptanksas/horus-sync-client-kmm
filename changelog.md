@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.2
+- Improved hashing validation.
+
 # v0.11.1
 - Added mutex in entity restriction validator to handle concurrent access.
 

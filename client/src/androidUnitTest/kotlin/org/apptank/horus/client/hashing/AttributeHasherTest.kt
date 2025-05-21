@@ -4,7 +4,7 @@ import org.apptank.horus.client.data.Horus
 import org.junit.Assert
 import org.junit.Test
 
-class AttributeHasherTest{
+class AttributeHasherTest {
 
     @Test
     fun testHashList() {
@@ -17,7 +17,7 @@ class AttributeHasherTest{
     }
 
     @Test
-    fun testHashing(){
+    fun testHashing() {
         // Given
         val attributes = listOf(
             Horus.Attribute("z1", "5a54d7f3-b83b-3193-9bc1-ecff425dee99"),
@@ -33,7 +33,7 @@ class AttributeHasherTest{
     }
 
     @Test
-    fun testHashingWithNullsAndBooleanWithTrue(){
+    fun testHashingWithNullsAndBooleanWithTrue() {
         // Given
         val attributes = listOf(
             Horus.Attribute("id", "43196d90-d8e1-4c24-bbac-76fdfe58a0eb"),
@@ -61,7 +61,7 @@ class AttributeHasherTest{
     }
 
     @Test
-    fun testHashingWithNullsAndBooleanWithFalse(){
+    fun testHashingWithNullsAndBooleanWithFalse() {
         // Given
         val attributes = listOf(
             Horus.Attribute("id", "43196d90-d8e1-4c24-bbac-76fdfe58a0eb"),
@@ -88,8 +88,48 @@ class AttributeHasherTest{
         Assert.assertEquals(hashExpected, result)
     }
 
+    @Test
+    fun testHashWithDecimalValues() {
+        // Given
+        val attributes = listOf(
+            Horus.Attribute("id", "5e066af9-e341-45b3-ada5-3ad3e8bc64a7"),
+            Horus.Attribute("date", 1747742400),
+            Horus.Attribute("animal_type", 1),
+            Horus.Attribute("price_total", 3270000.0),
+            Horus.Attribute("price_currency", "COP"),
+            Horus.Attribute("price_unit", 3000.0f),
+            Horus.Attribute("notes", null),
+            Horus.Attribute("transfer_status", 1),
+            Horus.Attribute("farm_id", "1f3c15ba-9984-4114-bb8f-d3d5ae9ffc03")
+        )
 
+        val hashExpected = "e7bbdd37338e8f0f6f4a64459d2183ac0edb2ce39d6e97aeb623e57aa81470ff"
+        // When
+        val result = AttributeHasher.generateHash(attributes)
+        // Then
+        Assert.assertEquals(hashExpected, result)
+    }
 
+    @Test
+    fun testHashWithDecimalValuesCase2() {
+        // Given
+        val attributes = listOf(
+            Horus.Attribute("date", 1747742400),
+            Horus.Attribute("animal_type", 1),
+            Horus.Attribute("price_total", 32700.05),
+            Horus.Attribute("price_currency", "COP"),
+            Horus.Attribute("price_unit", 230.233f),
+            Horus.Attribute("float", 230.23f),
+            Horus.Attribute("float2", 932.20f)
+        )
+
+        val hashExpected = "40f1bde7a43cb2d76b4b9ad683b2398f72917e19643ec54a18b0248814c6adb2"
+
+        // When
+        val result = AttributeHasher.generateHash(attributes)
+        // Then
+        Assert.assertEquals(hashExpected, result)
+    }
 
 
 }

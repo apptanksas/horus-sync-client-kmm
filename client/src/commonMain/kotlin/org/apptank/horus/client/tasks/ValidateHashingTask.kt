@@ -35,10 +35,15 @@ internal class ValidateHashingTask(
         }
 
         // Create dummy data for hashing validation.
-        val dataToValidate = mutableMapOf<String, Any>(
+        val dataToValidate = mutableMapOf<String, Any?>(
             "zattr" to "abc" + Random.nextInt().toString(),
             "id" to Random.nextInt(),
-            "name" to Random.nextBytes(10).toString()
+            "name" to Random.nextBytes(10).toString(),
+            "float" to 1234.40,
+            "float2" to 54.0f,
+            "null" to null,
+            "boolean" to true,
+            "boolean2" to false,
         )
 
         // Generate a hash of the dummy data.
