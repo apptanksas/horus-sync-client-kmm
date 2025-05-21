@@ -7,6 +7,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.data.Horus.Entity
 
 
 /**
@@ -19,16 +20,21 @@ fun String.isRelation() = this.startsWith("_")
 /**
  * Converts a [SyncDTO.Response.Entity] to a [Horus.Entity].
  *
+ * @param skipChildren Flag to indicate whether to skip child entities.
+ *
  * @return The [Horus.Entity] representation of the response entity.
  *
  * @throws IllegalArgumentException if the entity name is null.
  */
-fun SyncDTO.Response.Entity.toEntityData(): Horus.Entity {
+fun SyncDTO.Response.Entity.toEntityData(skipChildren: Boolean = false): Horus.Entity {
 
-    val relations =
+    val relations = if (skipChildren) {
+        null
+    } else {
         data?.filter { it.key.startsWith("_") }?.entries?.map {
             it.key to (it.value.toArrayListLinkedHashMap()).toListEntityResponse()
         }?.associate { it.first.substring(1) to it.second.toListEntityData() }
+    }
 
     return Horus.Entity(
         entity ?: throw IllegalArgumentException("Entity name is null"),

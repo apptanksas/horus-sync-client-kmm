@@ -323,7 +323,7 @@ internal class SynchronizatorManager(
                 }
 
                 return operationDatabaseHelper.insertWithTransaction(
-                    dataEntitiesResponse.data.map { it.toEntityData() }
+                    dataEntitiesResponse.data.map { it.toEntityData(skipChildren = true) }
                         .flatMap { it.toRecordsInsert() }.reversed()
                 )
             }
