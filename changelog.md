@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.3
+- Fixed calculate diff in hours.
+
 # v0.11.2
 - Fixed restore corrupted data when the entity is deleted by integrity.
 - Improved hashing validation.

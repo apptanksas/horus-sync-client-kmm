@@ -220,4 +220,39 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         verify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         verify { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }.wasInvoked(1)
     }
+
+    @Test
+    fun `when the ttl works then execute normally`() = runBlocking {
+        // Given
+        val entityNames = listOf("entity1")
+        val currentTimeInSeconds = Clock.System.now().epochSeconds
+        val recentTimestamp = currentTimeInSeconds - (25 * 60 * 60) // 25 hours ago (greater than the 24 hour TTL)
+
+        every { networkValidator.isNetworkAvailable() }.returns(true)
+        every { syncControlDatabaseHelper.getReadableEntityNames() }.returns(entityNames)
+        every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(recentTimestamp)
+
+        coEvery { syncService.getDataEntity("entity1") }.returns(
+            DataResult.Success(
+                listOf(
+                    SyncDTO.Response.Entity("entity1", mapOf("id" to "id1", "name" to "Entity Item 1"))
+                )
+            )
+        )
+
+        every { operationDatabaseHelper.truncate(any()) }.returns(Unit)
+        every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
+        every { settings.putLong(any(), any()) }
+
+        // When
+        val result = task.execute(null)
+
+        // Then
+        Assert.assertTrue(result is TaskResult.Success)
+        verify { syncControlDatabaseHelper.getReadableEntityNames() }.wasInvoked(1)
+        coVerify { syncService.getDataEntity("entity1") }.wasInvoked(1)
+        verify { operationDatabaseHelper.truncate("entity1") }.wasInvoked(1)
+        verify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
+        verify { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }.wasInvoked(1)
+    }
 } 

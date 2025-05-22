@@ -59,9 +59,10 @@ internal class RefreshReadableEntitiesTask(
         }
 
         val lastDate = getLastRefreshDate()
+        val diffInHours = (lastDate?.diffInHoursFromNow() ?: Int.MAX_VALUE)
 
         // Skip if within TTL window
-        if ((lastDate?.diffInHoursFromNow() ?: Int.MAX_VALUE) < REFRESH_TTL) {
+        if (diffInHours < REFRESH_TTL) {
             return TaskResult.success()
         }
 
