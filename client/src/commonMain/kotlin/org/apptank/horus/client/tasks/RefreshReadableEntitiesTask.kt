@@ -9,6 +9,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.extensions.diffInHoursFromNow
+import org.apptank.horus.client.extensions.forEachPair
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -70,12 +71,22 @@ internal class RefreshReadableEntitiesTask(
         syncControlDatabaseHelper.getReadableEntityNames().forEach { entityName ->
             when (val response = syncService.getDataEntity(entityName)) {
                 is DataResult.Success -> {
-                    // Remove existing records and insert fresh data
-                    operationDatabaseHelper.truncate(entityName)
+                    val entitiesToTruncate = mutableListOf(entityName)
                     val records = response.data
-                        .map { it.toEntityData() }
+                        .map {
+                            it.toEntityData().also {
+                                it.relations?.forEachPair { relation, entities ->
+                                    entitiesToTruncate.addAll(entities.map { it.name })
+                                }
+                            }
+                        }
                         .flatMap { it.toRecordsInsert() }
                         .reversed()
+
+                    // Remove existing records and insert fresh data
+                    entitiesToTruncate.forEach {
+                        operationDatabaseHelper.truncate(it)
+                    }
                     operationDatabaseHelper.insertWithTransaction(records)
                 }
 
