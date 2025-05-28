@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.5
+- Fixed get queue actions endpoint with excludes id.
+
 # v0.11.4
 - Fixed issue when truncate entities in refresh readable entities task.
 

@@ -73,7 +73,7 @@ internal class SynchronizationService(
         val queryParams = mutableMapOf<String, String>()
         timestampAfter?.let { queryParams["after"] = it.toString() }
         if (exclude.isNotEmpty()) {
-            queryParams["exclude"] = exclude.joinToString(",")
+            queryParams["exclude"] = exclude.distinct().joinToString(",")
         }
         return get("queue/actions", queryParams) { it.serialize() }
     }

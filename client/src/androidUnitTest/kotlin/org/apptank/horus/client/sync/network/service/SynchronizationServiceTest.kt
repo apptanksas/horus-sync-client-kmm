@@ -213,7 +213,7 @@ class SynchronizationServiceTest : ServiceTest() {
     @Test
     fun getQueueActionsWithExclude() = runBlocking {
         // Given
-        val exclude = generateRandomArray { timestamp() }
+        val exclude = generateRandomArray { timestamp() + it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
@@ -228,7 +228,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getQueueActionsWithTimestampAfterAndExclude() = runBlocking {
         // Given
         val timestampAfter = timestamp()
-        val exclude = generateRandomArray { timestamp() }
+        val exclude = generateRandomArray { timestamp() + it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
         val service = SynchronizationService(mockEngine, BASE_URL)
         // When
@@ -238,6 +238,23 @@ class SynchronizationServiceTest : ServiceTest() {
         assertRequestContainsQueryParam("after", timestampAfter.toString())
         assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
     }
+
+    @Test
+    fun getQueueActionsWithTimestampAfterAndExcludeUniques() = runBlocking {
+        // Given
+        val timestampAfter = timestamp()
+        val excludeTimestamp = timestamp()
+        val exclude = generateArray(10) { excludeTimestamp }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(timestampAfter, exclude)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", timestampAfter.toString())
+        assertRequestContainsQueryParam("exclude", excludeTimestamp.toString())
+    }
+
 
     @Test
     fun postValidateEntitiesData() = runBlocking {

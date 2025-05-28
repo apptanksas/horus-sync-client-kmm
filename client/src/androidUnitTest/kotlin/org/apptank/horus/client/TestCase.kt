@@ -180,10 +180,10 @@ abstract class TestCase {
         }, 0).value
     }
 
-    protected fun <T> generateRandomArray(size: Int = 10, creator: () -> T): List<T> {
+    protected fun <T> generateRandomArray(size: Int = 10, creator: (Int) -> T): List<T> {
         val sizeList = Random.nextInt(1, size)
-        return List(sizeList) { Random.nextInt(0, size) }.map {
-            creator()
+        return List(sizeList) { Random.nextInt(0, size) }.mapIndexed { index, i ->
+            creator(index)
         }
     }
 
