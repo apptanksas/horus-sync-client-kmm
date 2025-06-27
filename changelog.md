@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.7
+- Fixed setup when set user acting as.
+
 # v0.11.6
 - Fixed hashes entities validation when the user is invited.
 - Added chunked post actions. 
