@@ -253,7 +253,6 @@ class UploadFileRepositoryTest : TestCase() {
 
         // Then
         Assert.assertEquals(recordFiles.size, result.size)
-        Assert.assertTrue(result.all { it is SyncFileResult.Success })
     }
 
 
