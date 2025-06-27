@@ -2,6 +2,7 @@
 
 # v0.11.6
 - Fixed hashes entities validation when the user is invited.
+- Added chunked post actions. 
 
 # v0.11.5
 - Fixed get queue actions endpoint with excludes id.
