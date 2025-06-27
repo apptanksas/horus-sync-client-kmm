@@ -211,6 +211,7 @@ internal class SynchronizatorManager(
             val hashes = mutableListOf<String>()
             // Create a query to get the id and sync_hash of the entity
             val queryBuilder = SimpleQueryBuilder(entity)
+            queryBuilder.where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.OWNER_ID, HorusAuthentication.getEffectiveUserId())))
             queryBuilder.select(Horus.Attribute.HASH).orderBy("id")
 
             // Execute the query and get the hashes
