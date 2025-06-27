@@ -130,7 +130,7 @@ class SynchronizationServiceTest : ServiceTest() {
                 SyncControl.ActionType.INSERT.name, "products", mapOf(
                     "id" to uuid(),
                     "name" to "Product  ${uuid()}"
-                ), timestamp()
+                ), timestamp() - (it * 60)
             )
         } + generateRandomArray {
             SyncDTO.Request.SyncActionRequest(
@@ -143,7 +143,7 @@ class SynchronizationServiceTest : ServiceTest() {
                         "double" to 1.0,
                         "float" to 1.0f,
                     )
-                ), timestamp()
+                ), timestamp() + (it * 60)
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
@@ -152,7 +152,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val response = service.postQueueActions(actions)
         // Then
         assert(response is DataResult.Success)
-        assertRequestBody(Json.encodeToString(actions))
+        assertRequestBody(Json.encodeToString(actions.sortedBy { it.actionedAt }))
 
         // Validate request body
         Json.decodeFromString<List<SyncDTO.Response.SyncAction>>(Json.encodeToString(actions))
@@ -164,6 +164,39 @@ class SynchronizationServiceTest : ServiceTest() {
                     it.data?.get("attributes") is LinkedHashMap<*, *>
                 )
             }
+    }
+
+    @Test
+    fun postQueueActionsChunked() = runBlocking {
+
+        // Given
+        val actions = generateArray (1000) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        } +  generateArray (1000) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.UPDATE.name, "products", mapOf(
+                    "id" to uuid(),
+                    "attributes" to mapOf(
+                        "name" to "Attribute ${uuid()}",
+                        "boolean" to true,
+                        "int" to 1,
+                        "double" to 1.0,
+                        "float" to 1.0f,
+                    )
+                ), timestamp() + (it * 60)
+            )
+        }
+        val mockEngine = createMockResponse(status = HttpStatusCode.Created)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+        // When
+        val response = service.postQueueActions(actions)
+        // Then
+        assert(response is DataResult.Success)
     }
 
     @Test

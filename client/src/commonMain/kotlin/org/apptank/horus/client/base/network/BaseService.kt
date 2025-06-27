@@ -7,6 +7,7 @@ import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -63,6 +64,9 @@ internal abstract class BaseService(
                 }
             }
             level = LogLevel.ALL
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60L * 1000 // 60 secs
         }
     }
 

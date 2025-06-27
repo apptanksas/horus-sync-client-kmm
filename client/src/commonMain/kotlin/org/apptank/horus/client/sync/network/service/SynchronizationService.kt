@@ -4,6 +4,7 @@ import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.client.engine.HttpClientEngine
+import kotlinx.coroutines.delay
 
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
@@ -56,7 +57,22 @@ internal class SynchronizationService(
      * @return [DataResult] indicating the success or failure of the operation.
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
-        return post("queue/actions", actions) { it.serialize() }
+
+        val chunks = actions.sortedBy { it.actionedAt }.chunked(1000)
+        val results = mutableListOf<DataResult<Unit>>()
+
+        chunks.forEach { chunk ->
+            results.add(post("queue/actions", chunk) { it.serialize() })
+            if (chunks.size > 1) {
+                delay(5000)
+            }
+        }
+
+        return if (results.all { it is DataResult.Success }) {
+            DataResult.Success(Unit)
+        } else {
+            return results.filterIsInstance<DataResult.Failure>().firstOrNull() ?: DataResult.Failure(Exception("Failed to post queue actions"))
+        }
     }
 
     /**
@@ -125,4 +141,5 @@ internal class SynchronizationService(
     override suspend fun getDataShared(): DataResult<List<SyncDTO.Response.Entity>> {
         return get("shared") { it.serialize() }
     }
+
 }

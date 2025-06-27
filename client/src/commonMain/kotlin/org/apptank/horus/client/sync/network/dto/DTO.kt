@@ -29,10 +29,10 @@ sealed class SyncDTO {
          */
         @Serializable
         data class SyncActionRequest(
-            private val action: String,
-            private val entity: String,
-            private val data: DataMap,
-            @SerialName("actioned_at") private val actionedAt: Long
+            val action: String,
+            val entity: String,
+            val data: DataMap,
+            @SerialName("actioned_at") val actionedAt: Long
         )
 
         /**
