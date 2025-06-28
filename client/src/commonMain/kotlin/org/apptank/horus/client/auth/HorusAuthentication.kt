@@ -44,6 +44,7 @@ object HorusAuthentication {
      */
     fun setUserActingAs(userId: String) {
         userAuthentication?.setUserActingAs(userId)
+        EventBus.emit(EventType.SETUP_CHANGED)
     }
 
     /**
