@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.11.8
+- Fixed issue  sync file manager when user is logged out.
+
 # v0.11.7
 - Fixed setup when set user acting as.
 
