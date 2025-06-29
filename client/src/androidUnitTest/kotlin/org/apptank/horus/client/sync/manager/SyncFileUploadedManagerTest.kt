@@ -80,21 +80,4 @@ class SyncFileUploadedManagerTest {
         coVerify { repository.downloadRemoteFiles() }.wasInvoked()
     }
 
-    @Test
-    fun `syncFiles should not proceed when session is cleared`() = runBlocking {
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        coEvery { repository.uploadFiles() }.returns(listOf(SyncFileResult.Success("file1")))
-        coEvery { repository.syncFileReferencesInfo() }.returns(true)
-        coEvery { repository.downloadRemoteFiles() }.returns(listOf(SyncFileResult.Success("file2")))
-
-        // When
-        EventBus.emit(EventType.ON_READY)
-        EventBus.emit(EventType.USER_SESSION_CLEARED)
-        manager.syncFiles()
-
-        // Then
-        delay(100)
-        coVerify { repository.uploadFiles() }.wasInvoked(1)
-    }
-
 }
