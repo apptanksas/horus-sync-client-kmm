@@ -51,6 +51,10 @@ class SyncFileUploadedManager(
             isReady = true
             syncFiles()
         }
+
+        EventBus.register(EventType.USER_SESSION_CLEARED) {
+            isReady = false
+        }
     }
 
     /**

@@ -1,7 +1,6 @@
 package org.apptank.horus.client.sync.manager
 
 import io.mockative.Mock
-import io.mockative.any
 import io.mockative.classOf
 import io.mockative.coEvery
 import io.mockative.coVerify
@@ -15,7 +14,6 @@ import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
-import org.junit.After
 import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
