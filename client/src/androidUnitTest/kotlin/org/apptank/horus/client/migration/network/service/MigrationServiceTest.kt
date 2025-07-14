@@ -65,5 +65,16 @@ class MigrationServiceTest : ServiceTest() {
         Assert.assertTrue(response is DataResult.NotAuthorized)
     }
 
+    @Test
+    fun getMigrationIsFailureWithCustomHeaders() = runBlocking {
+        val mockEngine = createMockResponse("{}", status = HttpStatusCode.InternalServerError)
+        val customHeaders = mapOf("Custom-Header" to "CustomValue")
+        val apiClient = MigrationService(mockEngine, BASE_URL, customHeaders)
+        val response = apiClient.getMigration()
+
+        Assert.assertTrue(response is DataResult.Failure)
+        assertRequestHeader("Custom-Header", "CustomValue")
+    }
+
 
 }

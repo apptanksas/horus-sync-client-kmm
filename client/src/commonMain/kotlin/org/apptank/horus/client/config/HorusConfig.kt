@@ -16,6 +16,7 @@ data class HorusConfig(
     val baseUrl: String,
     val uploadFilesConfig: UploadFilesConfig,
     val pushPendingActionsConfig: PushPendingActionsConfig = PushPendingActionsConfig(),
+    val customHeaders: Map<String, String> = emptyMap(),
     val isDebug: Boolean = false
 )
 

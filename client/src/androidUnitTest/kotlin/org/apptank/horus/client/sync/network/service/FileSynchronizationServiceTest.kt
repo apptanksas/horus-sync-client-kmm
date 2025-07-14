@@ -168,4 +168,19 @@ class FileSynchronizationServiceTest : ServiceTest() {
         Assert.assertTrue(result is DataResult.Failure)
         Assert.assertTrue(result2 is DataResult.Failure)
     }
+
+    @Test
+    fun testWithCustomHeaders() = runBlocking {
+        // Given
+        val customHeaders = mapOf("Custom-Header" to "CustomValue")
+        val mockEngine = createMockResponse(MOCK_RESPONSE_FILE_INFO)
+        val service = FileSynchronizationService(mockEngine, BASE_URL, customHeaders)
+
+        // When
+        val response = service.uploadFile(uuid(), generateFileDataImage())
+
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestHeader("Custom-Header", "CustomValue")
+    }
 }
