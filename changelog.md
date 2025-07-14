@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.0
+- Added configuration to setup custom headers in the requests.
+
 # v0.11.8
 - Fixed issue  sync file manager when user is logged out.
 

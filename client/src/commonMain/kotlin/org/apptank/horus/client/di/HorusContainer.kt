@@ -262,9 +262,9 @@ object HorusContainer {
      * @return The [IFileSynchronizationService] instance.
      * @throws IllegalStateException if the file synchronization service is not set.
      */
-    internal fun getFileSynchronizationService(): IFileSynchronizationService{
+    internal fun getFileSynchronizationService(): IFileSynchronizationService {
         if (fileSynchronizationService == null) {
-            fileSynchronizationService = FileSynchronizationService(httpClient.engine, getConfig().baseUrl)
+            fileSynchronizationService = FileSynchronizationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
         }
         return fileSynchronizationService!!
     }

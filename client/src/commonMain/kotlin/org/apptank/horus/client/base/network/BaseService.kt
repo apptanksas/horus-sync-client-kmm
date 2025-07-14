@@ -47,7 +47,8 @@ import org.apptank.horus.client.sync.upload.data.FileData
  */
 internal abstract class BaseService(
     engine: HttpClientEngine,
-    private val baseUrl: String
+    private val baseUrl: String,
+    private val customHeaders: Map<String, String> = emptyMap()
 ) {
     // JSON decoder configured to ignore unknown keys
     val decoderJson = Json { ignoreUnknownKeys = true }
@@ -67,6 +68,8 @@ internal abstract class BaseService(
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 60L * 1000 // 60 secs
+            socketTimeoutMillis = 60L * 1000 // 60 secs
+            connectTimeoutMillis = 60L * 1000 // 60 secs
         }
     }
 
@@ -209,6 +212,11 @@ internal abstract class BaseService(
         builder.headers {
             append(HttpHeader.CONTENT_TYPE, "application/json")
             append(HttpHeader.ACCEPT, "application/json")
+
+            // Add custom headers if provided
+            customHeaders.forEach { (key, value) ->
+                append(key, value)
+            }
 
             with(HorusAuthentication) {
                 if (isNotUserAuthenticated()) {

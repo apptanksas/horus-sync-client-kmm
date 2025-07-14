@@ -18,12 +18,14 @@ import org.apptank.horus.client.sync.network.dto.SyncDTO
  *
  * @param engine The HttpClientEngine used for network requests.
  * @param baseUrl The base URL for the API endpoints.
+ * @param customHeaders Optional custom headers to include in the requests.
  * @year 2024
  */
 internal class FileSynchronizationService(
     engine: HttpClientEngine,
-    baseUrl: String
-) : BaseService(engine, baseUrl), IFileSynchronizationService {
+    baseUrl: String,
+    customHeaders: Map<String, String> = emptyMap()
+) : BaseService(engine, baseUrl, customHeaders), IFileSynchronizationService {
 
     /**
      * Uploads a file to the remote server.

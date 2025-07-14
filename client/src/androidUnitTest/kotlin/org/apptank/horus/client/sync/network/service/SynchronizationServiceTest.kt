@@ -482,4 +482,23 @@ class SynchronizationServiceTest : ServiceTest() {
             Assert.assertTrue(response.data.isNotEmpty())
         }
     }
+
+    @Test
+    fun validateWithCustomHeaders() = runBlocking {
+        // Given
+        val entitiesHash = listOf(
+            SyncDTO.Request.EntityHash("entity1", "hash1"),
+            SyncDTO.Request.EntityHash("entity1", "hash2")
+        )
+        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
+        val service = SynchronizationService(mockEngine, BASE_URL, customHeaders = mapOf("X-Custom-Header" to "CustomValue"))
+
+        // When
+        val response = service.postValidateEntitiesData(entitiesHash)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestBody(Json.encodeToString(entitiesHash))
+        assertRequestHeader("X-Custom-Header", "CustomValue")
+    }
 }

@@ -13,12 +13,14 @@ import io.ktor.client.engine.HttpClientEngine
  *
  * @param engine The HTTP client engine used to perform network operations.
  * @param baseUrl The base URL for the HTTP requests.
+ * @param customHeaders Optional custom headers to include in the requests.
  * @constructor Creates a new instance of `MigrationService` with the specified HTTP client engine and base URL.
  */
 internal class MigrationService(
     engine: HttpClientEngine,
-    baseUrl: String
-) : BaseService(engine, baseUrl), IMigrationService {
+    baseUrl: String,
+    customHeaders: Map<String, String> = emptyMap()
+) : BaseService(engine, baseUrl, customHeaders), IMigrationService {
 
     /**
      * Retrieves a list of entity schemes related to migration.

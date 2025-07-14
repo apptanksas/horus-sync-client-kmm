@@ -11,11 +11,13 @@ import kotlinx.coroutines.delay
  *
  * @param engine The HTTP client engine to use for making network requests.
  * @param baseUrl The base URL for the API.
+ * @param customHeaders Optional custom headers to include in the requests.
  */
 internal class SynchronizationService(
     engine: HttpClientEngine,
-    baseUrl: String
-) : BaseService(engine, baseUrl), ISynchronizationService {
+    baseUrl: String,
+    customHeaders: Map<String, String> = emptyMap()
+) : BaseService(engine, baseUrl, customHeaders), ISynchronizationService {
 
     /**
      * Retrieves data from the server, optionally after a specified timestamp.
