@@ -157,6 +157,7 @@ class MainApplication : Application() {
       BASE_SERVER_URL,
       uploadFileConfig,
       PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
+      mapOf("custom-header" to "custom-value"),
       isDebug = true
     )
 

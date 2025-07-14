@@ -240,7 +240,7 @@ object HorusContainer {
      * @throws IllegalStateException if the migration service is not set.
      */
     internal fun getMigrationService(): IMigrationService {
-        return migrationService ?: MigrationService(httpClient.engine, getConfig().baseUrl)
+        return migrationService ?: MigrationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
     }
 
     /**
@@ -251,7 +251,7 @@ object HorusContainer {
      */
     internal fun getSynchronizationService(): ISynchronizationService {
         if (synchronizationService == null) {
-            synchronizationService = SynchronizationService(httpClient.engine, getConfig().baseUrl)
+            synchronizationService = SynchronizationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
         }
         return synchronizationService!!
     }
