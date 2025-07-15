@@ -10,14 +10,17 @@ import org.apptank.horus.client.sync.upload.data.FileMimeType
  * @property baseUrl The base URL of the remote server used for synchronization.
  * @property uploadFilesConfig Configuration for uploading files to the server.
  * @property pushPendingActionsConfig Configuration for managing the batch size and expiration time for pending actions.
+ * @property customHeaders Optional custom headers to include in HTTP requests.
  * @property isDebug Flag to enable or disable debug mode. Default is `false`.
+ * @property onGlobalCallbackFailure A callback function that is invoked when a global failure occurs during synchronization.
  */
 data class HorusConfig(
     val baseUrl: String,
     val uploadFilesConfig: UploadFilesConfig,
     val pushPendingActionsConfig: PushPendingActionsConfig = PushPendingActionsConfig(),
     val customHeaders: Map<String, String> = emptyMap(),
-    val isDebug: Boolean = false
+    val isDebug: Boolean = false,
+    val onGlobalCallbackFailure: ((String, Throwable?) -> Unit)? = { _, _ -> },
 )
 
 /**

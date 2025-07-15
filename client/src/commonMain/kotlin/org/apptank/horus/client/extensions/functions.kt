@@ -46,5 +46,8 @@ internal fun warn(message: String) {
  * @param throwable The exception whose stack trace should be printed (optional).
  */
 fun logException(message: String, throwable: Throwable? = null) {
-    HorusContainer.getLogger()?.error(message, throwable)
+    with(HorusContainer) {
+        getLogger()?.error(message, throwable)
+        getConfig().onGlobalCallbackFailure?.invoke(message, throwable)
+    }
 }
