@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.1
+- Added setup global callback failure.
+
 # v0.12.0
 - Added configuration to setup custom headers in the requests.
 

@@ -47,6 +47,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
 
     @Mock
     val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
+
     @Mock
     val storageSettings = mock(classOf<Settings>())
 
@@ -66,9 +67,11 @@ class RemoteSynchronizatorManagerTest : TestCase() {
             0
         )
 
+
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
         HorusContainer.setupSettings(storageSettings)
+        HorusContainer.setupConfig(getHorusConfigTest())
     }
 
     @After
