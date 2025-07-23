@@ -548,7 +548,7 @@ object HorusDataFacade {
             )
         }
 
-        if (result.isNullOrEmpty()) {
+        if (result == null) {
             return DataResult.Failure(IllegalStateException(entity))
         }
 
@@ -576,7 +576,7 @@ object HorusDataFacade {
                 )
             }
 
-            if (result.isNullOrEmpty()) {
+            if (result == null) {
                 return DataResult.Failure(IllegalStateException(entityName))
             }
             return DataResult.Success(result)
