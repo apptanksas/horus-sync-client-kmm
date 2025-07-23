@@ -182,7 +182,7 @@ class HorusDatabase(
                 execute(
                     createSQLInsert(
                         EntitiesTable.TABLE_NAME,
-                        EntitiesTable.mapToCreate(entity.name, entity.isWritable())
+                        EntitiesTable.mapToCreate(entity.name, entity.isWritable(), entity.level)
                     )
                 )
                 entity.attributes.forEach {

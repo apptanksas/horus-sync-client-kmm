@@ -14,10 +14,12 @@ import org.apptank.horus.client.migration.network.dto.MigrationDTO
  * converting attributes and related entities to their corresponding types. It throws an `InvalidDataSchemeException`
  * if essential properties are missing.
  *
+ * @param level The level of the entity in the hierarchy.
+ *
  * @return An `EntityScheme` object representing the converted data.
  * @throws InvalidDataSchemeException If the entity name is null.
  */
-internal fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
+internal fun MigrationDTO.Response.EntityScheme.toScheme(level: Int = 0): EntityScheme {
 
     val type = EntityType.valueOf(this.type?.uppercase() ?: EntityType.WRITABLE.name)
 
@@ -26,7 +28,8 @@ internal fun MigrationDTO.Response.EntityScheme.toScheme(): EntityScheme {
         type,
         this.attributes?.map { it.toScheme() } ?: listOf(),
         this.currentVersion ?: 1,
-        this.getRelated().map { it.toScheme() }
+        this.getRelated().map { it.toScheme(level + 1) },
+        level = level
     )
 }
 

@@ -142,6 +142,14 @@ interface ISyncControlDatabaseHelper {
      */
     fun isEntityCanBeWritable(entityName: String): Boolean
 
+    /**
+     * Retrieves the level of an entity hierarchy.
+     *
+     * @param entityName The name of the entity to check.
+     *
+     * @return The level of the entity, where 0 is the root level.
+     */
+    fun getEntityLevel(entityName: String): Int
 
     /**
      * Retrieves a list of all entity names that are only readable.

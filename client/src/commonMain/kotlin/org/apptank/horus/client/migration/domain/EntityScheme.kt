@@ -8,13 +8,15 @@ package org.apptank.horus.client.migration.domain
  * @param attributes A list of attributes associated with the entity.
  * @param currentVersion The current version of the entity scheme.
  * @param entitiesRelated A list of related entity schemes.
+ * @param level The level of the entity in a hierarchical structure, default is 0.
  */
 data class EntityScheme(
     val name: String,
     val type: EntityType,
     val attributes: List<Attribute>,
     val currentVersion: Long,
-    val entitiesRelated: List<EntityScheme>
+    val entitiesRelated: List<EntityScheme>,
+    val level: Int = 0 // Used for hierarchical structures
 ) {
     /**
      * Indicates if the entity is writable.

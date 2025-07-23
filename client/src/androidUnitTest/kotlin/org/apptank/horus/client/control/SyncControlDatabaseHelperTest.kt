@@ -463,4 +463,32 @@ class SyncControlDatabaseHelperTest : TestCase() {
         assert(readableEntities.contains(entityReadOnly))
     }
 
+    @Test
+    fun validateGetEntityLevelIsSuccess(){
+        val entityLevel0 = "entity_level0"
+        val entityLevel1 = "entity_level1"
+
+        driver.createTable(entityLevel0, mapOf("id" to "TEXT"))
+        driver.createTable(entityLevel1, mapOf("id" to "TEXT"))
+
+        driver.registerEntity(entityLevel0, level = 0)
+        driver.registerEntity(entityLevel1, level = 1)
+
+        // When
+        val level0 = controlManagerDatabaseHelper.getEntityLevel(entityLevel0)
+        val level1 = controlManagerDatabaseHelper.getEntityLevel(entityLevel1)
+
+        // Then
+        Assert.assertEquals(0, level0)
+        Assert.assertEquals(1, level1)
+    }
+
+
+    @Test(expected = IllegalArgumentException::class)
+    fun validateGetEntityLevelNotFound(){
+        val entityNotFound = "entity_not_found"
+
+        // When
+        controlManagerDatabaseHelper.getEntityLevel(entityNotFound)
+    }
 }

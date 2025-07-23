@@ -33,6 +33,7 @@ internal sealed class InternalModel {
 
     data class TableEntity(
         val name: String,
-        val isWritable: Boolean
+        val isWritable: Boolean,
+        val level: Int
     )
 }
