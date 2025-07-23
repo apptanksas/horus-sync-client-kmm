@@ -319,7 +319,22 @@ internal class SyncControlDatabaseHelper(
      * @return True if the entity can be written to, false otherwise.
      */
     override fun isEntityCanBeWritable(entityName: String): Boolean {
-        return getTableEntities().filter { it.isWritable }.any { it.name == entityName }
+        return entityWritableCache.getOrPut(entityName) {
+            getTableEntities().filter { it.isWritable }.any { it.name == entityName }
+        }
+    }
+
+    /**
+     * Retrieves the level of an entity hierarchy.
+     *
+     * @param entityName The name of the entity to check.
+     * @return The level of the entity, where 0 is the root level.
+     * @throws IllegalArgumentException If the entity does not exist.
+     */
+    override fun getEntityLevel(entityName: String): Int {
+        return entityLevelCache.getOrPut(entityName) {
+            getTableEntities().find { it.name == entityName }?.level ?: throw IllegalArgumentException("Entity $entityName does not exist")
+        }
     }
 
     /**
@@ -433,5 +448,10 @@ internal class SyncControlDatabaseHelper(
      */
     private fun emitEntityDeleted(entity: String, id: String) {
         EventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
+    }
+
+    companion object {
+        private val entityWritableCache = mutableMapOf<String, Boolean>()
+        private val entityLevelCache = mutableMapOf<String, Int>()
     }
 }

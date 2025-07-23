@@ -58,7 +58,8 @@ abstract class SQLiteHelper(
             val result: List<InternalModel.TableEntity> = queryResult(simpleQuery) { cursor ->
                 InternalModel.TableEntity(
                     cursor.getValue(EntitiesTable.ATTR_NAME),
-                    cursor.getValue(EntitiesTable.ATTR_IS_WRITABLE)
+                    cursor.getValue(EntitiesTable.ATTR_IS_WRITABLE),
+                    cursor.getValue(EntitiesTable.ATTR_LEVEL)
                 )
             }
 

@@ -31,6 +31,7 @@ import org.apptank.horus.client.exception.EntityNotWritableException
 import org.apptank.horus.client.exception.OperationNotPermittedException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.isFalse
+import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.restrictions.EntityRestriction
@@ -239,9 +240,9 @@ object HorusDataFacade {
 
             return runCatching {
                 val result =
-                    operationDatabaseHelper!!.insertWithTransaction(recordInserts, onInsertActions)
+                    operationDatabaseHelper?.insertWithTransaction(recordInserts, onInsertActions)
 
-                if (result) {
+                if (result.isTrue()) {
                     return@runCatching DataResult.Success(insertIds.map { it.first.value })
                 }
                 return@runCatching DataResult.Failure(IllegalStateException("Insert entity failure"))
@@ -283,29 +284,29 @@ object HorusDataFacade {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
         }
 
-        val uuid =
-            attributes.find { it.name == Horus.Attribute.ID }?.value as? String ?: generateUUID()
+        val uuid = attributes.find { it.name == Horus.Attribute.ID }?.value as? String ?: generateUUID()
         val id = Horus.Attribute(Horus.Attribute.ID, uuid)
+        val effectiveUserId = getEffectiveUserIdToInsertOperation(entity)
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
             id,
-            AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
+            AttributesPreparator.appendInsertSyncAttributes(id, attributes, effectiveUserId)
         )
 
         return runCatching {
-            val result = operationDatabaseHelper!!.insertWithTransaction(
+            val result = operationDatabaseHelper?.insertWithTransaction(
                 listOf(
                     DatabaseOperation.InsertRecord(
                         entity, attributesPrepared.mapToDBColumValue()
                     )
                 )
             ) {
-                syncControlDatabaseHelper!!.addActionInsert(
+                syncControlDatabaseHelper?.addActionInsert(
                     entity,
                     mutableListOf<Horus.Attribute<*>>(id).apply { addAll(attributes) })
             }
 
-            if (result) {
+            if (result.isTrue()) {
                 return@runCatching DataResult.Success(uuid)
             }
             return@runCatching DataResult.Failure(IllegalStateException("Insert entity failure"))
@@ -359,8 +360,8 @@ object HorusDataFacade {
         }
 
         return runCatching {
-            val result = operationDatabaseHelper!!.updateWithTransaction(recordUpdates, onUpdateActions)
-            if (result) {
+            val result = operationDatabaseHelper?.updateWithTransaction(recordUpdates, onUpdateActions)
+            if (result.isTrue()) {
                 return@runCatching DataResult.Success(Unit)
             }
             return@runCatching DataResult.Failure(IllegalStateException("Update entity failure"))
@@ -407,7 +408,7 @@ object HorusDataFacade {
                 })
 
         return runCatching {
-            val result = operationDatabaseHelper!!.updateWithTransaction(
+            val result = operationDatabaseHelper?.updateWithTransaction(
                 listOf(
                     DatabaseOperation.UpdateRecord(
                         entity, attributesPrepared.mapToDBColumValue(),
@@ -420,14 +421,14 @@ object HorusDataFacade {
                     )
                 )
             ) {
-                syncControlDatabaseHelper!!.addActionUpdate(
+                syncControlDatabaseHelper?.addActionUpdate(
                     entity,
                     attrId,
                     attributes
                 )
             }
 
-            if (result) {
+            if (result.isTrue()) {
                 return@runCatching DataResult.Success(Unit)
             }
             return@runCatching DataResult.Failure(IllegalStateException("Update entity failure"))
@@ -482,7 +483,7 @@ object HorusDataFacade {
         val attrId = Horus.Attribute(Horus.Attribute.ID, id)
 
         return runCatching {
-            val result = operationDatabaseHelper!!.deleteWithTransaction(
+            val result = operationDatabaseHelper?.deleteWithTransaction(
                 listOf(
                     DatabaseOperation.DeleteRecord(
                         entity,
@@ -495,10 +496,10 @@ object HorusDataFacade {
                     )
                 )
             ) {
-                syncControlDatabaseHelper!!.addActionDelete(entity, attrId)
+                syncControlDatabaseHelper?.addActionDelete(entity, attrId)
             }
 
-            if (result) {
+            if (result.isTrue()) {
                 return@runCatching DataResult.Success(Unit)
             }
             return@runCatching DataResult.Failure(IllegalStateException("Delete entity failure"))
@@ -540,11 +541,15 @@ object HorusDataFacade {
             }
         }
 
-        val result = operationDatabaseHelper!!.queryRecords(queryBuilder).map {
+        val result = operationDatabaseHelper?.queryRecords(queryBuilder)?.map {
             Horus.Entity(
                 entity,
                 it.map { Horus.Attribute(it.key, it.value) }
             )
+        }
+
+        if (result == null) {
+            return DataResult.Failure(IllegalStateException(entity))
         }
 
         return DataResult.Success(result)
@@ -564,15 +569,17 @@ object HorusDataFacade {
 
             validateConstraintsReadable(entityName)
 
-            val result = operationDatabaseHelper!!.queryRecords(queryBuilder).map {
+            val result = operationDatabaseHelper?.queryRecords(queryBuilder)?.map {
                 Horus.Entity(
                     entityName,
                     it.map { Horus.Attribute(it.key, it.value) }
                 )
             }
 
+            if (result == null) {
+                return DataResult.Failure(IllegalStateException(entityName))
+            }
             return DataResult.Success(result)
-
         }.getOrElse {
             DataResult.Failure(it)
         }
@@ -589,8 +596,11 @@ object HorusDataFacade {
             val queryBuilder = SimpleQueryBuilder(entity).apply {
                 where(*whereCondition)
             }
-            return DataResult.Success(operationDatabaseHelper!!.countRecords(queryBuilder))
-
+            operationDatabaseHelper?.countRecords(queryBuilder)?.let {
+                return DataResult.Success(it)
+            } ?: run {
+                return DataResult.Failure(IllegalStateException("Count records failure"))
+            }
         }.getOrElse {
             DataResult.Failure(it)
         }
@@ -601,7 +611,11 @@ object HorusDataFacade {
      */
     suspend fun countRecords(queryBuilder: SimpleQueryBuilder): DataResult<Int> {
         return kotlin.runCatching {
-            return DataResult.Success(operationDatabaseHelper!!.countRecords(queryBuilder))
+            operationDatabaseHelper?.countRecords(queryBuilder)?.let {
+                return DataResult.Success(it)
+            } ?: run {
+                return DataResult.Failure(IllegalStateException("Count records failure"))
+            }
         }.getOrElse {
             DataResult.Failure(it)
         }
@@ -748,7 +762,7 @@ object HorusDataFacade {
      */
     fun uploadFile(fileData: FileData): Horus.FileReference {
         validateIsReady()
-        return uploadFileRepository!!.createFileLocal(fileData)
+        return uploadFileRepository?.createFileLocal(fileData) ?: throw IllegalStateException("Upload file repository is not initialized")
     }
 
     /**
@@ -880,10 +894,11 @@ object HorusDataFacade {
 
             val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
             val id = Horus.Attribute(Horus.Attribute.ID, uuid)
+            val effectiveUserId = getEffectiveUserIdToInsertOperation(entity)
 
             val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
                 id,
-                AttributesPreparator.appendInsertSyncAttributes(id, attributes, getEffectiveUserId())
+                AttributesPreparator.appendInsertSyncAttributes(id, attributes, effectiveUserId)
             )
 
             recordInserts.add(
@@ -968,7 +983,7 @@ object HorusDataFacade {
             val entity = it.second
             val attributes = it.third
 
-            syncControlDatabaseHelper!!.addActionInsert(
+            syncControlDatabaseHelper?.addActionInsert(
                 entity,
                 mutableListOf<Horus.Attribute<*>>(id).apply { addAll(attributes) }
             )
@@ -981,7 +996,7 @@ object HorusDataFacade {
             val entity = it.second
             val attributes = it.third
 
-            syncControlDatabaseHelper!!.addActionUpdate(
+            syncControlDatabaseHelper?.addActionUpdate(
                 entity,
                 id,
                 attributes
@@ -1030,7 +1045,7 @@ object HorusDataFacade {
     }
 
     private fun validateIsCanWriteIntoEntity(entity: String) {
-        if (syncControlDatabaseHelper!!.isEntityCanBeWritable(entity)) {
+        if (syncControlDatabaseHelper?.isEntityCanBeWritable(entity).isTrue()) {
             return
         }
         throw EntityNotWritableException(entity)
@@ -1085,6 +1100,27 @@ object HorusDataFacade {
             settings?.clear()
             clear()
         }
+    }
+
+    /**
+     * This should give us the corresponding user ID of the record owner to be inserted.
+     * Validating that if the entity is at level 0 of the entity schema hierarchy, this means the entity is primary and should always be
+     * the authenticated owner, and the shared data policy should not apply.
+     *
+     * @param entityName The name of the entity for which to get the effective user ID.
+     *
+     * @return The effective user ID to be used for the insert operation.
+     */
+    private fun getEffectiveUserIdToInsertOperation(entityName: String): String {
+
+        val entityLevel = syncControlDatabaseHelper?.getEntityLevel(entityName) ?: -1
+        val userIdEffective = if (entityLevel == 0) HorusAuthentication.getUserAuthenticatedId() else getEffectiveUserId()
+
+        if (userIdEffective == null) {
+            throw UserNotAuthenticatedException()
+        }
+
+        return userIdEffective
     }
 
     /**

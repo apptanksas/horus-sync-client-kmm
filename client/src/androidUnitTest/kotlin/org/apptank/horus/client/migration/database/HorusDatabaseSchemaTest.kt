@@ -48,6 +48,9 @@ class HorusDatabaseSchemaTest {
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
         Assert.assertEquals(versionExpected, lastVersion)
+        Assert.assertEquals(0, tables.find { it.name == "products" }?.level)
+        Assert.assertEquals(1, tables.find { it.name == "lots" }?.level)
+        Assert.assertEquals(2, tables.find { it.name == "categories_lots" }?.level)
     }
 
 

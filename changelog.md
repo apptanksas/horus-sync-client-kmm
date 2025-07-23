@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.12.2
+- Fixed issue when insert entity level 0 with user acting as.
+
 # v0.12.1
 - Added setup global callback failure.
 

@@ -226,11 +226,11 @@ abstract class TestCase {
         })
     }
 
-    protected fun SqlDriver.registerEntity(entity: String, isWritable: Boolean = true) {
+    protected fun SqlDriver.registerEntity(entity: String, isWritable: Boolean = true, level: Int = 0) {
         execute(
             createSQLInsert(
                 EntitiesTable.TABLE_NAME,
-                EntitiesTable.mapToCreate(entity, isWritable)
+                EntitiesTable.mapToCreate(entity, isWritable, level)
             )
         )
     }
