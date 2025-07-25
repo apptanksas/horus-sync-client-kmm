@@ -2,6 +2,7 @@
 
 # v0.13.0
 - Refactor start synchronization task to download data from url json.
+- Added emit progress sync data.
 
 # v0.12.2
 - Fixed issue when insert entity level 0 with user acting as.

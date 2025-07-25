@@ -70,7 +70,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             .returns(true)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Success)
@@ -90,7 +90,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             coEvery { synchronizeService.postStartSync(any()) }.returns(DataResult.Failure(Exception("Error synchronizing data")))
 
             // When
-            val result = task.execute(null)
+            val result = task.execute(null,0,10)
 
             // Then
             assert(result is TaskResult.Failure)
@@ -119,7 +119,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             coEvery { synchronizeService.downloadSyncData(matches { it == syncDataStatus.downloadUrl }, matches { true }) }.returns(entitiesFileData)
 
             // When
-            val result = task.execute(null)
+            val result = task.execute(null,0,10)
 
             // Then
             assert(result is TaskResult.Success)
@@ -146,7 +146,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             .returns(false)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Failure)
@@ -186,7 +186,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         HorusDatabase.Schema.create(driver, entitiesScheme)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Success)

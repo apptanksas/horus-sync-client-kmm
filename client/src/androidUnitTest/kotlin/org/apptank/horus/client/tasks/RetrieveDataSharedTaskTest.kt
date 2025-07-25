@@ -63,7 +63,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         every { networkValidator.isNetworkAvailable() }.returns(false)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -86,7 +86,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(recentTimestamp)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -107,7 +107,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         coEvery { syncService.getDataShared() }.returns(DataResult.Failure(Exception("Service error")))
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -131,7 +131,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity1, entity2)))
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -154,7 +154,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity)))
 
         // When/Then
-        task.execute(null)
+        task.execute(null,0,10)
     }
 
     /**
@@ -170,7 +170,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entityWithoutId)))
 
         // When/Then
-        task.execute(null)
+        task.execute(null,0,10)
     }
 
     /**
@@ -186,7 +186,7 @@ class RetrieveDataSharedTaskTest : TestCase() {
         coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity)))
 
         // When/Then
-        task.execute(null)
+        task.execute(null,0,10)
     }
 
     /**

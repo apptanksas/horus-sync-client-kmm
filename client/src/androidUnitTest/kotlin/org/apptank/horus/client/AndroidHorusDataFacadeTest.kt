@@ -127,7 +127,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `validate method onReady`() {
 
         var invoked = false
-        HorusDataFacade.onReady {
+        HorusDataFacade.onReady{
             invoked = true
         }
         EventBus.emit(EventType.ON_READY)

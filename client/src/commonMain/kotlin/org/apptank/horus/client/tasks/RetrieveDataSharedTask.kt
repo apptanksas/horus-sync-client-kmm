@@ -45,7 +45,7 @@ internal class RetrieveDataSharedTask(
      * @param previousDataTask  Result or output of the dependent task (unused).
      * @return [TaskResult.success] always, even on no-op or after completion.
      */
-    override suspend fun execute(previousDataTask: Any?): TaskResult {
+    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
         // Skip if offline
         if (networkValidator.isNetworkAvailable().not()) {
             return TaskResult.success()

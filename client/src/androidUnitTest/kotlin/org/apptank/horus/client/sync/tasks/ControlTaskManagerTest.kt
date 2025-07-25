@@ -25,6 +25,12 @@ import io.mockative.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
+import org.apptank.horus.client.buildSyncDataStatusFromJSON
+import org.apptank.horus.client.eventbus.EventBus
+import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.junit.After
@@ -107,8 +113,17 @@ class ControlTaskManagerTest : TestCase() {
                 )
             )
         )
-
+        val entitiesFileData =
+            DataResult.Success(SyncDTO.Response.FileData(AnySerializer.decoderJSON.encodeToString(entitiesData).toByteArray(), "application/json"))
+        val syncDataStatus = buildSyncDataStatusFromJSON(MOCK_RESPONSE_GET_SYNC_STATUS)
         val taskExecutionCountExpected = 7
+
+        EventBus.register(EventType.ON_PROGRESS_SYNC) {
+            val progress = (it.data?.get("progress") as Int)
+            assert(progress <= 100) {
+                "Progress $progress should not be less than or equal to 100"
+            }
+        }
 
         coEvery { migrationService.getMigration() }.returns(DataResult.Success(entitiesScheme))
         every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) }.returns(null)
@@ -127,6 +142,15 @@ class ControlTaskManagerTest : TestCase() {
         coEvery {
             synchronizationService.getData(any())
         }.returns(DataResult.Success(entitiesData))
+
+        // SynchronizationService mock responses
+        coEvery { synchronizationService.postStartSync(any()) }.returns(DataResult.Success(Unit))
+        coEvery { synchronizationService.getSyncStatus(any()) }.returns(DataResult.Success(syncDataStatus))
+        coEvery {
+            synchronizationService.downloadSyncData(
+                io.mockative.matches { it == syncDataStatus.downloadUrl },
+                io.mockative.matches { true })
+        }.returns(entitiesFileData)
 
         coEvery { synchronizationService.getDataShared() }.returns(DataResult.Success(entitiesData))
 

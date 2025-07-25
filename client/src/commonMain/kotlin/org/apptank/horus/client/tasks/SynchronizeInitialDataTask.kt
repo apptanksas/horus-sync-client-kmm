@@ -38,8 +38,8 @@ internal class SynchronizeInitialDataTask(
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizeService: ISynchronizationService,
     dependsOnTask: ValidateHashingTask,
-    private val pollingTime: Long = 5000L
-) : BaseTask(dependsOnTask) {
+    private val pollingTime: Long = 5000L,
+) : BaseTask(dependsOnTask, weightPercentage = 10) {
 
     private val decoderJSON = Json {
         ignoreUnknownKeys = true
@@ -52,7 +52,7 @@ internal class SynchronizeInitialDataTask(
      * @param previousDataTask Optional data from a previous task. Not used in this task.
      * @return A [TaskResult] indicating success or failure of the task.
      */
-    override suspend fun execute(previousDataTask: Any?): TaskResult {
+    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
         // Check if the initial synchronization has already been completed.
         if (isInitialSynchronizationCompleted()) {
             return TaskResult.success()
@@ -65,7 +65,7 @@ internal class SynchronizeInitialDataTask(
 
         EventBus.emit(EventType.START_SYNCHRONIZATION)
 
-        val dataResult = fetchSyncData()
+        val dataResult = fetchSyncData(weightProgressSum, totalProgressWeight)
 
         // If data retrieval is successful and data is saved, mark the initial synchronization as completed.
         if (dataResult is DataResult.Success && saveData(dataResult.data.toListEntityData()) {
@@ -80,7 +80,7 @@ internal class SynchronizeInitialDataTask(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun fetchSyncData(): DataResult<List<SyncDTO.Response.Entity>> {
+    private suspend fun fetchSyncData(weightProgressSum: Int, totalProgressWeight: Int): DataResult<List<SyncDTO.Response.Entity>> {
         val syncId = Uuid.random().toString()
         val requestStartSync = SyncDTO.Request.StartSyncRequest(syncId)
 
@@ -88,7 +88,8 @@ internal class SynchronizeInitialDataTask(
             is DataResult.Success -> {
                 val syncDataUrl = getSyncDataUrl(syncId)
                 return synchronizeService.downloadSyncData(syncDataUrl) {
-                    EventBus.emit(EventType.ON_PROGRESS_SYNC, Event(mapOf("progress" to it)))
+                    val progress = if (it >= 95) 95 else it // Ensure progress does not exceed 95% to leave room for final processing
+                    emitProgress(weightProgressSum, totalProgressWeight, progress)
                 }.fold(
                     onSuccess = {
                         DataResult.Success(

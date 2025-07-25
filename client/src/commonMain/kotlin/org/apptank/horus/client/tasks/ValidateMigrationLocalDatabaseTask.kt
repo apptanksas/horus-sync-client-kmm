@@ -25,7 +25,7 @@ internal class ValidateMigrationLocalDatabaseTask(
      * @param previousDataTask Data from a previous task. Expected to be a list of [EntityScheme].
      * @return A [TaskResult] indicating success or failure of the task.
      */
-    override suspend fun execute(previousDataTask: Any?): TaskResult {
+    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
 
         // Retrieve the database schema.
         val schema = getDatabaseSchema()

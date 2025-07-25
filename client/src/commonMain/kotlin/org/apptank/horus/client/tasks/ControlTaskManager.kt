@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.extensions.logException
 
 /**
@@ -100,6 +101,10 @@ internal object ControlTaskManager {
     // Counter for tracking the number of tasks executed.
     private var taskExecutionCounter = 0
 
+    private var weightProgressSum = 0
+
+    private val totalProgressWeight: Int get() = tasks.sumOf { it.weightPercentage }
+
     // Callback to be invoked on status change.
     private var onStatus: (Status) -> Unit = {}
 
@@ -182,9 +187,17 @@ internal object ControlTaskManager {
     private suspend fun executeTask(task: Task, data: Any?) {
         onStatus(Status.RUNNING)
         kotlin.runCatching {
+
             taskExecutionCounter++
+
             info("[ControlTask] Executing task: ${task::class.simpleName}")
-            val taskResult = task.execute(data)
+
+            // Execute the task, get result and emit progress.
+            val taskResult = task.execute(data, weightProgressSum, totalProgressWeight).also {
+                weightProgressSum += task.weightPercentage
+                task.emitProgress(weightProgressSum, totalProgressWeight, 100)
+            }
+
             handleTaskResult(findNextTask(task), taskResult)
         }.getOrElse {
             logException("[ControlTask] Error executing task: ${task::class.simpleName}", it)
@@ -245,4 +258,5 @@ internal object ControlTaskManager {
     fun getTaskExecutionCounter(): Int {
         return taskExecutionCounter
     }
+
 }
