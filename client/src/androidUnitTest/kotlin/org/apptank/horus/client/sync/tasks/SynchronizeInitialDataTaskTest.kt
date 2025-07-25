@@ -6,7 +6,6 @@ import org.apptank.horus.client.DATA_SYNC_INITIAL_DATA_TASK
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
-import org.apptank.horus.client.buildEntitiesDataFromJSON
 import org.apptank.horus.client.buildEntitiesSchemeFromJSON
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
@@ -26,9 +25,13 @@ import io.mockative.classOf
 import io.mockative.coEvery
 import io.mockative.coVerify
 import io.mockative.every
+import io.mockative.matches
 import io.mockative.mock
 import io.mockative.verify
 import kotlinx.coroutines.runBlocking
+import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
+import org.apptank.horus.client.buildSyncDataStatusFromJSON
+import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.junit.Before
 import org.junit.Test
 
@@ -83,6 +86,9 @@ class SynchronizeInitialDataTaskTest : TestCase() {
                 .returns(false)
             coEvery { synchronizeService.getData() }.returns(DataResult.Failure(Exception("Error synchronizing data")))
 
+            // SynchronizationService mock responses
+            coEvery { synchronizeService.postStartSync(any()) }.returns(DataResult.Failure(Exception("Error synchronizing data")))
+
             // When
             val result = task.execute(null)
 
@@ -94,18 +100,23 @@ class SynchronizeInitialDataTaskTest : TestCase() {
     fun `when initial synchronization is not completed then synchronize data is success`(): Unit =
         runBlocking {
             // Given
-            val entitiesData =
-                buildEntitiesDataFromJSON(MOCK_RESPONSE_GET_DATA)
+            val entitiesFileData = DataResult.Success(SyncDTO.Response.FileData(MOCK_RESPONSE_GET_DATA.toByteArray(), "application/json"))
+            val syncDataStatus = buildSyncDataStatusFromJSON(MOCK_RESPONSE_GET_SYNC_STATUS)
+
             every { networkValidator.isNetworkAvailable() }.returns(true)
-            every { syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) }
-                .returns(false)
-            coEvery { synchronizeService.getData() }.returns(DataResult.Success(entitiesData))
+            every { syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) }.returns(false)
+
             every {
                 operationDatabaseHelper.insertWithTransaction(
                     any(),
                     callbackMatcher()
                 )
             }.returns(true)
+
+            // SynchronizationService mock responses
+            coEvery { synchronizeService.postStartSync(any()) }.returns(DataResult.Success(Unit))
+            coEvery { synchronizeService.getSyncStatus(any()) }.returns(DataResult.Success(syncDataStatus))
+            coEvery { synchronizeService.downloadSyncData(matches { it == syncDataStatus.downloadUrl }, matches { true }) }.returns(entitiesFileData)
 
             // When
             val result = task.execute(null)
@@ -152,7 +163,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         val operationDatabaseHelper = OperationDatabaseHelper("database", driver)
         val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
 
-        val task =  SynchronizeInitialDataTask(
+        val task = SynchronizeInitialDataTask(
             networkValidator,
             operationDatabaseHelper,
             syncControlDatabaseHelper,
@@ -161,10 +172,16 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         )
 
         val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
-        val entitiesData = buildEntitiesDataFromJSON(DATA_SYNC_INITIAL_DATA_TASK)
+        val entitiesFileData = DataResult.Success(SyncDTO.Response.FileData(DATA_SYNC_INITIAL_DATA_TASK.toByteArray(), "application/json"))
+        val syncDataStatus = buildSyncDataStatusFromJSON(MOCK_RESPONSE_GET_SYNC_STATUS)
 
         every { networkValidator.isNetworkAvailable() }.returns(true)
-        coEvery { synchronizeService.getData() }.returns(DataResult.Success(entitiesData))
+
+        // SynchronizationService mock responses
+        coEvery { synchronizeService.postStartSync(any()) }.returns(DataResult.Success(Unit))
+        coEvery { synchronizeService.getSyncStatus(any()) }.returns(DataResult.Success(syncDataStatus))
+        coEvery { synchronizeService.downloadSyncData(matches { it == syncDataStatus.downloadUrl }, matches { true }) }.returns(entitiesFileData)
+
 
         HorusDatabase.Schema.create(driver, entitiesScheme)
 
@@ -174,8 +191,6 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         // Then
         assert(result is TaskResult.Success)
     }
-
-
 
 
 }

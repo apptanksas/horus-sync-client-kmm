@@ -25,6 +25,10 @@ internal fun buildEntitiesDataFromJSON(json: String): List<SyncDTO.Response.Enti
     return decoder.decodeFromString<List<SyncDTO.Response.Entity>>(json)
 }
 
+internal fun buildSyncDataStatusFromJSON(json: String): SyncDTO.Response.SyncDataStatus {
+    return decoder.decodeFromString<SyncDTO.Response.SyncDataStatus>(json)
+}
+
 @OptIn(ExperimentalUuidApi::class)
 internal fun generateSyncControlFile(
     status: SyncControl.FileStatus? = null,
