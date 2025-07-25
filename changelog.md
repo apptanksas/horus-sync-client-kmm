@@ -25,7 +25,7 @@
 # v0.11.4
 - Fixed issue when truncate entities in refresh readable entities task.
 
-# v0.11.3
+# v0.11.3 
 - Fixed calculate diff in hours.
 
 # v0.11.2
