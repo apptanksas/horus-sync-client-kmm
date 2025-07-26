@@ -128,7 +128,7 @@ internal class SynchronizeInitialDataTask(
             syncStatus.data.downloadUrl?.let {
                 return it
             }
-            progressTask += 1
+            progressTask += 2
             emitProgress(progressTask)
             delay(pollingTime)
             return getSyncDataUrl(syncId) // Retry after a delay if no URL is found

@@ -67,9 +67,17 @@ internal abstract class BaseTask(
      * @return [TaskResult] representing the outcome of the task execution.
      */
     override fun emitProgress(weightProgressSum: Int, totalWeight: Int, taskProgress: Int) {
-        val currentProgress = (weightProgressSum.toFloat() / totalWeight) * 100
-        val totalProgressWithTask = ((weightProgressSum.toFloat() + weightPercentage) / totalWeight) * 100
-        val progress = round(currentProgress + ((totalProgressWithTask - currentProgress) * (taskProgress / 100.0))).toInt()
+        val progress = if (taskProgress == 100) {
+            // Task is completed - weightProgressSum already includes current task's weight
+            val progressAfterTask = (weightProgressSum.toFloat() / totalWeight) * 100
+            round(progressAfterTask).toInt()
+        } else {
+            // Task is in progress - weightProgressSum does NOT include current task's weight yet
+            val progressBeforeTask = (weightProgressSum.toFloat() / totalWeight) * 100
+            val progressAfterTask = ((weightProgressSum + weightPercentage).toFloat() / totalWeight) * 100
+            round(progressBeforeTask + ((progressAfterTask - progressBeforeTask) * (taskProgress / 100.0))).toInt()
+        }.coerceIn(0, 100) // Ensure progress stays between 0% and 100%
+
         EventBus.emit(EventType.ON_PROGRESS_SYNC, Event(mapOf("progress" to progress)))
     }
 }
