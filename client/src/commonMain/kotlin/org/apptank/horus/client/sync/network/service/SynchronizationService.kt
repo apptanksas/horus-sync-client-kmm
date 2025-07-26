@@ -4,7 +4,13 @@ import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.onDownload
+import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.readBytes
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
+import org.apptank.horus.client.base.network.HttpHeader
 
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
@@ -18,6 +24,54 @@ internal class SynchronizationService(
     baseUrl: String,
     customHeaders: Map<String, String> = emptyMap()
 ) : BaseService(engine, baseUrl, customHeaders), ISynchronizationService {
+
+
+    /**
+     * Posts a request to start the synchronization process.
+     */
+    override suspend fun postStartSync(request: SyncDTO.Request.StartSyncRequest): DataResult<Unit> {
+        return post("sync/start", request) { it.serialize() }
+    }
+
+    /**
+     * Retrieves the status of a synchronization process by its ID.
+     *
+     * @param syncId The ID of the synchronization process to check.
+     * @return [DataResult] containing [SyncDTO.Response.SyncDataStatus] if successful.
+     */
+    override suspend fun getSyncStatus(syncId: String): DataResult<SyncDTO.Response.SyncDataStatus> {
+        return get("sync/$syncId") { it.serialize() }
+    }
+
+    /**
+     * Downloads synchronization data from the server.
+     *
+     * @param url The URL to download the sync data from.
+     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     */
+
+    override suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<SyncDTO.Response.FileData> {
+
+        val response: HttpResponse = client.get(url) {
+            onDownload { bytesSentTotal, contentLength ->
+                if (contentLength > 0) {
+                    onProgress(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
+                }
+            }
+        }
+
+        return if (response.status.isSuccess()) {
+            DataResult.Success(
+                SyncDTO.Response.FileData(
+                    response.readBytes(),
+                    response.headers[HttpHeader.CONTENT_TYPE]
+                        ?: throw Exception("Failed to get content type")
+                )
+            )
+        } else {
+            DataResult.Failure(Exception("Failed to download file"))
+        }
+    }
 
     /**
      * Retrieves data from the server, optionally after a specified timestamp.

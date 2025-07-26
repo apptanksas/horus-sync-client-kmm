@@ -1,5 +1,8 @@
 package org.apptank.horus.client.sync.network.service
 
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_ENTITY
 import org.apptank.horus.client.MOCK_RESPONSE_GET_ENTITY_HASHES
@@ -14,10 +17,13 @@ import org.apptank.horus.client.base.fold
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_SHARED
+import org.apptank.horus.client.MOCK_RESPONSE_POST_START_SYNC
+import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.junit.Assert
 import org.junit.Test
 
@@ -501,4 +507,115 @@ class SynchronizationServiceTest : ServiceTest() {
         assertRequestBody(Json.encodeToString(entitiesHash))
         assertRequestHeader("X-Custom-Header", "CustomValue")
     }
+
+    @Test
+    fun postStartSyncIsSuccess() = runBlocking {
+        // Given
+        val request = SyncDTO.Request.StartSyncRequest(
+            id = "sync-123",
+            timestampAfter = timestamp()
+        )
+        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_START_SYNC, status = HttpStatusCode.Created)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.postStartSync(request)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestBody(Json.encodeToString(request))
+    }
+
+    @Test
+    fun postStartSyncIsFailure() = runBlocking {
+        // Given
+        val request = SyncDTO.Request.StartSyncRequest(
+            id = "sync-123",
+            timestampAfter = timestamp()
+        )
+        val mockEngine = createMockResponse("{}", status = HttpStatusCode.InternalServerError)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.postStartSync(request)
+
+        // Then
+        assert(response is DataResult.Failure)
+    }
+
+    @Test
+    fun getSyncStatusIsSuccess() = runBlocking {
+        // Given
+        val syncId = "sync-123"
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_SYNC_STATUS)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.getSyncStatus(syncId)
+
+        // Then
+        assert(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals("sync-123", it.id)
+                Assert.assertEquals("user-456", it.userId)
+                Assert.assertEquals("completed", it.status)
+                Assert.assertEquals(1725044885L, it.resultAt)
+                Assert.assertEquals("https://api.example.com/sync/download/sync-123", it.downloadUrl)
+                Assert.assertEquals("checkpoint-789", it.checkpoint)
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
+    }
+
+    @Test
+    fun getSyncStatusIsFailure() = runBlocking {
+        // Given
+        val syncId = "sync-123"
+        val mockEngine = createMockResponse("{}", status = HttpStatusCode.NotFound)
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.getSyncStatus(syncId)
+
+        // Then
+        assert(response is DataResult.Failure)
+    }
+
+    @Test
+    fun downloadSyncDataIsSuccess() = runBlocking {
+        // Given
+        val url = "https://api.example.com/sync/download/sync-123"
+        val mockData = "sample sync data".toByteArray()
+        val contentType = "application/json"
+        
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = mockData,
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, contentType)
+            )
+        }
+        val service = SynchronizationService(mockEngine, BASE_URL)
+
+        // When
+        val response = service.downloadSyncData(url) { progress ->
+            Assert.assertTrue("Progress should be between 0 and 100", progress in 0..100)
+        }
+
+        // Then
+        assert(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertArrayEquals(mockData, it.data)
+                Assert.assertEquals(contentType, it.mimeType)
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
+    }
+
 }

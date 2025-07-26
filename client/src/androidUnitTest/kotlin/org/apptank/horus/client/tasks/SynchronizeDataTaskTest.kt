@@ -60,7 +60,7 @@ class SynchronizeDataTaskTest : TestCase() {
         every { networkValidator.isNetworkAvailable() }.returns(false)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Success)
@@ -79,7 +79,7 @@ class SynchronizeDataTaskTest : TestCase() {
             .returns(DataResult.Failure(Exception()))
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Failure)
@@ -98,7 +98,7 @@ class SynchronizeDataTaskTest : TestCase() {
             .returns(DataResult.Success(listOf(SyncDTO.Response.SyncAction())))
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Success)

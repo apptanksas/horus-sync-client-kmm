@@ -8,6 +8,33 @@ import org.apptank.horus.client.sync.network.dto.SyncDTO
  */
 interface ISynchronizationService {
 
+
+    /**
+     * Posts a request to start the synchronization process.
+     * This method is typically used to initiate the sync process
+     *
+     * @param request [SyncDTO.Request.StartSyncRequest] containing the sync ID and optional timestamp.
+     */
+    suspend fun postStartSync(request: SyncDTO.Request.StartSyncRequest): DataResult<Unit>
+
+
+    /**
+     * Retrieves the status of a synchronization process by its ID.
+     *
+     * @param syncId The ID of the synchronization process to check.
+     * @return [DataResult] containing [SyncDTO.Response.SyncDataStatus] if successful.
+     */
+    suspend fun getSyncStatus(syncId: String): DataResult<SyncDTO.Response.SyncDataStatus>
+
+    /**
+     * Downloads synchronization data from the server.
+     *
+     * @param url The URL to download the sync data from.
+     * @param onProgress A callback function to report download progress as a percentage.
+     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     */
+    suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<SyncDTO.Response.FileData>
+
     /**
      * Retrieves data from the server, optionally after a specified timestamp.
      *

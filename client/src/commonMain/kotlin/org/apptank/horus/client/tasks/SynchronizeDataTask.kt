@@ -30,7 +30,7 @@ internal class SynchronizeDataTask(
      * @param previousDataTask Optional data from a previous task. Not used in this task.
      * @return A [TaskResult] indicating success or failure of the task.
      */
-    override suspend fun execute(previousDataTask: Any?): TaskResult {
+    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
         // Create a manager for data validation and synchronization.
         val manager = createDataValidatorManager()
 

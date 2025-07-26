@@ -46,7 +46,7 @@ class ValidateHashingTaskTest : TestCase() {
             .returns(true)
 
         // When
-        val result = task.execute(null)
+        val result = task.execute(null,0,10)
 
         // Then
         assert(result is TaskResult.Success)
@@ -65,7 +65,7 @@ class ValidateHashingTaskTest : TestCase() {
                 .returns(DataResult.Failure(Exception("Hashing validation failed")))
 
             // When
-            val result = task.execute(null)
+            val result = task.execute(null,0,10)
 
             // Then
             assert(result is TaskResult.Failure)
@@ -91,7 +91,7 @@ class ValidateHashingTaskTest : TestCase() {
                 )
 
             // When
-            val result = task.execute(null)
+            val result = task.execute(null,0,10)
 
             // Then
             assert(result is TaskResult.Failure)
@@ -117,7 +117,7 @@ class ValidateHashingTaskTest : TestCase() {
                 )
 
             // When
-            val result = task.execute(null)
+            val result = task.execute(null,0,10)
 
             // Then
             assert(result is TaskResult.Success)

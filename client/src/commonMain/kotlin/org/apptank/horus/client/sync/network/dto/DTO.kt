@@ -20,6 +20,20 @@ sealed class SyncDTO {
     sealed class Request {
 
         /**
+         * Request to start the synchronization process.
+         *
+         * @param id Optional synchronization ID.
+         * @param timestampAfter Optional timestamp to get data updated after this time.
+         */
+        @Serializable
+        data class StartSyncRequest(
+            @SerialName("sync_id")
+            val id: String,
+            @SerialName("after")
+            val timestampAfter: Long? = null
+        )
+
+        /**
          * Request to synchronize an action.
          *
          * @param action The type of action (e.g., "INSERT", "UPDATE", "DELETE").
@@ -79,6 +93,16 @@ sealed class SyncDTO {
      * Sealed class representing various types of synchronization responses.
      */
     sealed class Response {
+
+        @Serializable
+        data class SyncDataStatus(
+            @SerialName("id") val id: String,
+            @SerialName("user_id") val userId: String,
+            @SerialName("status") val status: String,
+            @SerialName("result_at") val resultAt: Long? = null,
+            @SerialName("download_url") val downloadUrl: String? = null,
+            @SerialName("checkpoint") val checkpoint: String? = null
+        )
 
         /**
          * Response containing the hash validation result for an entity.

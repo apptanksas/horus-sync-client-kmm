@@ -54,7 +54,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         val countEntitiesExpected = 13
 
         // When
-        val result = task.execute(entitiesScheme)
+        val result = task.execute(entitiesScheme, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -75,10 +75,10 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
             val versionExpected = entitiesSchemeV2.getLastVersion()
 
             // Create database
-            task.execute(entitiesScheme)
+            task.execute(entitiesScheme,0, 10)
 
             // When
-            val result = task.execute(entitiesSchemeV2)
+            val result = task.execute(entitiesSchemeV2,0, 10)
 
             // Then
             Assert.assertTrue(result is TaskResult.Success)
@@ -101,10 +101,10 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
         )
 
         // Create database
-        task.execute(entitiesScheme)
+        task.execute(entitiesScheme,0, 10)
 
         // When
-        val result = task.execute(entitiesScheme)
+        val result = task.execute(entitiesScheme,0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -113,7 +113,7 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     @Test
     fun `when occurred an error then result failure`() = runBlocking {
         // When
-        val result = task.execute(buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1))
+        val result = task.execute(buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1),0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Failure)

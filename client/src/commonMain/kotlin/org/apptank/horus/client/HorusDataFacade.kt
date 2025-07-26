@@ -53,6 +53,7 @@ object HorusDataFacade {
     private var isReady = false
     private var isInitialized = false
     private var onCallbackReady: Callback? = null
+    private var onCallbackSyncProgress: ((Int) -> Unit)? = null
 
     private var changeListeners: MutableList<DataChangeListener> = mutableListOf()
 
@@ -149,12 +150,20 @@ object HorusDataFacade {
      *
      * @param callback The callback to be invoked when the facade is ready.
      */
-    fun onReady(callback: Callback) {
+    fun onReady(callback: Callback, onSyncProgress: ((Int) -> Unit)? = null) {
         onCallbackReady = callback
+        onCallbackSyncProgress = onSyncProgress
 
         if (isReady) {
             callOnReady()
         }
+    }
+
+    /**
+     * Calls the onReady callback if the facade is ready.
+     */
+    fun onReady(callback: Callback) {
+        onReady(callback, null)
     }
 
     /**
@@ -1087,6 +1096,11 @@ object HorusDataFacade {
                     listener.onDelete(entity, it as String)
                 }
             }
+        }
+
+        // Notify listeners when a synchronization progress is made
+        EventBus.register(EventType.ON_PROGRESS_SYNC) {
+            onCallbackSyncProgress?.invoke(it.data?.get("progress") as? Int ?: 0)
         }
     }
 

@@ -14,6 +14,16 @@ data class Event(val data: DataMap? = null)
  */
 enum class EventType {
     /**
+     * Event type indicating that synchronization has started.
+     */
+    START_SYNCHRONIZATION,
+
+    /**
+     * Event type indicating that synchronization has completed.
+     */
+    ON_PROGRESS_SYNC,
+
+    /**
      * Event type indicating that the client is ready to start synchronization.
      */
     ON_READY,

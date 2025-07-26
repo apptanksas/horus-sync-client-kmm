@@ -3066,3 +3066,20 @@ const val MOCK_RESPONSE_FILES_INFO = """
 """
 
 const val MOCK_RESPONSE_UPLOAD_FILE = MOCK_RESPONSE_FILE_INFO
+
+const val MOCK_RESPONSE_POST_START_SYNC = """
+{
+    "sync_id": "fb2c8bb1-a8ef-49fa-a8dc-69133ff3567e"
+}
+"""
+
+const val MOCK_RESPONSE_GET_SYNC_STATUS = """
+{
+  "id": "sync-123",
+  "user_id": "user-456",
+  "status": "completed",
+  "result_at": 1725044885,
+  "download_url": "https://api.example.com/sync/download/sync-123",
+  "checkpoint": "checkpoint-789"
+}
+"""

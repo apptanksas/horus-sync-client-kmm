@@ -28,7 +28,7 @@ internal class ValidateHashingTask(
      * @param previousDataTask Optional data from a previous task. Not used in this task.
      * @return A [TaskResult] indicating success or failure of the task.
      */
-    override suspend fun execute(previousDataTask: Any?): TaskResult {
+    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
         // Check if the hashing validation has already been completed.
         if (isValidationHashingCompleted()) {
             return TaskResult.success()
