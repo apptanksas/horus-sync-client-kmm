@@ -3,6 +3,7 @@ package org.apptank.horus.client.tasks
 import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.extensions.info
 import kotlin.math.round
 
 
@@ -67,7 +68,7 @@ internal abstract class BaseTask(
      */
     override fun emitProgress(weightProgressSum: Int, totalWeight: Int, taskProgress: Int) {
         val currentProgress = (weightProgressSum.toFloat() / totalWeight) * 100
-        val totalProgressWithTask = (weightProgressSum.toFloat() / totalWeight) * 100
+        val totalProgressWithTask = ((weightProgressSum.toFloat() + weightPercentage) / totalWeight) * 100
         val progress = round(currentProgress + ((totalProgressWithTask - currentProgress) * (taskProgress / 100.0))).toInt()
         EventBus.emit(EventType.ON_PROGRESS_SYNC, Event(mapOf("progress" to progress)))
     }

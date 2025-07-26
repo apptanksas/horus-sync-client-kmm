@@ -133,6 +133,7 @@ internal object ControlTaskManager {
         }
 
         taskExecutionCounter = 0
+        weightProgressSum = 0
 
         scope.apply {
             val job = launch(dispatcher) {

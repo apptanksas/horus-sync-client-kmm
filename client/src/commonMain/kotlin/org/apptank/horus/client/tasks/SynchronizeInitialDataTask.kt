@@ -59,6 +59,7 @@ internal class SynchronizeInitialDataTask(
 
         this.weightProgressSum = weightProgressSum
         this.totalProgressWeight = totalProgressWeight
+        this.progressTask = 0
 
         // Check if the initial synchronization has already been completed.
         if (isInitialSynchronizationCompleted()) {
@@ -127,7 +128,7 @@ internal class SynchronizeInitialDataTask(
             syncStatus.data.downloadUrl?.let {
                 return it
             }
-            progressTask++
+            progressTask += 1
             emitProgress(progressTask)
             delay(pollingTime)
             return getSyncDataUrl(syncId) // Retry after a delay if no URL is found
