@@ -31,7 +31,6 @@ import okio.Path.Companion.toPath
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.MOCK_RESPONSE_SYNC_DATA_FILE
 import org.apptank.horus.client.buildSyncDataStatusFromJSON
-import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.junit.Before
 import org.junit.Test
 import kotlin.random.Random
@@ -194,7 +193,7 @@ class SynchronizeInitialDataTaskTest : TestCase() {
 
     private suspend fun mockDownloadSyncData(url: String?) {
         val filename = "sync_data_" + (Random.nextUInt()) + ".ndjson"
-        val pathFile = getHorusConfigTest().uploadFilesConfig.baseStoragePath + filename
+        val pathFile = getLocalTestPath(filename)
         val path = createFileInLocalStorage(pathFile, MOCK_RESPONSE_SYNC_DATA_FILE).toPath()
 
         coEvery { synchronizeService.downloadSyncData(matches { it == url }, matches { true }) }.returns(

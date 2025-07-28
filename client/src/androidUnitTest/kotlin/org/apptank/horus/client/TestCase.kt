@@ -65,6 +65,7 @@ abstract class TestCase {
     private fun File.removeAll() {
         if (this.isDirectory) {
             this.listFiles()?.forEach { it.removeAll() }
+            this.deleteRecursively()
         }
         if (exists()) {
             this.delete()
