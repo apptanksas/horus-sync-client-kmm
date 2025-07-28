@@ -199,12 +199,7 @@ internal class SynchronizeInitialDataTask(
 
         return generateSequence {
             source.readUtf8Line()?.let { line ->
-                try {
-                    decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
-                } catch (e: Exception) {
-                    logException("Error decoding entity from line: $line", e)
-                    null
-                }
+                decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
             }
         }
     }
