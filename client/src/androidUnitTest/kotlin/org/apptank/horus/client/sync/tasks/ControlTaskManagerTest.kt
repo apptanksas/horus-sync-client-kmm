@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
+import okio.Path.Companion.toPath
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.buildSyncDataStatusFromJSON
 import org.apptank.horus.client.eventbus.EventBus
@@ -39,6 +40,8 @@ import org.junit.Before
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runners.MethodSorters
+import kotlin.random.Random
+import kotlin.random.nextUInt
 import kotlin.test.fail
 
 
@@ -113,10 +116,11 @@ class ControlTaskManagerTest : TestCase() {
                 )
             )
         )
-        val entitiesFileData =
-            DataResult.Success(SyncDTO.Response.FileData(AnySerializer.decoderJSON.encodeToString(entitiesData).toByteArray(), "application/json"))
         val syncDataStatus = buildSyncDataStatusFromJSON(MOCK_RESPONSE_GET_SYNC_STATUS)
         val taskExecutionCountExpected = 7
+        val filename = "sync_data_" + (Random.nextUInt()) + ".ndjson"
+        val pathFile = getHorusConfigTest().uploadFilesConfig.baseStoragePath + filename
+        val path = createFileInLocalStorage(pathFile, entitiesData.map { AnySerializer.decoderJSON.encodeToString(it) }.joinToString("\n")).toPath()
 
         EventBus.register(EventType.ON_PROGRESS_SYNC) {
             val progress = (it.data?.get("progress") as Int)
@@ -150,7 +154,11 @@ class ControlTaskManagerTest : TestCase() {
             synchronizationService.downloadSyncData(
                 io.mockative.matches { it == syncDataStatus.downloadUrl },
                 io.mockative.matches { true })
-        }.returns(entitiesFileData)
+        }.returns(
+            DataResult.Success(
+                path
+            )
+        )
 
         coEvery { synchronizationService.getDataShared() }.returns(DataResult.Success(entitiesData))
 

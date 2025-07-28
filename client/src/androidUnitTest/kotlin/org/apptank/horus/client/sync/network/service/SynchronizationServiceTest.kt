@@ -34,7 +34,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getDataIsSuccess() = runBlocking {
         // Given
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getData()
         // Then
@@ -59,7 +59,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val timestampAfter = timestamp()
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getData(timestampAfter)
         // Then
@@ -71,7 +71,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getDataIsFailure() = runBlocking {
         // Given
         val mockEngine = createMockResponse("{}", status = HttpStatusCode.InternalServerError)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getData()
         // Then
@@ -82,7 +82,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getDataEntityIsSuccess() = runBlocking {
         // Given
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getDataEntity("products")
         // Then
@@ -104,7 +104,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val ids = generateRandomArray { uuid() }.map { it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getDataEntity("products", ids = ids)
         // Then
@@ -118,7 +118,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val timestampAfter = timestamp()
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_ENTITY)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getDataEntity("products", timestampAfter)
         // Then
@@ -153,7 +153,7 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.postQueueActions(actions)
         // Then
@@ -176,14 +176,14 @@ class SynchronizationServiceTest : ServiceTest() {
     fun postQueueActionsChunked() = runBlocking {
 
         // Given
-        val actions = generateArray (1000) {
+        val actions = generateArray(1000) {
             SyncDTO.Request.SyncActionRequest(
                 SyncControl.ActionType.INSERT.name, "products", mapOf(
                     "id" to uuid(),
                     "name" to "Product  ${uuid()}"
                 ), timestamp() - (it * 60)
             )
-        } +  generateArray (1000) {
+        } + generateArray(1000) {
             SyncDTO.Request.SyncActionRequest(
                 SyncControl.ActionType.UPDATE.name, "products", mapOf(
                     "id" to uuid(),
@@ -198,7 +198,7 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.postQueueActions(actions)
         // Then
@@ -209,7 +209,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getQueueActionsDefault() = runBlocking {
         // Given
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         val countExpected = 7
         // When
         val response = service.getQueueActions()
@@ -240,7 +240,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val timestampAfter = timestamp()
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getQueueActions(timestampAfter)
         // Then
@@ -254,7 +254,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val exclude = generateRandomArray { timestamp() + it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getQueueActions(exclude = exclude)
         // Then
@@ -269,7 +269,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val timestampAfter = timestamp()
         val exclude = generateRandomArray { timestamp() + it }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getQueueActions(timestampAfter, exclude)
         // Then
@@ -285,7 +285,7 @@ class SynchronizationServiceTest : ServiceTest() {
         val excludeTimestamp = timestamp()
         val exclude = generateArray(10) { excludeTimestamp }
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getQueueActions(timestampAfter, exclude)
         // Then
@@ -303,7 +303,7 @@ class SynchronizationServiceTest : ServiceTest() {
             SyncDTO.Request.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.postValidateEntitiesData(entitiesHash)
@@ -340,7 +340,7 @@ class SynchronizationServiceTest : ServiceTest() {
             MOCK_RESPONSE_INTERNAL_SERVER_ERROR,
             status = HttpStatusCode.InternalServerError
         )
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.postValidateEntitiesData(entitiesHash)
         // Then
@@ -356,7 +356,7 @@ class SynchronizationServiceTest : ServiceTest() {
         )
         val request = SyncDTO.Request.ValidateHashingRequest(data, "hash1")
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_HASHING)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.postValidateHashing(request)
         // Then
@@ -378,7 +378,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getLastQueueAction() = runBlocking {
         // Given
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_LAST_QUEUE_ACTION)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getLastQueueAction()
         // Then
@@ -402,7 +402,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getLastQueueActionIsEmptyWithObjectEmpty() = runBlocking {
         // Given
         val mockEngine = createMockResponse("{}")
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getLastQueueAction()
         // Then
@@ -413,7 +413,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getLastQueueActionIsEmptyWithArrayEmpty() = runBlocking {
         // Given
         val mockEngine = createMockResponse("[]")
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getLastQueueAction()
         // Then
@@ -425,7 +425,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val entity = "entity123"
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_ENTITY_HASHES)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getEntityHashes(entity)
         // Then
@@ -448,7 +448,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val entity = "entity123"
         val mockEngine = createMockResponse("[]")
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getEntityHashes(entity)
         // Then
@@ -463,7 +463,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val entity = "entity123"
         val mockEngine = createMockResponse("{}")
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         // When
         val response = service.getEntityHashes(entity)
         // Then
@@ -477,7 +477,7 @@ class SynchronizationServiceTest : ServiceTest() {
     fun getDataSharedIsSuccess() = runBlocking {
         // Given
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_DATA_SHARED)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.getDataShared()
@@ -497,7 +497,7 @@ class SynchronizationServiceTest : ServiceTest() {
             SyncDTO.Request.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
-        val service = SynchronizationService(mockEngine, BASE_URL, customHeaders = mapOf("X-Custom-Header" to "CustomValue"))
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, customHeaders = mapOf("X-Custom-Header" to "CustomValue"))
 
         // When
         val response = service.postValidateEntitiesData(entitiesHash)
@@ -516,7 +516,7 @@ class SynchronizationServiceTest : ServiceTest() {
             timestampAfter = timestamp()
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_START_SYNC, status = HttpStatusCode.Created)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.postStartSync(request)
@@ -534,7 +534,7 @@ class SynchronizationServiceTest : ServiceTest() {
             timestampAfter = timestamp()
         )
         val mockEngine = createMockResponse("{}", status = HttpStatusCode.InternalServerError)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.postStartSync(request)
@@ -548,7 +548,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val syncId = "sync-123"
         val mockEngine = createMockResponse(MOCK_RESPONSE_GET_SYNC_STATUS)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.getSyncStatus(syncId)
@@ -561,7 +561,7 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.assertEquals("user-456", it.userId)
                 Assert.assertEquals("completed", it.status)
                 Assert.assertEquals(1725044885L, it.resultAt)
-                Assert.assertEquals("https://api.example.com/sync/download/sync-123", it.downloadUrl)
+                Assert.assertEquals("https://cg-storage.nyc3.digitaloceanspaces.com/horus/upload/sync/ef2ef583-2f61-4386-bea2-ab5d3de8529b.json?response-content-type=application%2Fjson&response-content-disposition=attachment%3B%20filename%3D%22ef2ef583-2f61-4386-bea2-ab5d3de8529b.json%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801YJBHWCCPVJ3H7FN%2F20250727%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20250727T201717Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=fe5da1c891d0577fbbc4db7f2fca2f2f5ae6607b4c74852646778a21c9f56461", it.downloadUrl)
                 Assert.assertEquals("checkpoint-789", it.checkpoint)
             },
             onFailure = {
@@ -575,7 +575,7 @@ class SynchronizationServiceTest : ServiceTest() {
         // Given
         val syncId = "sync-123"
         val mockEngine = createMockResponse("{}", status = HttpStatusCode.NotFound)
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.getSyncStatus(syncId)
@@ -587,10 +587,11 @@ class SynchronizationServiceTest : ServiceTest() {
     @Test
     fun downloadSyncDataIsSuccess() = runBlocking {
         // Given
-        val url = "https://api.example.com/sync/download/sync-123"
+        val url =
+            "https://cg-storage.nyc3.digitaloceanspaces.com/horus/upload/sync/ef2ef583-2f61-4386-bea2-ab5d3de8529b.json?response-content-type=application%2Fjson&response-content-disposition=attachment%3B%20filename%3D%22ef2ef583-2f61-4386-bea2-ab5d3de8529b.json%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801YJBHWCCPVJ3H7FN%2F20250727%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20250727T201717Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=fe5da1c891d0577fbbc4db7f2fca2f2f5ae6607b4c74852646778a21c9f56461"
         val mockData = "sample sync data".toByteArray()
         val contentType = "application/json"
-        
+
         val mockEngine = MockEngine { _ ->
             respond(
                 content = mockData,
@@ -598,7 +599,7 @@ class SynchronizationServiceTest : ServiceTest() {
                 headers = headersOf(HttpHeaders.ContentType, contentType)
             )
         }
-        val service = SynchronizationService(mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
         val response = service.downloadSyncData(url) { progress ->
@@ -607,15 +608,6 @@ class SynchronizationServiceTest : ServiceTest() {
 
         // Then
         assert(response is DataResult.Success)
-        response.fold(
-            onSuccess = {
-                Assert.assertArrayEquals(mockData, it.data)
-                Assert.assertEquals(contentType, it.mimeType)
-            },
-            onFailure = {
-                Assert.fail("Error")
-            }
-        )
     }
 
 }

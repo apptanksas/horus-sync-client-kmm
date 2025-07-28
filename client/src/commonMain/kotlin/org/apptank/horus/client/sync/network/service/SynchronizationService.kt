@@ -7,10 +7,20 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.readBytes
-import io.ktor.http.isSuccess
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.ByteReadChannel
+import io.matthewnelson.kmp.file.File
+import io.matthewnelson.kmp.file.SysDirSep
+import io.matthewnelson.kmp.file.path
+import io.matthewnelson.kmp.file.resolve
 import kotlinx.coroutines.delay
-import org.apptank.horus.client.base.network.HttpHeader
+import org.apptank.horus.client.config.HorusConfig
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
+import okio.SYSTEM
+import okio.buffer
+import okio.use
 
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
@@ -20,6 +30,7 @@ import org.apptank.horus.client.base.network.HttpHeader
  * @param customHeaders Optional custom headers to include in the requests.
  */
 internal class SynchronizationService(
+    private val config: HorusConfig,
     engine: HttpClientEngine,
     baseUrl: String,
     customHeaders: Map<String, String> = emptyMap()
@@ -47,10 +58,10 @@ internal class SynchronizationService(
      * Downloads synchronization data from the server.
      *
      * @param url The URL to download the sync data from.
-     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     * @return [DataResult] containing the downloaded data as a path file [String] if successful.
      */
 
-    override suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<SyncDTO.Response.FileData> {
+    override suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<Path> {
 
         val response: HttpResponse = client.get(url) {
             onDownload { bytesSentTotal, contentLength ->
@@ -60,16 +71,28 @@ internal class SynchronizationService(
             }
         }
 
-        return if (response.status.isSuccess()) {
-            DataResult.Success(
-                SyncDTO.Response.FileData(
-                    response.readBytes(),
-                    response.headers[HttpHeader.CONTENT_TYPE]
-                        ?: throw Exception("Failed to get content type")
-                )
-            )
-        } else {
-            DataResult.Failure(Exception("Failed to download file"))
+        val fileSystem = FileSystem.SYSTEM
+        val fileName = extractFileName(url)
+        val temporalFile: File = getTemporalFile(fileName)
+        val destinationPath = temporalFile.path.toPath(true)
+        val channel: ByteReadChannel = response.bodyAsChannel()
+
+        fileSystem.sink(destinationPath).buffer().use { sink ->
+            val buffer = ByteArray(8 * 1024)
+            while (!channel.isClosedForRead) {
+                val bytesRead = channel.readAvailable(buffer, 0, buffer.size)
+                if (bytesRead > 0) {
+                    sink.write(buffer, 0, bytesRead)
+                }
+            }
+        }
+
+        return destinationPath.let { path ->
+            if (fileSystem.exists(path)) {
+                DataResult.Success(path)
+            } else {
+                DataResult.Failure(Exception("Failed to download synchronization data"))
+            }
         }
     }
 
@@ -196,6 +219,31 @@ internal class SynchronizationService(
      */
     override suspend fun getDataShared(): DataResult<List<SyncDTO.Response.Entity>> {
         return get("shared") { it.serialize() }
+    }
+
+    // -----------------------------------------
+    // PRIVATE METHODS
+    // ------------------------------------------
+
+    private fun getTemporalFile(filename: String): File {
+        val basePath = File(normalizePath(config.uploadFilesConfig.baseStoragePath + HORUS_PATH_FILES))
+
+        if (!basePath.exists()) {
+            basePath.mkdirs()
+        }
+        return basePath.resolve(filename)
+    }
+
+    private fun extractFileName(url: String): String {
+        return url.substringAfterLast('/').substringBefore("?")
+    }
+
+    private fun normalizePath(path: String): String {
+        return path.replace("/", SysDirSep.toString())
+    }
+
+    internal companion object {
+        const val HORUS_PATH_FILES = "horus/sync/service"
     }
 
 }

@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.kotlin.crypto)
             implementation(libs.storage.settings)
             implementation(libs.storage.files)
+            implementation("com.squareup.okio:okio:3.9.1")
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)

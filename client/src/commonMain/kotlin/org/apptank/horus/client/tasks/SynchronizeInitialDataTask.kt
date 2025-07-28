@@ -3,6 +3,11 @@ package org.apptank.horus.client.tasks
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
+import okio.FileSystem
+import okio.Path
+import okio.SYSTEM
+import okio.buffer
+import okio.use
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.fold
@@ -14,6 +19,7 @@ import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.dto.toListEntityData
@@ -76,11 +82,19 @@ internal class SynchronizeInitialDataTask(
         val dataResult = fetchSyncData()
 
         // If data retrieval is successful and data is saved, mark the initial synchronization as completed.
-        if (dataResult is DataResult.Success && saveData(dataResult.data.toListEntityData()) {
-                // Complete initial synchronization when data is saved
+        if (dataResult is DataResult.Success) {
+
+            val completionRecords = mutableListOf<Boolean>()
+
+            for (data in dataResult.data) {
+                completionRecords.add(saveData(listOf(data).toListEntityData()) {})
+            }
+
+            if (completionRecords.all { it }) {
                 completeInitialSynchronization()
-            }) {
-            return TaskResult.success()
+                return TaskResult.success()
+            }
+
         }
 
         // Return failure if data retrieval or saving fails.
@@ -88,7 +102,7 @@ internal class SynchronizeInitialDataTask(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun fetchSyncData(): DataResult<List<SyncDTO.Response.Entity>> {
+    private suspend fun fetchSyncData(): DataResult<Sequence<SyncDTO.Response.Entity>> {
         val syncId = Uuid.random().toString()
         val requestStartSync = SyncDTO.Request.StartSyncRequest(syncId)
 
@@ -99,9 +113,7 @@ internal class SynchronizeInitialDataTask(
                     emitProgress(it + progressTask)
                 }.fold(
                     onSuccess = {
-                        DataResult.Success(
-                            decoderJSON.decodeFromString(it.data.decodeToString())
-                        )
+                        DataResult.Success(streamEntitiesFromFile(it))
                     },
                     onFailure = {
                         return@fold DataResult.Failure(it)
@@ -179,6 +191,22 @@ internal class SynchronizeInitialDataTask(
             return
         }
         emitProgress(weightProgressSum, totalProgressWeight, progress)
+    }
+
+    private fun streamEntitiesFromFile(path: Path): Sequence<SyncDTO.Response.Entity> {
+        val fileSystem = FileSystem.SYSTEM
+        val source = fileSystem.source(path).buffer()
+
+        return generateSequence {
+            source.readUtf8Line()?.let { line ->
+                try {
+                    decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
+                } catch (e: Exception) {
+                    logException("Error decoding entity from line: $line", e)
+                    null
+                }
+            }
+        }
     }
 
     companion object {

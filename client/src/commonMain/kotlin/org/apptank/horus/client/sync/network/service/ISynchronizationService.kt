@@ -1,5 +1,6 @@
 package org.apptank.horus.client.sync.network.service
 
+import okio.Path
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 
@@ -31,9 +32,9 @@ interface ISynchronizationService {
      *
      * @param url The URL to download the sync data from.
      * @param onProgress A callback function to report download progress as a percentage.
-     * @return [DataResult] containing a list of [SyncDTO.Response.Entity] if successful.
+     * @return [DataResult] containing the downloaded data as a path file [String] if successful.
      */
-    suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<SyncDTO.Response.FileData>
+    suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<Path>
 
     /**
      * Retrieves data from the server, optionally after a specified timestamp.
