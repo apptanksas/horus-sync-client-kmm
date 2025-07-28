@@ -1,19 +1,21 @@
 package org.apptank.horus.client.sync.network.service
 
+import io.ktor.client.call.body
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.network.BaseService
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.plugins.onDownload
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.request.prepareGet
+import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.exhausted
+import io.ktor.utils.io.readRemaining
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.SysDirSep
 import io.matthewnelson.kmp.file.path
 import io.matthewnelson.kmp.file.resolve
 import kotlinx.coroutines.delay
+import kotlinx.io.readByteArray
 import org.apptank.horus.client.config.HorusConfig
 import okio.FileSystem
 import okio.Path
@@ -21,6 +23,7 @@ import okio.Path.Companion.toPath
 import okio.SYSTEM
 import okio.buffer
 import okio.use
+import org.apptank.horus.client.extensions.info
 
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
@@ -63,29 +66,31 @@ internal class SynchronizationService(
 
     override suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<Path> {
 
-        val response: HttpResponse = client.get(url) {
-            onDownload { bytesSentTotal, contentLength ->
-                if (contentLength > 0) {
-                    onProgress(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
-                }
-            }
-        }
-
         val fileSystem = FileSystem.SYSTEM
         val fileName = extractFileName(url)
         val temporalFile: File = getTemporalFile(fileName)
         val destinationPath = temporalFile.path.toPath(true)
-        val channel: ByteReadChannel = response.bodyAsChannel()
+        var downloadedBytes = 0L
 
-        fileSystem.sink(destinationPath).buffer().use { sink ->
-            val buffer = ByteArray(8 * 1024)
-            while (!channel.isClosedForRead) {
-                val bytesRead = channel.readAvailable(buffer, 0, buffer.size)
-                if (bytesRead > 0) {
-                    sink.write(buffer, 0, bytesRead)
+        httpStreamClient.prepareGet(url).execute { httpResponse ->
+
+            val channel: ByteReadChannel = httpResponse.body()
+
+            info("[SynchronizationService] Downloading synchronization data from $url to $destinationPath")
+
+            val contentLength = httpResponse.contentLength() ?: -1L
+
+            fileSystem.sink(destinationPath).buffer().use { sink ->
+                while (!channel.exhausted()) {
+                    val bytesRead = channel.readRemaining(8 * 1024).readByteArray()
+                    downloadedBytes += bytesRead.size
+                    sink.write(bytesRead)
+                    onProgress(((downloadedBytes / contentLength.toDouble()) * 100).toInt())
                 }
             }
         }
+
+        info("[SynchronizationService] Download completed: $destinationPath")
 
         return destinationPath.let { path ->
             if (fileSystem.exists(path)) {

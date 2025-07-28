@@ -19,6 +19,7 @@ import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.sync.network.dto.SyncDTO
@@ -87,6 +88,7 @@ internal class SynchronizeInitialDataTask(
             val completionRecords = mutableListOf<Boolean>()
 
             for (data in dataResult.data) {
+                info("[SynchronizeInitialDataTask] Processing entity: ${data.entity}")
                 completionRecords.add(saveData(listOf(data).toListEntityData()) {})
             }
 
@@ -130,7 +132,6 @@ internal class SynchronizeInitialDataTask(
             }
         }
     }
-
 
     private suspend fun getSyncDataUrl(syncId: String): String {
 
@@ -195,11 +196,13 @@ internal class SynchronizeInitialDataTask(
 
     private fun streamEntitiesFromFile(path: Path): Sequence<SyncDTO.Response.Entity> {
         val fileSystem = FileSystem.SYSTEM
-        val source = fileSystem.source(path).buffer()
 
-        return generateSequence {
-            source.readUtf8Line()?.let { line ->
-                decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
+        fileSystem.source(path).buffer().use { source ->
+            return generateSequence {
+                source.readUtf8Line()?.let { line ->
+                    info("[SynchronizeInitialDataTask] streamEntitiesFromFile: Read line --- ")
+                    decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
+                }
             }
         }
     }

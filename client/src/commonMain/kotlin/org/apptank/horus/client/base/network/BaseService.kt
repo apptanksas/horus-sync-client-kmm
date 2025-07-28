@@ -53,6 +53,10 @@ internal abstract class BaseService(
     // JSON decoder configured to ignore unknown keys
     val decoderJson = Json { ignoreUnknownKeys = true }
 
+    init {
+        info("[ENGINE] Using engine: ${engine::class.simpleName}")
+    }
+
     // HttpClient instance configured with content negotiation for JSON
     protected val client = HttpClient(engine) {
         install(ContentNegotiation) {
@@ -70,6 +74,23 @@ internal abstract class BaseService(
             requestTimeoutMillis = 60L * 1000 // 60 secs
             socketTimeoutMillis = 60L * 1000 // 60 secs
             connectTimeoutMillis = 60L * 1000 // 60 secs
+        }
+    }
+
+    val httpStreamClient = HttpClient(engine) {
+        install(HttpTimeout) {
+            val timeout = 60L * 10 * 1000L // 10 minutes
+            requestTimeoutMillis = timeout
+            socketTimeoutMillis = timeout
+            connectTimeoutMillis = timeout
+        }
+        install(Logging) {
+            logger = object : Logger {
+                override fun log(message: String) {
+                    info(message)
+                }
+            }
+            level = LogLevel.ALL
         }
     }
 
@@ -150,6 +171,9 @@ internal abstract class BaseService(
                 }))
                 setupHeaders(this)
                 onUpload { bytesSentTotal, contentLength ->
+
+                    contentLength ?: return@onUpload
+
                     if (contentLength > 0) {
                         onProgressUpload(((bytesSentTotal.toDouble() / contentLength.toDouble()) * 100).toInt())
                     }
