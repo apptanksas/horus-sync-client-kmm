@@ -1,14 +1,15 @@
 package org.apptank.horus.client.tasks
 
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
+import okio.BufferedSource
 import okio.FileSystem
 import okio.Path
 import okio.SYSTEM
 import okio.buffer
-import okio.use
-import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.fold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -55,6 +56,7 @@ internal class SynchronizeInitialDataTask(
     private var weightProgressSum: Int = 0
     private var totalProgressWeight: Int = 0
     private var progressTask: Int = 0
+    private var source: BufferedSource? = null
 
     /**
      * Executes the task to perform the initial data synchronization.
@@ -88,23 +90,25 @@ internal class SynchronizeInitialDataTask(
             val completionRecords = mutableListOf<Boolean>()
 
             for (data in dataResult.data) {
-                info("[SynchronizeInitialDataTask] Processing entity: ${data.entity}")
-                completionRecords.add(saveData(listOf(data).toListEntityData()) {})
+                completionRecords.add(saveData(data.toListEntityData()))
             }
 
             if (completionRecords.all { it }) {
+                source?.close()
                 completeInitialSynchronization()
                 return TaskResult.success()
             }
 
         }
 
+        source?.close()
+
         // Return failure if data retrieval or saving fails.
         return TaskResult.failure(Exception("Error synchronizing data"))
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun fetchSyncData(): DataResult<Sequence<SyncDTO.Response.Entity>> {
+    private suspend fun fetchSyncData(): DataResult<Sequence<List<SyncDTO.Response.Entity>>> {
         val syncId = Uuid.random().toString()
         val requestStartSync = SyncDTO.Request.StartSyncRequest(syncId)
 
@@ -112,7 +116,7 @@ internal class SynchronizeInitialDataTask(
             is DataResult.Success -> {
                 val syncDataUrl = getSyncDataUrl(syncId)
                 return synchronizeService.downloadSyncData(syncDataUrl) {
-                    emitProgress(it + progressTask)
+                    emitProgress(it + progressTask, FRAGMENT_PROGRESS_DOWNLOAD_FILE)
                 }.fold(
                     onSuccess = {
                         DataResult.Success(streamEntitiesFromFile(it))
@@ -138,11 +142,16 @@ internal class SynchronizeInitialDataTask(
         val syncStatus = synchronizeService.getSyncStatus(syncId)
 
         if (syncStatus is DataResult.Success) {
+
+            if (syncStatus.data.status == "failed") {
+                throw IllegalStateException("Synchronization failed with status: ${syncStatus.data.status}")
+            }
+
             syncStatus.data.downloadUrl?.let {
                 return it
             }
-            progressTask += 2
-            emitProgress(progressTask)
+            progressTask += 1
+            emitProgress(progressTask, FRAGMENT_PROGRESS_GENERATE_SYNC_DATA)
             delay(pollingTime)
             return getSyncDataUrl(syncId) // Retry after a delay if no URL is found
         }
@@ -157,11 +166,9 @@ internal class SynchronizeInitialDataTask(
      * @param postCreated Callback function to be called after data is saved.
      * @return True if the data was successfully saved, false otherwise.
      */
-    private fun saveData(entities: List<Horus.Entity>, postCreated: Callback): Boolean {
-        val operations = entities.flatMap { it.toRecordsInsert() }.reversed()
-        return operationDatabaseHelper.insertWithTransaction(operations) {
-            postCreated()
-        }
+    private fun saveData(entities: List<Horus.Entity>): Boolean {
+        val operations = entities.flatMap { it.toRecordsInsert() }
+        return operationDatabaseHelper.insertWithTransaction(operations)
     }
 
     /**
@@ -187,27 +194,49 @@ internal class SynchronizeInitialDataTask(
         )
     }
 
-    private fun emitProgress(progress: Int) {
-        if (progress > LIMIT_PROGRESS_MAX) {
+    private fun emitProgress(progress: Int, maxChunk: Int) {
+        if (progress > maxChunk) {
             return
         }
         emitProgress(weightProgressSum, totalProgressWeight, progress)
     }
 
-    private fun streamEntitiesFromFile(path: Path): Sequence<SyncDTO.Response.Entity> {
+    private fun streamEntitiesFromFile(path: Path): Sequence<List<SyncDTO.Response.Entity>> {
         val fileSystem = FileSystem.SYSTEM
+        val totalSize = fileSystem.metadata(path).size ?: 0L
+        var readBytes = 0L
+        var countLines = 0
+        var progressTask = FRAGMENT_PROGRESS_DOWNLOAD_FILE
 
-        fileSystem.source(path).buffer().use { source ->
-            return generateSequence {
-                source.readUtf8Line()?.let { line ->
-                    info("[SynchronizeInitialDataTask] streamEntitiesFromFile: Read line --- ")
-                    decoderJSON.decodeFromString<SyncDTO.Response.Entity>(line)
-                }
+        source = fileSystem.source(path).buffer()
+
+        return generateSequence {
+            val line = source?.readUtf8Line() ?: return@generateSequence null
+            val lineBytes = line.toByteArray(Charsets.UTF_8).size.toLong()
+            readBytes += lineBytes
+            countLines++
+
+            if (countLines % (BATCH_SIZE * 5) == 0) {
+                val progress = ((readBytes.toDouble() / totalSize) * 100).toInt()
+                info("[SynchronizeInitialDataTask] Reading data... Lines:$countLines Progress: $progress%")
+                progressTask += 1
+                emitProgress(progressTask, FRAGMENT_PROGRESS_MIGRATE_DATA)
             }
-        }
+
+            try {
+                decoderJSON.decodeFromString(SyncDTO.Response.Entity.serializer(), line)
+            } catch (e: Exception) {
+                logException("[SynchronizeInitialDataTask] Error decoding entity from line: $line", e)
+                null
+            }
+        }.chunked(BATCH_SIZE)
     }
 
+
     companion object {
-        const val LIMIT_PROGRESS_MAX = 95 // Maximum progress limit to leave room for final processing
+        const val FRAGMENT_PROGRESS_GENERATE_SYNC_DATA = 30 // Percentage of progress for generating sync data
+        const val FRAGMENT_PROGRESS_DOWNLOAD_FILE = 50 // Progress percentage for downloading the file
+        const val FRAGMENT_PROGRESS_MIGRATE_DATA = 99 // Percentage of progress for migrating data
+        const val BATCH_SIZE = 1000 // Number of entities to process in each batch
     }
 }

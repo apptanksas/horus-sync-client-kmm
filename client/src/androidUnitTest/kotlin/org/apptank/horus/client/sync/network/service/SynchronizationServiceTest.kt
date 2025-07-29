@@ -603,7 +603,7 @@ class SynchronizationServiceTest : ServiceTest() {
 
         // When
         val response = service.downloadSyncData(url) { progress ->
-            Assert.assertTrue("Progress should be between 0 and 100", progress in 0..100)
+            Assert.assertTrue("Progress should be between 0 and 100, was $progress", progress in 0..100)
         }
 
         // Then

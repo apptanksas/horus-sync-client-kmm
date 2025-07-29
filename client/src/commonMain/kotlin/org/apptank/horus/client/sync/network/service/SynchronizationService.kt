@@ -78,14 +78,16 @@ internal class SynchronizationService(
 
             info("[SynchronizationService] Downloading synchronization data from $url to $destinationPath")
 
-            val contentLength = httpResponse.contentLength() ?: -1L
+            val contentLength = httpResponse.contentLength()
 
             fileSystem.sink(destinationPath).buffer().use { sink ->
                 while (!channel.exhausted()) {
                     val bytesRead = channel.readRemaining(8 * 1024).readByteArray()
                     downloadedBytes += bytesRead.size
                     sink.write(bytesRead)
-                    onProgress(((downloadedBytes / contentLength.toDouble()) * 100).toInt())
+                    contentLength?.let {
+                        onProgress(((downloadedBytes / contentLength.toDouble()) * 100).toInt())
+                    }
                 }
             }
         }

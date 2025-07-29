@@ -68,7 +68,8 @@ internal abstract class BaseService(
                     info(message)
                 }
             }
-            level = LogLevel.ALL
+            // To access the all data use Network Inspector
+            level = LogLevel.HEADERS
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 60L * 1000 // 60 secs
