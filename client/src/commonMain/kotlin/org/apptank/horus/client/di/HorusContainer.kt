@@ -359,6 +359,10 @@ object HorusContainer {
         return logger
     }
 
+    internal fun existsConfig(): Boolean {
+        return config != null
+    }
+
     /**
      * Retrieves the remote synchronizator manager.
      *

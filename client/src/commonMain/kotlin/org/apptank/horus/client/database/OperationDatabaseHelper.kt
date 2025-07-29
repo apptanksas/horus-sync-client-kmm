@@ -91,20 +91,12 @@ internal class OperationDatabaseHelper(
         records: List<DatabaseOperation.InsertRecord>,
         postOperation: Callback
     ): Boolean {
-        var indexCounter = 0
-        return executeTransaction({ db ->
+        return executeTransaction{ db ->
             records.forEachIndexed { index, item ->
-                indexCounter = index
                 val values = item.values.prepareMap()
                 insertOrThrow(item.table, values)
             }
             postOperation()
-        }) {
-            records.getOrNull(indexCounter)?.let { item ->
-                log("FAILURE [Insert] Transaction failed")
-                val values = item.values.prepareMap()
-                log("------------ [Insert][index:$indexCounter] Table: ${item.table} Values: $values")
-            }
         }
     }
 

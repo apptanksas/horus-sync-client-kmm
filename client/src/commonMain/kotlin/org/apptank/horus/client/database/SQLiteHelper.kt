@@ -185,6 +185,7 @@ abstract class SQLiteHelper(
      */
     protected fun insertOrThrow(table: String, values: DataMap) {
         val query = driver.createSQLInsert(table, values)
+        info("Insert query: $query")
         executeInsertOrThrow(query)
     }
 
