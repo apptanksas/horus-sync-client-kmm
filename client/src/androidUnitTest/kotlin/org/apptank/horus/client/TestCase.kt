@@ -20,6 +20,7 @@ import org.apptank.horus.client.tasks.ValidateHashingTask
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
+import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.parentPath
 import io.matthewnelson.kmp.file.toFile
 import io.mockative.Matchers
@@ -54,12 +55,24 @@ abstract class TestCase {
 
     private fun clearLocalPathStorage() {
         val basePath = getLocalTestPath().toFile()
-        if (basePath.exists()) {
-            basePath.parentPath?.toFile()?.deleteRecursively()
+        if (!basePath.exists()) {
+            return
+        }
+
+        basePath.removeAll()
+    }
+
+    private fun File.removeAll() {
+        if (this.isDirectory) {
+            this.listFiles()?.forEach { it.removeAll() }
+            this.deleteRecursively()
+        }
+        if (exists()) {
+            this.delete()
         }
     }
 
-    internal fun createFileInLocalStorage(pathFile: String): String {
+    internal fun createFileInLocalStorage(pathFile: String, content: String = "test"): String {
         val filename = pathFile.substringAfterLast("/")
         val path = pathFile.replace(filename, "")
         val baseFilePath = if (pathFile.contains(getLocalTestPath().normalizePath())) {
@@ -75,9 +88,7 @@ abstract class TestCase {
         val file = baseFilePath.resolve(filename)
 
         if (file.createNewFile() && file.setWritable(true)) {
-            file.writeBytes("test".toByteArray())
-        } else {
-            throw IllegalStateException("File not created")
+            file.writeBytes(content.toByteArray())
         }
         return file.absolutePath
     }

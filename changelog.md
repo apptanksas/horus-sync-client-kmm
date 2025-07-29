@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.1
+- Improvement initial sync data using stream to avoid memory issues. 
+
 # v0.13.0
 - Refactor start synchronization task to download data from url json.
 - Added emit progress sync data.

@@ -3079,7 +3079,13 @@ const val MOCK_RESPONSE_GET_SYNC_STATUS = """
   "user_id": "user-456",
   "status": "completed",
   "result_at": 1725044885,
-  "download_url": "https://api.example.com/sync/download/sync-123",
+  "download_url": "https://cg-storage.nyc3.digitaloceanspaces.com/horus/upload/sync/ef2ef583-2f61-4386-bea2-ab5d3de8529b.json?response-content-type=application%2Fjson&response-content-disposition=attachment%3B%20filename%3D%22ef2ef583-2f61-4386-bea2-ab5d3de8529b.json%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801YJBHWCCPVJ3H7FN%2F20250727%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20250727T201717Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=fe5da1c891d0577fbbc4db7f2fca2f2f5ae6607b4c74852646778a21c9f56461",
   "checkpoint": "checkpoint-789"
 }
+"""
+
+const val MOCK_RESPONSE_SYNC_DATA_FILE = """{"entity":"products","data":{"id":"7d00764c-9660-4f32-b9c0-00bc2ef0f6fa","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"2a1fbbb73aa1d37cb9e36874ea900034e16de18263960fde38b01578380a80a9","sync_created_at":1725281682,"sync_updated_at":1725281682,"name":"Finca Maracana","destination":"1","mv_size":"ec8f99e4-82c9-496f-9ba8-4c39585daa27","mv_variant":"03b0fe9c-b06f-489f-8148-8301bec3f89a","volume":"L","weight":"kg","type":"1"}}
+{"entity":"products","data":{"id":"797b62cb-d6f5-436b-9ae0-6657d0ae979a","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"e3d47ef233c70cc1819b8cf63818d7f79c3dc8d54d90c8241b76eae67be7254d","sync_created_at":1725051913,"sync_updated_at":1725051913,"name":"FincaLosAlpinos","destination":"1","mv_size":"5701514f-fd5c-4417-b3d9-6fdcd8ee746b","mv_variant":"4635a0a7-8548-4327-b74d-9ca88a6ccf90","volume":"L","weight":"kg","type":"1"}}
+{"entity":"categories","data":{"id":"00aedddd-325d-4472-a04c-27e57f5d6018","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83","sync_created_at":1725051913,"sync_updated_at":1725051913,"product_id":"797b62cb-d6f5-436b-9ae0-6657d0ae979a","name":"Camila","code":"9012345","gender":"f","type":"1","purpose":"2","sale_status":"0","stage":"4","reproductive_status":"1","health_status":"1","inside":1}}
+{"entity":"measures","data":{"id":"3093a07a-543b-336b-9ca8-4c3bf207aeb5","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"89424a4c2efa23f3b6a0caa03bfdcf66dd3d6d31c0559c8c286f82fcd3798f6d","sync_created_at":1725044885,"sync_updated_at":1725044885,"measure":"w","unit":"kg","value":10}}
 """

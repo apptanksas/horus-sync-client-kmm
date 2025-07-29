@@ -12,6 +12,7 @@ import org.apptank.horus.client.exception.DatabaseOperationFailureException
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.log
+import org.apptank.horus.client.extensions.logException
 
 /**
  * Helper class for performing database operations, extending [SQLiteHelper] and implementing [IOperationDatabaseHelper].
@@ -89,15 +90,15 @@ internal class OperationDatabaseHelper(
     override fun insertWithTransaction(
         records: List<DatabaseOperation.InsertRecord>,
         postOperation: Callback
-    ) =
-        executeTransaction { db ->
-            records.forEach { item ->
+    ): Boolean {
+        return executeTransaction{ db ->
+            records.forEachIndexed { index, item ->
                 val values = item.values.prepareMap()
-                log("[Insert] Table: ${item.table} Values: $values")
                 insertOrThrow(item.table, values)
             }
             postOperation()
         }
+    }
 
     /**
      * Updates records in the database within a transaction.
@@ -223,7 +224,7 @@ internal class OperationDatabaseHelper(
      * @param executeBody A function to be executed within the transaction.
      * @return True if the transaction was successful, false otherwise.
      */
-    private fun executeTransaction(executeBody: (SqlDriver) -> Unit): Boolean {
+    private fun executeTransaction(executeBody: (SqlDriver) -> Unit, onFailure: () -> Unit = {}): Boolean {
         return runCatching {
             transaction {
                 executeBody(driver)
@@ -231,7 +232,14 @@ internal class OperationDatabaseHelper(
             true
         }.getOrElse {
             it.printStackTrace()
+            onFailure()
             false
+        }
+    }
+
+    private fun executeTransaction(executeBody: (SqlDriver) -> Unit): Boolean {
+        return executeTransaction(executeBody) {
+            logException("[Transaction] Transaction failed")
         }
     }
 

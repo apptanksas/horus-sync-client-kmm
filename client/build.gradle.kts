@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.kotlin.crypto)
             implementation(libs.storage.settings)
             implementation(libs.storage.files)
+            implementation(libs.storage.okio)
         }
         commonTest.dependencies {
             implementation(libs.test.kotlin)

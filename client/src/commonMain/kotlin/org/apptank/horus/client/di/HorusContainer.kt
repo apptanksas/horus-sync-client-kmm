@@ -251,7 +251,7 @@ object HorusContainer {
      */
     internal fun getSynchronizationService(): ISynchronizationService {
         if (synchronizationService == null) {
-            synchronizationService = SynchronizationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
+            synchronizationService = SynchronizationService(getConfig(), httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
         }
         return synchronizationService!!
     }
@@ -357,6 +357,10 @@ object HorusContainer {
      */
     internal fun getLogger(): ILogger? {
         return logger
+    }
+
+    internal fun existsConfig(): Boolean {
+        return config != null
     }
 
     /**

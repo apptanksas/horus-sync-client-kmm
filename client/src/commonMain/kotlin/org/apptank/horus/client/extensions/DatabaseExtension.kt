@@ -53,7 +53,6 @@ internal fun Any?.prepareSQLValueAsString(): String {
 internal fun SqlDriver.createSQLInsert(table: String, values: DataMap): String {
     val columns = values.keys.joinToString(", ")
     val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
-    print("INSERT INTO $table ($columns) VALUES ($valuesString)")
     return "INSERT INTO $table ($columns) VALUES ($valuesString)"
 }
 
