@@ -119,6 +119,7 @@ class SyncFileUploadedManager(
                     failure.exception
                 )
             }
+            EventBus.emit(EventType.SYNC_PUSH_FAILED)
             return
         }
 
