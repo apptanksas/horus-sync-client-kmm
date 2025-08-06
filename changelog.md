@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.13.2
+- Added emit event failure when fail upload file.
+
 # v0.13.1
 - Improvement initial sync data using stream to avoid memory issues. 
 
