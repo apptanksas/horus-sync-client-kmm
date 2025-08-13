@@ -518,11 +518,11 @@ class SynchronizatorManagerTest : TestCase() {
         // ---> Get entities hash
         every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
         // ---> Validate entities data
-        coEvery { synchronizationService.postValidateEntitiesData(any()) }.returns(
+        coEvery { synchronizationService.postValidateEntitiesData(any(), any()) }.returns(
             DataResult.Success(entitiesHashesValidation)
         )
         // ---> Get entity hashes
-        coEvery { synchronizationService.getEntityHashes(any()) }.returns(
+        coEvery { synchronizationService.getEntityHashes(any(),any()) }.returns(
             DataResult.Success(emptyList())
         )
 
@@ -536,7 +536,7 @@ class SynchronizatorManagerTest : TestCase() {
         // Then
         delay(50)
         coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasNotInvoked()
-        coVerify { synchronizationService.getEntityHashes(any()) }.wasNotInvoked()
+        coVerify { synchronizationService.getEntityHashes(any(), any()) }.wasNotInvoked()
     }
 
     @Test
@@ -591,11 +591,11 @@ class SynchronizatorManagerTest : TestCase() {
             // ---> Get entities hash
             every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
             // ---> Validate entities data
-            coEvery { synchronizationService.postValidateEntitiesData(any()) }.returns(
+            coEvery { synchronizationService.postValidateEntitiesData(any(), any()) }.returns(
                 DataResult.Success(entitiesHashesValidation)
             )
             // ---> Get entity hashes
-            coEvery { synchronizationService.getEntityHashes(any()) }.returns(
+            coEvery { synchronizationService.getEntityHashes(any(), any()) }.returns(
                 DataResult.Success(entityIdHash)
             )
             // ---> Get entity data to restore
@@ -620,7 +620,7 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasInvoked(1)
-            coVerify { synchronizationService.getEntityHashes(any()) }.wasInvoked(1)
+            coVerify { synchronizationService.getEntityHashes(any(), any()) }.wasInvoked(1)
             coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.wasInvoked(1)
             coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         }
@@ -686,11 +686,11 @@ class SynchronizatorManagerTest : TestCase() {
             // ---> Get entities hash
             every { operationDatabaseHelper.queryRecords(any()) }.returns(entitiesHashes)
             // ---> Validate entities data
-            coEvery { synchronizationService.postValidateEntitiesData(any()) }.returns(
+            coEvery { synchronizationService.postValidateEntitiesData(any(), any()) }.returns(
                 DataResult.Success(entitiesHashesValidation)
             )
             // ---> Get entity hashes
-            coEvery { synchronizationService.getEntityHashes(any()) }.returns(
+            coEvery { synchronizationService.getEntityHashes(any(), any()) }.returns(
                 DataResult.Success(entitiesIdHashesRemote)
             )
             // ---> Get entity data to restore
@@ -709,7 +709,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             delay(50)
             coVerify { synchronizationService.getDataEntity(any(), any(), any()) }.wasInvoked(1)
-            coVerify { synchronizationService.getEntityHashes(any()) }.wasInvoked(1)
+            coVerify { synchronizationService.getEntityHashes(any(), any()) }.wasInvoked(1)
             coVerify { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.wasNotInvoked()
             coVerify { operationDatabaseHelper.insertWithTransaction(any(), any()) }.wasInvoked(1)
         }

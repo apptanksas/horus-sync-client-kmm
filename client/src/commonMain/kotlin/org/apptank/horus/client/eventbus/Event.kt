@@ -72,4 +72,9 @@ enum class EventType {
      * Event type indicating that user has logged out.
      */
     USER_SESSION_CLEARED,
+
+    /**
+     * Event type indicating that the synchronization process has failed.
+     */
+    SYNC_FAILED
 }

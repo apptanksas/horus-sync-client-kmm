@@ -84,6 +84,8 @@ internal class SynchronizatorManager(
 
         onStatus(SynchronizationStatus.IN_PROGRESS, false)
 
+        val userId = HorusAuthentication.getEffectiveUserId()
+
         // Stage 1: Validate if there are new data to sync with the server
         val validateIsExistsDataToSync =
             existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
@@ -100,8 +102,8 @@ internal class SynchronizatorManager(
         }
 
         // Stage 2: Validate entity hashes
-        val entitiesHashes = getEntityHashes()
-        val entitiesHashesValidated = validateEntityHashes(entitiesHashes)
+        val entitiesHashes = getEntityHashes(userId)
+        val entitiesHashesValidated = validateEntityHashes(entitiesHashes, userId)
 
         // EntityName -> List of corrupted ids
         val corruptedEntities = mutableMapOf<String, List<String>>()
@@ -203,7 +205,7 @@ internal class SynchronizatorManager(
      *
      * @return A list of entity hashes.
      */
-    private fun getEntityHashes(): List<Horus.EntityHash> {
+    private fun getEntityHashes(userId: String): List<Horus.EntityHash> {
 
         val output = mutableListOf<Horus.EntityHash>()
 
@@ -211,7 +213,7 @@ internal class SynchronizatorManager(
             val hashes = mutableListOf<String>()
             // Create a query to get the id and sync_hash of the entity
             val queryBuilder = SimpleQueryBuilder(entity)
-            queryBuilder.where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.OWNER_ID, HorusAuthentication.getEffectiveUserId())))
+            queryBuilder.where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.OWNER_ID, userId)))
             queryBuilder.select(Horus.Attribute.HASH).orderBy("id")
 
             // Execute the query and get the hashes
@@ -240,8 +242,8 @@ internal class SynchronizatorManager(
      * @param entitiesHashes A list of entity hashes to validate.
      * @return A list of pairs containing entity names and validation results.
      */
-    private suspend fun validateEntityHashes(entitiesHashes: List<Horus.EntityHash>): List<Pair<String, Boolean>> {
-        return validateRemoteEntitiesData(entitiesHashes).map { Pair(it.entity, it.isHashMatched) }
+    private suspend fun validateEntityHashes(entitiesHashes: List<Horus.EntityHash>, userId: String): List<Pair<String, Boolean>> {
+        return validateRemoteEntitiesData(entitiesHashes, userId).map { Pair(it.entity, it.isHashMatched) }
     }
 
     /**
@@ -565,9 +567,9 @@ internal class SynchronizatorManager(
      * @param entitiesHashes A list of entity hashes to validate.
      * @return A list of entity hash validation results.
      */
-    private suspend fun validateRemoteEntitiesData(entitiesHashes: List<Horus.EntityHash>): List<InternalModel.EntityHashValidation> {
+    private suspend fun validateRemoteEntitiesData(entitiesHashes: List<Horus.EntityHash>, userId: String): List<InternalModel.EntityHashValidation> {
         when (val result =
-            synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest())) {
+            synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest(), userId)) {
             is DataResult.Success -> {
                 return result.data.map { it.toInternalModel() }
             }
