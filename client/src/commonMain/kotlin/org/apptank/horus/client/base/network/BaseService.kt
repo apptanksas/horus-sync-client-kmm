@@ -136,11 +136,17 @@ internal abstract class BaseService(
     protected suspend inline fun <reified T : Any> post(
         path: String,
         data: Any,
+        queryParams: Map<String, String> = emptyMap(),
         onResponse: (response: String) -> T
     ): DataResult<T> {
         return kotlin.runCatching {
             handleResponse(client.post(buildUrl(path)) {
                 contentType(ContentType.Application.Json)
+                url {
+                    queryParams.forEach { (key, value) ->
+                        parameters.append(key, value)
+                    }
+                }
                 setBody(data)
                 setupHeaders(this)
             }, onResponse)

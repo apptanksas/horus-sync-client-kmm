@@ -82,9 +82,13 @@ interface ISynchronizationService {
      * Submits a request to validate hashing data.
      *
      * @param request [SyncDTO.Request.ValidateHashingRequest] containing the data and hash to validate.
+     * @param userId The ID of the user for whom the hashing validation is performed.
      * @return [DataResult] containing [SyncDTO.Response.HashingValidation] if successful.
      */
-    suspend fun postValidateHashing(request: SyncDTO.Request.ValidateHashingRequest): DataResult<SyncDTO.Response.HashingValidation>
+    suspend fun postValidateHashing(
+        request: SyncDTO.Request.ValidateHashingRequest,
+        userId: String? = null
+    ): DataResult<SyncDTO.Response.HashingValidation>
 
     /**
      * Submits a request to validate entity data by comparing hashes.
@@ -105,9 +109,13 @@ interface ISynchronizationService {
      * Retrieves the hash values for a specific entity from the server.
      *
      * @param entity The name of the entity to get hashes for.
+     * @param userId Optional user ID to filter the hashes.
      * @return [DataResult] containing a list of [SyncDTO.Response.EntityIdHash] if successful.
      */
-    suspend fun getEntityHashes(entity: String): DataResult<List<SyncDTO.Response.EntityIdHash>>
+    suspend fun getEntityHashes(
+        entity: String,
+        userId: String? = null
+    ): DataResult<List<SyncDTO.Response.EntityIdHash>>
 
 
     /**
