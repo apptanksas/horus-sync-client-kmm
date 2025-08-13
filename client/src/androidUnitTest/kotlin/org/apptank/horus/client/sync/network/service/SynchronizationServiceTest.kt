@@ -330,6 +330,42 @@ class SynchronizationServiceTest : ServiceTest() {
     }
 
     @Test
+    fun postValidateEntitiesDataWithUserId() = runBlocking {
+        // Given
+        val userId = "testUser"
+        val entitiesHash = listOf(
+            SyncDTO.Request.EntityHash("entity1", "hash1"),
+            SyncDTO.Request.EntityHash("entity1", "hash2")
+        )
+        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+
+        // When
+        val response = service.postValidateEntitiesData(entitiesHash, userId)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestBody(Json.encodeToString(entitiesHash))
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals(2, it.size)
+                it.forEach {
+                    Assert.assertNotNull(it.entity)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation?.expected)
+                    Assert.assertNotNull(it.hashingValidation?.obtained)
+                    Assert.assertNotNull(it.hashingValidation?.matched)
+                }
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
+        assertRequestContainsQueryParam("user_id", userId)
+    }
+
+    @Test
     fun postValidateEntitiesDataIsFailure() = runBlocking {
         // Given
         val entitiesHash = listOf(
@@ -372,36 +408,6 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.fail("Error")
             }
         )
-    }
-
-    @Test
-    fun postValidateHashingWithUserId() = runBlocking {
-        // Given
-        val data = mapOf<String, Any>(
-            uuid() to uuid(),
-            uuid() to uuid()
-        )
-        val userId = uuid()
-        val request = SyncDTO.Request.ValidateHashingRequest(data, "hash1")
-        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_HASHING)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
-        // When
-        val response = service.postValidateHashing(request, userId)
-        // Then
-        assert(response is DataResult.Success)
-        assertRequestBody(Json.encodeToString(request))
-        response.fold(
-            onSuccess = {
-                Assert.assertNotNull(it.matched)
-                Assert.assertNotNull(it.obtained)
-                Assert.assertNotNull(it.matched)
-            },
-            onFailure = {
-                Assert.fail("Error")
-            }
-        )
-
-        assertRequestContainsQueryParam("user_id", userId)
     }
 
     @Test

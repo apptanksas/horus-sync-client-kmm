@@ -184,26 +184,28 @@ internal class SynchronizationService(
      * Submits a request to validate entity data by comparing hashes.
      *
      * @param entitiesHash List of [SyncDTO.Request.EntityHash] containing entities and their hashes to validate.
+     * @param userId Optional user ID to filter the validation.
      * @return [DataResult] containing a list of [SyncDTO.Response.EntityHash] with validation results if successful.
      */
-    override suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.Request.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>> {
-        return post("validate/data", entitiesHash) { it.serialize() }
+    override suspend fun postValidateEntitiesData(
+        entitiesHash: List<SyncDTO.Request.EntityHash>,
+        userId: String?
+    ): DataResult<List<SyncDTO.Response.EntityHash>> {
+        val queryParams = mutableMapOf<String, String>()
+        userId?.let { queryParams["user_id"] = it }
+        return post("validate/data", entitiesHash, queryParams) { it.serialize() }
     }
 
     /**
      * Submits a request to validate hashing data.
      *
-     * @param userId The ID of the user for whom the hashing validation is performed.
      * @param request [SyncDTO.Request.ValidateHashingRequest] containing the data and hash to validate.
      * @return [DataResult] containing [SyncDTO.Response.HashingValidation] if successful.
      */
     override suspend fun postValidateHashing(
-        request: SyncDTO.Request.ValidateHashingRequest,
-        userId: String?,
+        request: SyncDTO.Request.ValidateHashingRequest
     ): DataResult<SyncDTO.Response.HashingValidation> {
-        val queryParams = mutableMapOf<String, String>()
-        userId?.let { queryParams["user_id"] = it }
-        return post("validate/hashing", request, queryParams) { it.serialize() }
+        return post("validate/hashing", request) { it.serialize() }
     }
 
     /**
