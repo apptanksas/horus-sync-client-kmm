@@ -116,7 +116,7 @@ internal class SynchronizatorManager(
             log("[SynchronizatorManager] Entity: $entity - IsHashCorrect: $isHashCorrect")
 
             if (!isHashCorrect) {
-                val (corrupted, missing) = validateEntityData(entity)
+                val (corrupted, missing) = validateEntityData(entity, userId)
                 corruptedEntities[it.first] = corrupted
                 missingEntities[it.first] = missing
             }
@@ -252,10 +252,11 @@ internal class SynchronizatorManager(
      * This method compares local data with remote hashes to find discrepancies.
      *
      * @param entity The name of the entity to check.
+     * @param userId The ID of the user to filter the data.
      * @return A pair of lists containing IDs with corrupted data and IDs with missing data. [Corrupted, Missing]
      */
-    private suspend fun validateEntityData(entity: String): Pair<List<String>, List<String>> {
-        val remoteHashes = getRemoteEntitiesHashes(entity)
+    private suspend fun validateEntityData(entity: String, userId: String): Pair<List<String>, List<String>> {
+        val remoteHashes = getRemoteEntitiesHashes(entity, userId)
         return compareEntityHashesWithLocalData(entity, remoteHashes)
     }
 
@@ -540,10 +541,11 @@ internal class SynchronizatorManager(
      * Retrieves remote entity hashes.
      *
      * @param entity The name of the entity.
+     * @param userId The ID of the user to filter the hashes.
      * @return A list of remote entity hashes.
      */
-    private suspend fun getRemoteEntitiesHashes(entity: String): List<InternalModel.EntityIdHash> {
-        when (val result = synchronizationService.getEntityHashes(entity)) {
+    private suspend fun getRemoteEntitiesHashes(entity: String, userId: String): List<InternalModel.EntityIdHash> {
+        when (val result = synchronizationService.getEntityHashes(entity, userId)) {
             is DataResult.Success -> {
                 return result.data.map { it.toInternalModel() }
             }

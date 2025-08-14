@@ -1,6 +1,7 @@
 package org.apptank.horus.client.database
 
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.data.Horus
@@ -17,9 +18,11 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -347,6 +350,50 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
+     * Retrieves a list of entities related to a specified entity.
+     *
+     * @param entityName The name of the entity to find related entities for.
+     * @return A list of related entities.
+     */
+    override fun getEntitiesRelated(entityName: String): List<EntityRelated> {
+
+        // Check cache first
+        entitiesRelatedCache[entityName]?.let {
+            return it
+        }
+
+        val query = "PRAGMA foreign_key_list('$entityName')"
+
+        return driver.executeQuery<List<EntityRelated>>(
+            null, // No identifier
+            query,
+            { cursor ->
+
+                val entitiesRelated = mutableListOf<EntityRelated>()
+
+                while (cursor.next().value) {
+                    val table = cursor.getString(2) // column 'table'
+                    val from = cursor.getString(3)  // column 'from'
+
+                    if (table != null && from != null) {
+                        entitiesRelated.add(
+                            EntityRelated(
+                                entity = table,
+                                attributeLinked = from
+                            )
+                        )
+                    }
+                }
+                QueryResult.Value(entitiesRelated)
+            },
+            0
+        ).value.also {
+            entitiesRelatedCache[entityName] = it
+        }
+    }
+
+
+    /**
      * Clears all data from the database.
      */
     override fun clearDatabase() {
@@ -453,5 +500,6 @@ internal class SyncControlDatabaseHelper(
     companion object {
         private val entityWritableCache = mutableMapOf<String, Boolean>()
         private val entityLevelCache = mutableMapOf<String, Int>()
+        private val entitiesRelatedCache = mutableMapOf<String, List<EntityRelated>>()
     }
 }
