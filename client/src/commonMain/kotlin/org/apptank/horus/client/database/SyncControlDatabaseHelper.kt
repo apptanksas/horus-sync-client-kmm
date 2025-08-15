@@ -22,7 +22,6 @@ import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
-import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -369,22 +368,25 @@ internal class SyncControlDatabaseHelper(
             query,
             { cursor ->
 
-                val entitiesRelated = mutableListOf<EntityRelated>()
+                val entitiesAttributes = mutableMapOf<String, MutableList<String>>()
 
                 while (cursor.next().value) {
                     val table = cursor.getString(2) // column 'table'
                     val from = cursor.getString(3)  // column 'from'
 
                     if (table != null && from != null) {
-                        entitiesRelated.add(
-                            EntityRelated(
-                                entity = table,
-                                attributeLinked = from
-                            )
-                        )
+                        entitiesAttributes.getOrPut(table) { mutableListOf() }.add(from)
                     }
                 }
-                QueryResult.Value(entitiesRelated)
+
+                QueryResult.Value(
+                    entitiesAttributes.map { entry ->
+                        EntityRelated(
+                            entity = entry.key,
+                            attributesLinked = entry.value
+                        )
+                    }
+                )
             },
             0
         ).value.also {

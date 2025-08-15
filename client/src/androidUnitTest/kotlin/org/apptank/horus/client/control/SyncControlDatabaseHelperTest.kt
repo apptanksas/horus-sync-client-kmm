@@ -514,7 +514,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then
         Assert.assertEquals(1, relatedEntities.size)
         Assert.assertEquals(entityParent, relatedEntities.first().entity)
-        Assert.assertEquals("parent_id", relatedEntities.first().attributeLinked)
+        Assert.assertEquals("parent_id", relatedEntities.first().attributesLinked.first())
     }
 
 }

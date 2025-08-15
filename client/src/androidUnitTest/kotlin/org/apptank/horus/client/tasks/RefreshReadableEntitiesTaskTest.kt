@@ -68,7 +68,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         every { networkValidator.isNetworkAvailable() }.returns(false)
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -92,7 +92,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(recentTimestamp)
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -112,9 +112,9 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         every { networkValidator.isNetworkAvailable() }.returns(true)
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(null)
         every { syncControlDatabaseHelper.getReadableEntityNames() }.returns(emptyList())
-        
+
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -132,11 +132,11 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
     fun `when service returns data for multiple entities then insert all into database`() = runBlocking {
         // Given
         val entityNames = listOf("entity1", "entity2", "entity3")
-        
+
         every { networkValidator.isNetworkAvailable() }.returns(true)
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(null)
         every { syncControlDatabaseHelper.getReadableEntityNames() }.returns(entityNames)
-        
+
         // Set up responses for each entity
         coEvery { syncService.getDataEntity("entity1") }.returns(
             DataResult.Success(
@@ -146,7 +146,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
                 )
             )
         )
-        
+
         coEvery { syncService.getDataEntity("entity2") }.returns(
             DataResult.Success(
                 listOf(
@@ -154,7 +154,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
                 )
             )
         )
-        
+
         coEvery { syncService.getDataEntity("entity3") }.returns(
             DataResult.Success(
                 listOf(
@@ -164,13 +164,14 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
                 )
             )
         )
-        
+
         every { operationDatabaseHelper.truncate(any()) }.returns(Unit)
         every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
         every { settings.putLong(any(), any()) }
+        every { syncControlDatabaseHelper.getEntityLevel(any()) }.returns(1)
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -192,11 +193,11 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
     fun `when null previous task data then still execute normally`() = runBlocking {
         // Given
         val entityNames = listOf("entity1")
-        
+
         every { networkValidator.isNetworkAvailable() }.returns(true)
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(null)
         every { syncControlDatabaseHelper.getReadableEntityNames() }.returns(entityNames)
-        
+
         coEvery { syncService.getDataEntity("entity1") }.returns(
             DataResult.Success(
                 listOf(
@@ -204,13 +205,13 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
                 )
             )
         )
-        
+
         every { operationDatabaseHelper.truncate(any()) }.returns(Unit)
         every { operationDatabaseHelper.insertWithTransaction(any(), any()) }.returns(true)
         every { settings.putLong(any(), any()) }
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
@@ -245,7 +246,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         every { settings.putLong(any(), any()) }
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
