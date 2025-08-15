@@ -2283,7 +2283,7 @@ const val DATA_MIGRATION_VERSION_3 = """
 """
 
 const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
-[
+    [
   {
     "entity": "measures",
     "type": "writable",
@@ -2371,6 +2371,71 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
         "version": 1,
         "type": "float",
         "nullable": false
+      },
+      {
+        "name": "relations_one_of_many",
+        "version": 1,
+        "type": "relation_one_of_many",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "measures_metadata",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_string",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "measure_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "measures",
+                "delete_on_cascade": true
+              },
+              {
+                "name": "name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "value",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          }
+        ]
       }
     ],
     "current_version": 1
