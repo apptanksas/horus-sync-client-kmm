@@ -902,7 +902,7 @@ object HorusDataFacade {
 
             val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
             val id = Horus.Attribute(Horus.Attribute.ID, uuid)
-            val effectiveUserId = getEntityUserOwnerId(entity, attributes)
+            val effectiveUserId = getEntityUserOwnerId(entity, attributes, batch)
 
             val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
                 id,
@@ -1161,7 +1161,7 @@ object HorusDataFacade {
             }
         }
 
-        return getEffectiveUserId()
+        throw IllegalStateException("No owner ID found for entity: $entityName with attributes: $attributes")
     }
 
     /**
