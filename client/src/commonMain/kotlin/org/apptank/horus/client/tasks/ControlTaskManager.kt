@@ -239,6 +239,7 @@ internal object ControlTaskManager {
             is TaskResult.Failure -> {
                 logException("[ControlTask] Error executing task", taskResult.error)
                 onStatus(Status.FAILED)
+                EventBus.emit(EventType.SYNC_FAILED)
             }
         }
     }

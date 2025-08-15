@@ -22,7 +22,6 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.INetworkValidator
-import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.AttributeRestrictedException
@@ -295,7 +294,7 @@ object HorusDataFacade {
 
         val uuid = attributes.find { it.name == Horus.Attribute.ID }?.value as? String ?: generateUUID()
         val id = Horus.Attribute(Horus.Attribute.ID, uuid)
-        val effectiveUserId = getEffectiveUserIdToInsertOperation(entity)
+        val effectiveUserId = getEntityUserOwnerId(entity, attributes)
 
         val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
             id,
@@ -903,7 +902,7 @@ object HorusDataFacade {
 
             val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
             val id = Horus.Attribute(Horus.Attribute.ID, uuid)
-            val effectiveUserId = getEffectiveUserIdToInsertOperation(entity)
+            val effectiveUserId = getEntityUserOwnerId(entity, attributes, batch)
 
             val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
                 id,
@@ -1122,19 +1121,47 @@ object HorusDataFacade {
      * the authenticated owner, and the shared data policy should not apply.
      *
      * @param entityName The name of the entity for which to get the effective user ID.
+     * @param insertBatchPending The list of pending insert batch operations, if any.
      *
      * @return The effective user ID to be used for the insert operation.
      */
-    private fun getEffectiveUserIdToInsertOperation(entityName: String): String {
+    private fun getEntityUserOwnerId(
+        entityName: String,
+        attributes: List<Horus.Attribute<*>>,
+        insertBatchPending: List<Horus.Batch.Insert> = emptyList()
+    ): String {
 
         val entityLevel = syncControlDatabaseHelper?.getEntityLevel(entityName) ?: -1
-        val userIdEffective = if (entityLevel == 0) HorusAuthentication.getUserAuthenticatedId() else getEffectiveUserId()
 
-        if (userIdEffective == null) {
-            throw UserNotAuthenticatedException()
+        if (entityLevel == 0) {
+            return HorusAuthentication.getUserAuthenticatedId() ?: getEffectiveUserId()
         }
 
-        return userIdEffective
+        val entitiesRelated = syncControlDatabaseHelper?.getEntitiesRelated(entityName) ?: emptyList()
+
+        entitiesRelated.forEach { entityRelated ->
+
+            entityRelated.attributesLinked.forEach forEachAttributes@{ attributeLinked ->
+
+                val entityRelatedId = (attributes.find { it.name == attributeLinked }?.value as? String?) ?: return@forEachAttributes
+
+                val relatedInBatch = insertBatchPending.find {
+                    it.entity == entityRelated.entity && it.getAttribute<String>(Horus.Attribute.ID) == entityRelatedId
+                }
+
+                // If the related entity is in the batch, we must to try to get the owner ID from entities with upper level
+                if (relatedInBatch != null) {
+                    return getEntityUserOwnerId(entityRelated.entity, relatedInBatch.attributes, insertBatchPending)
+                }
+
+                getEntityUserOwnerIdFromDatabase(entityRelated.entity, entityRelatedId)?.let { ownerId ->
+                    return ownerId
+                }
+
+            }
+        }
+
+        throw IllegalStateException("No owner ID found for entity: $entityName with attributes: $attributes")
     }
 
     /**
@@ -1156,6 +1183,34 @@ object HorusDataFacade {
     private fun generateUUID(): String {
         return Uuid.random().toString()
     }
+
+    /**
+     * Retrieves the owner ID of an entity from the database based on the entity name and related ID.
+     *
+     * @param entity The name of the entity.
+     * @param entityRelatedId The ID of the related entity.
+     * @return The owner ID of the entity, or `null` if not found.
+     */
+    private fun getEntityUserOwnerIdFromDatabase(entity: String, entityRelatedId: String): String? {
+
+        val queryBuilder = SimpleQueryBuilder(entity).apply {
+            select(Horus.Attribute.OWNER_ID)
+            where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(Horus.Attribute.ID, entityRelatedId),
+                    SQL.Comparator.EQUALS
+                )
+            )
+        }
+
+        // Try to get the owner ID from entity related
+        operationDatabaseHelper?.queryRecords(queryBuilder)?.map { it[Horus.Attribute.OWNER_ID]?.toString() }?.firstOrNull()?.let {
+            return it
+        }
+
+        return null
+    }
+
 
     /**
      * Clears the state of the facade, resetting readiness and clearing listeners.

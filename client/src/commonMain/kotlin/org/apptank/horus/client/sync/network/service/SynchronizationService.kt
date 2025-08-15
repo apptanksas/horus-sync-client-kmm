@@ -184,10 +184,16 @@ internal class SynchronizationService(
      * Submits a request to validate entity data by comparing hashes.
      *
      * @param entitiesHash List of [SyncDTO.Request.EntityHash] containing entities and their hashes to validate.
+     * @param userId Optional user ID to filter the validation.
      * @return [DataResult] containing a list of [SyncDTO.Response.EntityHash] with validation results if successful.
      */
-    override suspend fun postValidateEntitiesData(entitiesHash: List<SyncDTO.Request.EntityHash>): DataResult<List<SyncDTO.Response.EntityHash>> {
-        return post("validate/data", entitiesHash) { it.serialize() }
+    override suspend fun postValidateEntitiesData(
+        entitiesHash: List<SyncDTO.Request.EntityHash>,
+        userId: String?
+    ): DataResult<List<SyncDTO.Response.EntityHash>> {
+        val queryParams = mutableMapOf<String, String>()
+        userId?.let { queryParams["user_id"] = it }
+        return post("validate/data", entitiesHash, queryParams) { it.serialize() }
     }
 
     /**
@@ -196,7 +202,9 @@ internal class SynchronizationService(
      * @param request [SyncDTO.Request.ValidateHashingRequest] containing the data and hash to validate.
      * @return [DataResult] containing [SyncDTO.Response.HashingValidation] if successful.
      */
-    override suspend fun postValidateHashing(request: SyncDTO.Request.ValidateHashingRequest): DataResult<SyncDTO.Response.HashingValidation> {
+    override suspend fun postValidateHashing(
+        request: SyncDTO.Request.ValidateHashingRequest
+    ): DataResult<SyncDTO.Response.HashingValidation> {
         return post("validate/hashing", request) { it.serialize() }
     }
 
@@ -213,10 +221,13 @@ internal class SynchronizationService(
      * Retrieves the hash values for a specific entity from the server.
      *
      * @param entity The name of the entity to get hashes for.
+     * @param userId Optional user ID to filter the hashes.
      * @return [DataResult] containing a list of [SyncDTO.Response.EntityIdHash] if successful.
      */
-    override suspend fun getEntityHashes(entity: String): DataResult<List<SyncDTO.Response.EntityIdHash>> {
-        return get("entity/$entity/hashes") { it.serialize() }
+    override suspend fun getEntityHashes(entity: String, userId: String?): DataResult<List<SyncDTO.Response.EntityIdHash>> {
+        val queryParams = mutableMapOf<String, String>()
+        userId?.let { queryParams["user_id"] = it }
+        return get("entity/$entity/hashes", queryParams) { it.serialize() }
     }
 
     /**

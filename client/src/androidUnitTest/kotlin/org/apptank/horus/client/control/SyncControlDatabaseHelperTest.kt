@@ -2,6 +2,7 @@ package org.apptank.horus.client.control
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import kotlinx.coroutines.runBlocking
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
@@ -464,7 +465,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
-    fun validateGetEntityLevelIsSuccess(){
+    fun validateGetEntityLevelIsSuccess() {
         val entityLevel0 = "entity_level0"
         val entityLevel1 = "entity_level1"
 
@@ -485,10 +486,35 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
 
     @Test(expected = IllegalArgumentException::class)
-    fun validateGetEntityLevelNotFound(){
+    fun validateGetEntityLevelNotFound() {
         val entityNotFound = "entity_not_found"
 
         // When
         controlManagerDatabaseHelper.getEntityLevel(entityNotFound)
     }
+
+
+    @Test
+    fun `when getEntitiesRelated from entity child then return parent entities related`(): Unit = runBlocking {
+        // Given
+        val entityParent = "entity_parent"
+        val entityChild = "entity_child"
+
+        driver.execute("CREATE TABLE $entityParent (id TEXT PRIMARY KEY, name TEXT)")
+        driver.execute("CREATE TABLE $entityChild (id TEXT PRIMARY KEY, parent_id TEXT, name TEXT, FOREIGN KEY(parent_id) REFERENCES $entityParent(id))")
+
+        driver.registerEntity(entityParent, level = 0)
+        driver.registerEntity(entityChild, level = 1)
+
+        // When
+        controlManagerDatabaseHelper.getEntitiesRelated(entityChild) // First call to load cache
+        val relatedEntities = controlManagerDatabaseHelper.getEntitiesRelated(entityChild)
+
+
+        // Then
+        Assert.assertEquals(1, relatedEntities.size)
+        Assert.assertEquals(entityParent, relatedEntities.first().entity)
+        Assert.assertEquals("parent_id", relatedEntities.first().attributesLinked.first())
+    }
+
 }

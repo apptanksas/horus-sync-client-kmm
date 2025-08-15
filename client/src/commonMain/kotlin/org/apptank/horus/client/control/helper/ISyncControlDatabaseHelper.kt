@@ -1,6 +1,7 @@
 package org.apptank.horus.client.control.helper
 
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.struct.Column
 import org.apptank.horus.client.migration.domain.AttributeType
@@ -157,6 +158,14 @@ interface ISyncControlDatabaseHelper {
      * @return A list of entity names that are only readable.
      */
     fun getReadableEntityNames(): List<String>
+
+    /**
+     * Retrieves a list of entities related to a specified entity.
+     *
+     * @param entityName The name of the entity to find related entities for.
+     * @return A list of related entities.
+     */
+    fun getEntitiesRelated(entityName: String): List<EntityRelated>
 
     /**
      * Clears all data from the database.

@@ -116,6 +116,8 @@ class SynchronizeInitialDataTaskTest : TestCase() {
             // SynchronizationService mock responses
             coEvery { synchronizeService.postStartSync(any()) }.returns(DataResult.Success(Unit))
             coEvery { synchronizeService.getSyncStatus(any()) }.returns(DataResult.Success(syncDataStatus))
+            every { syncControlDatabaseHelper.getEntityLevel(any()) }.returns(1)
+
             mockDownloadSyncData(syncDataStatus.downloadUrl)
 
             // When

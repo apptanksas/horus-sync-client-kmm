@@ -330,6 +330,42 @@ class SynchronizationServiceTest : ServiceTest() {
     }
 
     @Test
+    fun postValidateEntitiesDataWithUserId() = runBlocking {
+        // Given
+        val userId = "testUser"
+        val entitiesHash = listOf(
+            SyncDTO.Request.EntityHash("entity1", "hash1"),
+            SyncDTO.Request.EntityHash("entity1", "hash2")
+        )
+        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+
+        // When
+        val response = service.postValidateEntitiesData(entitiesHash, userId)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestBody(Json.encodeToString(entitiesHash))
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals(2, it.size)
+                it.forEach {
+                    Assert.assertNotNull(it.entity)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation)
+                    Assert.assertNotNull(it.hashingValidation?.expected)
+                    Assert.assertNotNull(it.hashingValidation?.obtained)
+                    Assert.assertNotNull(it.hashingValidation?.matched)
+                }
+            },
+            onFailure = {
+                Assert.fail("Error")
+            }
+        )
+        assertRequestContainsQueryParam("user_id", userId)
+    }
+
+    @Test
     fun postValidateEntitiesDataIsFailure() = runBlocking {
         // Given
         val entitiesHash = listOf(
@@ -441,6 +477,32 @@ class SynchronizationServiceTest : ServiceTest() {
             onFailure = {
                 Assert.fail("Error")
             })
+    }
+
+    @Test
+    fun getEntityHashesWithUserId() = runBlocking {
+        // Given
+        val entity = "entity123"
+        val userId = "user123"
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_ENTITY_HASHES)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getEntityHashes(entity, userId)
+        // Then
+        assert(response is DataResult.Success)
+        response.fold(
+            onSuccess = {
+                Assert.assertEquals(1, it.size)
+                it.forEach {
+                    Assert.assertNotNull(it.id)
+                    Assert.assertNotNull(it.hash)
+                }
+            },
+            onFailure = {
+                Assert.fail("Error")
+            })
+
+        assertRequestContainsQueryParam("user_id", userId)
     }
 
     @Test
@@ -561,7 +623,10 @@ class SynchronizationServiceTest : ServiceTest() {
                 Assert.assertEquals("user-456", it.userId)
                 Assert.assertEquals("completed", it.status)
                 Assert.assertEquals(1725044885L, it.resultAt)
-                Assert.assertEquals("https://cg-storage.nyc3.digitaloceanspaces.com/horus/upload/sync/ef2ef583-2f61-4386-bea2-ab5d3de8529b.json?response-content-type=application%2Fjson&response-content-disposition=attachment%3B%20filename%3D%22ef2ef583-2f61-4386-bea2-ab5d3de8529b.json%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801YJBHWCCPVJ3H7FN%2F20250727%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20250727T201717Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=fe5da1c891d0577fbbc4db7f2fca2f2f5ae6607b4c74852646778a21c9f56461", it.downloadUrl)
+                Assert.assertEquals(
+                    "https://cg-storage.nyc3.digitaloceanspaces.com/horus/upload/sync/ef2ef583-2f61-4386-bea2-ab5d3de8529b.json?response-content-type=application%2Fjson&response-content-disposition=attachment%3B%20filename%3D%22ef2ef583-2f61-4386-bea2-ab5d3de8529b.json%22&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801YJBHWCCPVJ3H7FN%2F20250727%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date=20250727T201717Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=fe5da1c891d0577fbbc4db7f2fca2f2f5ae6607b4c74852646778a21c9f56461",
+                    it.downloadUrl
+                )
                 Assert.assertEquals("checkpoint-789", it.checkpoint)
             },
             onFailure = {

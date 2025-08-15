@@ -127,7 +127,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `validate method onReady`() {
 
         var invoked = false
-        HorusDataFacade.onReady{
+        HorusDataFacade.onReady {
             invoked = true
         }
         EventBus.emit(EventType.ON_READY)
@@ -417,6 +417,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateInsertWithIdTest()
         validateInsertIsFailureByRestriction()
         validateInsertBatchTest()
+        validateInsertBatchWithRelatedTest()
         validateInsertBatchIsFailureByMaxCountRestriction()
         validateInsertBatchWithIdsTest()
         validateUpdateBatchIsTest()
@@ -546,7 +547,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateInsertTest() = prepareInternalTest {
         val result = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord()
+            createDataMeasureRecord()
         )
         assert(result is DataResult.Success)
     }
@@ -555,7 +556,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         val idExpected = uuid()
         val result = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord().toMutableMap().apply {
+            createDataMeasureRecord().toMutableMap().apply {
                 put("id", idExpected)
             }
         )
@@ -581,7 +582,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val result = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord().toMutableMap().apply {
+            createDataMeasureRecord().toMutableMap().apply {
                 put("id", idExpected)
             }
         )
@@ -607,12 +608,43 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val result = HorusDataFacade.insertBatch(
             listOf(
-                Horus.Batch.Insert("measures", createDataInsertRecord()),
-                Horus.Batch.Insert("measures", createDataInsertRecord()),
-                Horus.Batch.Insert("measures", createDataInsertRecord())
+                Horus.Batch.Insert("measures", createDataMeasureRecord()),
+                Horus.Batch.Insert("measures", createDataMeasureRecord()),
+                Horus.Batch.Insert("measures", createDataMeasureRecord())
             )
         )
         assert(result is DataResult.Success)
+    }
+
+    private fun validateInsertBatchWithRelatedTest() = prepareInternalTest {
+
+        // Given
+        val result = HorusDataFacade.insert("measures", createDataMeasureRecord()) as DataResult.Success
+
+        val measureId = result.data
+        val measureMetadata = createDataMeasureMetadataRecord(
+            measureId = measureId
+        )
+
+        val userOwnerId = driver.rawQuery("SELECT * FROM measures WHERE id= '$measureId'") {
+            it.getString(1)
+        }[0]
+
+        assertEquals(HorusAuthentication.getUserAuthenticatedId(), userOwnerId)
+        // When
+        HorusDataFacade.insertBatch(
+            listOf(
+                Horus.Batch.Insert("measures_metadata", measureMetadata)
+            )
+        )
+
+        // Then
+        assert(driver.rawQuery(
+            "SELECT * FROM measures_metadata WHERE measure_id = '$measureId' AND ${Horus.Attribute.OWNER_ID} = '$userOwnerId'"
+        ) {
+            it.getString(0)
+        }.isNotEmpty()
+        )
     }
 
     private fun validateInsertBatchIsFailureByMaxCountRestriction() = prepareInternalTest {
@@ -625,9 +657,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
         val result = HorusDataFacade.insertBatch(
             listOf(
-                Horus.Batch.Insert("measures", createDataInsertRecord()),
-                Horus.Batch.Insert("measures", createDataInsertRecord()),
-                Horus.Batch.Insert("measures", createDataInsertRecord())
+                Horus.Batch.Insert("measures", createDataMeasureRecord()),
+                Horus.Batch.Insert("measures", createDataMeasureRecord()),
+                Horus.Batch.Insert("measures", createDataMeasureRecord())
             )
         )
         assert(result is DataResult.NotAuthorized)
@@ -638,9 +670,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val result = HorusDataFacade.insertBatch(
             listOf(
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId())
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId()),
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId()),
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId())
             )
         )
         assert(result is DataResult.Success)
@@ -650,9 +682,9 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         val resultInsert = HorusDataFacade.insertBatch(
             listOf(
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId()),
-                Horus.Batch.Insert("measures", createDataInsertRecordWithId())
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId()),
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId()),
+                Horus.Batch.Insert("measures", createDataMeasureRecordWithId())
             )
         )
 
@@ -679,7 +711,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         val valueExpected = Random.nextFloat()
         val resultInsert = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord()
+            createDataMeasureRecord()
         )
 
         // When
@@ -712,7 +744,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Given
         val resultInsert = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord()
+            createDataMeasureRecord()
         )
 
         // When
@@ -737,7 +769,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun validateExecuteBatchOperations() = prepareInternalTest {
         // Given
-        val measure = createDataInsertRecordWithId()
+        val measure = createDataMeasureRecordWithId()
         val measureId = measure["id"] as String
         val operations = listOf(
             Horus.Batch.Insert("measures", measure),
@@ -766,7 +798,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         // Given
         val resultInsert = HorusDataFacade.insert(
             "measures",
-            createDataInsertRecord()
+            createDataMeasureRecord()
         )
 
         // When
@@ -784,7 +816,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private suspend fun validateGetEntities() = prepareInternalTest {
         // Given
         val attributesList = generateRandomArray {
-            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+            createDataMeasureRecord().map { Horus.Attribute(it.key, it.value) }
         }
 
         attributesList.forEach {
@@ -808,7 +840,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private suspend fun validateGetEntitiesWithWhereConditions() = prepareInternalTest {
         // Given
-        val attributesList = createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+        val attributesList = createDataMeasureRecord().map { Horus.Attribute(it.key, it.value) }
 
         val insertResult = HorusDataFacade.insert("measures", *attributesList.toTypedArray())
 
@@ -835,7 +867,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private suspend fun validateGetEntitiesWithLimitAndOffset() = prepareInternalTest {
 
         val attributesList = List(20) { 0 }.map {
-            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+            createDataMeasureRecord().map { Horus.Attribute(it.key, it.value) }
         }
 
         attributesList.forEach {
@@ -872,7 +904,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun validateGetEntitiesName() = prepareInternalTest {
         // Given
-        val countEntitiesExpected = 2
+        val countEntitiesExpected = 3
 
         // When
         val entitiesName = HorusDataFacade.getEntityNames()
@@ -886,7 +918,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private suspend fun validateCountRecordFromEntity() = prepareInternalTest {
         // Given
         val entitiesAttributes = generateRandomArray {
-            createDataInsertRecord().map { Horus.Attribute(it.key, it.value) }
+            createDataMeasureRecord().map { Horus.Attribute(it.key, it.value) }
         }
 
         entitiesAttributes.forEach {
@@ -1079,14 +1111,21 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     //---------------------------------------------
 
-    private fun createDataInsertRecord() = mapOf(
+    private fun createDataMeasureRecord() = mapOf(
         "measure" to "w",
         "unit" to "kg",
         "value" to 10.0f,
         "nullable" to null
     )
 
-    private fun createDataInsertRecordWithId() = mapOf(
+    private fun createDataMeasureMetadataRecord(measureId: String) = mapOf(
+        "id" to uuid(),
+        "measure_id" to measureId,
+        "name" to "name123" + Random.nextInt(1..1000),
+        "value" to "value123" + Random.nextInt(1..1000),
+    )
+
+    private fun createDataMeasureRecordWithId() = mapOf(
         "id" to uuid(),
         "measure" to "w",
         "unit" to "kg",
@@ -1105,6 +1144,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun prepareInternalTest(block: suspend () -> Unit) = runBlocking {
         driver.execute("DELETE FROM measures")
         driver.execute("DELETE FROM product_breeds")
+        driver.execute("DELETE FROM measures_metadata")
         driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
         driver.execute("DELETE FROM ${DataSharedTable.TABLE_NAME}")
         HorusDataFacade.setEntityRestrictions(emptyList())

@@ -80,8 +80,8 @@ internal class RefreshReadableEntitiesTask(
                                 }
                             }
                         }
+                        .sortedBy { syncControlDatabaseHelper.getEntityLevel(it.name) }
                         .flatMap { it.toRecordsInsert() }
-                        .reversed()
 
                     // Remove existing records and insert fresh data
                     entitiesToTruncate.forEach {
