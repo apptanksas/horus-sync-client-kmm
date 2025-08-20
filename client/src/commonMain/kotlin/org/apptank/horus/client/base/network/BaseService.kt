@@ -32,6 +32,8 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.apptank.horus.client.sync.upload.data.FileData
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * BaseService provides a foundational layer for making HTTP requests with a shared HttpClient.
@@ -239,10 +241,12 @@ internal abstract class BaseService(
      * @param builder The HttpRequestBuilder used to configure the request.
      * @return The modified HttpRequestBuilder with added headers.
      */
+    @OptIn(ExperimentalUuidApi::class)
     private fun setupHeaders(builder: HttpRequestBuilder): HttpRequestBuilder {
         builder.headers {
             append(HttpHeader.CONTENT_TYPE, "application/json")
             append(HttpHeader.ACCEPT, "application/json")
+            append(HttpHeader.X_REQUEST_ID, Uuid.random().toString())
 
             // Add custom headers if provided
             customHeaders.forEach { (key, value) ->

@@ -22,4 +22,6 @@ internal object HttpHeader {
 
     // Header for specifying the accepted content type of the response
     const val ACCEPT = "Accept"
+
+    const val X_REQUEST_ID = "X-Request-ID"
 }

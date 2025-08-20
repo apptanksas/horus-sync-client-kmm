@@ -1,7 +1,8 @@
 # Changelog
 
-# v0.13.4
+# v0.14.0
 - Fixed sort sync actions by entity level.
+- Added header request id in the service requests.
 
 # v0.13.3
 - Fixed problems related with identify entities owner in the insert actions.
