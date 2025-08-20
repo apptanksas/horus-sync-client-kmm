@@ -1,6 +1,9 @@
 # Changelog
 
-# v.13.3
+# v0.13.4
+- Fixed sort sync actions by entity level.
+
+# v0.13.3
 - Fixed problems related with identify entities owner in the insert actions.
 
 # v0.13.2
