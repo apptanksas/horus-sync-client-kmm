@@ -403,9 +403,7 @@ internal class SynchronizatorManager(
 
                 val (actionsInsert, updateActions, deleteActions) = organizeActions(newActions)
 
-                val operations = mapToInsertOperation(actionsInsert) +
-                        mapToUpdateOperation(updateActions) +
-                        mapToDeleteOperation(deleteActions)
+                val operations = mapToInsertOperation(actionsInsert) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
 
                 val result = operationDatabaseHelper.executeOperations(operations)
 
@@ -499,7 +497,7 @@ internal class SynchronizatorManager(
      * @return A list of delete operations.
      */
     private fun mapToDeleteOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.DeleteRecord> {
-        return actions.map { it.toDeleteRecord() }
+        return actions.sortedByDescending { syncControlDatabaseHelper.getEntityLevel(it.entity) }.map { it.toDeleteRecord() }
     }
 
     /**

@@ -11,6 +11,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import org.junit.Assert
 import org.junit.Before
+import kotlin.test.assertTrue
 
 abstract class ServiceTest : TestCase() {
     companion object {
@@ -84,6 +85,7 @@ abstract class ServiceTest : TestCase() {
     private fun validateHeaders() {
         assertRequestHeader(HttpHeader.ACCEPT, "application/json")
         assertRequestHeader(HttpHeader.AUTHORIZATION, "Bearer $USER_ACCESS_TOKEN")
+        assertTrue(lastRequest.headers.contains(HttpHeader.X_REQUEST_ID))
     }
 
 
