@@ -1,6 +1,6 @@
 # Changelog
 
-# v0.14.0
+# v0.13.4
 - Fixed sort sync actions by entity level.
 - Added header request id in the service requests.
 
