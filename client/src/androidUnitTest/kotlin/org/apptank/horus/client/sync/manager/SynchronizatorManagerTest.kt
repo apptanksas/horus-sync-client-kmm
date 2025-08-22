@@ -9,7 +9,7 @@ import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import io.mockative.Mock

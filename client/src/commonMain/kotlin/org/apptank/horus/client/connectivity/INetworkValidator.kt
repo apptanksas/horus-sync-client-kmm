@@ -1,4 +1,4 @@
-package org.apptank.horus.client.di
+package org.apptank.horus.client.connectivity
 
 import org.apptank.horus.client.base.Callback
 

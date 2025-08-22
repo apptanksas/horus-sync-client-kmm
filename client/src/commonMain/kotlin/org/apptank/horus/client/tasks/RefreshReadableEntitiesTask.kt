@@ -7,7 +7,7 @@ import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.database.struct.toRecordsInsert
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.extensions.diffInHoursFromNow
 import org.apptank.horus.client.extensions.forEachPair
 import org.apptank.horus.client.extensions.logException

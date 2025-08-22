@@ -6,7 +6,7 @@ import kotlinx.datetime.Instant
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.extensions.diffInHoursFromNow
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 

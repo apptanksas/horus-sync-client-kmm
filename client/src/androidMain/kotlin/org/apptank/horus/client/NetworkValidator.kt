@@ -3,7 +3,7 @@ package org.apptank.horus.client
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 
 internal class NetworkValidator(
     private val context: Context

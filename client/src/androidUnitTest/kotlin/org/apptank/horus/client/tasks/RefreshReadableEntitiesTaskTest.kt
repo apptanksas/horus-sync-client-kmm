@@ -16,7 +16,7 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.junit.Assert

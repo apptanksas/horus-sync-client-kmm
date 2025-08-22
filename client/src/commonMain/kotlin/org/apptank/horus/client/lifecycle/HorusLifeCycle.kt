@@ -3,7 +3,7 @@ package org.apptank.horus.client.lifecycle
 import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.ILifeCycle
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.sync.manager.DispenserManager

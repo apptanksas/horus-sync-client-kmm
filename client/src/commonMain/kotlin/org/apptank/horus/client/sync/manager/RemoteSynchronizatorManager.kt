@@ -11,7 +11,7 @@ import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.extensions.logException
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.dto.toRequest
 import org.apptank.horus.client.sync.network.service.ISynchronizationService

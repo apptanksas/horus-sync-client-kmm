@@ -11,7 +11,7 @@ import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.OperationDatabaseHelper
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.network.toScheme
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
