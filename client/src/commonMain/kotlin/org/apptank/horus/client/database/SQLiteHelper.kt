@@ -7,8 +7,12 @@ import app.cash.sqldelight.db.SqlDriver
 import org.apptank.horus.client.base.CallbackOnParseStringNullable
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.control.QueueActionsTable
+import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlTable
+import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.data.InternalModel
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.Column
@@ -16,6 +20,7 @@ import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsert
+import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.getRequireString
@@ -45,8 +50,8 @@ abstract class SQLiteHelper(
      */
     internal fun getTableEntities(): List<InternalModel.TableEntity> {
 
-        if (MemoryCache.hasTables(databaseName)) {
-            return MemoryCache.getTables(databaseName) ?: emptyList()
+        if (MemoryCache.hasTablesEntities(databaseName)) {
+            return MemoryCache.getTablesEntities(databaseName) ?: emptyList()
         }
 
         val tables = mutableListOf<InternalModel.TableEntity>()
@@ -67,7 +72,7 @@ abstract class SQLiteHelper(
         }
 
         return tables.also {
-            MemoryCache.setTables(
+            MemoryCache.setTablesEntities(
                 databaseName,
                 it
             )
@@ -80,13 +85,20 @@ abstract class SQLiteHelper(
      * @return A list of table names.
      */
     fun getTables(): List<String> {
+
+        if (MemoryCache.hasTables()) {
+            return MemoryCache.getTables()
+        }
+
         this.driver.handle {
             // Query tables
             val result: List<String> = rawQuery(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ) { cursor -> cursor.getString(0) }
 
-            return (result.filter { TABLES_SYSTEM.notContains(it) })
+            return (result.filter { TABLES_SYSTEM.notContains(it) }).also {
+                MemoryCache.setTables(it)
+            }
         }
     }
 
@@ -125,6 +137,24 @@ abstract class SQLiteHelper(
                 it
             )
         }
+    }
+
+
+    /**
+     * Validates and creates necessary tables for Horus migration if they do not exist.
+     */
+    fun validateMigrationHorusTables() {
+        if (getTables().contains(EntitiesTable.TABLE_NAME)) return
+
+        driver.handle {
+            execute(EntitiesTable.SQL_CREATE_TABLE)
+            execute(SyncControlTable.SQL_CREATE_TABLE)
+            execute(QueueActionsTable.SQL_CREATE_TABLE)
+            execute(SyncFileTable.SQL_CREATE_TABLE)
+            execute(EntityAttributesTable.SQL_CREATE_TABLE)
+            execute(DataSharedTable.SQL_CREATE_TABLE)
+        }
+        MemoryCache.flushCache()
     }
 
     /**
@@ -236,6 +266,7 @@ abstract class SQLiteHelper(
                 }
             }
             executeSql("PRAGMA foreign_keys = ON;")
+            MemoryCache.flushCache()
         } catch (e: Exception) {
             logException("[CLEAR_DATABASE] Error", e)
         }

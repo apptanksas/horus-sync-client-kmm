@@ -47,6 +47,7 @@ internal class SyncControlDatabaseHelper(
      * @return True if the status is completed, false otherwise.
      */
     override fun isStatusCompleted(type: SyncControl.OperationType): Boolean {
+        validateMigrationHorusTables()
         driver.handle {
             return rawQuery(
                 "SELECT EXISTS(SELECT 1 FROM ${SyncControlTable.TABLE_NAME} WHERE ${SyncControlTable.ATTR_TYPE} = ${type.id} AND " +
@@ -61,6 +62,7 @@ internal class SyncControlDatabaseHelper(
      * @return The timestamp of the last checkpoint in milliseconds.
      */
     override fun getLastDatetimeCheckpoint(): Long {
+        validateMigrationHorusTables()
         driver.handle {
             val query = SimpleQueryBuilder(SyncControlTable.TABLE_NAME).apply {
                 select(SyncControlTable.ATTR_DATETIME)
