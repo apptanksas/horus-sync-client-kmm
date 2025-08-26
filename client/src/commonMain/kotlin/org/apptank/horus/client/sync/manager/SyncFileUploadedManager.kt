@@ -113,14 +113,16 @@ class SyncFileUploadedManager(
 
         if (uploadFilesResult.isFailure()) {
             uploadFilesResult.forEach {
-                val failure = it as SyncFileResult.Failure
-                logException(
-                    "[SyncFiles] Error while uploading files -> ${failure.exception.message}",
-                    failure.exception
-                )
+                if (it is SyncFileResult.Failure) {
+                    val failure = it
+                    logException(
+                        "[SyncFiles] Error while uploading files -> ${failure.exception.message}",
+                        failure.exception
+                    )
+                }
+                EventBus.emit(EventType.SYNC_PUSH_FAILED)
+                return
             }
-            EventBus.emit(EventType.SYNC_PUSH_FAILED)
-            return
         }
 
         printLogUploadFilesResult(uploadFilesResult)
@@ -155,11 +157,13 @@ class SyncFileUploadedManager(
 
         if (downloadFilesResult.isFailure()) {
             downloadFilesResult.forEach {
-                val failure = it as SyncFileResult.Failure
-                logException(
-                    "[SyncFiles] Error while downloading files -> ${failure.exception.message}",
-                    failure.exception
-                )
+                if (it is SyncFileResult.Failure) {
+                    val failure = it
+                    logException(
+                        "[SyncFiles] Error while downloading files -> ${failure.exception.message}",
+                        failure.exception
+                    )
+                }
             }
             return
         }
