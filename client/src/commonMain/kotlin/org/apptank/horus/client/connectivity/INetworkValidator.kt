@@ -30,6 +30,13 @@ interface INetworkValidator {
     fun registerNetworkCallback()
 
     /**
+     * Gets the current connection level.
+     *
+     * @return The current [ConnectionLevel].
+     */
+    fun getNetworkInfo(): Network
+
+    /**
      * Unregisters the network callback.
      */
     fun unregisterNetworkCallback()

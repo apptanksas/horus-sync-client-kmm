@@ -19,7 +19,6 @@ import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
 import org.apptank.horus.client.exception.FileSizeExceededException
-import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.extensions.toPath
 import org.apptank.horus.client.generateFileDataImage
 import org.apptank.horus.client.generateSyncControlFile
@@ -428,8 +427,7 @@ class UploadFileRepositoryTest : TestCase() {
 
     @Test
     fun testDownloadFilesIsSuccess() = runBlocking {
-        val filesUploadedInRemote =
-            generateRandomArray { generateSyncControlFile(SyncControl.FileStatus.REMOTE) }
+        val filesUploadedInRemote = generateRandomArray { generateSyncControlFile(SyncControl.FileStatus.REMOTE) }
         val fileDownloaded = SyncDTO.Response.FileData(byteArrayOf(0, 1, 2, 3), "image/png")
 
         every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.REMOTE) }.returns(

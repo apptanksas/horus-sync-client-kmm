@@ -233,8 +233,18 @@ class UploadFileRepository(
                                         "Mime type not found"
                                     )
                             val filename = "${recordFile.reference}.${mimeType.extension}"
-                            val fileLocalUri =
-                                createFileInLocalStorage(fileData.data, filename, getBasePathFile())
+                            val fileLocalUri = createFileInLocalStorage(fileData.data, filename, getBasePathFile())
+
+                            if (!validateIfFileIsCorrect(fileLocalUri)) {
+                                KmpFile(fileLocalUri.toPath()).delete() // Delete the invalid file
+                                result.add(
+                                    SyncFileResult.Failure(
+                                        recordFile.reference,
+                                        Exception("Error validating file downloaded")
+                                    )
+                                )
+                                return@coFold
+                            }
 
                             val updateResult = fileDatabaseHelper.update(
                                 SyncControl.File(
@@ -406,6 +416,11 @@ class UploadFileRepository(
             filename,
             mimeType
         )
+    }
+
+    private fun validateIfFileIsCorrect(path: String): Boolean {
+        val file = KmpFile(path.toPath())
+        return file.exists() && file.readBytes().isNotEmpty()
     }
 
     internal fun String.fallbackFileLocalUri(): String {
