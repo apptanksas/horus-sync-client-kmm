@@ -74,9 +74,10 @@ internal abstract class BaseService(
             level = LogLevel.HEADERS
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 60L * 1000 // 60 secs
-            socketTimeoutMillis = 60L * 1000 // 60 secs
-            connectTimeoutMillis = 60L * 1000 // 60 secs
+            val timeout = 60L * 2 * 1000L // 120 seconds
+            requestTimeoutMillis = timeout
+            socketTimeoutMillis = timeout
+            connectTimeoutMillis = timeout
         }
     }
 

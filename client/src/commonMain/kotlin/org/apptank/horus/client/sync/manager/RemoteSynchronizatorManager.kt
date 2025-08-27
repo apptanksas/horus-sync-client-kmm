@@ -22,7 +22,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 
 
@@ -106,7 +105,7 @@ internal class RemoteSynchronizatorManager(
                         updateActionsAsCompleted(pendingActions)
                     },
                     onFailure = {
-                        logException("Error trying to sync actions")
+                        logException("Error trying to sync actions: " + it.message, it)
                         event.emit(
                             EventType.SYNC_PUSH_FAILED,
                             Event(mapOf<String, Any>("exception" to it))
@@ -116,7 +115,7 @@ internal class RemoteSynchronizatorManager(
 
             job.invokeOnCompletion {
                 it?.let {
-                    logException("Error trying to sync actions", it)
+                    logException("Error trying to sync actions: " + it.message, it)
                     event.emit(
                         EventType.SYNC_PUSH_FAILED,
                         Event(mapOf<String, Any>("exception" to it))

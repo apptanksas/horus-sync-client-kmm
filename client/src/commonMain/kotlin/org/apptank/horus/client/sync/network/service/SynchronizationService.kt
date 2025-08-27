@@ -86,6 +86,7 @@ internal class SynchronizationService(
                     downloadedBytes += bytesRead.size
                     sink.write(bytesRead)
                     contentLength?.let {
+                        info("[SynchronizationService] Download progress: $downloadedBytes / $contentLength")
                         onProgress(((downloadedBytes / contentLength.toDouble()) * 100).toInt())
                     }
                 }
