@@ -206,6 +206,12 @@ internal class NetworkValidator(
      * Returns Network.noConnections() when no active network or capabilities are present.
      */
     private fun getNetworkInformation(context: Context): Network {
+
+        if (!hasAccessNetworkStatePermission()) {
+            warn("[NetworkValidator] Missing ACCESS_NETWORK_STATE permission; cannot access network state.")
+            return Network.noConnections()
+        }
+
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return Network.noConnections()
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return Network.noConnections()
@@ -340,6 +346,13 @@ internal class NetworkValidator(
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         val netInfo = cm?.activeNetworkInfo
         return netInfo != null && netInfo.isConnectedOrConnecting
+    }
+
+    /**
+     * Checks if the app has the ACCESS_NETWORK_STATE permission.
+     */
+    private fun hasAccessNetworkStatePermission(): Boolean {
+        return context.checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED
     }
 
 }
