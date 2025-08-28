@@ -402,7 +402,9 @@ internal class SyncControlDatabaseHelper(
      */
     override fun clearDatabase() {
         driver.handle {
-            deleteAllTables()
+            while (getTables().isNotEmpty()) {
+                deleteAllTables()
+            }
         }
     }
 
