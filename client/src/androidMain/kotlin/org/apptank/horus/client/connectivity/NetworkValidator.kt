@@ -14,6 +14,7 @@ import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.warn
 
 /**
@@ -208,7 +209,7 @@ internal class NetworkValidator(
     private fun getNetworkInformation(context: Context): Network {
 
         if (!hasAccessNetworkStatePermission()) {
-            warn("[NetworkValidator] Missing ACCESS_NETWORK_STATE permission; cannot access network state.")
+            logException("[NetworkValidator] Missing ACCESS_NETWORK_STATE permission; cannot access network state.")
             return Network.noConnections()
         }
 
