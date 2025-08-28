@@ -145,7 +145,7 @@ internal class SynchronizationService(
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
 
-        val chunks = actions.sortedBy { it.actionedAt }.chunked(1000)
+        val chunks = actions.sortedBy { it.actionedAt }.chunked(500)
         val results = mutableListOf<DataResult<Unit>>()
 
         chunks.forEach { chunk ->

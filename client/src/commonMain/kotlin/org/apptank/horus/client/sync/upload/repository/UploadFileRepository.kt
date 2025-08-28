@@ -9,6 +9,7 @@ import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.base.fold
 import io.matthewnelson.kmp.file.File as KmpFile
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -49,7 +50,8 @@ class UploadFileRepository(
     private val fileDatabaseHelper: ISyncFileDatabaseHelper,
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
-    private val service: IFileSynchronizationService
+    private val service: IFileSynchronizationService,
+    private val networkValidator: INetworkValidator
 ) : IUploadFileRepository {
 
     /**
@@ -117,6 +119,11 @@ class UploadFileRepository(
         info("Upload: ${queryResult.size} files")
 
         queryResult.forEach { recordFile ->
+
+            if (networkValidator.isNetworkAvailable().not()) {
+                output.add(recordFile.reference.toFailure(Exception("No network available")))
+                return@forEach
+            }
 
             runCatching {
                 recordFile.createFileData()?.let { fileData ->
@@ -223,6 +230,11 @@ class UploadFileRepository(
         fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.REMOTE).forEach { recordFile ->
             runCatching {
 
+                if (networkValidator.isNetworkAvailable().not()) {
+                    result.add(recordFile.reference.toFailure(Exception("No network available")))
+                    return@forEach
+                }
+
                 recordFile.urlRemote?.let { url ->
 
                     service.downloadFileByUrl(url).coFold(
@@ -304,7 +316,7 @@ class UploadFileRepository(
         return when (file.status) {
             SyncControl.FileStatus.LOCAL -> file.urlLocal
             SyncControl.FileStatus.REMOTE -> file.urlRemote
-            SyncControl.FileStatus.SYNCED -> file.urlLocal
+            SyncControl.FileStatus.SYNCED -> getFileUrlLocal(reference)
         }
     }
 
@@ -315,7 +327,29 @@ class UploadFileRepository(
      * @return The URL of the file if found, `null` otherwise.
      */
     override fun getFileUrlLocal(reference: CharSequence): String? {
-        return fileDatabaseHelper.search(reference)?.urlLocal
+        val urlLocal = fileDatabaseHelper.search(reference)?.urlLocal
+
+        if (urlLocal != null && validateIfFileIsCorrect(urlLocal)) {
+            return urlLocal
+        }
+
+        // If the file is not valid locally and is synced, update its status to REMOTE
+        fileDatabaseHelper.search(reference)?.let {
+            if (it.status.isSynced()) {
+                fileDatabaseHelper.update(
+                    SyncControl.File(
+                        it.reference,
+                        it.type,
+                        SyncControl.FileStatus.REMOTE,
+                        it.mimeType,
+                        urlLocal = null,
+                        urlRemote = it.urlRemote
+                    )
+                )
+            }
+        }
+
+        return null
     }
 
     /**
@@ -420,7 +454,13 @@ class UploadFileRepository(
 
     private fun validateIfFileIsCorrect(path: String): Boolean {
         val file = KmpFile(path.toPath())
-        return file.exists() && file.readBytes().isNotEmpty()
+        val fileIsValid = file.exists() && file.readBytes().isNotEmpty()
+
+        if (fileIsValid.not()) {
+            file.delete() // Delete the invalid file
+        }
+
+        return fileIsValid
     }
 
     internal fun String.fallbackFileLocalUri(): String {

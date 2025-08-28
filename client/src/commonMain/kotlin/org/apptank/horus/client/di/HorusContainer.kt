@@ -425,7 +425,8 @@ object HorusContainer {
                 getSyncFilesDatabaseHelper(),
                 getSyncControlDatabaseHelper(),
                 getOperationDatabaseHelper(),
-                getFileSynchronizationService()
+                getFileSynchronizationService(),
+                getNetworkValidator()
             )
         }
         return uploadFileRepository!!

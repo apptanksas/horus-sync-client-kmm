@@ -106,6 +106,8 @@ sealed class SyncControl {
         REMOTE(2),
         SYNCED(3);
 
+        fun isSynced(): Boolean = this == SYNCED
+
         companion object {
             /**
              * Retrieves the FileStatus enum based on its ID.
