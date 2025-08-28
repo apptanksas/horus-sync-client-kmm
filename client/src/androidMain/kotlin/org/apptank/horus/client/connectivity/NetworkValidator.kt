@@ -13,6 +13,7 @@ import android.telephony.CellInfoLte
 import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
+import androidx.annotation.RequiresPermission
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.warn
@@ -206,6 +207,7 @@ internal class NetworkValidator(
      *
      * Returns Network.noConnections() when no active network or capabilities are present.
      */
+    @SuppressLint("MissingPermission")
     private fun getNetworkInformation(context: Context): Network {
 
         if (!hasAccessNetworkStatePermission()) {
@@ -248,6 +250,7 @@ internal class NetworkValidator(
      *  - Uses TelephonyManager.networkType to classify the generation (2G/3G/4G/5G).
      *  - For 3G/4G/5G entries, returns a mapped signal level based on getMobileSignalLevel().
      */
+    @SuppressLint("MissingPermission")
     private fun getMobileNetworkType(context: Context): ConnectionLevel {
 
         if (hasPermissions(context).not()) {
@@ -295,6 +298,7 @@ internal class NetworkValidator(
      * Requires ACCESS_FINE_LOCATION (and sometimes READ_PHONE_STATE) to return real cell data.
      * Returns -1 when no cell info is available.
      */
+    @SuppressLint("MissingPermission")
     private fun getMobileSignalLevel(context: Context): Int {
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         val cellInfoList = telephonyManager.allCellInfo
@@ -343,6 +347,7 @@ internal class NetworkValidator(
      * Lightweight helper that uses the legacy activeNetworkInfo to determine availability.
      * NOTE: activeNetworkInfo is deprecated on newer APIs; consider replacing with NetworkCapabilities checks where possible.
      */
+    @SuppressLint("MissingPermission")
     private fun isNetworkIsAvailableByService(): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         val netInfo = cm?.activeNetworkInfo
