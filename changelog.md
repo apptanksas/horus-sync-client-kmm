@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.1
+- Fixed gradle configuration.
+
 # v0.14.0
 - Added restore horus tables and validation.
 - Since now the insert actions are processed with replace to avoid conflicts with unique constraints.
