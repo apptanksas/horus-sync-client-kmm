@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.2
+- Fixed get signal strength in android 13 and above.
+
 # v0.14.1
 - Fixed gradle configuration.
 
