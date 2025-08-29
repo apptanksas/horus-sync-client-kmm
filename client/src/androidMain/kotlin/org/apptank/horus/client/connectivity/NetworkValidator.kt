@@ -314,7 +314,14 @@ internal class NetworkValidator(
                 return cellInfo.cellSignalStrength.level
             }
         }
-        return -1 // no signal
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            telephonyManager.signalStrength?.let {
+                return it.level
+            }
+        }
+
+        return NOT_SIGNAL_LEVEL// No signal info available
     }
 
     /**
@@ -322,7 +329,6 @@ internal class NetworkValidator(
      * Any out-of-range value is interpreted as NONE.
      */
     private fun mapSignalLevel(level: Int): ConnectionLevel {
-
         return when (level) {
             0 -> ConnectionLevel.NONE
             1 -> ConnectionLevel.VERY_LOW
@@ -330,6 +336,7 @@ internal class NetworkValidator(
             3 -> ConnectionLevel.MEDIUM
             4 -> ConnectionLevel.HIGH
             5 -> ConnectionLevel.VERY_HIGH
+            NOT_SIGNAL_LEVEL -> ConnectionLevel.MEDIUM // When signal level is not available, assume MEDIUM for mobile.
             else -> ConnectionLevel.NONE
         }
     }
@@ -361,4 +368,8 @@ internal class NetworkValidator(
         return context.checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED
     }
 
+
+    companion object {
+        const val NOT_SIGNAL_LEVEL = -1
+    }
 }
