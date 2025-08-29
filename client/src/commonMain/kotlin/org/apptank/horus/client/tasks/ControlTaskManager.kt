@@ -30,7 +30,6 @@ internal object ControlTaskManager {
         FAILED       // Task execution has failed.
     }
 
-
     private val networkValidator = HorusContainer.getNetworkValidator()
 
     // Task instances with their dependencies set up.
@@ -120,6 +119,8 @@ internal object ControlTaskManager {
      */
     fun start(dispatcher: CoroutineDispatcher = Dispatchers.IO) {
 
+        val syncControlDatabaseHelper = HorusContainer.getSyncControlDatabaseHelper()
+
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated to start the horus task manager")
             onStatus(Status.FAILED)
@@ -128,7 +129,13 @@ internal object ControlTaskManager {
 
         if (networkValidator.isNetworkAvailable().not()) {
             info("Network is not available to start the horus task manager")
-            emitEventOnReady()
+            when {
+                syncControlDatabaseHelper.getEntityNames().isEmpty() -> {
+                    onStatus(Status.FAILED)
+                    EventBus.emit(EventType.SYNC_FAILED)
+                }
+                else -> emitEventOnReady()
+            }
             return
         }
 

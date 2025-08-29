@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.data.Horus
@@ -20,7 +21,6 @@ import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.hashing.AttributeHasher
-import org.apptank.horus.client.di.INetworkValidator
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData

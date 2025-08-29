@@ -21,7 +21,7 @@ import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.exception.AttributeRestrictedException

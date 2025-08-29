@@ -11,8 +11,9 @@ import org.apptank.horus.client.database.struct.Column
  */
 internal object MemoryCache {
 
-    // Cache for tables
-    private var CACHE_TABLES = mutableMapOf<String, List<InternalModel.TableEntity>>()
+    // Cache for tables entities
+    private var CACHE_TABLES = listOf<String>()
+    private var CACHE_TABLES_ENTITIES = mutableMapOf<String, List<InternalModel.TableEntity>>()
     // Cache for column names
     private var CACHE_COLUMN_NAMES = mutableMapOf<String, MutableMap<String, List<Column>>>()
 
@@ -59,8 +60,8 @@ internal object MemoryCache {
      * @param databaseName The name of the database.
      * @param tables The list of tables.
      */
-    fun setTables(databaseName: String, tables: List<InternalModel.TableEntity>) {
-        CACHE_TABLES[databaseName] = tables
+    fun setTablesEntities(databaseName: String, tables: List<InternalModel.TableEntity>) {
+        CACHE_TABLES_ENTITIES[databaseName] = tables
     }
 
     /**
@@ -69,8 +70,8 @@ internal object MemoryCache {
      * @param databaseName The name of the database.
      * @return The list of tables.
      */
-    fun getTables(databaseName: String): List<InternalModel.TableEntity>? {
-        return CACHE_TABLES[databaseName]
+    fun getTablesEntities(databaseName: String): List<InternalModel.TableEntity>? {
+        return CACHE_TABLES_ENTITIES[databaseName]
     }
 
     /**
@@ -79,15 +80,44 @@ internal object MemoryCache {
      * @param databaseName The name of the database.
      * @return True if the tables are cached, false otherwise.
      */
-    fun hasTables(databaseName: String): Boolean {
-        return CACHE_TABLES.containsKey(databaseName)
+    fun hasTablesEntities(databaseName: String): Boolean {
+        return CACHE_TABLES_ENTITIES.containsKey(databaseName)
     }
+
+    /**
+     * Sets the list of tables.
+     *
+     * @param tables The list of tables.
+     */
+    fun setTables(tables: List<String>) {
+        CACHE_TABLES = tables
+    }
+
+    /**
+     * Gets the list of tables.
+     *
+     * @return The list of tables.
+     */
+    fun getTables(): List<String> {
+        return CACHE_TABLES
+    }
+
+    /**
+     * Checks if the list of tables is cached.
+     *
+     * @return True if the list of tables is cached, false otherwise.
+     */
+    fun hasTables(): Boolean {
+        return CACHE_TABLES.isNotEmpty()
+    }
+
 
     /**
      * Clears the cached tables and column names.
      */
     fun flushCache() {
-        CACHE_TABLES = mutableMapOf()
+        CACHE_TABLES = mutableListOf()
+        CACHE_TABLES_ENTITIES = mutableMapOf()
         CACHE_COLUMN_NAMES = mutableMapOf()
     }
 }

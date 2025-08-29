@@ -15,7 +15,7 @@ import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository

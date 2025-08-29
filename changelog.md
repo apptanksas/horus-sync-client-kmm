@@ -1,5 +1,10 @@
 # Changelog
 
+# v0.14.0
+- Added restore horus tables and validation.
+- Since now the insert actions are processed with replace to avoid conflicts with unique constraints.
+- Added files download validation.
+
 # v0.13.4
 - Fixed sort sync actions by entity level.
 - Added header request id in the service requests.

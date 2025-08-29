@@ -13,6 +13,7 @@ import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.database.DataSharedDatabaseHelper
@@ -424,7 +425,8 @@ object HorusContainer {
                 getSyncFilesDatabaseHelper(),
                 getSyncControlDatabaseHelper(),
                 getOperationDatabaseHelper(),
-                getFileSynchronizationService()
+                getFileSynchronizationService(),
+                getNetworkValidator()
             )
         }
         return uploadFileRepository!!

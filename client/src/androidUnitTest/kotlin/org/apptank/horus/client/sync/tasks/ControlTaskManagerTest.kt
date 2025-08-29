@@ -9,7 +9,7 @@ import org.apptank.horus.client.buildEntitiesSchemeFromJSON
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.IDatabaseDriverFactory
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.migration.network.service.IMigrationService
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService

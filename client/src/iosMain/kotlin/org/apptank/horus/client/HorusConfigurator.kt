@@ -1,7 +1,7 @@
 package org.apptank.horus.client
 
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import com.russhwolf.settings.NSUserDefaultsSettings
 import org.apptank.horus.client.config.HorusConfig
 import platform.Foundation.NSUserDefaults

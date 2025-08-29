@@ -1,4 +1,4 @@
-package org.apptank.horus.client.di
+package org.apptank.horus.client.connectivity
 
 import org.apptank.horus.client.base.Callback
 
@@ -28,6 +28,13 @@ interface INetworkValidator {
      * Registers a network callback to monitor network changes.
      */
     fun registerNetworkCallback()
+
+    /**
+     * Gets the current connection level.
+     *
+     * @return The current [ConnectionLevel].
+     */
+    fun getNetworkInfo(): Network
 
     /**
      * Unregisters the network callback.

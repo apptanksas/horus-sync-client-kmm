@@ -5,6 +5,7 @@ import io.mockative.any
 import io.mockative.classOf
 import io.mockative.coEvery
 import io.mockative.every
+import io.mockative.matches
 import io.mockative.mock
 import io.mockative.verify
 import kotlinx.coroutines.runBlocking
@@ -12,6 +13,7 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -19,7 +21,6 @@ import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
 import org.apptank.horus.client.exception.FileSizeExceededException
-import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.extensions.toPath
 import org.apptank.horus.client.generateFileDataImage
 import org.apptank.horus.client.generateSyncControlFile
@@ -55,13 +56,16 @@ class UploadFileRepositoryTest : TestCase() {
     @Mock
     private val service: IFileSynchronizationService = mock(classOf<IFileSynchronizationService>())
 
+    @Mock
+    private val networkValidator = mock(classOf<INetworkValidator>())
+
     private lateinit var repository: UploadFileRepository
 
     @Before
     fun setUp() {
         repository = UploadFileRepository(
             getHorusConfigTest(),
-            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service
+            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service, networkValidator
         )
     }
 
@@ -105,7 +109,7 @@ class UploadFileRepositoryTest : TestCase() {
                 "http://test",
                 UploadFilesConfig("test", listOf(FileMimeType.IMAGE_PORTABLE_NETWORK_GRAPHICS), 1)
             ),
-            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service
+            fileDatabaseHelper, controlDatabaseHelper, operationDatabaseHelper, service, networkValidator
         )
         val fileData = FileData(
             byteArrayOf(0, 1, 2, 3),
@@ -153,7 +157,11 @@ class UploadFileRepositoryTest : TestCase() {
     fun testGetFileUrlWhenIsSyncedIsSuccess() = runBlocking {
         // Given
         val fileReference = Horus.FileReference()
-        val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED)
+        val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED, getLocalTestPath()).also {
+            it.urlLocal?.let {
+                createFileInLocalStorage(it.toPath())
+            }
+        }
 
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
@@ -207,7 +215,11 @@ class UploadFileRepositoryTest : TestCase() {
     fun testGetFileUrlLocalIsSuccess() {
         // Given
         val fileReference = Horus.FileReference()
-        val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL)
+        val recordFile = generateSyncControlFile(SyncControl.FileStatus.LOCAL, getLocalTestPath()).also {
+            it.urlLocal?.let {
+                createFileInLocalStorage(it.toPath())
+            }
+        }
 
         every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
 
@@ -233,6 +245,28 @@ class UploadFileRepositoryTest : TestCase() {
     }
 
     @Test
+    fun testGetFileUrlLocalNullWhenFileIsInvalid() {
+        // Given
+        val fileReference = Horus.FileReference()
+        val recordFile = generateSyncControlFile(SyncControl.FileStatus.SYNCED, getLocalTestPath()).also {
+            it.urlLocal?.let {
+                createFileInLocalStorage(it.toPath(), "")
+            }
+        }
+
+        every { fileDatabaseHelper.search(fileReference) }.returns(recordFile)
+        every { fileDatabaseHelper.update(matches { it.status == SyncControl.FileStatus.REMOTE }) }.returns(true)
+
+        // When
+        val result = repository.getFileUrlLocal(fileReference)
+
+        // Then
+        Assert.assertNull(result)
+        verify { fileDatabaseHelper.update(any()) }.wasInvoked()
+    }
+
+
+    @Test
     fun testUploadFilesIsSuccess() = runBlocking {
         // Given
         val recordFiles = generateArray {
@@ -244,6 +278,7 @@ class UploadFileRepositoryTest : TestCase() {
         }
         val fileResponse = SyncDTO.Response.FileInfoUploaded()
 
+        every { networkValidator.isNetworkAvailable() }.returns(true)
         every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(recordFiles)
         coEvery { service.uploadFile(any(), any()) }.returns(DataResult.Success(fileResponse))
         every { fileDatabaseHelper.update(any()) }.returns(true)
@@ -275,6 +310,7 @@ class UploadFileRepositoryTest : TestCase() {
         )
         val fileResponse = SyncDTO.Response.FileInfoUploaded()
 
+        every { networkValidator.isNetworkAvailable() }.returns(true)
         every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.LOCAL) }.returns(listOf(file))
         coEvery { service.uploadFile(any(), any()) }.returns(DataResult.Success(fileResponse))
         every { fileDatabaseHelper.update(any()) }.returns(true)
@@ -428,14 +464,14 @@ class UploadFileRepositoryTest : TestCase() {
 
     @Test
     fun testDownloadFilesIsSuccess() = runBlocking {
-        val filesUploadedInRemote =
-            generateRandomArray { generateSyncControlFile(SyncControl.FileStatus.REMOTE) }
+        val filesUploadedInRemote = generateRandomArray { generateSyncControlFile(SyncControl.FileStatus.REMOTE) }
         val fileDownloaded = SyncDTO.Response.FileData(byteArrayOf(0, 1, 2, 3), "image/png")
 
         every { fileDatabaseHelper.queryByStatus(SyncControl.FileStatus.REMOTE) }.returns(
             filesUploadedInRemote
         )
         coEvery { service.downloadFileByUrl(any()) }.returns(DataResult.Success(fileDownloaded))
+        every { networkValidator.isNetworkAvailable() }.returns(true)
         every { fileDatabaseHelper.update(any()) }.returns(true)
 
         // When

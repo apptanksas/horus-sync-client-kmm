@@ -14,7 +14,7 @@ import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.eventbus.EventBus
 import org.apptank.horus.client.eventbus.EventType
 import org.apptank.horus.client.di.IDatabaseDriverFactory
-import org.apptank.horus.client.di.INetworkValidator
+import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.EntityNotExistsException
