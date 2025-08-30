@@ -51,13 +51,6 @@ internal class RemoteSynchronizatorManager(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
-    init {
-        // Registers a callback to attempt synchronization when network changes are detected.
-        netWorkValidator.onNetworkChange {
-            trySynchronizeData()
-        }
-    }
-
     /**
      * Attempts to synchronize pending data with the remote server.
      *
