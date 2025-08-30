@@ -212,10 +212,4 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         Assert.assertEquals(1, eventCounter)
         verify { networkValidator.isNetworkAvailable() }.wasInvoked(1)
     }
-
-    @Test
-    fun trySynchronizeDataWhenOnNetworkChange() = runBlocking {
-        // Given
-        verify { networkValidator.onNetworkChange(any()) }.wasInvoked(1)
-    }
 }

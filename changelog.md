@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.3
+- Remove sync data when on change network.
+
 # v0.14.2
 - Fixed get signal strength in android 13 and above.
 
