@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.4
+- Fixed network validator when have not permission to access the network state.
+
 # v0.14.3
 - Remove sync data when on change network.
 

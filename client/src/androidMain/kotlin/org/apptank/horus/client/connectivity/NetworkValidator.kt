@@ -210,11 +210,6 @@ internal class NetworkValidator(
     @SuppressLint("MissingPermission")
     private fun getNetworkInformation(context: Context): Network {
 
-        if (!hasAccessNetworkStatePermission()) {
-            logException("[NetworkValidator] Missing ACCESS_NETWORK_STATE permission; cannot access network state.")
-            return Network.noConnections()
-        }
-
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return Network.noConnections()
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return Network.noConnections()
@@ -258,6 +253,7 @@ internal class NetworkValidator(
             return ConnectionLevel.MEDIUM
         }
 
+
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         return when (telephonyManager.networkType) {
@@ -300,6 +296,7 @@ internal class NetworkValidator(
      */
     @SuppressLint("MissingPermission")
     private fun getMobileSignalLevel(context: Context): Int {
+
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         val cellInfoList = telephonyManager.allCellInfo
         if (!cellInfoList.isNullOrEmpty()) {
