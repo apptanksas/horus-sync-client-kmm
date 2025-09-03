@@ -294,6 +294,7 @@ internal class NetworkValidator(
      * Requires ACCESS_FINE_LOCATION (and sometimes READ_PHONE_STATE) to return real cell data.
      * Returns -1 when no cell info is available.
      */
+    @SuppressLint("MissingPermission")
     private fun getMobileSignalLevel(context: Context): Int {
 
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
