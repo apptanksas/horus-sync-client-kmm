@@ -8,14 +8,13 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.provider.Settings
 import android.telephony.CellInfoGsm
 import android.telephony.CellInfoLte
 import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
-import androidx.annotation.RequiresPermission
 import org.apptank.horus.client.extensions.info
-import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.extensions.warn
 
 /**
@@ -141,7 +140,7 @@ internal class NetworkValidator(
      */
     @SuppressLint("MissingPermission")
     override fun isNetworkAvailable(): Boolean {
-        return isNetworkIsAvailableByService() && getNetworkInfo().hasValidConnection()
+        return isNetworkIsAvailableByService() && getNetworkInfo().hasValidConnection() && isAirplaneModeOn().not()
     }
 
     /**
@@ -358,11 +357,13 @@ internal class NetworkValidator(
         return netInfo != null && netInfo.isConnectedOrConnecting
     }
 
+
     /**
-     * Checks if the app has the ACCESS_NETWORK_STATE permission.
+     * Checks if Airplane Mode is enabled on the device.
+     * Note: This method does not require special permissions.
      */
-    private fun hasAccessNetworkStatePermission(): Boolean {
-        return context.checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED
+    private fun isAirplaneModeOn(): Boolean {
+        return Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
     }
 
 
