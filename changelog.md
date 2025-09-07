@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.14.5
+- Added validate airplane mode in network validator.
+
 # v0.14.4
 - Fixed network validator when have not permission to access the network state.
 
