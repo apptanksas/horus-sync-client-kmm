@@ -59,7 +59,8 @@ sealed class SyncControl {
     enum class ActionType(val id: Int) {
         INSERT(1),
         UPDATE(2),
-        DELETE(3);
+        DELETE(3),
+        MOVE(4); // Update or delete
 
         companion object {
             /**

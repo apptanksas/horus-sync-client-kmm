@@ -101,6 +101,24 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun getLastDatetimeCheckPointIsSuccessWithInitialSync() {
+        // Given
+        val datetime = 123456789L
+        driver.insertOrThrow(
+            SyncControlTable.TABLE_NAME,
+            SyncControlTable.mapToCreate(
+                SyncControl.OperationType.INITIAL_SYNCHRONIZATION,
+                SyncControl.Status.COMPLETED
+            ).plus(Pair(SyncControlTable.ATTR_DATETIME, datetime))
+        )
+        // When
+        val lastDatetimeCheckpoint = controlManagerDatabaseHelper.getLastDatetimeCheckpoint()
+        // Then
+        Assert.assertEquals(datetime, lastDatetimeCheckpoint)
+    }
+
+
+    @Test
     fun getLastDatetimeCheckPointWithAddSyncTypeStatusIsSuccess() {
         // Given
 

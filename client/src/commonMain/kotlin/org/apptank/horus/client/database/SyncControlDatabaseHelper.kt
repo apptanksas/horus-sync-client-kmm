@@ -66,12 +66,10 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
             val query = SimpleQueryBuilder(SyncControlTable.TABLE_NAME).apply {
                 select(SyncControlTable.ATTR_DATETIME)
-                where(
-                    SQL.WhereCondition(
-                        SQL.ColumnValue(
-                            SyncControlTable.ATTR_TYPE,
-                            SyncControl.OperationType.CHECKPOINT.id
-                        )
+                whereIn(
+                    SyncControlTable.ATTR_TYPE, listOf(
+                        SyncControl.OperationType.CHECKPOINT.id,
+                        SyncControl.OperationType.INITIAL_SYNCHRONIZATION.id
                     )
                 )
                 where(
@@ -314,6 +312,16 @@ internal class SyncControlDatabaseHelper(
         type: AttributeType
     ): List<String> {
         return getColumns(entityName).filter { it.format == type }.map { it.name }
+    }
+
+    /**
+     * Retrieves a list of all attribute names for a specified entity.
+     *
+     * @param entityName The name of the entity to retrieve attributes for.
+     * @return A list of attribute names.
+     */
+    override fun getEntityAttributes(entityName: String): List<String> {
+        return getColumns(entityName).map { it.name }
     }
 
     /**

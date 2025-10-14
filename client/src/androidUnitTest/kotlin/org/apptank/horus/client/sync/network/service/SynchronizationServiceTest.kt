@@ -26,6 +26,7 @@ import org.apptank.horus.client.MOCK_RESPONSE_POST_START_SYNC
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 
 class SynchronizationServiceTest : ServiceTest() {
@@ -292,6 +293,49 @@ class SynchronizationServiceTest : ServiceTest() {
         assert(response is DataResult.Success)
         assertRequestContainsQueryParam("after", timestampAfter.toString())
         assertRequestContainsQueryParam("exclude", excludeTimestamp.toString())
+    }
+
+    @Test
+    fun getQueueActionsWithTimestampAfterAndExcludeUsingCache() = runBlocking {
+        // Given
+        val timestampAfter = timestamp()
+        val exclude = generateRandomArray { timestamp() + it }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+
+        for (i in 1..10) {
+            // Calling multiple times to test the cache
+            service.getQueueActions(timestampAfter, exclude)
+        }
+        val response = service.getQueueActions(timestampAfter, exclude)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertEquals(1, SynchronizationService.queueActionsCache.size)
+        assertRequestContainsQueryParam("after", timestampAfter.toString())
+        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
+    }
+
+
+    @Test
+    fun getQueueActionsWithMultiplesCache() = runBlocking {
+        // Given
+        val timestampAfter = timestamp()
+        val exclude = generateRandomArray { timestamp() + it }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+
+        for (i in 1..10) {
+            // Calling multiple times to test the cache
+            service.getQueueActions(timestamp() + i, exclude)
+        }
+        val response = service.getQueueActions(timestampAfter, exclude)
+
+        // Then
+        assert(response is DataResult.Success)
+        assertEquals(5, SynchronizationService.queueActionsCache.size)
     }
 
 
