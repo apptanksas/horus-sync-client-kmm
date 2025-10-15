@@ -194,6 +194,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${resultActions.type}")
+            }
         }
 
         return null
@@ -341,6 +345,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:restoreCorruptedData] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${dataEntitiesResponse.type}")
+            }
         }
 
         return false
@@ -371,6 +379,10 @@ internal class SynchronizatorManager(
 
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:syncEntitiesMissingData] Not authorized")
+            }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${dataEntitiesResponse.type}")
             }
         }
         return false
@@ -442,6 +454,11 @@ internal class SynchronizatorManager(
 
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager] Not authorized")
+                return false
+            }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${actions.type}")
                 return false
             }
         }
@@ -564,6 +581,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:getEntitiesHashes] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${result.type}")
+            }
         }
 
         return emptyList()
@@ -589,6 +610,10 @@ internal class SynchronizatorManager(
 
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:getRemoteValidateEntitiesData] Not authorized")
+            }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${result.type}")
             }
         }
 

@@ -158,7 +158,7 @@ internal class SynchronizationService(
         return if (results.all { it is DataResult.Success }) {
             DataResult.Success(Unit)
         } else {
-            return results.filterIsInstance<DataResult.Failure>().firstOrNull() ?: DataResult.Failure(Exception("Failed to post queue actions"))
+            return results.find { it !is DataResult.Success } ?: DataResult.Failure(Exception("Failed to post queue actions"))
         }
     }
 

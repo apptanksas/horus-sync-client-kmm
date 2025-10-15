@@ -134,6 +134,10 @@ internal class SynchronizeInitialDataTask(
             is DataResult.NotAuthorized -> {
                 return startResult
             }
+
+            is DataResult.ClientError -> {
+                return startResult
+            }
         }
     }
 

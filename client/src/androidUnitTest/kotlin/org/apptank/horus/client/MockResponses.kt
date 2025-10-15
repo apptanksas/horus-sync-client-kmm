@@ -925,6 +925,21 @@ const val MOCK_RESPONSE_INTERNAL_SERVER_ERROR = """
 }
 """
 
+const val MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY = """
+ {
+    "message": "Max count entity [farms] restriction exceeded.",
+    "code": "max_count_entity_restriction_exceeded",
+    "context": {
+        "user_id": "5ba0a8b9-ff1e-46b9-90f9-1d81cb89d3b3",
+        "entity": "farms",
+        "current_count": 3,
+        "count_to_insert": 1,
+        "count_to_delete": 0,
+        "max_count": 3
+    }
+}
+"""
+
 const val MOCK_RESPONSE_GET_LAST_QUEUE_ACTION = """
     {
     "action": "INSERT",
@@ -3154,3 +3169,4 @@ const val MOCK_RESPONSE_SYNC_DATA_FILE = """{"entity":"products","data":{"id":"7
 {"entity":"categories","data":{"id":"00aedddd-325d-4472-a04c-27e57f5d6018","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"d2b4f095f8634c7c19ec7a173fa3ce84830e0a20f20d75a8749cc7a5f6cfbb83","sync_created_at":1725051913,"sync_updated_at":1725051913,"product_id":"797b62cb-d6f5-436b-9ae0-6657d0ae979a","name":"Camila","code":"9012345","gender":"f","type":"1","purpose":"2","sale_status":"0","stage":"4","reproductive_status":"1","health_status":"1","inside":1}}
 {"entity":"measures","data":{"id":"3093a07a-543b-336b-9ca8-4c3bf207aeb5","sync_owner_id":"5160ea14-8676-3881-9b93-0859a7f59431","sync_hash":"89424a4c2efa23f3b6a0caa03bfdcf66dd3d6d31c0559c8c286f82fcd3798f6d","sync_created_at":1725044885,"sync_updated_at":1725044885,"measure":"w","unit":"kg","value":10}}
 """
+
