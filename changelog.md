@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.15.1
+- Fixed gradle configuration.
+
 # v0.15.0
 - Handle Move actions in the sync data process when a entity is moved.
 - Added horus client event bus to get details sync errors.
