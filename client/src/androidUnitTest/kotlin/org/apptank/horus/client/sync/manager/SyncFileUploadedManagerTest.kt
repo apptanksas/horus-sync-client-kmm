@@ -10,8 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.sync.upload.data.SyncFileResult
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.Before
@@ -70,7 +70,7 @@ class SyncFileUploadedManagerTest {
         coEvery { repository.downloadRemoteFiles() }.returns(listOf(SyncFileResult.Success("file2")))
 
         // When
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         manager.syncFiles()
 
         // Then

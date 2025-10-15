@@ -1,4 +1,6 @@
-package org.apptank.horus.client.connectivity
+package org.apptank.horus.client.bus
+
+import org.apptank.horus.client.connectivity.Network
 
 object HorusClientNetworkEventBus {
 

@@ -5,9 +5,9 @@ import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.eventbus.Event
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.Event
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.extensions.logException
@@ -45,7 +45,7 @@ internal class RemoteSynchronizatorManager(
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
     private val uploadFileRepository: IUploadFileRepository,
-    private val event: EventBus = EventBus,
+    private val event: InternalEventBus = InternalEventBus,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val maxAttempts: Int = 3
 ) {

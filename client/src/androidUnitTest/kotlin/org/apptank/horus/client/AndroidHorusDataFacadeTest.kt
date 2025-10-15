@@ -11,8 +11,8 @@ import org.apptank.horus.client.base.fold
 import org.apptank.horus.client.data.DataChangeListener
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.di.IDatabaseDriverFactory
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.database.HorusDatabase
@@ -130,7 +130,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         HorusDataFacade.onReady {
             invoked = true
         }
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         assert(invoked)
     }
 
@@ -138,7 +138,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `validate method onReady when already is ready`() {
         var invoked = false
         HorusDataFacade.init()
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         HorusDataFacade.onReady {
             invoked = true
         }
@@ -149,7 +149,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `validate method onReady when already user token is setup`() {
         var invoked = false
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         HorusDataFacade.onReady {
             invoked = true
         }
@@ -161,7 +161,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         HorusDataFacade.init()
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
 
         HorusDataFacade.onReady {
 
@@ -385,8 +385,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
             verify { mockNetworkValidator.isNetworkAvailable() }
             Assert.assertFalse(invokedOnFailure)
             assert(invokedOnSuccess)
-            Assert.assertEquals(0, EventBus.getCountListeners(EventType.SYNC_PUSH_FAILED))
-            Assert.assertEquals(0, EventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS))
+            Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_FAILED))
+            Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS))
         }
 
     @Test
@@ -1135,7 +1135,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
     private fun prepareEnvironment(block: suspend () -> Unit) = runBlocking {
         HorusDataFacade
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         migrateDatabase()
         block()

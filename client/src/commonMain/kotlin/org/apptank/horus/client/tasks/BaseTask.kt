@@ -1,9 +1,8 @@
 package org.apptank.horus.client.tasks
 
-import org.apptank.horus.client.eventbus.Event
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
-import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.bus.Event
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import kotlin.math.round
 
 
@@ -78,7 +77,7 @@ internal abstract class BaseTask(
             round(progressBeforeTask + ((progressAfterTask - progressBeforeTask) * (taskProgress / 100.0))).toInt()
         }.coerceIn(0, 100) // Ensure progress stays between 0% and 100%
 
-        EventBus.emit(EventType.ON_PROGRESS_SYNC, Event(mapOf("progress" to progress)))
+        InternalEventBus.emit(EventType.ON_PROGRESS_SYNC, Event(mapOf("progress" to progress)))
     }
 }
 

@@ -29,8 +29,8 @@ import kotlinx.serialization.encodeToString
 import okio.Path.Companion.toPath
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.buildSyncDataStatusFromJSON
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
@@ -122,7 +122,7 @@ class ControlTaskManagerTest : TestCase() {
         val pathFile = getHorusConfigTest().uploadFilesConfig.baseStoragePath + filename
         val path = createFileInLocalStorage(pathFile, entitiesData.map { AnySerializer.decoderJSON.encodeToString(it) }.joinToString("\n")).toPath()
 
-        EventBus.register(EventType.ON_PROGRESS_SYNC) {
+        InternalEventBus.register(EventType.ON_PROGRESS_SYNC) {
             val progress = (it.data?.get("progress") as Int)
             assert(progress <= 100) {
                 "Progress $progress should not be less than or equal to 100"

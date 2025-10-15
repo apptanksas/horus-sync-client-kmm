@@ -22,8 +22,8 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.mapToDBColumValue
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.exception.AttributeRestrictedException
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
@@ -128,7 +128,7 @@ object HorusDataFacade {
     init {
         registerEntityEventListeners()
         registerObserverEvents()
-        EventBus.register(EventType.ON_READY) {
+        InternalEventBus.register(EventType.ON_READY) {
             callOnReady()
         }
         isInitialized = true
@@ -681,13 +681,13 @@ object HorusDataFacade {
         var callbackSyncPushFailure: CallbackEvent? = null
         val removeListeners: Callback = {
             callbackSyncPushSuccess?.let { callback ->
-                EventBus.unregister(
+                InternalEventBus.unregister(
                     EventType.SYNC_PUSH_SUCCESS,
                     callback
                 )
             }
             callbackSyncPushFailure?.let { callback ->
-                EventBus.unregister(
+                InternalEventBus.unregister(
                     EventType.SYNC_PUSH_FAILED,
                     callback
                 )
@@ -704,8 +704,8 @@ object HorusDataFacade {
             }
             setOnCompleted {
 
-                EventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
-                EventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
+                InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
+                InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
 
                 remoteSynchronizatorManager?.trySynchronizeData()
             }
@@ -1065,7 +1065,7 @@ object HorusDataFacade {
     private fun registerEntityEventListeners() {
 
         // Notify listeners when an entity is created
-        EventBus.register(EventType.ENTITY_CREATED) {
+        InternalEventBus.register(EventType.ENTITY_CREATED) {
             changeListeners.forEach { listener ->
                 val entity = it.data?.get("entity") as? String ?: ""
                 val attributes = it.data?.get("attributes") as? DataMap ?: mapOf()
@@ -1077,7 +1077,7 @@ object HorusDataFacade {
         }
 
         // Notify listeners when an entity is updated
-        EventBus.register(EventType.ENTITY_UPDATED) {
+        InternalEventBus.register(EventType.ENTITY_UPDATED) {
             changeListeners.forEach { listener ->
                 val entity = it.data?.get("entity") as? String ?: ""
                 val attributes = it.data?.get("attributes") as? DataMap ?: mapOf()
@@ -1088,7 +1088,7 @@ object HorusDataFacade {
         }
 
         // Notify listeners when an entity is deleted
-        EventBus.register(EventType.ENTITY_DELETED) {
+        InternalEventBus.register(EventType.ENTITY_DELETED) {
             changeListeners.forEach { listener ->
                 val entity = it.data?.get("entity") as? String ?: ""
                 it.data?.get(Horus.Attribute.ID)?.let {
@@ -1098,7 +1098,7 @@ object HorusDataFacade {
         }
 
         // Notify listeners when a synchronization progress is made
-        EventBus.register(EventType.ON_PROGRESS_SYNC) {
+        InternalEventBus.register(EventType.ON_PROGRESS_SYNC) {
             onCallbackSyncProgress?.invoke(it.data?.get("progress") as? Int ?: 0)
         }
     }
@@ -1107,7 +1107,7 @@ object HorusDataFacade {
      * Register Observer Events to do some actions when the event is triggered.
      */
     private fun registerObserverEvents() {
-        EventBus.register(EventType.USER_SESSION_CLEARED) {
+        InternalEventBus.register(EventType.USER_SESSION_CLEARED) {
             syncControlDatabaseHelper?.clearDatabase()
             MemoryCache.flushCache()
             settings?.clear()

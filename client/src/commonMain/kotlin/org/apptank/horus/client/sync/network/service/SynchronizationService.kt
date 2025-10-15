@@ -23,6 +23,9 @@ import okio.Path.Companion.toPath
 import okio.SYSTEM
 import okio.buffer
 import okio.use
+import org.apptank.horus.client.base.ClientTypeError
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
+import org.apptank.horus.client.bus.SyncError
 import org.apptank.horus.client.extensions.info
 
 /**
@@ -158,7 +161,11 @@ internal class SynchronizationService(
         return if (results.all { it is DataResult.Success }) {
             DataResult.Success(Unit)
         } else {
-            return results.find { it !is DataResult.Success } ?: DataResult.Failure(Exception("Failed to post queue actions"))
+            return (results.find { it !is DataResult.Success } ?: DataResult.Failure(Exception("Failed to post queue actions"))).also {
+                if (it is DataResult.ClientError) {
+                    emitEventSyncError(it)
+                }
+            }
         }
     }
 
@@ -245,6 +252,12 @@ internal class SynchronizationService(
     // PRIVATE METHODS
     // ------------------------------------------
 
+    /**
+     * Gets a temporary file in the configured base storage path for uploads.
+     *
+     * @param filename The name of the file to create.
+     * @return The [File] object representing the temporary file.
+     */
     private fun getTemporalFile(filename: String): File {
         val basePath = File(normalizePath(config.uploadFilesConfig.baseStoragePath + HORUS_PATH_FILES))
 
@@ -254,12 +267,50 @@ internal class SynchronizationService(
         return basePath.resolve(filename)
     }
 
+    /**
+     * Extracts the file name from a given URL.
+     *
+     * @param url The URL to extract the file name from.
+     * @return The extracted file name.
+     */
     private fun extractFileName(url: String): String {
         return url.substringAfterLast('/').substringBefore("?")
     }
 
+    /**
+     * Normalizes a file path by replacing forward slashes with the system's directory separator.
+     *
+     * @param path The file path to normalize.
+     */
     private fun normalizePath(path: String): String {
         return path.replace("/", SysDirSep.toString())
+    }
+
+    /**
+     * Emits a synchronization error event based on the provided [DataResult.ClientError].
+     *
+     * @param resultClientError The client error result to process and emit an event for.
+     */
+    private fun emitEventSyncError(resultClientError: DataResult.ClientError) {
+
+        HorusClientSyncErrorEventBus.emit(
+            when (resultClientError.type) {
+                is ClientTypeError.MaxCountEntityExceeded -> {
+                    val entity = resultClientError.type.entity
+                    val maxCount = resultClientError.type.maxCount
+                    val currentCount = resultClientError.type.currentCount
+
+                    if (entity == null || maxCount == null || currentCount == null) {
+                        SyncError.UnknownError(Exception("Unknown client error"))
+                    } else {
+                        SyncError.MaxCountEntityRestrictionExceeded(entity, maxCount, currentCount)
+                    }
+                }
+
+                else -> SyncError.UnknownError(Exception("Unknown client error"))
+            }
+        )
+
     }
 
     internal companion object {

@@ -16,8 +16,8 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncFileDatabaseHelper
 import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.exception.FileMimeTypeNotAllowedException
 import org.apptank.horus.client.exception.FileSizeExceededException
 import org.apptank.horus.client.extensions.info
@@ -91,7 +91,7 @@ class UploadFileRepository(
             )
         )
 
-        EventBus.emit(EventType.FILE_QUEUED_FOR_UPLOAD)
+        InternalEventBus.emit(EventType.FILE_QUEUED_FOR_UPLOAD)
 
         return fileReference
     }

@@ -9,9 +9,9 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.getRequireLong
 import org.apptank.horus.client.extensions.handle
-import org.apptank.horus.client.eventbus.Event
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.Event
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -470,7 +470,7 @@ internal class SyncControlDatabaseHelper(
      * Emits an event indicating that an action has been created.
      */
     private fun emitEventActionCreated() {
-        EventBus.emit(EventType.ACTION_CREATED, Event())
+        InternalEventBus.emit(EventType.ACTION_CREATED, Event())
     }
 
     /**
@@ -481,7 +481,7 @@ internal class SyncControlDatabaseHelper(
      * @param data The attributes of the entity.
      */
     private fun emitEntityCreated(entity: String, id: String, data: DataMap) {
-        EventBus.emit(
+        InternalEventBus.emit(
             EventType.ENTITY_CREATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
@@ -495,7 +495,7 @@ internal class SyncControlDatabaseHelper(
      * @param data The updated attributes of the entity.
      */
     private fun emitEntityUpdated(entity: String, id: String, data: DataMap) {
-        EventBus.emit(
+        InternalEventBus.emit(
             EventType.ENTITY_UPDATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
@@ -508,7 +508,7 @@ internal class SyncControlDatabaseHelper(
      * @param id The identifier of the entity.
      */
     private fun emitEntityDeleted(entity: String, id: String) {
-        EventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
+        InternalEventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
     }
 
     companion object {

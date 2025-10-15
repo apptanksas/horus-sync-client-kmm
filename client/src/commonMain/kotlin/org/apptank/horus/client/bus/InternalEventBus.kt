@@ -1,4 +1,4 @@
-package org.apptank.horus.client.eventbus
+package org.apptank.horus.client.bus
 
 import org.apptank.horus.client.base.CallbackEvent
 
@@ -6,7 +6,7 @@ import org.apptank.horus.client.base.CallbackEvent
 /**
  * Singleton object for managing event listeners and dispatching events.
  */
-internal object EventBus {
+internal object InternalEventBus {
 
     /**
      * Map of event types to their associated listeners.

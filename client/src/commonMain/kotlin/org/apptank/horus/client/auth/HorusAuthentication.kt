@@ -1,8 +1,8 @@
 package org.apptank.horus.client.auth
 
 import org.apptank.horus.client.HorusDataFacade
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 
 /**
@@ -26,7 +26,7 @@ object HorusAuthentication {
     fun setupUserAccessToken(token: String) {
         HorusDataFacade.init()
         userAuthentication = UserAuthentication(token)
-        EventBus.emit(EventType.SETUP_CHANGED)
+        InternalEventBus.emit(EventType.SETUP_CHANGED)
     }
 
     /**
@@ -34,7 +34,7 @@ object HorusAuthentication {
      */
     fun clearSession() {
         userAuthentication = null
-        EventBus.emit(EventType.USER_SESSION_CLEARED)
+        InternalEventBus.emit(EventType.USER_SESSION_CLEARED)
     }
 
     /**
@@ -44,7 +44,7 @@ object HorusAuthentication {
      */
     fun setUserActingAs(userId: String) {
         userAuthentication?.setUserActingAs(userId)
-        EventBus.emit(EventType.SETUP_CHANGED)
+        InternalEventBus.emit(EventType.SETUP_CHANGED)
     }
 
     /**

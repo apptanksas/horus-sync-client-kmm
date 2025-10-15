@@ -26,6 +26,9 @@ import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_SHARED
 import org.apptank.horus.client.MOCK_RESPONSE_POST_START_SYNC
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.base.ClientTypeError
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
+import org.apptank.horus.client.bus.SyncError
+import org.junit.After
 import org.junit.Assert
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -33,6 +36,12 @@ import kotlin.test.assertNotNull
 
 
 class SynchronizationServiceTest : ServiceTest() {
+
+
+    @After
+    fun tearDown() {
+        HorusClientSyncErrorEventBus.clear()
+    }
 
     @Test
     fun getDataIsSuccess() = runBlocking {
@@ -692,6 +701,12 @@ class SynchronizationServiceTest : ServiceTest() {
 
         val mockEngine = createMockResponse(MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY, status = HttpStatusCode.BadRequest)
         val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        var isEventBusCalled = false
+
+        HorusClientSyncErrorEventBus.register {
+            Assert.assertTrue(it is SyncError.MaxCountEntityRestrictionExceeded)
+            isEventBusCalled = true
+        }
 
         // When
         val response = service.postQueueActions(actions)
@@ -703,6 +718,7 @@ class SynchronizationServiceTest : ServiceTest() {
         assertNotNull(errorType.maxCount)
         assertNotNull(errorType.currentCount)
         assertEquals(errorType.maxCount, errorType.currentCount)
+        Assert.assertTrue(isEventBusCalled)
     }
 
 }

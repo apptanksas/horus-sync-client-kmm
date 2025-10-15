@@ -2,6 +2,7 @@
 
 # v0.15.0
 - Handle Move actions in the sync data process when a entity is moved.
+- Added horus client event bus to get details sync errors.
 
 # v0.14.5
 - Added validate airplane mode in network validator.
