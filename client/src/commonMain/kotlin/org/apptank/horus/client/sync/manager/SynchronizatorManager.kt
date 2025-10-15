@@ -20,6 +20,7 @@ import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.log
+import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.hashing.AttributeHasher
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.dto.toDomain
@@ -412,7 +413,7 @@ internal class SynchronizatorManager(
                 }
 
                 val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
-                val result = operationDatabaseHelper.executeOperations(operations)
+                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty())
 
                 val syncControlStatus = if (result) {
                     log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
@@ -613,7 +614,7 @@ internal class SynchronizatorManager(
         return listOf(moveActions, insertActions, updateActions, deleteActions)
     }
 
-    private fun executeMoveActions(actions: List<SyncControl.Action>): Boolean {
+    private suspend fun executeMoveActions(actions: List<SyncControl.Action>): Boolean {
 
         if (actions.isEmpty()) return true
 
@@ -622,25 +623,72 @@ internal class SynchronizatorManager(
             return false
         }
 
-        // Try to update records
-        if (operationDatabaseHelper.executeOperations(mapToUpdateOperation(actions))) {
+        try {
+
+            //---------------------------------------
+            // 1. TRY TO UPDATE THE RECORDS
+            //---------------------------------------
+
+            val updateOperations = mapToUpdateOperation(actions)
+
+            if (operationDatabaseHelper.executeOperations(updateOperations) && updateOperations.size == actions.size) {
+                return true
+            }
+
+            val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
+                .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
+                .sortedByDescending { it.second }
+
+            val groupedByEntity = actions.groupBy { it.entity }
+
+            groupedByEntity.forEach foreachGroupedEntity@{
+
+                val entityName = it.key
+                val entitiesIdsToDelete = it.value.map { action -> action.getEntityId() }.toMutableList()
+                val entitiesIdsMissing = mutableListOf<String>()
+
+                //---------------------------------------
+                // 2. VALIDATE IF EXISTS RECORDS TO DELETE
+                //---------------------------------------
+
+                entitiesIdsToDelete.toList().forEach foreachIds@{ id ->
+                    // Validate if exists records to delete
+                    val isNotExists = operationDatabaseHelper.countRecords(
+                        SimpleQueryBuilder(entityName).select(Horus.Attribute.ID).apply {
+                            where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, id)))
+                        } as SimpleQueryBuilder
+                    ) == 0
+
+                    if (isNotExists) {
+                        entitiesIdsMissing.add(id)
+                        entitiesIdsToDelete.remove(id)
+                        return@foreachIds
+                    }
+
+                }
+
+                //---------------------------------------
+                // 2. INSERT MISSING RECORDS
+                //---------------------------------------
+
+                if (entitiesIdsMissing.isNotEmpty()) {
+                    syncEntitiesMissingData(entityName, entitiesIdsMissing)
+                }
+
+                //---------------------------------------
+                // 3. DELETE RELATED RECORDS
+                //---------------------------------------
+
+                deleteEntitiesRelated(entityName, entitiesIdsToDelete, entitiesSorted)
+            }
+
             return true
+
+        } catch (e: Exception) {
+            logException("[SynchronizatorManager:executeMoveActions] Error executing move actions", e)
         }
 
-        val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
-            .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
-            .sortedByDescending { it.second }
-
-        val groupedByEntity = actions.groupBy { it.entity }
-
-        groupedByEntity.forEach {
-            val entityToDelete = it.key
-            val ids = it.value.map { action -> action.getEntityId() }
-            deleteEntitiesRelated(entityToDelete, ids, entitiesSorted)
-        }
-
-
-        return true
+        return false
     }
 
     private fun deleteEntitiesRelated(
@@ -650,7 +698,7 @@ internal class SynchronizatorManager(
         entitiesProcessed: List<String> = emptyList()
     ): Boolean {
 
-        if (ids.isEmpty()) return true
+        if (ids.isEmpty()) return false
 
         // ---------------------------------------
         // DELETE RELATED RECORDS
@@ -720,11 +768,19 @@ internal class SynchronizatorManager(
 
     private fun filterMoveActions(actions: List<SyncControl.Action>, moveActions: List<SyncControl.Action>): List<SyncControl.Action> {
         return actions.filter { action ->
+
+            val actionData = action.data.values.flatMap {
+                if (it is Map<*, *>) {
+                    it.values.toList()
+                } else {
+                    listOf(it)
+                }
+            }
+
             moveActions.find { moveAction ->
-                action.data.values.forEach {
-                    if (moveAction.data.values.contains(it)) {
-                        return@find true
-                    }
+                val entityId = moveAction.getEntityId()
+                if (actionData.contains(entityId)) {
+                    return@find true
                 }
                 return@find false
             } == null

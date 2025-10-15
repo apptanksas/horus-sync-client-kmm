@@ -179,23 +179,7 @@ internal class SynchronizationService(
             queryParams["exclude"] = exclude.distinct().joinToString(",")
         }
 
-        if (queueActionsCache.containsKey(queryParams)) {
-            return queueActionsCache[queryParams]!!
-        }
-
-        val result: DataResult<List<SyncDTO.Response.SyncAction>> = get("queue/actions", queryParams) { it.serialize() }
-
-        if (result is DataResult.Success) {
-            queueActionsCache[queryParams] = result
-        }
-        
-        if (queueActionsCache.size > 5) {
-            val firstKey = queueActionsCache.keys.first()
-            queueActionsCache.remove(firstKey)
-        }
-
-
-        return result
+        return get("queue/actions", queryParams) { it.serialize() }
     }
 
     /**
@@ -280,7 +264,6 @@ internal class SynchronizationService(
 
     internal companion object {
         const val HORUS_PATH_FILES = "horus/sync/service"
-        val queueActionsCache: MutableMap<Map<String, String>, DataResult<List<SyncDTO.Response.SyncAction>>> = mutableMapOf()
     }
 
 }

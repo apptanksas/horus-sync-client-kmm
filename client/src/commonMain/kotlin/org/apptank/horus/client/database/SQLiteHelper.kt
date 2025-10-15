@@ -19,7 +19,7 @@ import org.apptank.horus.client.database.struct.Column
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.database.struct.SQL
-import org.apptank.horus.client.extensions.createSQLInsert
+import org.apptank.horus.client.extensions.createSQLInsertOrReplace
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireInt
@@ -214,7 +214,7 @@ abstract class SQLiteHelper(
      * @param values The data to insert.
      */
     protected fun insertOrThrow(table: String, values: DataMap) {
-        val query = driver.createSQLInsert(table, values)
+        val query = driver.createSQLInsertOrReplace(table, values)
         info("Insert query: $query")
         executeInsertOrThrow(query)
     }

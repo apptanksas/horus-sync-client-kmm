@@ -2,7 +2,6 @@
 
 # v0.15.0
 - Handle Move actions in the sync data process when a entity is moved.
-- Added cache handle in get queue actions service.
 
 # v0.14.5
 - Added validate airplane mode in network validator.

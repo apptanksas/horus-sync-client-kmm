@@ -296,50 +296,6 @@ class SynchronizationServiceTest : ServiceTest() {
     }
 
     @Test
-    fun getQueueActionsWithTimestampAfterAndExcludeUsingCache() = runBlocking {
-        // Given
-        val timestampAfter = timestamp()
-        val exclude = generateRandomArray { timestamp() + it }
-        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
-        // When
-
-        for (i in 1..10) {
-            // Calling multiple times to test the cache
-            service.getQueueActions(timestampAfter, exclude)
-        }
-        val response = service.getQueueActions(timestampAfter, exclude)
-
-        // Then
-        assert(response is DataResult.Success)
-        assertEquals(1, SynchronizationService.queueActionsCache.size)
-        assertRequestContainsQueryParam("after", timestampAfter.toString())
-        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
-    }
-
-
-    @Test
-    fun getQueueActionsWithMultiplesCache() = runBlocking {
-        // Given
-        val timestampAfter = timestamp()
-        val exclude = generateRandomArray { timestamp() + it }
-        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
-        // When
-
-        for (i in 1..10) {
-            // Calling multiple times to test the cache
-            service.getQueueActions(timestamp() + i, exclude)
-        }
-        val response = service.getQueueActions(timestampAfter, exclude)
-
-        // Then
-        assert(response is DataResult.Success)
-        assertEquals(5, SynchronizationService.queueActionsCache.size)
-    }
-
-
-    @Test
     fun postValidateEntitiesData() = runBlocking {
         // Given
         val entitiesHash = listOf(

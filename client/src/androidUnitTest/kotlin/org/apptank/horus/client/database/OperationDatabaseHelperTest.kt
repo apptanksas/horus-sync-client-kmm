@@ -124,6 +124,138 @@ class OperationDatabaseHelperTest : TestCase() {
         Assert.assertFalse(postOperationValidation)
     }
 
+
+    @Test
+    fun validateExecuteTransactionsIsSuccessWhenIgnoreIfFailure() {
+        // Given
+        val uuid = uuid()
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        driver.createTable(
+            "owners",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT NOT NULL"
+            )
+        )
+
+        driver.createTable(
+            "animals",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "owner_id" to "TEXT NOT NULL",
+                "name" to "TEXT",
+                "species" to "TEXT",
+                "FOREIGN KEY(owner_id)" to "REFERENCES owners(id) ON DELETE CASCADE"
+            )
+        )
+
+        driver.insertOrThrow(
+            "owners",
+            mapOf(
+                "id" to uuid,
+                "name" to "owner1"
+            )
+        )
+
+        val actions = listOf(
+            DatabaseOperation.InsertRecord(
+                "animals",
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("owner_id", uuid()),
+                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("species", "canine")
+                )
+            )
+        )
+        var postOperationValidation = false
+        // When
+        val result = databaseHelper.executeOperations(actions, ignoreIsFailure = true) {
+            postOperationValidation = true
+        }
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM animals", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        // Then
+        Assert.assertEquals(0, count)
+        Assert.assertTrue(result)
+        Assert.assertTrue(postOperationValidation)
+    }
+
+    @Test
+    fun validateExecuteTransactionsIsFailureWhenIgnoreIfFailureIsDisabled() {
+        // Given
+        val uuid = uuid()
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        driver.createTable(
+            "owners",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT NOT NULL"
+            )
+        )
+
+        driver.createTable(
+            "animals",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "owner_id" to "TEXT NOT NULL",
+                "name" to "TEXT",
+                "species" to "TEXT",
+                "FOREIGN KEY(owner_id)" to "REFERENCES owners(id) ON DELETE CASCADE"
+            )
+        )
+
+        driver.insertOrThrow(
+            "owners",
+            mapOf(
+                "id" to uuid,
+                "name" to "owner1"
+            )
+        )
+
+        val actions = listOf(
+            DatabaseOperation.InsertRecord(
+                "animals",
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("owner_id", uuid()),
+                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("species", "canine")
+                )
+            )
+        )
+        var postOperationValidation = false
+
+        // When
+        val result = databaseHelper.executeOperations(actions) {
+            postOperationValidation = true
+        }
+
+
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM animals", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        // Then
+        Assert.assertEquals(0, count)
+        Assert.assertFalse(result)
+        Assert.assertFalse(postOperationValidation)
+    }
+
     @Test
     fun executeOperationsWithVarargsInsertAndUpdateIsSuccess() {
         // Given

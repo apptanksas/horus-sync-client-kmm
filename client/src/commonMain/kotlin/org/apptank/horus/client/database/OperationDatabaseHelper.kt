@@ -32,42 +32,56 @@ internal class OperationDatabaseHelper(
      * @param postOperation Callback to be executed after the operations.
      * @throws DatabaseOperationFailureException if any operation fails.
      */
-    override fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback) =
+    override fun executeOperations(actions: List<DatabaseOperation>, ignoreIsFailure: Boolean, postOperation: Callback) =
         executeTransaction { _ ->
             actions.forEach { action ->
-                val operationIsFailure: Boolean = when (action) {
-                    // Insert operation
-                    is DatabaseOperation.InsertRecord -> {
-                        insertOrThrow(
+
+                try {
+                    val operationIsFailure: Boolean = when (action) {
+                        // Insert operation
+                        is DatabaseOperation.InsertRecord -> {
+                            insertOrThrow(
+                                action.table,
+                                action.values.prepareMap()
+                            )
+                            false // Insert is always considered successful
+                        }
+                        // Update operation
+                        is DatabaseOperation.UpdateRecord -> executeUpdate(
                             action.table,
-                            action.values.prepareMap()
-                        )
-                        false // Insert is always considered successful
+                            action.values,
+                            action.conditions,
+                            action.operator
+                        ).isFailure
+                        // Delete operation
+                        is DatabaseOperation.DeleteRecord -> executeDelete(
+                            action.table,
+                            action.conditions,
+                            action.operator
+                        ).isFailure
+
+                        else -> throw IllegalStateException("Action not supported")
                     }
-                    // Update operation
-                    is DatabaseOperation.UpdateRecord -> executeUpdate(
-                        action.table,
-                        action.values,
-                        action.conditions,
-                        action.operator
-                    ).isFailure
-                    // Delete operation
-                    is DatabaseOperation.DeleteRecord -> executeDelete(
-                        action.table,
-                        action.conditions,
-                        action.operator
-                    ).isFailure
 
-                    else -> throw IllegalStateException("Action not supported")
-                }
+                    if (operationIsFailure) {
+                        throw DatabaseOperationFailureException("Operation database is failed")
+                    }
 
-                if (operationIsFailure) {
-                    throw DatabaseOperationFailureException("Operation database is failed")
+                } catch (e: Exception) {
+                    logException("Error processing action: $action", e)
+                    if (!ignoreIsFailure) {
+                        throw e
+                    }
                 }
             }
             // Execute the post operation callback
             postOperation()
         }
+
+
+    override fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback): Boolean {
+        return executeOperations(actions, false, postOperation)
+    }
 
     /**
      * Executes a vararg list of database operations in a transaction.
@@ -91,7 +105,7 @@ internal class OperationDatabaseHelper(
         records: List<DatabaseOperation.InsertRecord>,
         postOperation: Callback
     ): Boolean {
-        return executeTransaction{ db ->
+        return executeTransaction { db ->
             records.forEachIndexed { index, item ->
                 val values = item.values.prepareMap()
                 insertOrThrow(item.table, values)
