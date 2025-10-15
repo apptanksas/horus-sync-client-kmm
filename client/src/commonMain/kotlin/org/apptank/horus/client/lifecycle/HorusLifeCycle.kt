@@ -4,8 +4,8 @@ import org.apptank.horus.client.base.CallbackEvent
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.di.ILifeCycle
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.tasks.ControlTaskManager
@@ -30,7 +30,7 @@ object HorusLifeCycle : ILifeCycle {
 
     override fun onResume() {
 
-        with(EventBus) {
+        with(InternalEventBus) {
             register(EventType.ACTION_CREATED, callbackEventActionCreated)
             register(EventType.SETUP_CHANGED, callbackSetupChanged)
         }
@@ -41,7 +41,7 @@ object HorusLifeCycle : ILifeCycle {
     }
 
     override fun onPause() {
-        with(EventBus) {
+        with(InternalEventBus) {
             unregister(EventType.ACTION_CREATED, callbackEventActionCreated)
             unregister(EventType.SETUP_CHANGED, callbackSetupChanged)
         }

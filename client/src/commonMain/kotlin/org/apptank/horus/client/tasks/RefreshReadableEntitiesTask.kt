@@ -90,7 +90,7 @@ internal class RefreshReadableEntitiesTask(
                     operationDatabaseHelper.insertWithTransaction(records)
                 }
 
-                is DataResult.Failure, is DataResult.NotAuthorized -> {
+                else -> {
                     logException("Failed to retrieve data for entity: $entityName")
                     return TaskResult.success()
                 }

@@ -20,6 +20,7 @@ import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.log
+import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.hashing.AttributeHasher
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.dto.toDomain
@@ -193,6 +194,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${resultActions.type}")
+            }
         }
 
         return null
@@ -340,6 +345,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:restoreCorruptedData] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${dataEntitiesResponse.type}")
+            }
         }
 
         return false
@@ -371,6 +380,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:syncEntitiesMissingData] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${dataEntitiesResponse.type}")
+            }
         }
         return false
     }
@@ -398,14 +411,21 @@ internal class SynchronizatorManager(
         when (actions) {
             is DataResult.Success -> {
 
-                val newActions =
-                    filterOwnActions(actions.data.map { it.toDomain() }, checkpointDatetime)
+                val newActions = filterOwnActions(actions.data.map { it.toDomain() }, checkpointDatetime)
 
-                val (actionsInsert, updateActions, deleteActions) = organizeActions(newActions)
+                val (moveActions, insertActions, updateActions, deleteActions) = organizeActions(newActions)
 
-                val operations = mapToInsertOperation(actionsInsert) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
+                if (executeMoveActions(moveActions).not()) {
+                    log("[SynchronizatorManager:synchronizeData] Error executing updelete actions")
+                    syncControlDatabaseHelper.addSyncTypeStatus(
+                        SyncControl.OperationType.CHECKPOINT,
+                        SyncControl.Status.FAILED
+                    )
+                    return false
+                }
 
-                val result = operationDatabaseHelper.executeOperations(operations)
+                val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
+                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty())
 
                 val syncControlStatus = if (result) {
                     log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
@@ -434,6 +454,11 @@ internal class SynchronizatorManager(
 
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager] Not authorized")
+                return false
+            }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${actions.type}")
                 return false
             }
         }
@@ -556,6 +581,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:getEntitiesHashes] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${result.type}")
+            }
         }
 
         return emptyList()
@@ -582,6 +611,10 @@ internal class SynchronizatorManager(
             is DataResult.NotAuthorized -> {
                 log("[SynchronizatorManager:getRemoteValidateEntitiesData] Not authorized")
             }
+
+            is DataResult.ClientError -> {
+                log("[SynchronizatorManager] Client error: ${result.type}")
+            }
         }
 
         return emptyList()
@@ -593,13 +626,189 @@ internal class SynchronizatorManager(
      * @param syncActions A list of synchronization actions.
      * @return A triple containing lists of insert, update, and delete actions.
      */
-    private fun organizeActions(syncActions: List<SyncControl.Action>): Triple<List<SyncControl.Action>, List<SyncControl.Action>, List<SyncControl.Action>> {
-        val insertActions = syncActions.filter { it.action == SyncControl.ActionType.INSERT }
-            .sortedBy { it.getActionedAtTimestamp() }
-        val updateActions = syncActions.filter { it.action == SyncControl.ActionType.UPDATE }
-            .sortedBy { it.getActionedAtTimestamp() }
-        val deleteActions = syncActions.filter { it.action == SyncControl.ActionType.DELETE }
-            .sortedBy { it.getActionedAtTimestamp() }
-        return Triple(insertActions, updateActions, deleteActions)
+    private fun organizeActions(syncActions: List<SyncControl.Action>): List<List<SyncControl.Action>> {
+        val moveActions = syncActions.filter { it.action == SyncControl.ActionType.MOVE }.sortedBy { it.getActionedAtTimestamp() }
+
+        val insertActions =
+            filterMoveActions(syncActions.filter { it.action == SyncControl.ActionType.INSERT }.sortedBy { it.getActionedAtTimestamp() }, moveActions)
+        val updateActions =
+            filterMoveActions(syncActions.filter { it.action == SyncControl.ActionType.UPDATE }.sortedBy { it.getActionedAtTimestamp() }, moveActions)
+        val deleteActions =
+            filterMoveActions(syncActions.filter { it.action == SyncControl.ActionType.DELETE }.sortedBy { it.getActionedAtTimestamp() }, moveActions)
+
+        return listOf(moveActions, insertActions, updateActions, deleteActions)
+    }
+
+    private suspend fun executeMoveActions(actions: List<SyncControl.Action>): Boolean {
+
+        if (actions.isEmpty()) return true
+
+        if (actions.any { it.action != SyncControl.ActionType.MOVE }) {
+            log("[SynchronizatorManager:executeMoveActions] Invalid action type in move actions")
+            return false
+        }
+
+        try {
+
+            //---------------------------------------
+            // 1. TRY TO UPDATE THE RECORDS
+            //---------------------------------------
+
+            val updateOperations = mapToUpdateOperation(actions)
+
+            if (operationDatabaseHelper.executeOperations(updateOperations) && updateOperations.size == actions.size) {
+                return true
+            }
+
+            val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
+                .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
+                .sortedByDescending { it.second }
+
+            val groupedByEntity = actions.groupBy { it.entity }
+
+            groupedByEntity.forEach foreachGroupedEntity@{
+
+                val entityName = it.key
+                val entitiesIdsToDelete = it.value.map { action -> action.getEntityId() }.toMutableList()
+                val entitiesIdsMissing = mutableListOf<String>()
+
+                //---------------------------------------
+                // 2. VALIDATE IF EXISTS RECORDS TO DELETE
+                //---------------------------------------
+
+                entitiesIdsToDelete.toList().forEach foreachIds@{ id ->
+                    // Validate if exists records to delete
+                    val isNotExists = operationDatabaseHelper.countRecords(
+                        SimpleQueryBuilder(entityName).select(Horus.Attribute.ID).apply {
+                            where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, id)))
+                        } as SimpleQueryBuilder
+                    ) == 0
+
+                    if (isNotExists) {
+                        entitiesIdsMissing.add(id)
+                        entitiesIdsToDelete.remove(id)
+                        return@foreachIds
+                    }
+
+                }
+
+                //---------------------------------------
+                // 2. INSERT MISSING RECORDS
+                //---------------------------------------
+
+                if (entitiesIdsMissing.isNotEmpty()) {
+                    syncEntitiesMissingData(entityName, entitiesIdsMissing)
+                }
+
+                //---------------------------------------
+                // 3. DELETE RELATED RECORDS
+                //---------------------------------------
+
+                deleteEntitiesRelated(entityName, entitiesIdsToDelete, entitiesSorted)
+            }
+
+            return true
+
+        } catch (e: Exception) {
+            logException("[SynchronizatorManager:executeMoveActions] Error executing move actions", e)
+        }
+
+        return false
+    }
+
+    private fun deleteEntitiesRelated(
+        entityToDelete: String,
+        ids: List<String>,
+        entitiesSorted: List<Pair<String, Int>>,
+        entitiesProcessed: List<String> = emptyList()
+    ): Boolean {
+
+        if (ids.isEmpty()) return false
+
+        // ---------------------------------------
+        // DELETE RELATED RECORDS
+        // ---------------------------------------
+
+        entitiesSorted.forEach { entitySorted ->
+
+            val entity = entitySorted.first
+            val entityLevel = entitySorted.second
+
+            if (entitiesProcessed.contains(entity)) return@forEach
+
+            syncControlDatabaseHelper.getEntitiesRelated(entity).forEach { entityRelated ->
+
+                val entityRelatedName = entityRelated.entity
+                val entityRelatedLevel = syncControlDatabaseHelper.getEntityLevel(entityRelated.entity)
+
+                if (entityRelatedLevel < entityLevel) {
+
+                    val entityRelatedAttributes = syncControlDatabaseHelper.getEntityAttributes(entityRelatedName)
+                    val entityRelatedIds = operationDatabaseHelper.queryRecords(
+                        SimpleQueryBuilder(entityRelatedName).select(Horus.Attribute.ID).apply {
+                            entityRelatedAttributes.forEach {
+                                whereIn(it, ids, SQL.LogicOperator.OR)
+                            }
+                        }
+                    ).map { it[Horus.Attribute.ID].toString() }
+
+                    // Delete related records
+
+                    if (entityRelatedIds.isNotEmpty()) {
+                        operationDatabaseHelper.deleteRecords(
+                            entity,
+                            entityRelatedIds.map { id ->
+                                entityRelated.attributesLinked.map { attribute ->
+                                    SQL.WhereCondition(SQL.ColumnValue(attribute, id))
+                                }
+                            }.flatten(),
+                            SQL.LogicOperator.OR
+                        )
+                        // Recursive delete
+                        deleteEntitiesRelated(entityRelatedName, entityRelatedIds, entitiesSorted, entitiesProcessed + entity)
+                    }
+                }
+
+            }
+
+        }
+
+        // ---------------------------------------
+        // DELETE PRIMARY RECORDS
+        // ---------------------------------------
+
+        val deleteResult = operationDatabaseHelper.deleteRecords(
+            entityToDelete,
+            ids.map { id -> SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, id)) },
+            SQL.LogicOperator.OR
+        )
+
+        if (deleteResult.isFailure) {
+            log("[SynchronizatorManager:executeUpdateOrDeleteActions] Error deleting records for entity: $entityToDelete")
+            return false
+        }
+
+        return true
+    }
+
+    private fun filterMoveActions(actions: List<SyncControl.Action>, moveActions: List<SyncControl.Action>): List<SyncControl.Action> {
+        return actions.filter { action ->
+
+            val actionData = action.data.values.flatMap {
+                if (it is Map<*, *>) {
+                    it.values.toList()
+                } else {
+                    listOf(it)
+                }
+            }
+
+            moveActions.find { moveAction ->
+                val entityId = moveAction.getEntityId()
+                if (actionData.contains(entityId)) {
+                    return@find true
+                }
+                return@find false
+            } == null
+        }
     }
 }

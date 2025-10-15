@@ -50,7 +50,7 @@ internal fun Any?.prepareSQLValueAsString(): String {
  * @param values A map of column names to values to be inserted.
  * @return The SQL INSERT statement.
  */
-internal fun SqlDriver.createSQLInsert(table: String, values: DataMap): String {
+internal fun SqlDriver.createSQLInsertOrReplace(table: String, values: DataMap): String {
     val columns = values.keys.joinToString(", ")
     val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
     return "INSERT OR REPLACE INTO $table ($columns) VALUES ($valuesString)"

@@ -16,7 +16,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
+import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.After
@@ -42,7 +42,7 @@ class DispenserManagerTest : TestCase() {
     @Mock
     val storageSettings = mock(classOf<Settings>())
 
-    private val eventBus = EventBus
+    private val eventBus = InternalEventBus
 
     private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
     private lateinit var dispenserManager: DispenserManager

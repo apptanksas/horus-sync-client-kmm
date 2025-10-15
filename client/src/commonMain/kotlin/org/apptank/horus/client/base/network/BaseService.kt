@@ -31,6 +31,9 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.apptank.horus.client.base.ClientTypeError
+import org.apptank.horus.client.base.DataMap
+import org.apptank.horus.client.base.error.ErrorRestrictionResponse
 import org.apptank.horus.client.sync.upload.data.FileData
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -214,6 +217,15 @@ internal abstract class BaseService(
                 return DataResult.NotAuthorized(Exception("Unauthorized"))
             }
 
+            if (response.status.value == HttpStatusCode.BadRequest.value) {
+                return kotlin.runCatching {
+                    val errorResponse = response.bodyAsText().serialize<ErrorRestrictionResponse>()
+                    DataResult.ClientError(errorResponse.code.toClientTypeError(errorResponse.context))
+                }.getOrElse {
+                    DataResult.ClientError(ClientTypeError.Unknown("bad_request"))
+                }
+            }
+
             if (!response.status.isSuccess()) {
                 return DataResult.Failure(Exception("Error: ${response.status.value}"))
             }
@@ -332,5 +344,17 @@ internal abstract class BaseService(
      */
     private fun getNetworkError(exception: Throwable): DataResult.Failure {
         return DataResult.Failure(IllegalStateException("Network error: ${exception.message}"))
+    }
+
+    private fun String.toClientTypeError(data: DataMap): ClientTypeError {
+        return when (this) {
+            "max_count_entity_restriction_exceeded" -> ClientTypeError.MaxCountEntityExceeded(
+                data["entity"]?.toString(),
+                data["max_count"] as? Int,
+                data["current_count"] as? Int
+            )
+
+            else -> ClientTypeError.Unknown(this)
+        }
     }
 }

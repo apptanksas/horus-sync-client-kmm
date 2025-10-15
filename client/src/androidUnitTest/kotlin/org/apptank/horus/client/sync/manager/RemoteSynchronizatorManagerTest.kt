@@ -6,8 +6,8 @@ import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import io.mockative.Mock
@@ -51,7 +51,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     @Mock
     val storageSettings = mock(classOf<Settings>())
 
-    private val eventBus = EventBus
+    private val eventBus = InternalEventBus
 
     private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
 

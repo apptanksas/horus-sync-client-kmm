@@ -21,14 +21,27 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.apptank.horus.client.MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_SHARED
 import org.apptank.horus.client.MOCK_RESPONSE_POST_START_SYNC
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
+import org.apptank.horus.client.base.ClientTypeError
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
+import org.apptank.horus.client.bus.SyncError
+import org.junit.After
 import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 
 class SynchronizationServiceTest : ServiceTest() {
+
+
+    @After
+    fun tearDown() {
+        HorusClientSyncErrorEventBus.clear()
+    }
 
     @Test
     fun getDataIsSuccess() = runBlocking {
@@ -293,7 +306,6 @@ class SynchronizationServiceTest : ServiceTest() {
         assertRequestContainsQueryParam("after", timestampAfter.toString())
         assertRequestContainsQueryParam("exclude", excludeTimestamp.toString())
     }
-
 
     @Test
     fun postValidateEntitiesData() = runBlocking {
@@ -673,6 +685,40 @@ class SynchronizationServiceTest : ServiceTest() {
 
         // Then
         assert(response is DataResult.Success)
+    }
+
+    @Test
+    fun postQueueActionsIsFailureByClientErrorMaxCountEntityExceeded() = runBlocking {
+        // Given
+        val actions = generateArray(10) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        }
+
+        val mockEngine = createMockResponse(MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY, status = HttpStatusCode.BadRequest)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        var isEventBusCalled = false
+
+        HorusClientSyncErrorEventBus.register {
+            Assert.assertTrue(it is SyncError.MaxCountEntityRestrictionExceeded)
+            isEventBusCalled = true
+        }
+
+        // When
+        val response = service.postQueueActions(actions)
+        // Then
+        assert(response is DataResult.ClientError && response.type is ClientTypeError.MaxCountEntityExceeded)
+
+        val errorType = (response as DataResult.ClientError).type as ClientTypeError.MaxCountEntityExceeded
+        assertNotNull(errorType.entity)
+        assertNotNull(errorType.maxCount)
+        assertNotNull(errorType.currentCount)
+        assertEquals(errorType.maxCount, errorType.currentCount)
+        Assert.assertTrue(isEventBusCalled)
     }
 
 }

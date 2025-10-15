@@ -7,11 +7,10 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.apptank.horus.client.base.Callback
-import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.SuspendedCallback
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.isFalse
 import org.apptank.horus.client.extensions.logException
@@ -47,12 +46,12 @@ class SyncFileUploadedManager(
             syncFiles()
         }
 
-        EventBus.register(EventType.ON_READY) {
+        InternalEventBus.register(EventType.ON_READY) {
             isReady = true
             syncFiles()
         }
 
-        EventBus.register(EventType.USER_SESSION_CLEARED) {
+        InternalEventBus.register(EventType.USER_SESSION_CLEARED) {
             isReady = false
         }
     }
@@ -120,7 +119,7 @@ class SyncFileUploadedManager(
                         failure.exception
                     )
                 }
-                EventBus.emit(EventType.SYNC_PUSH_FAILED)
+                InternalEventBus.emit(EventType.SYNC_PUSH_FAILED)
                 return
             }
         }

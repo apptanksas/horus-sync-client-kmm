@@ -48,6 +48,7 @@ internal fun warn(message: String) {
 fun logException(message: String, throwable: Throwable? = null) {
     with(HorusContainer) {
         getLogger()?.error(message, throwable)
+        throwable?.printStackTrace()
         if (existsConfig()) {
             getConfig().onGlobalCallbackFailure?.invoke(message, throwable)
         }

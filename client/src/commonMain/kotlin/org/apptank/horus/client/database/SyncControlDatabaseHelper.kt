@@ -9,9 +9,9 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.getRequireLong
 import org.apptank.horus.client.extensions.handle
-import org.apptank.horus.client.eventbus.Event
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.Event
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -66,12 +66,10 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
             val query = SimpleQueryBuilder(SyncControlTable.TABLE_NAME).apply {
                 select(SyncControlTable.ATTR_DATETIME)
-                where(
-                    SQL.WhereCondition(
-                        SQL.ColumnValue(
-                            SyncControlTable.ATTR_TYPE,
-                            SyncControl.OperationType.CHECKPOINT.id
-                        )
+                whereIn(
+                    SyncControlTable.ATTR_TYPE, listOf(
+                        SyncControl.OperationType.CHECKPOINT.id,
+                        SyncControl.OperationType.INITIAL_SYNCHRONIZATION.id
                     )
                 )
                 where(
@@ -317,6 +315,16 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
+     * Retrieves a list of all attribute names for a specified entity.
+     *
+     * @param entityName The name of the entity to retrieve attributes for.
+     * @return A list of attribute names.
+     */
+    override fun getEntityAttributes(entityName: String): List<String> {
+        return getColumns(entityName).map { it.name }
+    }
+
+    /**
      * Checks if an entity can be written to.
      *
      * @param entityName The name of the entity to check.
@@ -462,7 +470,7 @@ internal class SyncControlDatabaseHelper(
      * Emits an event indicating that an action has been created.
      */
     private fun emitEventActionCreated() {
-        EventBus.emit(EventType.ACTION_CREATED, Event())
+        InternalEventBus.emit(EventType.ACTION_CREATED, Event())
     }
 
     /**
@@ -473,7 +481,7 @@ internal class SyncControlDatabaseHelper(
      * @param data The attributes of the entity.
      */
     private fun emitEntityCreated(entity: String, id: String, data: DataMap) {
-        EventBus.emit(
+        InternalEventBus.emit(
             EventType.ENTITY_CREATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
@@ -487,7 +495,7 @@ internal class SyncControlDatabaseHelper(
      * @param data The updated attributes of the entity.
      */
     private fun emitEntityUpdated(entity: String, id: String, data: DataMap) {
-        EventBus.emit(
+        InternalEventBus.emit(
             EventType.ENTITY_UPDATED,
             Event(mutableMapOf("entity" to entity, "id" to id, "attributes" to data))
         )
@@ -500,7 +508,7 @@ internal class SyncControlDatabaseHelper(
      * @param id The identifier of the entity.
      */
     private fun emitEntityDeleted(entity: String, id: String) {
-        EventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
+        InternalEventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
     }
 
     companion object {

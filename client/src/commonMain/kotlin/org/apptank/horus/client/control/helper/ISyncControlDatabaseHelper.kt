@@ -135,6 +135,15 @@ interface ISyncControlDatabaseHelper {
      */
     fun getEntityAttributesWithType(entityName: String, type: AttributeType): List<String>
 
+
+    /**
+     * Retrieves a list of all attribute names for a specified entity.
+     *
+     * @param entityName The name of the entity to retrieve attributes for.
+     * @return A list of attribute names.
+     */
+    fun getEntityAttributes(entityName: String): List<String>
+
     /**
      * Checks if an entity can be written to.
      *

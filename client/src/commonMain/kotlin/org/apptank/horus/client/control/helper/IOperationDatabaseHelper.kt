@@ -18,6 +18,16 @@ interface IOperationDatabaseHelper {
     fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback = {}): Boolean
 
     /**
+     * Executes a list of database operations (insert, update, delete) within a transaction.
+     *
+     * @param actions The list of actions to be performed on the database.
+     * @param ignoreIsFailure Flag to indicate whether to ignore failures in individual operations.
+     * @param postOperation The callback to be executed after the operation.
+     * @return True if the transaction was successful, false otherwise.
+     */
+    fun executeOperations(actions: List<DatabaseOperation>, ignoreIsFailure: Boolean, postOperation: Callback = {}): Boolean
+
+    /**
      * Executes a variable number of database operations (insert, update, delete) within a transaction.
      *
      * @param postOperation The callback to be executed after the operation.

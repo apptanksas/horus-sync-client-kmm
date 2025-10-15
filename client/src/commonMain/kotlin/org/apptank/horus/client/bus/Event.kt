@@ -1,4 +1,4 @@
-package org.apptank.horus.client.eventbus
+package org.apptank.horus.client.bus
 
 import org.apptank.horus.client.base.DataMap
 

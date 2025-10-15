@@ -3,8 +3,8 @@ package org.apptank.horus.client.tasks
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.warn
 import kotlinx.coroutines.CoroutineDispatcher
@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import org.apptank.horus.client.eventbus.Event
 import org.apptank.horus.client.extensions.logException
 
 /**
@@ -132,7 +131,7 @@ internal object ControlTaskManager {
             when {
                 syncControlDatabaseHelper.getEntityNames().isEmpty() -> {
                     onStatus(Status.FAILED)
-                    EventBus.emit(EventType.SYNC_FAILED)
+                    InternalEventBus.emit(EventType.SYNC_FAILED)
                 }
                 else -> emitEventOnReady()
             }
@@ -246,7 +245,7 @@ internal object ControlTaskManager {
             is TaskResult.Failure -> {
                 logException("[ControlTask] Error executing task", taskResult.error)
                 onStatus(Status.FAILED)
-                EventBus.emit(EventType.SYNC_FAILED)
+                InternalEventBus.emit(EventType.SYNC_FAILED)
             }
         }
     }
@@ -255,7 +254,7 @@ internal object ControlTaskManager {
      * Emits an event when the task execution is completed.
      */
     private fun emitEventOnReady() {
-        EventBus.emit(EventType.ON_READY)
+        InternalEventBus.emit(EventType.ON_READY)
         info("[Synchronization Validation] Horus sync is ready to operation")
     }
 

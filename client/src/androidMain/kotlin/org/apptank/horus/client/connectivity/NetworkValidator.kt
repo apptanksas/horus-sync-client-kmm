@@ -14,6 +14,7 @@ import android.telephony.CellInfoLte
 import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
+import org.apptank.horus.client.bus.HorusClientNetworkEventBus
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.warn
 

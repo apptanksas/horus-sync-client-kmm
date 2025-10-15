@@ -18,8 +18,8 @@ import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.connectivity.INetworkValidator
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.serialization.AnySerializer
@@ -80,7 +80,7 @@ internal class SynchronizeInitialDataTask(
             return TaskResult.failure(Exception("Network is not available"))
         }
 
-        EventBus.emit(EventType.START_SYNCHRONIZATION)
+        InternalEventBus.emit(EventType.START_SYNCHRONIZATION)
 
         val dataResult = fetchSyncData()
 
@@ -132,6 +132,10 @@ internal class SynchronizeInitialDataTask(
             }
 
             is DataResult.NotAuthorized -> {
+                return startResult
+            }
+
+            is DataResult.ClientError -> {
                 return startResult
             }
         }

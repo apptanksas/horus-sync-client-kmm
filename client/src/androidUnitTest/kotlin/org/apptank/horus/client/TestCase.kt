@@ -7,7 +7,7 @@ import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
-import org.apptank.horus.client.extensions.createSQLInsert
+import org.apptank.horus.client.extensions.createSQLInsertOrReplace
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.di.IDatabaseDriverFactory
@@ -21,7 +21,6 @@ import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
 import io.matthewnelson.kmp.file.File
-import io.matthewnelson.kmp.file.parentPath
 import io.matthewnelson.kmp.file.toFile
 import io.mockative.Matchers
 import io.mockative.classOf
@@ -33,7 +32,6 @@ import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
-import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
@@ -239,7 +237,7 @@ abstract class TestCase {
 
     protected fun SqlDriver.registerEntity(entity: String, isWritable: Boolean = true, level: Int = 0) {
         execute(
-            createSQLInsert(
+            createSQLInsertOrReplace(
                 EntitiesTable.TABLE_NAME,
                 EntitiesTable.mapToCreate(entity, isWritable, level)
             )
@@ -252,7 +250,7 @@ abstract class TestCase {
         attributeType: AttributeType
     ) {
         execute(
-            createSQLInsert(
+            createSQLInsertOrReplace(
                 EntityAttributesTable.TABLE_NAME,
                 EntityAttributesTable.mapToCreate(entity, attributeName, attributeType)
             )

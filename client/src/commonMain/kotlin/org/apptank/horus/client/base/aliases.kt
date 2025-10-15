@@ -4,7 +4,7 @@ import org.apptank.horus.client.serialization.AnySerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.apptank.horus.client.eventbus.Event
+import org.apptank.horus.client.bus.Event
 
 /**
  * Typealias for a map that holds data where the values are of any type, serializable using `AnySerializer`.

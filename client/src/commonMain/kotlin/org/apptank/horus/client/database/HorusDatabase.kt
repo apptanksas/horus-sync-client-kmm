@@ -11,9 +11,8 @@ import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
-import org.apptank.horus.client.extensions.createSQLInsert
+import org.apptank.horus.client.extensions.createSQLInsertOrReplace
 import org.apptank.horus.client.extensions.execute
-import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
@@ -149,7 +148,7 @@ class HorusDatabase(
                     // Insert new attributes into the entity attributes table usually for new attributes
                     attribute?.let {
                         execute(
-                            createSQLInsert(
+                            createSQLInsertOrReplace(
                                 EntityAttributesTable.TABLE_NAME,
                                 EntityAttributesTable.mapToCreate(entity, it.name, it.type)
                             )
@@ -180,14 +179,14 @@ class HorusDatabase(
                 }
 
                 execute(
-                    createSQLInsert(
+                    createSQLInsertOrReplace(
                         EntitiesTable.TABLE_NAME,
                         EntitiesTable.mapToCreate(entity.name, entity.isWritable(), entity.level)
                     )
                 )
                 entity.attributes.forEach {
                     execute(
-                        createSQLInsert(
+                        createSQLInsertOrReplace(
                             EntityAttributesTable.TABLE_NAME,
                             EntityAttributesTable.mapToCreate(entity.name, it.name, it.type)
                         )

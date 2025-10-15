@@ -32,6 +32,14 @@ sealed class DataResult<out T : Any?> {
      * @param exception The exception related to unauthorized access.
      */
     data class NotAuthorized(val exception: Throwable) : DataResult<Nothing>()
+
+    /**
+     * ClientError result containing a type and message for client-side errors.
+     *
+     * @param type The type of client error.
+     * @param message The message describing the client error.
+     */
+    data class ClientError(val type: ClientTypeError) : DataResult<Nothing>()
 }
 
 /**
@@ -41,17 +49,20 @@ sealed class DataResult<out T : Any?> {
  * @param onSuccess A function to execute if the result is successful.
  * @param onFailure A function to execute if the result is a failure or unauthorized.
  * @param onNotAuthorized A function to execute if the result is unauthorized.
+ * @param onClientError A function to execute if the result is a client error.
  * @return The result of executing the appropriate function.
  */
 fun <R, T : Any> DataResult<T>.fold(
     onSuccess: (T) -> R,
     onFailure: (Throwable) -> R,
-    onNotAuthorized: ((Throwable) -> R)? = null
+    onNotAuthorized: ((Throwable) -> R)? = null,
+    onClientError: ((ClientTypeError) -> R)? = null
 ): R {
     return when (val result = this) {
         is DataResult.Success -> onSuccess(result.data)
         is DataResult.Failure -> onFailure(result.exception)
         is DataResult.NotAuthorized -> onNotAuthorized?.invoke(result.exception) ?: onFailure(result.exception)
+        is DataResult.ClientError -> onClientError?.invoke(result.type) ?: onFailure(Exception("Client error: ${result.type}"))
     }
 }
 
@@ -69,6 +80,7 @@ suspend fun <R, T : Any> DataResult<T>.coFold(
     onSuccess: suspend (T) -> R,
     onFailure: suspend (Throwable) -> R,
     onNotAuthorized: (suspend (Throwable) -> R)? = null,
+    onClientError: (suspend (ClientTypeError) -> R)? = null,
     onComplete: suspend () -> Unit = {}
 ): R {
     return when (val result = this) {
@@ -91,5 +103,19 @@ suspend fun <R, T : Any> DataResult<T>.coFold(
                 onComplete.invoke()
             }
         }
+
+        is DataResult.ClientError -> {
+            onClientError?.invoke(result.type)?.also {
+                onComplete.invoke()
+            } ?: onFailure(Exception("Client error: ${result.type}")).also {
+                onComplete.invoke()
+            }
+        }
     }
+}
+
+
+sealed class ClientTypeError {
+    data class MaxCountEntityExceeded(val entity: String?, val maxCount: Int?, val currentCount: Int?) : ClientTypeError()
+    data class Unknown(val message: String) : ClientTypeError()
 }

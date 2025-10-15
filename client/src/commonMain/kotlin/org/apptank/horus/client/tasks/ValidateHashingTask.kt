@@ -71,7 +71,7 @@ internal class ValidateHashingTask(
             }
 
             // Handle failure or authorization errors.
-            is DataResult.Failure, is DataResult.NotAuthorized -> {
+            is DataResult.Failure, is DataResult.NotAuthorized, is DataResult.ClientError -> {
                 TaskResult.failure(Exception("Hashing validation failed"))
             }
         }

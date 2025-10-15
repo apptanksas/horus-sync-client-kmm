@@ -7,8 +7,8 @@ import io.mockative.mock
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.di.HorusContainer
-import org.apptank.horus.client.eventbus.EventBus
-import org.apptank.horus.client.eventbus.EventType
+import org.apptank.horus.client.bus.InternalEventBus
+import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.junit.Assert
 import org.junit.Before
@@ -36,7 +36,7 @@ class HorusAuthenticationTest : TestCase() {
 
         var eventReceived = false
 
-        EventBus.register(EventType.SETUP_CHANGED){
+        InternalEventBus.register(EventType.SETUP_CHANGED){
             eventReceived = true
         }
 
@@ -54,7 +54,7 @@ class HorusAuthenticationTest : TestCase() {
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
 
-        EventBus.register(EventType.USER_SESSION_CLEARED){
+        InternalEventBus.register(EventType.USER_SESSION_CLEARED){
             eventReceived = true
         }
 
