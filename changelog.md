@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.15.2
+- Performance improved in insert operations using entity restrictions validation.
+
 # v0.15.1
 - Fixed gradle configuration.
 
