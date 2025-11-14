@@ -280,9 +280,9 @@ object HorusDataFacade {
         // Validate entity restrictions
         try {
             with(entityRestrictionValidator) {
-                startValidation()
+                startValidation(entity)
                 validate(entity, EntityRestriction.OperationType.INSERT)
-                entityRestrictionValidator.finishValidation()
+                entityRestrictionValidator.finishValidation(entity)
             }
         } catch (e: OperationNotPermittedException) {
             return DataResult.NotAuthorized(e)
@@ -881,45 +881,51 @@ object HorusDataFacade {
 
         val recordInserts = mutableListOf<DatabaseOperation.InsertRecord>()
         // ID, entity, attributes
-        val insertIds =
-            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
+        val insertIds = mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
 
-        // Start validation
-        entityRestrictionValidator.startValidation()
+        val batchGroupedByEntity = batch.groupBy { it.entity }
 
-        batch.forEach { it ->
+        batchGroupedByEntity.forEach {
 
-            val entity = it.entity
-            val attributes = it.attributes
+            val entity = it.key
 
-            validateConstraintsEntity(entity)
+            // Start validation
+            entityRestrictionValidator.startValidation(entity)
 
-            entityRestrictionValidator.validate(entity, EntityRestriction.OperationType.INSERT)
+            it.value.forEach {
 
-            if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
-                throw AttributeRestrictedException()
+                val attributes = it.attributes
+
+                validateConstraintsEntity(entity)
+
+                entityRestrictionValidator.validate(entity, EntityRestriction.OperationType.INSERT)
+
+                if (AttributesPreparator.isAttributesNameContainsRestricted(attributes)) {
+                    throw AttributeRestrictedException()
+                }
+
+                val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
+                val id = Horus.Attribute(Horus.Attribute.ID, uuid)
+                val effectiveUserId = getEntityUserOwnerId(entity, attributes, batch)
+
+                val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
+                    id,
+                    AttributesPreparator.appendInsertSyncAttributes(id, attributes, effectiveUserId)
+                )
+
+                recordInserts.add(
+                    DatabaseOperation.InsertRecord(
+                        entity,
+                        attributesPrepared.mapToDBColumValue()
+                    )
+                )
+                insertIds.add(Triple(id, entity, attributes))
             }
 
-            val uuid = it.getAttribute<String>(Horus.Attribute.ID) ?: generateUUID()
-            val id = Horus.Attribute(Horus.Attribute.ID, uuid)
-            val effectiveUserId = getEntityUserOwnerId(entity, attributes, batch)
-
-            val attributesPrepared = AttributesPreparator.appendHashAndUpdateAttributes(
-                id,
-                AttributesPreparator.appendInsertSyncAttributes(id, attributes, effectiveUserId)
-            )
-
-            recordInserts.add(
-                DatabaseOperation.InsertRecord(
-                    entity,
-                    attributesPrepared.mapToDBColumValue()
-                )
-            )
-            insertIds.add(Triple(id, entity, attributes))
+            // Finish validation
+            entityRestrictionValidator.finishValidation(entity)
         }
 
-        // Finish validation
-        entityRestrictionValidator.finishValidation()
 
         return Pair(recordInserts, insertIds)
     }
