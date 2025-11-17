@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.15.3
+- Fixed configure user defaults in IOS platform.
+
 # v0.15.2
 - Performance improved in insert operations using entity restrictions validation.
 
