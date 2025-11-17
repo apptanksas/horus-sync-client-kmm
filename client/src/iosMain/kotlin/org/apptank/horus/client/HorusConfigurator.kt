@@ -7,7 +7,7 @@ import org.apptank.horus.client.config.HorusConfig
 import platform.Foundation.NSUserDefaults
 
 class HorusConfigurator(
-   private val config: HorusConfig
+    private val config: HorusConfig
 ) {
 
     /**
@@ -16,9 +16,12 @@ class HorusConfigurator(
      * @param context The context to use for configuration.
      */
     fun configure(networkValidator: INetworkValidator) {
+
+        val customDefaults = NSUserDefaults(suiteName = "org.apptank.horus.client.settings")
+
         with(HorusContainer) {
             setupSettings(
-                NSUserDefaultsSettings(NSUserDefaults.standardUserDefaults)
+                NSUserDefaultsSettings(customDefaults)
             )
             setupConfig(config)
             setupDatabaseFactory(DatabaseDriverFactory())
