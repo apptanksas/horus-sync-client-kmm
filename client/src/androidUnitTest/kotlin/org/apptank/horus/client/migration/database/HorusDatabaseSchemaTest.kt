@@ -6,6 +6,7 @@ import org.apptank.horus.client.DATA_MIGRATION_VERSION_2
 import org.apptank.horus.client.DATA_MIGRATION_VERSION_3
 import org.apptank.horus.client.DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE
 import org.apptank.horus.client.KotlinLogger
+import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.buildEntitiesSchemeFromJSON
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.di.HorusContainer
@@ -16,7 +17,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class HorusDatabaseSchemaTest {
+class HorusDatabaseSchemaTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
 
@@ -243,6 +244,44 @@ class HorusDatabaseSchemaTest {
         // Validate new entity "products_metadata" was added in the version 3
         Assert.assertTrue(tablesV1.notContains("products_metadata"))
         Assert.assertTrue(tablesV3.contains("products_metadata"))
+    }
+
+    @Test
+    fun migrateDatabaseV1ToV3ALT() {
+        // Given
+        val entitiesV1 = buildEntitiesSchemeFromJSON(getContentFromFileResource("migration_v1_alt.json")).map { it.toScheme() }
+        val entitiesV3 = buildEntitiesSchemeFromJSON(getContentFromFileResource("migration_v3_alt.json")).map { it.toScheme() }
+
+        val oldVersion = entitiesV1.getLastVersion()
+        val lastVersion = entitiesV3.getLastVersion()
+
+        // When
+
+        // --> Migrate V1
+        schema.create(driver, entitiesV1)
+
+        val tablesV1 = database.getTableEntities().map { it.name }
+
+        // --> Migrate V3
+        schema.migrate(driver, oldVersion, lastVersion, entitiesV3)
+
+        // Then
+        val tablesV3 = database.getTableEntities().map { it.name }
+
+
+        Assert.assertEquals(1, oldVersion)
+        Assert.assertEquals(3, lastVersion)
+
+        Assert.assertTrue(tablesV1.notContains("events_tasks_configuration"))
+        Assert.assertTrue(tablesV1.notContains("events"))
+        Assert.assertTrue(tablesV1.notContains("tasks"))
+        Assert.assertTrue(tablesV1.notContains("events_metadata"))
+        Assert.assertTrue(tablesV1.notContains("tasks_metadata"))
+        Assert.assertTrue(tablesV3.contains("events_tasks_configuration"))
+        Assert.assertTrue(tablesV3.contains("events"))
+        Assert.assertTrue(tablesV3.contains("tasks"))
+        Assert.assertTrue(tablesV3.contains("events_metadata"))
+        Assert.assertTrue(tablesV3.contains("tasks_metadata"))
     }
 
     @Test
