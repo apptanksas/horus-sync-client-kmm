@@ -1,5 +1,9 @@
 # Changelog
 
+# v0.15.4
+- Fixed refresh readable entities task sorting entities by level.
+- Fixed validate migration local database tasks.
+
 # v0.15.3
 - Fixed configure user defaults in IOS platform.
 

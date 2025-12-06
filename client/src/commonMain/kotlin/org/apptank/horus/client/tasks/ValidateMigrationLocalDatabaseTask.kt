@@ -53,6 +53,7 @@ internal class ValidateMigrationLocalDatabaseTask(
                     databaseDriverFactory.getDriver(),
                     schemaVersion,
                     lastVersion,
+                    data,
                     AfterVersion(lastVersion) {
                         setSchemaVersion(lastVersion)
                     }

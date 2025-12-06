@@ -1,0 +1,3478 @@
+[
+  {
+    "entity": "organizations",
+    "type": "writable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_uuid",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "category_code",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "name": "metric_total_capacity",
+        "version": 1,
+        "type": "uuid",
+        "nullable": false
+      },
+      {
+        "name": "metric_operational_capacity",
+        "version": 1,
+        "type": "uuid",
+        "nullable": false
+      },
+      {
+        "name": "uom_volume",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "m3",
+          "L",
+          "mL",
+          "cm3",
+          "dm3",
+          "in3",
+          "ft3",
+          "yd3",
+          "bt",
+          "gal",
+          "iga"
+        ]
+      },
+      {
+        "name": "uom_mass",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "kg",
+          "g",
+          "lb",
+          "oz",
+          "mg",
+          "t"
+        ]
+      },
+      {
+        "name": "uom_surface",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "m2",
+          "cm2",
+          "mm2",
+          "km2",
+          "ha",
+          "in2",
+          "ft2",
+          "yd2",
+          "ac"
+        ]
+      },
+      {
+        "name": "relations_one_of_many",
+        "version": 1,
+        "type": "relation_one_of_many",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "organizations_metadata",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "meta_key",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "meta_value",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "standard_metrics",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "dimension_type",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "w",
+                  "v",
+                  "a"
+                ]
+              },
+              {
+                "name": "unit_label",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "kg",
+                  "g",
+                  "lb",
+                  "oz",
+                  "mg",
+                  "t",
+                  "m3",
+                  "L",
+                  "mL",
+                  "cm3",
+                  "dm3",
+                  "in3",
+                  "ft3",
+                  "yd3",
+                  "bt",
+                  "gal",
+                  "iga",
+                  "m2",
+                  "cm2",
+                  "mm2",
+                  "km2",
+                  "ha",
+                  "in2",
+                  "ft2",
+                  "yd2",
+                  "ac"
+                ]
+              },
+              {
+                "name": "value",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "assets",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "alias",
+                "version": 1,
+                "type": "string",
+                "nullable": true
+              },
+              {
+                "name": "serial_number",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "electronic_id",
+                "version": 1,
+                "type": "string",
+                "nullable": true
+              },
+              {
+                "name": "variant_code",
+                "version": 1,
+                "type": "string",
+                "nullable": true
+              },
+              {
+                "name": "category_alpha",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "m",
+                  "f",
+                  "ud"
+                ]
+              },
+              {
+                "name": "category_beta",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6"
+                ]
+              },
+              {
+                "name": "utilization_code",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4"
+                ]
+              },
+              {
+                "name": "label_tag_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "status_workflow",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3"
+                ]
+              },
+              {
+                "name": "lifecycle_stage",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              {
+                "name": "status_cycle",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3"
+                ]
+              },
+              {
+                "name": "status_integrity",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              {
+                "name": "is_internal",
+                "version": 1,
+                "type": "boolean",
+                "nullable": false
+              },
+              {
+                "name": "access_level",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3"
+                ]
+              },
+              {
+                "name": "comments",
+                "version": 1,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "assets_logbook",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_entry",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "event_type",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5",
+                          "6",
+                          "7",
+                          "8",
+                          "9",
+                          "10",
+                          "11",
+                          "12",
+                          "13",
+                          "14",
+                          "15",
+                          "16",
+                          "17"
+                        ]
+                      },
+                      {
+                        "name": "external_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_bookmarks",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_media",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "media_type",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2"
+                        ]
+                      },
+                      {
+                        "name": "file_ref",
+                        "version": 1,
+                        "type": "ref_file",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_calibrations",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "repair_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true,
+                        "linked_entity": "assets_repairs",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_record",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "calibration_type",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5"
+                        ]
+                      },
+                      {
+                        "name": "metric_mass",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "input_type",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5",
+                          "6",
+                          "7",
+                          "8",
+                          "9",
+                          "10"
+                        ]
+                      },
+                      {
+                        "name": "is_under_repair",
+                        "version": 1,
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_updates",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_action",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "update_method",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4"
+                        ]
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      },
+                      {
+                        "name": "relations_one_of_many",
+                        "version": 1,
+                        "type": "relation_one_of_many",
+                        "nullable": false,
+                        "related": [
+                          {
+                            "entity": "assets_updates_metadata",
+                            "type": "writable",
+                            "attributes": [
+                              {
+                                "name": "id",
+                                "version": 1,
+                                "type": "primary_key_uuid",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_owner_id",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_hash",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_created_at",
+                                "version": 1,
+                                "type": "timestamp",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_updated_at",
+                                "version": 1,
+                                "type": "timestamp",
+                                "nullable": false
+                              },
+                              {
+                                "name": "update_id",
+                                "version": 1,
+                                "type": "uuid",
+                                "nullable": false,
+                                "linked_entity": "assets_updates",
+                                "delete_on_cascade": false
+                              },
+                              {
+                                "name": "meta_key",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "meta_value",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              }
+                            ],
+                            "current_version": 1
+                          }
+                        ]
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_repairs",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_start",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "timestamp_end",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "duration_days",
+                        "version": 1,
+                        "type": "int",
+                        "nullable": false
+                      },
+                      {
+                        "name": "label",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": true
+                      },
+                      {
+                        "name": "assessment",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": true
+                      },
+                      {
+                        "name": "component_used",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": true
+                      },
+                      {
+                        "name": "category_code",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1001",
+                          "1002",
+                          "1003",
+                          "1004",
+                          "1005",
+                          "2001",
+                          "2002",
+                          "2003",
+                          "2004",
+                          "2005",
+                          "3001",
+                          "3002",
+                          "3003",
+                          "3004",
+                          "3005",
+                          "3006",
+                          "3007",
+                          "4001",
+                          "4002",
+                          "4003",
+                          "4004",
+                          "5001",
+                          "5002",
+                          "5003",
+                          "5004",
+                          "5005",
+                          "6001",
+                          "6002",
+                          "6003",
+                          "7001",
+                          "7002",
+                          "7003",
+                          "7004",
+                          "9999"
+                        ]
+                      },
+                      {
+                        "name": "root_cause",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": true,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5",
+                          "6",
+                          "7",
+                          "8",
+                          "9",
+                          "10",
+                          "11",
+                          "999"
+                        ]
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_warnings",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "alert_level",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "01",
+                          "02",
+                          "03",
+                          "04",
+                          "05",
+                          "11",
+                          "12",
+                          "13",
+                          "14"
+                        ]
+                      },
+                      {
+                        "name": "timestamp_start",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "timestamp_end",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "is_silenced",
+                        "version": 1,
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      {
+                        "name": "relations_one_of_many",
+                        "version": 1,
+                        "type": "relation_one_of_many",
+                        "nullable": false,
+                        "related": [
+                          {
+                            "entity": "assets_warnings_metadata",
+                            "type": "writable",
+                            "attributes": [
+                              {
+                                "name": "id",
+                                "version": 1,
+                                "type": "primary_key_uuid",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_owner_id",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_hash",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_created_at",
+                                "version": 1,
+                                "type": "timestamp",
+                                "nullable": false
+                              },
+                              {
+                                "name": "sync_updated_at",
+                                "version": 1,
+                                "type": "timestamp",
+                                "nullable": false
+                              },
+                              {
+                                "name": "warning_id",
+                                "version": 1,
+                                "type": "uuid",
+                                "nullable": false,
+                                "linked_entity": "assets_warnings",
+                                "delete_on_cascade": false
+                              },
+                              {
+                                "name": "meta_key",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              },
+                              {
+                                "name": "meta_value",
+                                "version": 1,
+                                "type": "string",
+                                "nullable": false
+                              }
+                            ],
+                            "current_version": 1
+                          }
+                        ]
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_status_checks",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_check",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "result_bool",
+                        "version": 1,
+                        "type": "boolean",
+                        "nullable": false
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_failures",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_event",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "category_sub",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "m",
+                          "f",
+                          "ud"
+                        ]
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_defects",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "repair_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true,
+                        "linked_entity": "assets_repairs",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_detected",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "severity_data",
+                        "version": 1,
+                        "type": "json",
+                        "nullable": false
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_outputs",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "cluster_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      },
+                      {
+                        "name": "zone_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      },
+                      {
+                        "name": "timestamp_event",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "shift_code",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "m",
+                          "a",
+                          "n"
+                        ]
+                      },
+                      {
+                        "name": "metric_volume_primary",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "metric_volume_secondary",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_patches",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_applied",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "patch_code",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5",
+                          "6",
+                          "7",
+                          "8",
+                          "9",
+                          "10",
+                          "11",
+                          "12",
+                          "13",
+                          "14",
+                          "15",
+                          "16",
+                          "17",
+                          "18",
+                          "99"
+                        ]
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              },
+              {
+                "name": "relations_one_of_one",
+                "version": 1,
+                "type": "relation_one_of_one",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "assets_lineage",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "parent_a_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      },
+                      {
+                        "name": "parent_b_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      },
+                      {
+                        "name": "parent_c_ref_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_variants",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "variant_primary_id",
+                        "version": 1,
+                        "type": "int",
+                        "nullable": false
+                      },
+                      {
+                        "name": "variant_primary_pct",
+                        "version": 1,
+                        "type": "int",
+                        "nullable": false
+                      },
+                      {
+                        "name": "variant_secondary_id",
+                        "version": 1,
+                        "type": "int",
+                        "nullable": true
+                      },
+                      {
+                        "name": "variant_secondary_pct",
+                        "version": 1,
+                        "type": "int",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "assets_archivals",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_archive",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "reason_code",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5",
+                          "6",
+                          "7",
+                          "8",
+                          "9",
+                          "99"
+                        ]
+                      },
+                      {
+                        "name": "comments",
+                        "version": 1,
+                        "type": "text",
+                        "nullable": true
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 2
+          },
+          {
+            "entity": "batches",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "label",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "assets_batches_rel",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "batch_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "batches",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "clusters",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "label",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "zones",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "label",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "metric_area",
+                "version": 1,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "assets_zones_rel",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "zone_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "zones",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "timestamp_entry",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "shareholders",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "legal_name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "assets_shareholders_rel",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "shareholder_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "shareholders",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "tags",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "tag_code",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "image_ref",
+                "version": 1,
+                "type": "ref_file",
+                "nullable": true
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "output_distributions",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "timestamp_dist",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "zone_ref_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": true
+              },
+              {
+                "name": "metric_internal_use",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "metric_asset_use",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "metric_total_out",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false
+              },
+              {
+                "name": "manifest_json",
+                "version": 1,
+                "type": "json",
+                "nullable": true
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "distribution_clients",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "distribution_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "output_distributions",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "client_ref_code",
+                        "version": 1,
+                        "type": "custom",
+                        "nullable": false,
+                        "regex": "^[CD]-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                      },
+                      {
+                        "name": "metric_quantity",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "unit_cost",
+                        "version": 1,
+                        "type": "float",
+                        "nullable": false
+                      },
+                      {
+                        "name": "currency_code",
+                        "version": 1,
+                        "type": "custom",
+                        "nullable": false,
+                        "regex": "^[A-Z]{3}$"
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "distributors",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "company_name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "distributors_metadata",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "distributor_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "distributors",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "meta_key",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "meta_value",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "config_settings",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "category_config",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6"
+                ]
+              },
+              {
+                "name": "cycle_time_1",
+                "version": 1,
+                "type": "int",
+                "nullable": true
+              },
+              {
+                "name": "cycle_time_2",
+                "version": 1,
+                "type": "int",
+                "nullable": true
+              },
+              {
+                "name": "cycle_type",
+                "version": 1,
+                "type": "enum",
+                "nullable": true,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "input_acquisitions",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "timestamp_acq",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "category_input",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6"
+                ]
+              },
+              {
+                "name": "cost_total",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "currency_code",
+                "version": 1,
+                "type": "custom",
+                "nullable": false,
+                "regex": "^[A-Z]{3}$"
+              },
+              {
+                "name": "cost_unit",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "comments",
+                "version": 1,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "acquisition_items",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "acquisition_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "input_acquisitions",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "assets",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "metric_mass_ref",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "cost_value",
+                        "version": 1,
+                        "type": "float",
+                        "nullable": false
+                      },
+                      {
+                        "name": "currency_code",
+                        "version": 1,
+                        "type": "custom",
+                        "nullable": false,
+                        "regex": "^[A-Z]{3}$"
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "acquisition_metadata",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "acquisition_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "input_acquisitions",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "meta_key",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "meta_value",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          },
+          {
+            "entity": "asset_liquidations",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "timestamp_liq",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "category_asset",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6"
+                ]
+              },
+              {
+                "name": "price_total",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "currency_code",
+                "version": 1,
+                "type": "custom",
+                "nullable": false,
+                "regex": "^[A-Z]{3}$"
+              },
+              {
+                "name": "price_unit",
+                "version": 1,
+                "type": "float",
+                "nullable": false
+              },
+              {
+                "name": "comments",
+                "version": 1,
+                "type": "text",
+                "nullable": true
+              },
+              {
+                "name": "transfer_state",
+                "version": 1,
+                "type": "enum",
+                "nullable": false,
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9"
+                ]
+              },
+              {
+                "name": "relations_one_of_many",
+                "version": 1,
+                "type": "relation_one_of_many",
+                "nullable": false,
+                "related": [
+                  {
+                    "entity": "liquidation_items",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "liquidation_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "asset_liquidations",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "asset_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "asset_cycle_stage",
+                        "version": 1,
+                        "type": "enum",
+                        "nullable": false,
+                        "options": [
+                          "1",
+                          "2",
+                          "3",
+                          "4",
+                          "5"
+                        ]
+                      },
+                      {
+                        "name": "asset_serial",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "metric_mass_ref",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "price_value",
+                        "version": 1,
+                        "type": "float",
+                        "nullable": false
+                      },
+                      {
+                        "name": "currency_code",
+                        "version": 1,
+                        "type": "custom",
+                        "nullable": false,
+                        "regex": "^[A-Z]{3}$"
+                      }
+                    ],
+                    "current_version": 1
+                  },
+                  {
+                    "entity": "liquidation_metadata",
+                    "type": "writable",
+                    "attributes": [
+                      {
+                        "name": "id",
+                        "version": 1,
+                        "type": "primary_key_uuid",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_owner_id",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_hash",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_created_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "sync_updated_at",
+                        "version": 1,
+                        "type": "timestamp",
+                        "nullable": false
+                      },
+                      {
+                        "name": "liquidation_id",
+                        "version": 1,
+                        "type": "uuid",
+                        "nullable": false,
+                        "linked_entity": "asset_liquidations",
+                        "delete_on_cascade": false
+                      },
+                      {
+                        "name": "meta_key",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      },
+                      {
+                        "name": "meta_value",
+                        "version": 1,
+                        "type": "string",
+                        "nullable": false
+                      }
+                    ],
+                    "current_version": 1
+                  }
+                ]
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      },
+      {
+        "name": "relations_one_of_one",
+        "version": 1,
+        "type": "relation_one_of_one",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "org_geodata",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "organization_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "organizations",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "region_name",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "locality_id",
+                "version": 1,
+                "type": "int",
+                "nullable": false
+              },
+              {
+                "name": "geo_x",
+                "version": 1,
+                "type": "float",
+                "nullable": true
+              },
+              {
+                "name": "geo_y",
+                "version": 1,
+                "type": "float",
+                "nullable": true
+              },
+              {
+                "name": "formatted_location",
+                "version": 1,
+                "type": "string",
+                "nullable": true
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "asset_types",
+    "type": "readable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_integer",
+        "nullable": false
+      },
+      {
+        "name": "category",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "name": "label",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "default_distributors",
+    "type": "readable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_uuid",
+        "nullable": false
+      },
+      {
+        "name": "company_name",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "region_code",
+        "version": 1,
+        "type": "custom",
+        "nullable": false,
+        "regex": "^[A-Z]{2}$"
+      },
+      {
+        "name": "relations_one_of_many",
+        "version": 1,
+        "type": "relation_one_of_many",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "default_distributors_meta",
+            "type": "readable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "distributor_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "default_distributors",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "meta_key",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "meta_value",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "user_alerts",
+    "type": "writable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_uuid",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "organization_id",
+        "version": 1,
+        "type": "uuid",
+        "nullable": true
+      },
+      {
+        "name": "header",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "body_content",
+        "version": 1,
+        "type": "text",
+        "nullable": false
+      },
+      {
+        "name": "locale",
+        "version": 1,
+        "type": "custom",
+        "nullable": false,
+        "regex": "^[a-z]{2}$"
+      },
+      {
+        "name": "category",
+        "version": 1,
+        "type": "custom",
+        "nullable": false,
+        "regex": "^[a-z_0-9]+$"
+      },
+      {
+        "name": "payload_action",
+        "version": 1,
+        "type": "json",
+        "nullable": true
+      },
+      {
+        "name": "timestamp_read",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": true
+      },
+      {
+        "name": "relations_one_of_many",
+        "version": 1,
+        "type": "relation_one_of_many",
+        "nullable": false,
+        "related": [
+          {
+            "entity": "user_alerts_metadata",
+            "type": "writable",
+            "attributes": [
+              {
+                "name": "id",
+                "version": 1,
+                "type": "primary_key_uuid",
+                "nullable": false
+              },
+              {
+                "name": "sync_owner_id",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_hash",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "sync_created_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "sync_updated_at",
+                "version": 1,
+                "type": "timestamp",
+                "nullable": false
+              },
+              {
+                "name": "alert_id",
+                "version": 1,
+                "type": "uuid",
+                "nullable": false,
+                "linked_entity": "user_alerts",
+                "delete_on_cascade": false
+              },
+              {
+                "name": "meta_key",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              },
+              {
+                "name": "meta_value",
+                "version": 1,
+                "type": "string",
+                "nullable": false
+              }
+            ],
+            "current_version": 1
+          }
+        ]
+      }
+    ],
+    "current_version": 1
+  },
+  {
+    "entity": "alert_channels",
+    "type": "writable",
+    "attributes": [
+      {
+        "name": "id",
+        "version": 1,
+        "type": "primary_key_uuid",
+        "nullable": false
+      },
+      {
+        "name": "sync_owner_id",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_hash",
+        "version": 1,
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "sync_created_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "sync_updated_at",
+        "version": 1,
+        "type": "timestamp",
+        "nullable": false
+      },
+      {
+        "name": "channel_type",
+        "version": 1,
+        "type": "enum",
+        "nullable": false,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "name": "is_active",
+        "version": 1,
+        "type": "boolean",
+        "nullable": false
+      }
+    ],
+    "current_version": 1
+  }
+]
