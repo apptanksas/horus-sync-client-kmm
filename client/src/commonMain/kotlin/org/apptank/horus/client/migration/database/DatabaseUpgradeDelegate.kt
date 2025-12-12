@@ -154,7 +154,9 @@ class DatabaseUpgradeDelegate(
         this.forEach {
             // Map entities for related entities recursively.
             it.entitiesRelated.mapEntitiesByVersion(versionSearch).forEach { entityName ->
-                entities.add(entityName)
+                if (entities.contains(entityName).not()) {
+                    entities.add(entityName)
+                }
             }
 
             var entryVersion = Int.MAX_VALUE.toLong()
@@ -166,7 +168,9 @@ class DatabaseUpgradeDelegate(
             }
 
             if (entryVersion == versionSearch) {
-                entities.add(it.name)
+                if (entities.contains(it.name).not()) {
+                    entities.add(it.name)
+                }
             }
         }
 

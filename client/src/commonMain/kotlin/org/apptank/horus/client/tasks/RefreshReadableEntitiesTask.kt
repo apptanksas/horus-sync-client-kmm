@@ -68,7 +68,9 @@ internal class RefreshReadableEntitiesTask(
         }
 
         // Refresh each readable entity
-        syncControlDatabaseHelper.getReadableEntityNames().forEach { entityName ->
+        val entitiesSorted = syncControlDatabaseHelper.getReadableEntityNames().sortedBy { syncControlDatabaseHelper.getEntityLevel(it) }
+        entitiesSorted.forEach { entityName ->
+
             when (val response = syncService.getDataEntity(entityName)) {
                 is DataResult.Success -> {
                     val entitiesToTruncate = mutableListOf(entityName)
@@ -79,9 +81,7 @@ internal class RefreshReadableEntitiesTask(
                                     entitiesToTruncate.addAll(entities.map { it.name })
                                 }
                             }
-                        }
-                        .sortedBy { syncControlDatabaseHelper.getEntityLevel(it.name) }
-                        .flatMap { it.toRecordsInsert() }
+                        }.flatMap { it.toRecordsInsert() }.sortedBy { syncControlDatabaseHelper.getEntityLevel(it.table) }
 
                     // Remove existing records and insert fresh data
                     entitiesToTruncate.forEach {
