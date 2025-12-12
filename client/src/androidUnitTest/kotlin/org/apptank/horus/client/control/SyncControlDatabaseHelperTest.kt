@@ -10,6 +10,7 @@ import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.SyncControlDatabaseHelper
@@ -535,4 +536,61 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals("parent_id", relatedEntities.first().attributesLinked.first())
     }
 
+    @Test
+    fun `when insertActionSequences simple is success`(): Unit = runBlocking {
+        // Given
+        val sequences = generateArray(50) { Random.nextLong() }
+
+        // When
+        controlManagerDatabaseHelper.insertActionSequences(sequences)
+
+        // Then
+        val result = driver.executeQuery(
+            null,
+            "SELECT COUNT(${SyncControlSequenceTable.ATTR_SEQUENCE}) FROM ${SyncControlSequenceTable.TABLE_NAME} WHERE ${SyncControlSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
+            {
+                QueryResult.Value(it.getLong(0))
+            },
+            0
+        ).value
+        Assert.assertEquals(sequences.size.toLong(), result)
+    }
+
+    @Test
+    fun `when insertActionSequences is too long is success`(): Unit = runBlocking {
+        // Given
+        val sequences = generateArray(50000) { Random.nextLong() }
+
+        // When
+        controlManagerDatabaseHelper.insertActionSequences(sequences)
+
+        // Then
+        val result = driver.executeQuery(
+            null,
+            "SELECT COUNT(${SyncControlSequenceTable.ATTR_SEQUENCE}) FROM ${SyncControlSequenceTable.TABLE_NAME} WHERE ${SyncControlSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
+            {
+                QueryResult.Value(it.getLong(0))
+            },
+            0
+        ).value
+        Assert.assertEquals(sequences.size.toLong(), result)
+    }
+
+    @Test
+    fun `when getExistsActionSequences is success`(): Unit = runBlocking {
+        // Given
+        val sequences = generateArray(50) { Random.nextLong() }
+        controlManagerDatabaseHelper.insertActionSequences(sequences)
+
+        val sequencesToCheck = sequences.take(30) + generateArray(20) { Random.nextLong() }
+
+        // When
+        val existsSequences = controlManagerDatabaseHelper.getExistsActionSequences(sequencesToCheck)
+
+        // Then
+        Assert.assertEquals(30, existsSequences.size)
+        sequences.take(30).forEach {
+            Assert.assertTrue(existsSequences.contains(it))
+        }
+    }
 }

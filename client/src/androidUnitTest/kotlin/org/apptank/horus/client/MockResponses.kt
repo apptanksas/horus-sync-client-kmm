@@ -788,6 +788,7 @@ const val MOCK_RESPONSE_GET_DATA_ENTITY = """
 const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     [
     {
+        "sequence": 102929383844,
         "action": "INSERT",
         "entity": "measures",
         "data": {
@@ -800,7 +801,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725044885
     },
     {
-        "action": "INSERT",
+      "sequence": 102929383845,
+          "action": "INSERT",
         "entity": "measures",
         "data": {
             "id": "3093a07a-543b-336b-9ca8-4c3bf207aeb4",
@@ -812,6 +814,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
+        "sequence": 102929383846,
         "action": "UPDATE",
         "entity": "measures",
         "data": {
@@ -826,6 +829,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
+        "sequence": 102929383847,
         "action": "DELETE",
         "entity": "measures",
         "data": {
@@ -835,6 +839,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
+        "sequence": 102929383848,
         "action": "INSERT",
         "entity": "products",
         "data": {
@@ -851,7 +856,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048957
     },
     {
-        "action": "INSERT",
+       "sequence": 102929383848,
+       "action": "INSERT",
         "entity": "products",
         "data": {
             "id": "797b62cb-d6f5-436b-9ae0-6657d0ae979a",
@@ -867,7 +873,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725051913
     },
     {
-        "action": "INSERT",
+       "sequence": 102929383849,
+       "action": "INSERT",
         "entity": "categories",
         "data": {
             "id": "00aedddd-325d-4472-a04c-27e57f5d6018",

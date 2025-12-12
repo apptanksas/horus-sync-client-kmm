@@ -915,6 +915,7 @@ class SynchronizatorManagerTest : TestCase() {
     private fun generateResponseSyncActions(type: SyncControl.ActionType, entityName: String = "entity"): List<SyncDTO.Response.SyncAction> {
         return generateSyncActions(type).map {
             SyncDTO.Response.SyncAction(
+                Random.nextLong(),
                 it.action.name,
                 entityName,
                 it.data,

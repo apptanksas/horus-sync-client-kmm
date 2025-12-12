@@ -1,6 +1,9 @@
 package org.apptank.horus.client.utils
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Provides utility functions related to system time.
@@ -13,6 +16,6 @@ internal object SystemTime {
      * @return The current timestamp as a [Long] value, representing the number of seconds since January 1, 1970, 00:00:00 GMT.
      */
     fun getCurrentTimestamp(): Long {
-        return Clock.System.now().epochSeconds
+        return Clock.System.now().toLocalDateTime(TimeZone.UTC).toInstant(TimeZone.UTC).epochSeconds
     }
 }

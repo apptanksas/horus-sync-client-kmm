@@ -19,6 +19,7 @@ import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.model.EntityRelated
+import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
@@ -413,6 +414,42 @@ internal class SyncControlDatabaseHelper(
             while (getTables().isNotEmpty()) {
                 deleteAllTables()
             }
+        }
+    }
+
+    /**
+     * Inserts multiple action sequences into the database.
+     *
+     * @param sequences The list of action sequence IDs to be inserted.
+     */
+    override fun insertActionSequences(sequences: List<Long>) {
+        driver.handle {
+            transaction {
+                for (chunk in sequences.chunked(1000)) {
+                    insertMultipleOrThrow(
+                        SyncControlSequenceTable.TABLE_NAME,
+                        chunk.map { SyncControlSequenceTable.mapToCreate(it) }
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves existing action sequences from the database.
+     *
+     * @param sequences The list of action sequence IDs to be checked.
+     * @return A list of existing action sequence IDs.
+     */
+    override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
+
+        driver.handle {
+            val sqlSentence = SimpleQueryBuilder(SyncControlSequenceTable.TABLE_NAME)
+                .whereIn(SyncControlSequenceTable.ATTR_SEQUENCE, sequences)
+                .select(SyncControlSequenceTable.ATTR_SEQUENCE)
+                .build()
+
+            return queryResult(sqlSentence) { it.getValue<String>(SyncControlSequenceTable.ATTR_SEQUENCE).toLong() }
         }
     }
 

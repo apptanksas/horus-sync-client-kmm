@@ -11,6 +11,7 @@ import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.data.InternalModel
@@ -20,6 +21,7 @@ import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.createSQLInsertOrReplace
+import org.apptank.horus.client.extensions.createSQLMultipleInsertOrReplace
 import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireInt
@@ -153,6 +155,7 @@ abstract class SQLiteHelper(
             execute(SyncFileTable.SQL_CREATE_TABLE)
             execute(EntityAttributesTable.SQL_CREATE_TABLE)
             execute(DataSharedTable.SQL_CREATE_TABLE)
+            execute(SyncControlSequenceTable.SQL_CREATE_TABLE)
         }
         MemoryCache.flushCache()
     }
@@ -216,6 +219,18 @@ abstract class SQLiteHelper(
     protected fun insertOrThrow(table: String, values: DataMap) {
         val query = driver.createSQLInsertOrReplace(table, values)
         info("Insert query: $query")
+        executeInsertOrThrow(query)
+    }
+
+    /**
+     * Inserts multiple records into a specified table, throwing an exception if the insertion fails.
+     *
+     * @param table The name of the table.
+     * @param listValues The list of data maps to insert.
+     */
+    protected fun insertMultipleOrThrow(table: String, listValues: List<DataMap>) {
+        val query = driver.createSQLMultipleInsertOrReplace(table, listValues)
+        info("Insert Multiple query: $query")
         executeInsertOrThrow(query)
     }
 

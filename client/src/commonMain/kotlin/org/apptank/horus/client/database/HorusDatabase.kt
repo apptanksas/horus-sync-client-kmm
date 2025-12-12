@@ -9,6 +9,7 @@ import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.extensions.createSQLInsertOrReplace
@@ -88,6 +89,7 @@ class HorusDatabase(
                 execute(SyncFileTable.SQL_CREATE_TABLE)
                 execute(EntityAttributesTable.SQL_CREATE_TABLE)
                 execute(DataSharedTable.SQL_CREATE_TABLE)
+                execute(SyncControlSequenceTable.SQL_CREATE_TABLE)
 
                 databaseCreatorDelegate?.createTables {
                     execute(Random.nextInt(), it, 0)

@@ -173,11 +173,10 @@ internal class SynchronizatorManager(
     private suspend fun existsDataToSync(): Boolean? {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions =
-            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         val resultActions = synchronizationService.getQueueActions(
-            checkpointTimestamp,
+            checkpointTimestamp - CHECKPOINT_GAP,
             lastActions.map { it.getActionedAtTimestamp() })
 
         when (resultActions) {
@@ -406,7 +405,7 @@ internal class SynchronizatorManager(
 
         log("[SynchronizatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
 
-        val actions = synchronizationService.getQueueActions(checkpointDatetime)
+        val actions = synchronizationService.getQueueActions(checkpointDatetime - CHECKPOINT_GAP)
 
         when (actions) {
             is DataResult.Success -> {
@@ -810,5 +809,9 @@ internal class SynchronizatorManager(
                 return@find false
             } == null
         }
+    }
+
+    companion object {
+        private const val CHECKPOINT_GAP = 6 * 60 * 60 // 6 hours in seconds
     }
 }
