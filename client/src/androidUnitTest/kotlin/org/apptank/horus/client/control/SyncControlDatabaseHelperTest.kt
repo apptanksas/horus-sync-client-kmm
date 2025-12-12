@@ -10,7 +10,7 @@ import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
-import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
+import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.database.SyncControlDatabaseHelper
@@ -547,7 +547,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then
         val result = driver.executeQuery(
             null,
-            "SELECT COUNT(${SyncControlSequenceTable.ATTR_SEQUENCE}) FROM ${SyncControlSequenceTable.TABLE_NAME} WHERE ${SyncControlSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
+            "SELECT COUNT(${QueueActionsSequenceTable.ATTR_SEQUENCE}) FROM ${QueueActionsSequenceTable.TABLE_NAME} WHERE ${QueueActionsSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
             {
                 QueryResult.Value(it.getLong(0))
             },
@@ -567,7 +567,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then
         val result = driver.executeQuery(
             null,
-            "SELECT COUNT(${SyncControlSequenceTable.ATTR_SEQUENCE}) FROM ${SyncControlSequenceTable.TABLE_NAME} WHERE ${SyncControlSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
+            "SELECT COUNT(${QueueActionsSequenceTable.ATTR_SEQUENCE}) FROM ${QueueActionsSequenceTable.TABLE_NAME} WHERE ${QueueActionsSequenceTable.ATTR_SEQUENCE} IS NOT NULL",
             {
                 QueryResult.Value(it.getLong(0))
             },

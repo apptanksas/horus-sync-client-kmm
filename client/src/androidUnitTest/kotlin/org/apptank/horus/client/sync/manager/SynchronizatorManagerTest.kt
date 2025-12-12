@@ -110,6 +110,8 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(
                 checkpointTimestamp
             )
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
+
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
                 actions
             )
@@ -146,12 +148,14 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(
                 checkpointTimestamp
             )
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
+
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
                 actions
             )
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(
@@ -196,15 +200,15 @@ class SynchronizatorManagerTest : TestCase() {
 
             every { networkValidator.isNetworkAvailable() }.returns(true)
             every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
-            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
-                .returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }
                 .returns(ownNewActions)
 
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(responseActions))
@@ -249,15 +253,15 @@ class SynchronizatorManagerTest : TestCase() {
 
             every { networkValidator.isNetworkAvailable() }.returns(true)
             every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
-            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
-                .returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }
                 .returns(ownNewActions)
 
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(responseActions))
@@ -308,15 +312,15 @@ class SynchronizatorManagerTest : TestCase() {
 
             every { networkValidator.isNetworkAvailable() }.returns(true)
             every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
-            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
-                .returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(checkpointTimestamp)
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }
                 .returns(ownNewActions)
 
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(responseActions))
@@ -378,6 +382,8 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(
                 checkpointTimestamp
             )
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
+
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(
                 insertActions + updateActions + deleteActions
             )
@@ -390,7 +396,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(responseActions))
@@ -456,10 +462,12 @@ class SynchronizatorManagerTest : TestCase() {
 
         coEvery {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp),
+                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                 any()
             )
         }.returns(DataResult.Success(responseActions))
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
+
 
         every { operationDatabaseHelper.executeOperations(listOf(any()), any(), any()) }.returns(false)
 
@@ -499,11 +507,13 @@ class SynchronizatorManagerTest : TestCase() {
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(
             checkpointTimestamp
         )
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
+
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(pendingActions)
 
         coEvery {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp),
+                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                 any()
             )
         }.returns(DataResult.Success(responseActions))
@@ -575,7 +585,7 @@ class SynchronizatorManagerTest : TestCase() {
         )
         coEvery {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp),
+                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                 any()
             )
         }.returns(DataResult.Success(emptyList()))
@@ -648,7 +658,7 @@ class SynchronizatorManagerTest : TestCase() {
             )
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(emptyList()))
@@ -743,7 +753,7 @@ class SynchronizatorManagerTest : TestCase() {
             )
             coEvery {
                 synchronizationService.getQueueActions(
-                    checkpointTimestamp,
+                    checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP,
                     emptyList()
                 )
             }.returns(DataResult.Success(emptyList()))
@@ -792,13 +802,14 @@ class SynchronizatorManagerTest : TestCase() {
         every { networkValidator.isNetworkAvailable() }.returns(true)
         every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(checkpointTimestamp)
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(listOf())
         every { operationDatabaseHelper.queryRecords(any()) }.returns(
             responseActions.map { it.data ?: mapOf() }
         )
         coEvery {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp),
+                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                 any()
             )
         }.returns(DataResult.Success(responseActions))
@@ -843,13 +854,14 @@ class SynchronizatorManagerTest : TestCase() {
             every { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) }.returns(
                 DatabaseOperation.Result(true, 1)
             )
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) }.returns(listOf())
             every { operationDatabaseHelper.executeOperations(listOf(any()), matches<Callback> { true }) }.returns(false)
             every { operationDatabaseHelper.queryRecords(any()) }.returns(
                 responseActions.map { it.data ?: mapOf() }
             )
             coEvery {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp),
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
                     any()
                 )
             }.returns(DataResult.Success(responseActions))
@@ -884,6 +896,46 @@ class SynchronizatorManagerTest : TestCase() {
                 )
             }.wasInvoked(1)
         }
+
+
+    @Test
+    fun `when exists actionsSequences already process then do nothing`() = runBlocking {
+        // Given
+        val responseActions = generateResponseSyncActions(SyncControl.ActionType.INSERT)
+        val checkpointTimestamp = Clock.System.now().toEpochMilliseconds()
+        val existingSequences = responseActions.mapNotNull { it.sequence }
+
+        every { networkValidator.isNetworkAvailable() }.returns(true)
+        every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
+        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }.returns(checkpointTimestamp)
+        every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) }.returns(listOf())
+        coEvery {
+            synchronizationService.getQueueActions(
+                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                any()
+            )
+        }.returns(DataResult.Success(responseActions))
+
+        every { syncControlDatabaseHelper.getExistsActionSequences(existingSequences) }.returns(existingSequences)
+        every { operationDatabaseHelper.executeOperations(eq(emptyList()), any(), any()) }.returns(true)
+
+        // When
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+            }
+        }
+
+        // Then
+        delay(50)
+        coVerify { operationDatabaseHelper.executeOperations(eq(emptyList()), any(), any()) }.wasInvoked(1)
+        verify {
+            syncControlDatabaseHelper.addSyncTypeStatus(
+                SyncControl.OperationType.CHECKPOINT,
+                SyncControl.Status.COMPLETED
+            )
+        }.wasInvoked(1)
+    }
 
     private fun generateSyncActions(
         type: SyncControl.ActionType,

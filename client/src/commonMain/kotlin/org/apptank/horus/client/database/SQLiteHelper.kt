@@ -11,7 +11,7 @@ import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
-import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
+import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.data.InternalModel
@@ -145,20 +145,21 @@ abstract class SQLiteHelper(
     /**
      * Validates and creates necessary tables for Horus migration if they do not exist.
      */
-    fun validateMigrationHorusTables() {
-        if (getTables().contains(EntitiesTable.TABLE_NAME)) return
+    protected fun validateMigrationHorusTables() {
 
         driver.handle {
-            execute(EntitiesTable.SQL_CREATE_TABLE)
-            execute(SyncControlTable.SQL_CREATE_TABLE)
-            execute(QueueActionsTable.SQL_CREATE_TABLE)
-            execute(SyncFileTable.SQL_CREATE_TABLE)
-            execute(EntityAttributesTable.SQL_CREATE_TABLE)
-            execute(DataSharedTable.SQL_CREATE_TABLE)
-            execute(SyncControlSequenceTable.SQL_CREATE_TABLE)
+            createTableIfNotExists(
+                EntitiesTable.TABLE_NAME,
+                SyncControlTable.TABLE_NAME,
+                QueueActionsTable.TABLE_NAME,
+                SyncFileTable.TABLE_NAME,
+                EntityAttributesTable.TABLE_NAME,
+                DataSharedTable.TABLE_NAME,
+                QueueActionsSequenceTable.TABLE_NAME
+            )
         }
-        MemoryCache.flushCache()
     }
+
 
     /**
      * Executes a raw SQL query and maps the result using the provided mapper function.
@@ -298,6 +299,16 @@ abstract class SQLiteHelper(
         val result = executeDelete(query)
         executeSql("PRAGMA foreign_keys = ON;")
         return result
+    }
+
+    protected fun SqlDriver.createTableIfNotExists(vararg tableName: String) {
+        tableName.forEach { table ->
+            val isExists = getTables().contains(table)
+            if (!isExists) {
+                execute(table)
+                MemoryCache.flushCache()
+            }
+        }
     }
 
     /**

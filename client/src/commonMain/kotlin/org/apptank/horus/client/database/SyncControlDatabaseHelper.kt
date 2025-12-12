@@ -15,14 +15,16 @@ import org.apptank.horus.client.bus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.model.EntityRelated
-import org.apptank.horus.client.control.scheme.SyncControlSequenceTable
+import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -424,11 +426,15 @@ internal class SyncControlDatabaseHelper(
      */
     override fun insertActionSequences(sequences: List<Long>) {
         driver.handle {
+
+            // Ensure the SyncControlSequenceTable exists
+            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+
             transaction {
                 for (chunk in sequences.chunked(1000)) {
                     insertMultipleOrThrow(
-                        SyncControlSequenceTable.TABLE_NAME,
-                        chunk.map { SyncControlSequenceTable.mapToCreate(it) }
+                        QueueActionsSequenceTable.TABLE_NAME,
+                        chunk.map { QueueActionsSequenceTable.mapToCreate(it) }
                     )
                 }
             }
@@ -442,14 +448,16 @@ internal class SyncControlDatabaseHelper(
      * @return A list of existing action sequence IDs.
      */
     override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
-
         driver.handle {
-            val sqlSentence = SimpleQueryBuilder(SyncControlSequenceTable.TABLE_NAME)
-                .whereIn(SyncControlSequenceTable.ATTR_SEQUENCE, sequences)
-                .select(SyncControlSequenceTable.ATTR_SEQUENCE)
+
+            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+
+            val sqlSentence = SimpleQueryBuilder(QueueActionsSequenceTable.TABLE_NAME)
+                .whereIn(QueueActionsSequenceTable.ATTR_SEQUENCE, sequences)
+                .select(QueueActionsSequenceTable.ATTR_SEQUENCE)
                 .build()
 
-            return queryResult(sqlSentence) { it.getValue<String>(SyncControlSequenceTable.ATTR_SEQUENCE).toLong() }
+            return queryResult(sqlSentence) { it.getValue<String>(QueueActionsSequenceTable.ATTR_SEQUENCE).toLong() }
         }
     }
 

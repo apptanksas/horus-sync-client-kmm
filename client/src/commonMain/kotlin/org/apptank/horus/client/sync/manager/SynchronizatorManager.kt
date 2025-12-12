@@ -176,7 +176,7 @@ internal class SynchronizatorManager(
         val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         val resultActions = synchronizationService.getQueueActions(
-            checkpointTimestamp - CHECKPOINT_GAP,
+            if (checkpointTimestamp > 0) checkpointTimestamp - CHECKPOINT_GAP else checkpointTimestamp,
             lastActions.map { it.getActionedAtTimestamp() })
 
         when (resultActions) {
@@ -410,7 +410,21 @@ internal class SynchronizatorManager(
         when (actions) {
             is DataResult.Success -> {
 
-                val newActions = filterOwnActions(actions.data.map { it.toDomain() }, checkpointDatetime)
+                val actionSequences = actions.data.mapNotNull { it.sequence }.toMutableList()
+
+                // -------------------------------------------------
+                // Filter actions that are already processed
+                // -------------------------------------------------
+
+                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
+                actionSequences.removeAll(actionsAlreadyProcessed)
+
+                // -------------------------------------------------
+
+                val actionsToProcess = actions.data.filter { action ->
+                    action.sequence?.let { actionSequences.contains(it) } ?: true
+                }
+                val newActions = filterOwnActions(actionsToProcess.map { it.toDomain() }, checkpointDatetime)
 
                 val (moveActions, insertActions, updateActions, deleteActions) = organizeActions(newActions)
 
@@ -437,6 +451,9 @@ internal class SynchronizatorManager(
                     SyncControl.OperationType.CHECKPOINT,
                     syncControlStatus
                 )
+
+                // Insert processed action sequences
+                syncControlDatabaseHelper.insertActionSequences(actionSequences)
 
                 return result
             }
@@ -812,6 +829,6 @@ internal class SynchronizatorManager(
     }
 
     companion object {
-        private const val CHECKPOINT_GAP = 6 * 60 * 60 // 6 hours in seconds
+        const val CHECKPOINT_GAP = 6 * 60 * 60 // 6 hours in seconds
     }
 }
