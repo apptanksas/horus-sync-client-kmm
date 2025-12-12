@@ -15,13 +15,16 @@ import org.apptank.horus.client.bus.EventType
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.model.EntityRelated
+import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -413,6 +416,48 @@ internal class SyncControlDatabaseHelper(
             while (getTables().isNotEmpty()) {
                 deleteAllTables()
             }
+        }
+    }
+
+    /**
+     * Inserts multiple action sequences into the database.
+     *
+     * @param sequences The list of action sequence IDs to be inserted.
+     */
+    override fun insertActionSequences(sequences: List<Long>) {
+        driver.handle {
+
+            // Ensure the SyncControlSequenceTable exists
+            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+
+            transaction {
+                for (chunk in sequences.chunked(1000)) {
+                    insertMultipleOrThrow(
+                        QueueActionsSequenceTable.TABLE_NAME,
+                        chunk.map { QueueActionsSequenceTable.mapToCreate(it) }
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Retrieves existing action sequences from the database.
+     *
+     * @param sequences The list of action sequence IDs to be checked.
+     * @return A list of existing action sequence IDs.
+     */
+    override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
+        driver.handle {
+
+            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+
+            val sqlSentence = SimpleQueryBuilder(QueueActionsSequenceTable.TABLE_NAME)
+                .whereIn(QueueActionsSequenceTable.ATTR_SEQUENCE, sequences)
+                .select(QueueActionsSequenceTable.ATTR_SEQUENCE)
+                .build()
+
+            return queryResult(sqlSentence) { it.getValue<String>(QueueActionsSequenceTable.ATTR_SEQUENCE).toLong() }
         }
     }
 

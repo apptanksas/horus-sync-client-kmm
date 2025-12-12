@@ -56,6 +56,19 @@ internal fun SqlDriver.createSQLInsertOrReplace(table: String, values: DataMap):
     return "INSERT OR REPLACE INTO $table ($columns) VALUES ($valuesString)"
 }
 
+
+internal fun SqlDriver.createSQLMultipleInsertOrReplace(table: String, listValues: List<DataMap>): String {
+    if (listValues.isEmpty()) return ""
+
+    val columns = listValues.first().keys.joinToString(", ")
+    val valuesStrings = listValues.map { values ->
+        val valueString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
+        "($valueString)"
+    }.joinToString(", ")
+
+    return "INSERT OR REPLACE INTO $table ($columns) VALUES $valuesStrings"
+}
+
 /**
  * Executes a SQL query on the driver.
  *

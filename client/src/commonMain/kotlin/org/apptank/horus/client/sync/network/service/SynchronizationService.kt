@@ -180,13 +180,31 @@ internal class SynchronizationService(
         timestampAfter: Long?,
         exclude: List<Long>
     ): DataResult<List<SyncDTO.Response.SyncAction>> {
+
         val queryParams = mutableMapOf<String, String>()
         timestampAfter?.let { queryParams["after"] = it.toString() }
+
         if (exclude.isNotEmpty()) {
             queryParams["exclude"] = exclude.distinct().joinToString(",")
         }
 
-        return get("queue/actions", queryParams) { it.serialize() }
+        val cacheKey = queryParams.entries.joinToString("&") { "${it.key}=${it.value}" }
+
+        val retrieveResult = suspend {
+            get<List<SyncDTO.Response.SyncAction>>("queue/actions", queryParams) { it.serialize() }.also { result ->
+                if (result is DataResult.Success) {
+                    cacheGetQueueActions[cacheKey] = result
+                }
+            }
+        }
+
+        if (cacheGetQueueActions.containsKey(cacheKey)) {
+            return cacheGetQueueActions[cacheKey] ?: retrieveResult().apply {
+                cacheGetQueueActions.clear()
+            }
+        }
+
+        return retrieveResult()
     }
 
     /**
@@ -315,6 +333,7 @@ internal class SynchronizationService(
 
     internal companion object {
         const val HORUS_PATH_FILES = "horus/sync/service"
+        val cacheGetQueueActions = mutableMapOf<String, DataResult<List<SyncDTO.Response.SyncAction>>>()
     }
 
 }
