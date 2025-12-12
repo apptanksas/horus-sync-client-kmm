@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.16.1
+- Fixed PodFile configuration.
+
 # v0.16.0
 - Added validation to get actions using a sequence as identifier.
 - Added timestamp gap to get actions to avoid missing actions when the server and client have different times.
