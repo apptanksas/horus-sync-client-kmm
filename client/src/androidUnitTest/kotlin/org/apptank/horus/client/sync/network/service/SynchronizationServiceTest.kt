@@ -232,6 +232,7 @@ class SynchronizationServiceTest : ServiceTest() {
             onSuccess = {
                 Assert.assertEquals(countExpected, it.size)
                 it.forEach {
+                    Assert.assertNotNull(it.sequence)
                     Assert.assertNotNull(it.action)
                     Assert.assertNotNull(it.entity)
                     Assert.assertNotNull(it.data)

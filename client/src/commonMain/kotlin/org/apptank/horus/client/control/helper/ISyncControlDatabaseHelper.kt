@@ -180,4 +180,19 @@ interface ISyncControlDatabaseHelper {
      * Clears all data from the database.
      */
     fun clearDatabase()
+
+    /**
+     * Inserts a list of action sequence numbers into the database.
+     *
+     * @param sequences The list of action sequence numbers to insert.
+     */
+    fun insertActionSequences(sequences: List<Long>)
+
+    /**
+     * Retrieves a list of existing action sequence numbers from the database.
+     *
+     * @param sequences The list of action sequence numbers to check.
+     * @return A list of existing action sequence numbers.
+     */
+    fun getExistsActionSequences(sequences: List<Long>): List<Long>
 }

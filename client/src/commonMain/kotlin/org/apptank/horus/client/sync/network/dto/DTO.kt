@@ -139,6 +139,7 @@ sealed class SyncDTO {
          */
         @Serializable
         data class SyncAction(
+            val sequence: Long? = null,
             val action: String? = null,
             val entity: String? = null,
             val data: DataMap? = null,
