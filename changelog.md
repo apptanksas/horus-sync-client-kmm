@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.16.2
+- Fixed issue when validate migration horus tables.
+
 # v0.16.1
 - Fixed PodFile configuration.
 

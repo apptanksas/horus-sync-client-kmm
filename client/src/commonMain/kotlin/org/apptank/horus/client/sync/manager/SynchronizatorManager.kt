@@ -88,8 +88,7 @@ internal class SynchronizatorManager(
         val userId = HorusAuthentication.getEffectiveUserId()
 
         // Stage 1: Validate if there are new data to sync with the server
-        val validateIsExistsDataToSync =
-            existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
+        val validateIsExistsDataToSync = existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
 
         if (validateIsExistsDataToSync.isTrue()) {
             log("[SynchronizatorManager] There are new data to sync with the server")
@@ -176,7 +175,7 @@ internal class SynchronizatorManager(
         val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         val resultActions = synchronizationService.getQueueActions(
-            if (checkpointTimestamp > 0) checkpointTimestamp - CHECKPOINT_GAP else checkpointTimestamp,
+            validateCheckpointTimestamp(checkpointTimestamp),
             lastActions.map { it.getActionedAtTimestamp() })
 
         when (resultActions) {
@@ -405,7 +404,7 @@ internal class SynchronizatorManager(
 
         log("[SynchronizatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
 
-        val actions = synchronizationService.getQueueActions(checkpointDatetime - CHECKPOINT_GAP)
+        val actions = synchronizationService.getQueueActions(validateCheckpointTimestamp(checkpointDatetime))
 
         when (actions) {
             is DataResult.Success -> {
@@ -826,6 +825,13 @@ internal class SynchronizatorManager(
                 return@find false
             } == null
         }
+    }
+
+    private fun validateCheckpointTimestamp(timestamp: Long): Long {
+        if (timestamp <= 0L) {
+            return timestamp
+        }
+        return timestamp - CHECKPOINT_GAP
     }
 
     companion object {
