@@ -428,7 +428,9 @@ internal class SyncControlDatabaseHelper(
         driver.handle {
 
             // Ensure the SyncControlSequenceTable exists
-            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+            with(QueueActionsSequenceTable) {
+                createTableIfNotExists(Pair(TABLE_NAME, SQL_CREATE_TABLE))
+            }
 
             transaction {
                 for (chunk in sequences.chunked(1000)) {
@@ -450,7 +452,9 @@ internal class SyncControlDatabaseHelper(
     override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
         driver.handle {
 
-            createTableIfNotExists(QueueActionsSequenceTable.TABLE_NAME)
+            with(QueueActionsSequenceTable) {
+                createTableIfNotExists(Pair(TABLE_NAME, SQL_CREATE_TABLE))
+            }
 
             val sqlSentence = SimpleQueryBuilder(QueueActionsSequenceTable.TABLE_NAME)
                 .whereIn(QueueActionsSequenceTable.ATTR_SEQUENCE, sequences)

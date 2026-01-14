@@ -149,13 +149,34 @@ abstract class SQLiteHelper(
 
         driver.handle {
             createTableIfNotExists(
-                EntitiesTable.TABLE_NAME,
-                SyncControlTable.TABLE_NAME,
-                QueueActionsTable.TABLE_NAME,
-                SyncFileTable.TABLE_NAME,
-                EntityAttributesTable.TABLE_NAME,
-                DataSharedTable.TABLE_NAME,
-                QueueActionsSequenceTable.TABLE_NAME
+                Pair(
+                    EntitiesTable.TABLE_NAME,
+                    EntitiesTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    SyncControlTable.TABLE_NAME,
+                    SyncControlTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    QueueActionsTable.TABLE_NAME,
+                    QueueActionsTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    SyncFileTable.TABLE_NAME,
+                    SyncFileTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    EntityAttributesTable.TABLE_NAME,
+                    EntityAttributesTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    DataSharedTable.TABLE_NAME,
+                    DataSharedTable.SQL_CREATE_TABLE
+                ),
+                Pair(
+                    QueueActionsSequenceTable.TABLE_NAME,
+                    QueueActionsSequenceTable.SQL_CREATE_TABLE
+                )
             )
         }
     }
@@ -301,11 +322,13 @@ abstract class SQLiteHelper(
         return result
     }
 
-    protected fun SqlDriver.createTableIfNotExists(vararg tableName: String) {
-        tableName.forEach { table ->
-            val isExists = getTables().contains(table)
+    protected fun SqlDriver.createTableIfNotExists(vararg tables: Pair<String, String>) {
+        tables.forEach { table ->
+            val tableName = table.first
+            val creationSQL = table.second
+            val isExists = getTables().contains(tableName)
             if (!isExists) {
-                execute(table)
+                execute(creationSQL)
                 MemoryCache.flushCache()
             }
         }
