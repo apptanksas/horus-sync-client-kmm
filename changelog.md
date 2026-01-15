@@ -1,5 +1,11 @@
 # Changelog
 
+# v0.16.3
+- Added force initial sync data in horus data facade.
+
+# v0.16.2
+- Fixed version name. 
+
 # v0.16.1
 - Fixed PodFile configuration.
 

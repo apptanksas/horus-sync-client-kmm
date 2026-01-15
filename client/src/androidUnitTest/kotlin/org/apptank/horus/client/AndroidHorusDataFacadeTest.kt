@@ -39,6 +39,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.base.encodeToJSON
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
@@ -67,6 +68,7 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.random.nextUInt
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.fail
 
 @RunWith(RobolectricTestRunner::class)
@@ -440,6 +442,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateQueryWithWhereLikeConditions()
         validateQueryWithWhereLikeConditionsAlternative()
         queryDataSharedSuccess()
+        validateSyncFailedEventWhenForceInitialSync()
 
         assert(invokedInsert)
         assert(invokedUpdate)
@@ -639,11 +642,12 @@ class AndroidHorusDataFacadeTest : TestCase() {
         )
 
         // Then
-        assert(driver.rawQuery(
-            "SELECT * FROM measures_metadata WHERE measure_id = '$measureId' AND ${Horus.Attribute.OWNER_ID} = '$userOwnerId'"
-        ) {
-            it.getString(0)
-        }.isNotEmpty()
+        assert(
+            driver.rawQuery(
+                "SELECT * FROM measures_metadata WHERE measure_id = '$measureId' AND ${Horus.Attribute.OWNER_ID} = '$userOwnerId'"
+            ) {
+                it.getString(0)
+            }.isNotEmpty()
         )
     }
 
@@ -1107,6 +1111,20 @@ class AndroidHorusDataFacadeTest : TestCase() {
         Assert.assertEquals(1, results.size)
         Assert.assertEquals("test_entity", results[0].name)
         Assert.assertEquals("value23", results[0].getRequireString("attr1"))
+    }
+
+    private fun validateSyncFailedEventWhenForceInitialSync() = prepareInternalTest {
+        // Given
+
+        val mockNetworkValidator = mock(classOf<INetworkValidator>())
+        every { mockNetworkValidator.isNetworkAvailable() }.returns(false)
+        HorusContainer.setupNetworkValidator(mockNetworkValidator)
+
+        // When
+        val result = HorusDataFacade.forceInitialSynchronization { }
+
+        // Then
+        assertFalse(result)
     }
 
     //---------------------------------------------

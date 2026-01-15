@@ -20,6 +20,7 @@ import org.apptank.horus.client.database.struct.toRecordsInsert
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
+import org.apptank.horus.client.exception.NetworkException
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.serialization.AnySerializer
@@ -38,14 +39,16 @@ import kotlin.uuid.Uuid
  * @property synchronizeService Service to handle synchronization operations.
  * @property dependsOnTask The task that must be completed before this task can run.
  * @param pollingTime The time to wait between retries for data synchronization (default is 5000 milliseconds).
+ * @property force Flag to indicate if the synchronization should be forced.
  */
 internal class SynchronizeInitialDataTask(
     private val networkValidator: INetworkValidator,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val controlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizeService: ISynchronizationService,
-    dependsOnTask: ValidateHashingTask,
+    dependsOnTask: ValidateHashingTask? = null,
     private val pollingTime: Long = 5000L,
+    private val force: Boolean = false
 ) : BaseTask(dependsOnTask, weightPercentage = 10) {
 
     private val decoderJSON = Json {
@@ -71,13 +74,13 @@ internal class SynchronizeInitialDataTask(
         this.progressTask = 0
 
         // Check if the initial synchronization has already been completed.
-        if (isInitialSynchronizationCompleted()) {
+        if (isInitialSynchronizationCompleted() && !force) {
             return TaskResult.success()
         }
 
         // Check network availability before proceeding.
         if (!networkValidator.isNetworkAvailable()) {
-            return TaskResult.failure(Exception("Network is not available"))
+            return TaskResult.failure(NetworkException())
         }
 
         InternalEventBus.emit(EventType.START_SYNCHRONIZATION)
@@ -106,6 +109,8 @@ internal class SynchronizeInitialDataTask(
         // Return failure if data retrieval or saving fails.
         return TaskResult.failure(Exception("Error synchronizing data"))
     }
+
+
 
     @OptIn(ExperimentalUuidApi::class)
     private suspend fun fetchSyncData(): DataResult<Sequence<List<SyncDTO.Response.Entity>>> {
