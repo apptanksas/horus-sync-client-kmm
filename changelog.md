@@ -4,7 +4,7 @@
 - Added force initial sync data in horus data facade.
 
 # v0.16.2
-- Fixed version name. 
+- Fixed issue when validate migration horus tables.
 
 # v0.16.1
 - Fixed PodFile configuration.
