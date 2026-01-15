@@ -26,6 +26,7 @@ object HorusClientSyncErrorEventBus {
 
 sealed class SyncError {
     data class MaxCountEntityRestrictionExceeded(val entity: String, val maxCount: Int, val currentCount: Int) : SyncError()
+    data object NetworkError : SyncError()
     data class UnknownError(val error: Throwable?) : SyncError()
 }
 

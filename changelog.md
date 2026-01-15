@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.16.3
+- Added force initial sync data in horus data facade.
+
 # v0.16.2
 - Fixed issue when validate migration horus tables.
 

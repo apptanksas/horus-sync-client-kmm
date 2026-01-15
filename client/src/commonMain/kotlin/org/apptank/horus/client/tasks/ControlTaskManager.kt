@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.apptank.horus.client.bus.Event
+import org.apptank.horus.client.exception.NetworkException
 import org.apptank.horus.client.extensions.logException
 
 /**
@@ -131,8 +133,9 @@ internal object ControlTaskManager {
             when {
                 syncControlDatabaseHelper.getEntityNames().isEmpty() -> {
                     onStatus(Status.FAILED)
-                    InternalEventBus.emit(EventType.SYNC_FAILED)
+                    InternalEventBus.emit(EventType.SYNC_FAILED, Event(mutableMapOf("exception" to NetworkException("Network is not available"))))
                 }
+
                 else -> emitEventOnReady()
             }
             return
@@ -245,7 +248,7 @@ internal object ControlTaskManager {
             is TaskResult.Failure -> {
                 logException("[ControlTask] Error executing task", taskResult.error)
                 onStatus(Status.FAILED)
-                InternalEventBus.emit(EventType.SYNC_FAILED)
+                InternalEventBus.emit(EventType.SYNC_FAILED, Event(mutableMapOf("exception" to taskResult.error)))
             }
         }
     }
