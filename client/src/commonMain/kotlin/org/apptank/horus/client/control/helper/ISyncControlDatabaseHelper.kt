@@ -27,9 +27,11 @@ interface ISyncControlDatabaseHelper {
     /**
      * Retrieves the timestamp of the last datetime checkpoint.
      *
+     * @param type Optional type of synchronization operation to filter the checkpoint.
+     *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
-    fun getLastDatetimeCheckpoint(): Long
+    fun getLastDatetimeCheckpoint(type: SyncControl.OperationType? = null): Long
 
     /**
      * Adds a new synchronization type status to the database.

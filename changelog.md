@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.16.4
+- Fixed issue in synchronization manager when get last actions after initial sync.
+
 # v0.16.3
 - Added force initial sync data in horus data facade.
 

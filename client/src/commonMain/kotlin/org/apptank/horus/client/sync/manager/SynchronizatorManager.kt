@@ -27,6 +27,7 @@ import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.dto.toInternalModel
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import org.apptank.horus.client.utils.SystemTime
 
 /**
  * Manages data synchronization between local storage and a remote server.
@@ -419,6 +420,17 @@ internal class SynchronizatorManager(
                 actionSequences.removeAll(actionsAlreadyProcessed)
 
                 // -------------------------------------------------
+
+                val lastCheckInitialSync = syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
+                val currentTime = SystemTime.getCurrentTimestamp()
+                val diffLastCheckInitialSync = currentTime - lastCheckInitialSync
+
+                if (diffLastCheckInitialSync <= INITIAL_SYNC_VALIDATION_CHECK_IN_SECS) {
+                    log("[SynchronizatorManager:synchronizeData] Initial synchronization recently completed. Skipping data synchronization.")
+                    // Insert processed action sequences
+                    syncControlDatabaseHelper.insertActionSequences(actionSequences)
+                    return true
+                }
 
                 val actionsToProcess = actions.data.filter { action ->
                     action.sequence?.let { actionSequences.contains(it) } ?: true
@@ -836,5 +848,6 @@ internal class SynchronizatorManager(
 
     companion object {
         const val CHECKPOINT_GAP = 6 * 60 * 60 // 6 hours in seconds
+        const val INITIAL_SYNC_VALIDATION_CHECK_IN_SECS = 30L // 30 seconds
     }
 }
