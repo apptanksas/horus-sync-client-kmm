@@ -27,10 +27,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import okio.Path.Companion.toPath
+import org.apptank.horus.client.HorusDataFacade
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.buildSyncDataStatusFromJSON
 import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
+import org.apptank.horus.client.bus.SyncError
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
@@ -61,6 +65,9 @@ class ControlTaskManagerTest : TestCase() {
 
     @Mock
     val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
+
+    @Mock
+    val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
 
     @Mock
     val storageSettings = mock(classOf<Settings>())
@@ -162,7 +169,7 @@ class ControlTaskManagerTest : TestCase() {
 
         coEvery { synchronizationService.getDataShared() }.returns(DataResult.Success(entitiesData))
 
-        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false, true, true)
+        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false, true, true,false)
 
         var isCompleted = false
 
@@ -188,4 +195,42 @@ class ControlTaskManagerTest : TestCase() {
         )
         Assert.assertTrue(isCompleted)
     }
+
+    @Test
+    fun `start execution is failure by network is not available`() = runBlocking {
+        // Given
+
+        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+        HorusContainer.setupNetworkValidator(networkValidator)
+
+        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { syncControlDatabaseHelper.getEntityNames() }.returns(emptyList())
+
+        var isFailed = false
+        var eventBusCalled = false
+
+        with(ControlTaskManager) {
+            setOnCallbackStatusListener {
+                if (it === ControlTaskManager.Status.FAILED) {
+                    isFailed = true
+                }
+            }
+        }
+
+        HorusDataFacade.init()
+
+        HorusClientSyncErrorEventBus.register {
+            eventBusCalled = true
+            assert(it is SyncError.NetworkError)
+        }
+
+        // When
+        ControlTaskManager.start(Dispatchers.Default)
+        delay(500)
+
+        // Then
+        Assert.assertTrue(isFailed)
+        Assert.assertTrue(eventBusCalled)
+    }
+
 }

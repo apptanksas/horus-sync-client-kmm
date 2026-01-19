@@ -24,9 +24,12 @@ import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
+import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
+import org.apptank.horus.client.bus.SyncError
 import org.apptank.horus.client.exception.AttributeRestrictedException
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
+import org.apptank.horus.client.exception.NetworkException
 import org.apptank.horus.client.exception.OperationNotPermittedException
 import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.isFalse
@@ -39,6 +42,8 @@ import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
+import org.apptank.horus.client.tasks.SynchronizeInitialDataTask
+import org.apptank.horus.client.tasks.TaskResult
 import org.apptank.horus.client.utils.AttributesPreparator
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -127,6 +132,7 @@ object HorusDataFacade {
 
     init {
         registerEntityEventListeners()
+        registerSyncEventListeners()
         registerObserverEvents()
         InternalEventBus.register(EventType.ON_READY) {
             callOnReady()
@@ -665,6 +671,32 @@ object HorusDataFacade {
     }
 
     /**
+     * Forces an initial synchronization of data with the remote server.
+     *
+     * @return `true` if the synchronization was successful, `false` otherwise.
+     */
+    suspend fun forceInitialSynchronization(onProgress: (progress: Int) -> Unit): Boolean {
+
+        val callbackProgress: CallbackEvent = {
+            onProgress((it.data?.get("progress") as? Int ?: 0) * 2)
+        }
+        // Notify listeners when a synchronization progress is made
+        InternalEventBus.register(EventType.ON_PROGRESS_SYNC, callbackProgress)
+
+        val task = SynchronizeInitialDataTask(
+            HorusContainer.getNetworkValidator(),
+            HorusContainer.getOperationDatabaseHelper(),
+            HorusContainer.getSyncControlDatabaseHelper(),
+            HorusContainer.getSynchronizationService(),
+            force = true
+        )
+
+        return (task.execute(null, 0, task.weightPercentage) is TaskResult.Success).apply {
+            InternalEventBus.unregister(EventType.ON_PROGRESS_SYNC, callbackProgress)
+        }
+    }
+
+    /**
      * Forces a synchronization of data with the remote server. Validating if the network is available.
      *
      * @param onSuccess The callback to be invoked when the synchronization is successful.
@@ -1102,10 +1134,24 @@ object HorusDataFacade {
                 }
             }
         }
+    }
+
+    private fun registerSyncEventListeners() {
 
         // Notify listeners when a synchronization progress is made
         InternalEventBus.register(EventType.ON_PROGRESS_SYNC) {
             onCallbackSyncProgress?.invoke(it.data?.get("progress") as? Int ?: 0)
+        }
+
+        // Notify listeners when a synchronization error occurs
+        InternalEventBus.register(EventType.SYNC_FAILED) {
+            val exception = it.data?.get("exception") as? Throwable
+            HorusClientSyncErrorEventBus.emit(
+                when (exception) {
+                    is NetworkException -> SyncError.NetworkError
+                    else -> SyncError.UnknownError(exception)
+                }
+            )
         }
     }
 
