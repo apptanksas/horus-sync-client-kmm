@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.17.0
+- Update AGP version to 8.13.2
+
 # v0.16.4
 - Fixed issue in synchronization manager when get last actions after initial sync.
 
