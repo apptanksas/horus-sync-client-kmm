@@ -62,27 +62,41 @@ internal class SyncControlDatabaseHelper(
     /**
      * Retrieves the timestamp of the last datetime checkpoint.
      *
+     * @param type Optional type of synchronization operation to filter the checkpoint.
+     *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
-    override fun getLastDatetimeCheckpoint(): Long {
+    override fun getLastDatetimeCheckpoint(type: SyncControl.OperationType?): Long {
         validateMigrationHorusTables()
         driver.handle {
             val query = SimpleQueryBuilder(SyncControlTable.TABLE_NAME).apply {
                 select(SyncControlTable.ATTR_DATETIME)
-                whereIn(
-                    SyncControlTable.ATTR_TYPE, listOf(
-                        SyncControl.OperationType.CHECKPOINT.id,
-                        SyncControl.OperationType.INITIAL_SYNCHRONIZATION.id
-                    )
-                )
-                where(
-                    SQL.WhereCondition(
-                        SQL.ColumnValue(
-                            SyncControlTable.ATTR_STATUS,
-                            SyncControl.Status.COMPLETED.id
+
+                if (type != null) {
+                    where(
+                        SQL.WhereCondition(
+                            SQL.ColumnValue(
+                                SyncControlTable.ATTR_TYPE,
+                                type.id
+                            )
                         )
                     )
-                )
+                } else {
+                    whereIn(
+                        SyncControlTable.ATTR_TYPE, listOf(
+                            SyncControl.OperationType.CHECKPOINT.id,
+                            SyncControl.OperationType.INITIAL_SYNCHRONIZATION.id
+                        )
+                    )
+                    where(
+                        SQL.WhereCondition(
+                            SQL.ColumnValue(
+                                SyncControlTable.ATTR_STATUS,
+                                SyncControl.Status.COMPLETED.id
+                            )
+                        )
+                    )
+                }
                 orderBy(SyncControlTable.ATTR_ID, SQL.OrderBy.DESC)
                 limit(1)
             }
