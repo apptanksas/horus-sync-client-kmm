@@ -42,6 +42,7 @@ kotlin {
         framework {
             baseName = "horus"
             isStatic = false
+            linkerOpts("-lsqlite3")
         }
     }
 
