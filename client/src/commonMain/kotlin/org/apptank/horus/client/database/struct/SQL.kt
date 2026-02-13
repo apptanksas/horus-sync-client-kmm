@@ -79,9 +79,31 @@ sealed class SQL {
     }
 
 
-    sealed interface Extension;
-    sealed class Coordinate : Extension {
-        data class WithIn(val distanceInKm: Double) : Coordinate()
+    /**
+     * A sealed interface representing extensions for SQL queries, allowing for additional filtering or functionality.
+     */
+    sealed interface Extension
+
+    /**
+     * Represents a coordinate-based extension for SQL queries, allowing for filtering based on distance from a point.
+     *
+     * @property point The reference point for the coordinates.
+     * @property column The name of the column containing the coordinates in "lat,lon" format.
+     */
+    sealed class Coordinates(val point: Horus.Point, val column: String) : Extension {
+
+        /**
+         * Represents a coordinate extension that filters records within a specified distance.
+         *
+         * @param column The name of the column containing the coordinates in "lat,lon" format.
+         * @param point The reference point for the distance calculation.
+         * @param distanceInKm The maximum distance in kilometers.
+         */
+        class WithIn(
+            column: String,
+            point: Horus.Point,
+            val distanceInKm: Double
+        ) : Coordinates(point, column)
     }
 }
 

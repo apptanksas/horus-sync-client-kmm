@@ -55,7 +55,7 @@ class OperationDatabaseHelperTest : TestCase() {
         // Given
         val uuid = uuid()
         val nameExpected = "art2"
-        val coordinates = Horus.Coordinates.random()
+        val coordinates = Horus.Point.random()
         val actions = listOf(
             createInsertAction(uuid, "dog", coordinates),
             createUpdateAction(uuid, nameExpected),
@@ -645,7 +645,7 @@ class OperationDatabaseHelperTest : TestCase() {
                 "point" to "TEXT"
             )
         )
-        val pointReference = Horus.Coordinates.random()
+        val pointReference = Horus.Point.random()
         val distanceInKm = 2
 
         val earthRadiusKm = 6371.0
@@ -669,7 +669,7 @@ class OperationDatabaseHelperTest : TestCase() {
                 listOf(
                     SQL.ColumnValue("id", uuid()),
                     SQL.ColumnValue(
-                        "point", Horus.Coordinates(
+                        "point", Horus.Point(
                             randomLat,
                             randomLng
                         ).toString()
@@ -678,42 +678,47 @@ class OperationDatabaseHelperTest : TestCase() {
             )
         }
 
-        val otherOutsidePoints = generateRandomArray {
 
-            val distanceInKm = 5
+        databaseHelper.insertWithTransaction(listActions)
+        // Other points outside the distance (between 3km and 10km from reference point)
+        databaseHelper.insertWithTransaction(generateArray(10) {
+
+            val minDistanceKm = 3.0  // Minimum distance to ensure points are outside 2km range
+            val maxDistanceKm = 10.0
 
             val earthRadiusKm = 6371.0
-            val deltaLat = distanceInKm / earthRadiusKm * (180.0 / Math.PI)
-            val deltaLng =
-                distanceInKm / (earthRadiusKm * cos(Math.toRadians(pointReference.latitude))) * (180.0 / Math.PI)
 
             val angle = Random.nextDouble(0.0, 2 * Math.PI)
-            val distance = Random.nextDouble(0.0, 1.0)
-            val adjustedDistance = Math.sqrt(distance)
+            // Generate distance between minDistanceKm and maxDistanceKm
+            val actualDistanceKm =
+                minDistanceKm + Random.nextDouble() * (maxDistanceKm - minDistanceKm)
 
-            val randomLat =
-                pointReference.latitude + (adjustedDistance * deltaLat * Math.cos(angle))
-            val randomLng =
-                pointReference.longitude + (adjustedDistance * deltaLng * Math.sin(angle))
+            val deltaLat = actualDistanceKm / earthRadiusKm * (180.0 / Math.PI)
+            val deltaLng =
+                actualDistanceKm / (earthRadiusKm * cos(Math.toRadians(pointReference.latitude))) * (180.0 / Math.PI)
+
+            val randomLat = pointReference.latitude + (deltaLat * Math.cos(angle))
+            val randomLng = pointReference.longitude + (deltaLng * Math.sin(angle))
 
             DatabaseOperation.InsertRecord(
                 entityName,
                 listOf(
                     SQL.ColumnValue("id", uuid()),
                     SQL.ColumnValue(
-                        "point", Horus.Coordinates(
+                        "point", Horus.Point(
                             randomLat,
                             randomLng
                         ).toString()
                     )
                 )
             )
-        }
+        })
 
-        databaseHelper.insertWithTransaction(listActions)
         // When
         val result = databaseHelper.queryRecords(
-            SimpleQueryBuilder(entityName)
+            SimpleQueryBuilder(entityName).withExtension(
+                SQL.Coordinates.WithIn("point", pointReference, distanceInKm.toDouble())
+            )
         )
 
         // Then
@@ -996,13 +1001,13 @@ class OperationDatabaseHelperTest : TestCase() {
         ).value
     }
 
-    private fun createInsertAction(uuid: String, name: String, point: Horus.Coordinates? = null) =
+    private fun createInsertAction(uuid: String, name: String, point: Horus.Point? = null) =
         DatabaseOperation.InsertRecord(
             entityName,
             listOf(
                 SQL.ColumnValue("id", uuid),
                 SQL.ColumnValue("name", name),
-                SQL.ColumnValue("point", point ?: Horus.Coordinates.random())
+                SQL.ColumnValue("point", point ?: Horus.Point.random())
             )
         )
 

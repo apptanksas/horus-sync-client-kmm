@@ -334,7 +334,7 @@ sealed class Horus {
      * @property latitude The latitude of the coordinates.
      * @property longitude The longitude of the coordinates.
      */
-    data class Coordinates(
+    data class Point(
         val latitude: Double,
         val longitude: Double
     ) : Comparable<CharSequence>, CharSequence {
@@ -359,11 +359,11 @@ sealed class Horus {
 
 
         companion object {
-            fun random(): Coordinates {
+            fun random(): Point {
                 val random = Random
                 val latitude = -90 + random.nextDouble() * 180
                 val longitude = -180 + random.nextDouble() * 360
-                return Coordinates(latitude, longitude)
+                return Point(latitude, longitude)
             }
         }
     }

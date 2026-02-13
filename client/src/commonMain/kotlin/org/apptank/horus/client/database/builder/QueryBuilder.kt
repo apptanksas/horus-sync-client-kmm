@@ -37,7 +37,8 @@ abstract class QueryBuilder {
 
     private var extensions = mutableListOf<SQL.Extension>()
 
-    private var conditions = mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
+    private var conditions =
+        mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
 
     private var limit: Int? = null
 
@@ -139,6 +140,26 @@ abstract class QueryBuilder {
         }
         this.orderBy?.add(Pair(column, orderBy))
         return this
+    }
+
+    /**
+     * Adds an extension to the query.
+     *
+     * @param extension The extension to add.
+     * @return The current instance of [QueryBuilder] for method chaining.
+     */
+    fun withExtension(extension: SQL.Extension): QueryBuilder {
+        extensions.add(extension)
+        return this
+    }
+
+    /**
+     * Returns the list of extensions added to the query.
+     *
+     * @return A list of [SQL.Extension].
+     */
+    protected fun getExtensions(): List<SQL.Extension> {
+        return extensions
     }
 
     private fun addWhere(
