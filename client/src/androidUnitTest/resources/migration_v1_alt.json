@@ -116,6 +116,12 @@
         ]
       },
       {
+        "name": "geo_point",
+        "version": 1,
+        "type": "coordinates",
+        "nullable": false
+      },
+      {
         "name": "relations_one_of_many",
         "version": 1,
         "type": "relation_one_of_many",

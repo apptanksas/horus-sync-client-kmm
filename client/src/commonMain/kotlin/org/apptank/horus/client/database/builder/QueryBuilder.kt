@@ -35,8 +35,9 @@ abstract class QueryBuilder {
 
     protected var attributeSelection = mutableListOf<String>()
 
-    private var conditions =
-        mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
+    private var extensions = mutableListOf<SQL.Extension>()
+
+    private var conditions = mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
 
     private var limit: Int? = null
 
@@ -173,7 +174,8 @@ abstract class QueryBuilder {
             // Open group
             var conditionGrouped = if (hasGroups) "(" else ""
 
-            conditionGrouped += conditions.second.joinToString(" ${conditions.first.name} ",
+            conditionGrouped += conditions.second.joinToString(
+                " ${conditions.first.name} ",
                 transform = {
                     if (it.comparator == SQL.Comparator.IS_NULL || it.comparator == SQL.Comparator.IS_NOT_NULL) {
                         return@joinToString "${it.columnValue.column} ${it.comparator.value}"

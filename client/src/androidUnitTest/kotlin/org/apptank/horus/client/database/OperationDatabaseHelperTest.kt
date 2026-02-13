@@ -5,6 +5,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
+import org.apptank.horus.client.data.Horus
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
@@ -18,6 +19,7 @@ import org.apptank.horus.client.migration.domain.EntityType
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.math.cos
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
@@ -40,7 +42,8 @@ class OperationDatabaseHelperTest : TestCase() {
             entityName,
             mapOf(
                 "id" to "STRING PRIMARY KEY",
-                "name" to "TEXT"
+                "name" to "TEXT",
+                "point" to "TEXT"
             )
         )
         driver.execute(EntityAttributesTable.SQL_CREATE_TABLE)
@@ -52,8 +55,9 @@ class OperationDatabaseHelperTest : TestCase() {
         // Given
         val uuid = uuid()
         val nameExpected = "art2"
+        val coordinates = Horus.Coordinates.random()
         val actions = listOf(
-            createInsertAction(uuid, "dog"),
+            createInsertAction(uuid, "dog", coordinates),
             createUpdateAction(uuid, nameExpected),
         )
         // When
@@ -67,7 +71,16 @@ class OperationDatabaseHelperTest : TestCase() {
             },
             0
         ).value
+        val pointResult = driver.executeQuery(
+            null,
+            "SELECT point FROM $entityName WHERE id = '$uuid'", {
+                QueryResult.Value(it.getString(0))
+            },
+            0
+        ).value
+
         Assert.assertEquals(nameExpected, nameResult)
+        Assert.assertEquals(coordinates.toString(), pointResult)
     }
 
     @Test
@@ -622,6 +635,92 @@ class OperationDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun validateQueryRecordIsSuccessFindItemsNearbyCoordinates() {
+        // Given
+        val entityName = "points"
+        driver.createTable(
+            entityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "point" to "TEXT"
+            )
+        )
+        val pointReference = Horus.Coordinates.random()
+        val distanceInKm = 2
+
+        val earthRadiusKm = 6371.0
+        val deltaLat = distanceInKm / earthRadiusKm * (180.0 / Math.PI)
+        val deltaLng =
+            distanceInKm / (earthRadiusKm * cos(Math.toRadians(pointReference.latitude))) * (180.0 / Math.PI)
+
+        val listActions = generateRandomArray {
+
+            val angle = Random.nextDouble(0.0, 2 * Math.PI)
+            val distance = Random.nextDouble(0.0, 1.0)
+            val adjustedDistance = Math.sqrt(distance)
+
+            val randomLat =
+                pointReference.latitude + (adjustedDistance * deltaLat * Math.cos(angle))
+            val randomLng =
+                pointReference.longitude + (adjustedDistance * deltaLng * Math.sin(angle))
+
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue(
+                        "point", Horus.Coordinates(
+                            randomLat,
+                            randomLng
+                        ).toString()
+                    )
+                )
+            )
+        }
+
+        val otherOutsidePoints = generateRandomArray {
+
+            val distanceInKm = 5
+
+            val earthRadiusKm = 6371.0
+            val deltaLat = distanceInKm / earthRadiusKm * (180.0 / Math.PI)
+            val deltaLng =
+                distanceInKm / (earthRadiusKm * cos(Math.toRadians(pointReference.latitude))) * (180.0 / Math.PI)
+
+            val angle = Random.nextDouble(0.0, 2 * Math.PI)
+            val distance = Random.nextDouble(0.0, 1.0)
+            val adjustedDistance = Math.sqrt(distance)
+
+            val randomLat =
+                pointReference.latitude + (adjustedDistance * deltaLat * Math.cos(angle))
+            val randomLng =
+                pointReference.longitude + (adjustedDistance * deltaLng * Math.sin(angle))
+
+            DatabaseOperation.InsertRecord(
+                entityName,
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue(
+                        "point", Horus.Coordinates(
+                            randomLat,
+                            randomLng
+                        ).toString()
+                    )
+                )
+            )
+        }
+
+        databaseHelper.insertWithTransaction(listActions)
+        // When
+        val result = databaseHelper.queryRecords(
+            SimpleQueryBuilder(entityName)
+        )
+
+        // Then
+        Assert.assertEquals(listActions.size, result.size)
+    }
+
+    @Test
     fun validateQueryRecordWithSelectTwoIsSuccess() {
         // Given
         val entityName = "my_entity"
@@ -781,7 +880,10 @@ class OperationDatabaseHelperTest : TestCase() {
             // Then
             Assert.fail()
         } catch (e: Throwable) {
-            Assert.assertEquals("[SQLITE_CONSTRAINT_FOREIGNKEY] A foreign key constraint failed (FOREIGN KEY constraint failed)", e.message)
+            Assert.assertEquals(
+                "[SQLITE_CONSTRAINT_FOREIGNKEY] A foreign key constraint failed (FOREIGN KEY constraint failed)",
+                e.message
+            )
         }
 
     }
@@ -894,13 +996,15 @@ class OperationDatabaseHelperTest : TestCase() {
         ).value
     }
 
-    private fun createInsertAction(uuid: String, name: String) = DatabaseOperation.InsertRecord(
-        entityName,
-        listOf(
-            SQL.ColumnValue("id", uuid),
-            SQL.ColumnValue("name", name)
+    private fun createInsertAction(uuid: String, name: String, point: Horus.Coordinates? = null) =
+        DatabaseOperation.InsertRecord(
+            entityName,
+            listOf(
+                SQL.ColumnValue("id", uuid),
+                SQL.ColumnValue("name", name),
+                SQL.ColumnValue("point", point ?: Horus.Coordinates.random())
+            )
         )
-    )
 
     private fun createUpdateAction(uuid: String, name: String) = DatabaseOperation.UpdateRecord(
         entityName,

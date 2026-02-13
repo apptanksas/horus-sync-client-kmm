@@ -1,6 +1,7 @@
 package org.apptank.horus.client.data
 
 import org.apptank.horus.client.base.DataMap
+import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -324,6 +325,46 @@ sealed class Horus {
 
         override fun toString(): String {
             return id.toString()
+        }
+    }
+
+    /**
+     * Represents geographical coordinates with latitude and longitude.
+     *
+     * @property latitude The latitude of the coordinates.
+     * @property longitude The longitude of the coordinates.
+     */
+    data class Coordinates(
+        val latitude: Double,
+        val longitude: Double
+    ) : Comparable<CharSequence>, CharSequence {
+
+        override val length: Int get() = toString().length
+
+        override fun compareTo(other: CharSequence): Int {
+            return toString().compareTo(other.toString())
+        }
+
+        override fun get(index: Int): Char {
+            return toString()[index]
+        }
+
+        override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
+            return toString().subSequence(startIndex, endIndex)
+        }
+
+        override fun toString(): String {
+            return "$latitude,$longitude"
+        }
+
+
+        companion object {
+            fun random(): Coordinates {
+                val random = Random
+                val latitude = -90 + random.nextDouble() * 180
+                val longitude = -180 + random.nextDouble() * 360
+                return Coordinates(latitude, longitude)
+            }
         }
     }
 }

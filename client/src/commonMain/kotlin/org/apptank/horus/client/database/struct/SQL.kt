@@ -78,6 +78,11 @@ sealed class SQL {
         DESC
     }
 
+
+    sealed interface Extension;
+    sealed class Coordinate : Extension {
+        data class WithIn(val distanceInKm: Double) : Coordinate()
+    }
 }
 
 /**

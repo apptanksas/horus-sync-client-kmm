@@ -34,6 +34,7 @@ fun Attribute.convertToSQL(applyConstraints: (List<Constraint>) -> Unit = {}): S
         AttributeType.Timestamp -> "INTEGER"
         AttributeType.UUID -> "TEXT"
         AttributeType.RefFile -> "TEXT"
+        AttributeType.Coordinates -> "TEXT"
         else -> throw IllegalArgumentException("Attribute type ${this.type} not defined")
     }
 

@@ -46,12 +46,14 @@ class HorusDatabaseSchemaTest : TestCase() {
 
         // Then
         val tables = database.getTableEntities()
+        val tableColumnsProducts = database.getColumns("products")
 
         Assert.assertEquals(countEntitiesExpected, tables.size)
         Assert.assertEquals(versionExpected, lastVersion)
         Assert.assertEquals(0, tables.find { it.name == "products" }?.level)
         Assert.assertEquals(1, tables.find { it.name == "lots" }?.level)
         Assert.assertEquals(2, tables.find { it.name == "categories_lots" }?.level)
+        Assert.assertNotNull(tableColumnsProducts.find { it.name == "geo_point" })
     }
 
 

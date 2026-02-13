@@ -622,7 +622,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
     private fun validateInsertBatchWithRelatedTest() = prepareInternalTest {
 
         // Given
-        val result = HorusDataFacade.insert("measures", createDataMeasureRecord()) as DataResult.Success
+        val result =
+            HorusDataFacade.insert("measures", createDataMeasureRecord()) as DataResult.Success
 
         val measureId = result.data
         val measureMetadata = createDataMeasureMetadataRecord(
@@ -777,7 +778,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
         val measureId = measure["id"] as String
         val operations = listOf(
             Horus.Batch.Insert("measures", measure),
-            Horus.Batch.Update("measures", measureId, listOf(Horus.Attribute("value", Random.nextFloat()))),
+            Horus.Batch.Update(
+                "measures",
+                measureId,
+                listOf(Horus.Attribute("value", Random.nextFloat()))
+            ),
             Horus.Batch.Delete("measures", measureId)
         )
 
@@ -1004,7 +1009,10 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         result.fold(
             { count ->
-                Assert.assertEquals(entitiesAttributes.count { it["value"] == true || it["nullable"] == null }, count)
+                Assert.assertEquals(
+                    entitiesAttributes.count { it["value"] == true || it["nullable"] == null },
+                    count
+                )
             },
             { exception ->
                 Assert.fail(exception.message)
@@ -1133,7 +1141,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
         "measure" to "w",
         "unit" to "kg",
         "value" to 10.0f,
-        "nullable" to null
+        "nullable" to null,
+        "point" to Random.nextFloat().toString() + "," + Random.nextFloat()
     )
 
     private fun createDataMeasureMetadataRecord(measureId: String) = mapOf(
