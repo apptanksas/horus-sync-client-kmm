@@ -35,6 +35,8 @@ abstract class QueryBuilder {
 
     protected var attributeSelection = mutableListOf<String>()
 
+    private var extensions = mutableListOf<SQL.Extension>()
+
     private var conditions =
         mutableMapOf<SQL.OperatorKey, Pair<SQL.LogicOperator, List<SQL.WhereCondition>>>()
 
@@ -140,6 +142,26 @@ abstract class QueryBuilder {
         return this
     }
 
+    /**
+     * Adds an extension to the query.
+     *
+     * @param extension The extension to add.
+     * @return The current instance of [QueryBuilder] for method chaining.
+     */
+    fun withExtension(extension: SQL.Extension): QueryBuilder {
+        extensions.add(extension)
+        return this
+    }
+
+    /**
+     * Returns the list of extensions added to the query.
+     *
+     * @return A list of [SQL.Extension].
+     */
+    protected fun getExtensions(): List<SQL.Extension> {
+        return extensions
+    }
+
     private fun addWhere(
         joinOperator: SQL.LogicOperator,
         operatorCondition: SQL.LogicOperator,
@@ -173,7 +195,8 @@ abstract class QueryBuilder {
             // Open group
             var conditionGrouped = if (hasGroups) "(" else ""
 
-            conditionGrouped += conditions.second.joinToString(" ${conditions.first.name} ",
+            conditionGrouped += conditions.second.joinToString(
+                " ${conditions.first.name} ",
                 transform = {
                     if (it.comparator == SQL.Comparator.IS_NULL || it.comparator == SQL.Comparator.IS_NOT_NULL) {
                         return@joinToString "${it.columnValue.column} ${it.comparator.value}"

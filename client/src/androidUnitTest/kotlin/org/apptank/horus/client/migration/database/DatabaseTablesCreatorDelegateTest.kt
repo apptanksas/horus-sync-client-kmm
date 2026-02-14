@@ -1,5 +1,6 @@
 package org.apptank.horus.client.migration.database
 
+import io.ktor.util.Attributes
 import org.apptank.horus.client.migration.domain.Attribute
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.migration.domain.EntityScheme
@@ -97,7 +98,8 @@ class DatabaseTablesCreatorDelegateTest {
                                     false,
                                     version = 1,
                                     linkedEntity = "users"
-                                )
+                                ),
+                                Attribute("position", AttributeType.Coordinates, false, version = 1)
                             ),
                             1,
                             listOf(
@@ -168,6 +170,7 @@ class DatabaseTablesCreatorDelegateTest {
                 id TEXT PRIMARY KEY NOT NULL,
                 street TEXT NOT NULL,
                 user_id TEXT NOT NULL,
+                position TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """,

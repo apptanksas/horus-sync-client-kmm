@@ -1110,6 +1110,12 @@ const val DATA_MIGRATION_VERSION_1 ="""
         ]
       },
       {
+        "name": "geo_point",
+        "version": 1,
+        "type": "coordinates",
+        "nullable": false
+      },
+      {
         "name": "relations_one_of_many",
         "version": 1,
         "type": "relation_one_of_many",
@@ -2355,6 +2361,12 @@ const val DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE = """
         "name": "nullable",
         "version": 1,
         "type": "int",
+        "nullable": true
+      },
+      {
+        "name": "point",
+        "version": 1,
+        "type": "coordinates",
         "nullable": true
       },
       {
