@@ -13,21 +13,18 @@ plugins {
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
     id("kotlin-kapt")
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("plugin.serialization") version "2.1.10"
     id("maven-publish")
-    id("app.cash.sqldelight") version "2.0.2"
-    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
+    id("com.google.devtools.ksp") version "2.1.10-1.0.29"
     // To publish the library to the maven repository
     id("com.vanniktech.maven.publish") version "0.29.0"
 }
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-                freeCompilerArgs = listOf("-Xdebug")
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.add("-Xdebug")
         }
 
         // Publish android variants
@@ -45,6 +42,7 @@ kotlin {
         framework {
             baseName = "horus"
             isStatic = false
+            linkerOpts("-lsqlite3")
         }
     }
 
@@ -89,13 +87,13 @@ kotlin {
 
 android {
     namespace = "org.apptank.horus"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         minSdk = 24
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
