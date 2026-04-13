@@ -41,6 +41,7 @@ class SynchronizationServiceTest : ServiceTest() {
     @After
     fun tearDown() {
         HorusClientSyncErrorEventBus.clear()
+        SynchronizationService.cacheGetQueueActions.clear()
     }
 
     @Test
@@ -572,7 +573,12 @@ class SynchronizationServiceTest : ServiceTest() {
             SyncDTO.Request.EntityHash("entity1", "hash2")
         )
         val mockEngine = createMockResponse(MOCK_RESPONSE_POST_VALIDATE_DATA)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, customHeaders = mapOf("X-Custom-Header" to "CustomValue"))
+        val service = SynchronizationService(
+            getHorusConfigTest(),
+            mockEngine,
+            BASE_URL,
+            customHeaders = mapOf("X-Custom-Header" to "CustomValue")
+        )
 
         // When
         val response = service.postValidateEntitiesData(entitiesHash)
@@ -590,7 +596,8 @@ class SynchronizationServiceTest : ServiceTest() {
             id = "sync-123",
             timestampAfter = timestamp()
         )
-        val mockEngine = createMockResponse(MOCK_RESPONSE_POST_START_SYNC, status = HttpStatusCode.Created)
+        val mockEngine =
+            createMockResponse(MOCK_RESPONSE_POST_START_SYNC, status = HttpStatusCode.Created)
         val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
 
         // When
@@ -681,7 +688,10 @@ class SynchronizationServiceTest : ServiceTest() {
 
         // When
         val response = service.downloadSyncData(url) { progress ->
-            Assert.assertTrue("Progress should be between 0 and 100, was $progress", progress in 0..100)
+            Assert.assertTrue(
+                "Progress should be between 0 and 100, was $progress",
+                progress in 0..100
+            )
         }
 
         // Then
@@ -700,7 +710,10 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
 
-        val mockEngine = createMockResponse(MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY, status = HttpStatusCode.BadRequest)
+        val mockEngine = createMockResponse(
+            MOCK_RESPONSE_BAD_REQUEST_BY_MAX_COUNT_ENTITIY,
+            status = HttpStatusCode.BadRequest
+        )
         val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
         var isEventBusCalled = false
 
@@ -714,7 +727,8 @@ class SynchronizationServiceTest : ServiceTest() {
         // Then
         assert(response is DataResult.ClientError && response.type is ClientTypeError.MaxCountEntityExceeded)
 
-        val errorType = (response as DataResult.ClientError).type as ClientTypeError.MaxCountEntityExceeded
+        val errorType =
+            (response as DataResult.ClientError).type as ClientTypeError.MaxCountEntityExceeded
         assertNotNull(errorType.entity)
         assertNotNull(errorType.maxCount)
         assertNotNull(errorType.currentCount)
