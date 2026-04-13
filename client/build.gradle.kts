@@ -4,6 +4,8 @@ val libGroupId = project.findProperty("lib.groupId") as String
 val libArtifactId = project.findProperty("lib.artifactId") as String
 val libVersion = project.findProperty("lib.version") as String
 
+val isMacOs = org.gradle.internal.os.OperatingSystem.current().isMacOsX
+
 
 group = libGroupId
 version = libVersion
@@ -19,6 +21,7 @@ plugins {
     // To publish the library to the maven repository
     id("com.vanniktech.maven.publish") version "0.29.0"
 }
+
 
 kotlin {
     androidTarget {
@@ -78,9 +81,11 @@ kotlin {
             implementation(libs.android.test.robolectric)
         }
         // IOS dependencies
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.driver.ios)
+        if (isMacOs) {
+            iosMain.dependencies {
+                implementation(libs.ktor.client.darwin)
+                implementation(libs.sqldelight.driver.ios)
+            }
         }
     }
 }
@@ -155,4 +160,18 @@ if (!isPublishToMavenLocal) {
     }
 } else {
     logger.lifecycle("Publishing to Maven Local, skipping Maven Central configuration")
+}
+
+// Disable iOS compilation tasks on non-macOS systems (Windows/Linux)
+// so that publishToMavenLocal only builds and publishes Android artifacts.
+if (!isMacOs) {
+    tasks.configureEach {
+        if (name.contains("Ios", ignoreCase = true) &&
+            (name.startsWith("compile") || name.startsWith("link") ||
+             name.startsWith("cinterop") || name.startsWith("generateProjectStructure") ||
+             name.startsWith("transformCommonMainDependencies"))
+        ) {
+            enabled = false
+        }
+    }
 }
