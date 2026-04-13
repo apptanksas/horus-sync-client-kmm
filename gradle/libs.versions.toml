@@ -1,7 +1,7 @@
 [versions]
 agp = "9.0.1"
 kotlin = "2.2.21"
-kotlinxSerialization = "1.10.0"
+kotlinxSerialization = "1.8.1"
 ktor = "3.3.3"
 sqldelight = "2.3.2"
 kotlinxDateTime = "0.6.1"
