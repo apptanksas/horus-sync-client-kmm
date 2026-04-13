@@ -2,8 +2,10 @@
 
 # v0.18.0
 - Update AGP version to 9.0.1
-- Update dependencies versions.
-- Migrate Mockkative as testing tool for unit tests to Mockkery 3.0.0
+- Update Kotlin version to 2.2.21
+- Update Ktor version to 3.3.3
+- Migrate testing library from Mockative to Mokkery 3.0.0
+- Fixed iOS targets compilation disabled on non-macOS systems for `publishToMavenLocal`
 
 # v0.17.0
 - Added support to a new attribute type in the entities called `coordinates` to store geolocation data with latitude and longitude values.
