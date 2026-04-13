@@ -1,12 +1,13 @@
 package org.apptank.horus.client.restrictions
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import io.mockative.Mock
-import io.mockative.any
-import io.mockative.classOf
-import io.mockative.every
-import io.mockative.mock
-import io.mockative.verify
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.matcher.any
+import dev.mokkery.MockMode
+import dev.mokkery.mock
+import dev.mokkery.verify
+import dev.mokkery.verify.VerifyMode.Companion.exactly
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,8 +39,7 @@ class EntityRestrictionValidatorTest : TestCase() {
     private val entityName1 = "test_entity"
     private val entityName2 = "another_entity"
 
-    @Mock
-    private val operationDatabaseHelper = mock(classOf<IOperationDatabaseHelper>())
+    private val operationDatabaseHelper = mock<IOperationDatabaseHelper>(MockMode.autofill)
     private val entityRestrictionValidator = EntityRestrictionValidator(operationDatabaseHelper)
 
     @Before
@@ -78,7 +78,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(maxCount)
+        every { operationDatabaseHelper.countRecords(any()) } returns maxCount
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))
@@ -98,7 +98,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val countInserts = Random.nextInt(9, 50)
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(maxCount + 1 - countInserts)
+        every { operationDatabaseHelper.countRecords(any()) } returns maxCount + 1 - countInserts
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))
@@ -116,9 +116,9 @@ class EntityRestrictionValidatorTest : TestCase() {
         } catch (_: OperationNotPermittedException) {
         }
 
-        verify {
+        verify(exactly(1)) {
             operationDatabaseHelper.countRecords(any())
-        }.wasInvoked(1)
+        }
     }
 
 
@@ -256,7 +256,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(maxCount - 2)
+        every { operationDatabaseHelper.countRecords(any()) } returns maxCount - 2
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))
@@ -276,7 +276,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val countInserts = Random.nextInt(1, 10)
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(maxCount - countInserts)
+        every { operationDatabaseHelper.countRecords(any()) } returns maxCount - countInserts
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))
@@ -297,7 +297,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val maxCount = Random.nextUInt(1u, 1000u).toInt()
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(maxCount - 1)
+        every { operationDatabaseHelper.countRecords(any()) } returns maxCount - 1
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))
@@ -349,7 +349,7 @@ class EntityRestrictionValidatorTest : TestCase() {
         val entityRestriction = MaxCountEntityRestriction(entityName, maxCount)
         val startTime = System.currentTimeMillis()
 
-        every { operationDatabaseHelper.countRecords(any()) }.returns(0)
+        every { operationDatabaseHelper.countRecords(any()) } returns 0
 
         // Set the restriction
         entityRestrictionValidator.setRestrictions(listOf(entityRestriction))

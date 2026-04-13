@@ -10,14 +10,15 @@ import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
-import io.mockative.Mock
-import io.mockative.any
-import io.mockative.classOf
-import io.mockative.coEvery
-import io.mockative.coVerify
-import io.mockative.every
-import io.mockative.mock
-import io.mockative.verify
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.MockMode
+import dev.mokkery.mock
+import dev.mokkery.verify
+import dev.mokkery.verifySuspend
+import dev.mokkery.verify.VerifyMode.Companion.exactly
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -35,24 +36,13 @@ import kotlin.random.Random
 
 class RemoteSynchronizatorManagerTest : TestCase() {
 
-
-    @Mock
-    val networkValidator = mock(classOf<INetworkValidator>())
-
-    @Mock
-    val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
-
-    @Mock
-    val synchronizationService = mock(classOf<ISynchronizationService>())
-
-    @Mock
-    val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
-
-    @Mock
-    val storageSettings = mock(classOf<Settings>())
+    val networkValidator = mock<INetworkValidator>(MockMode.autofill)
+    val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
+    val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
+    val mockUploadFileRepository = mock<IUploadFileRepository>(MockMode.autofill)
+    val storageSettings = mock<Settings>(MockMode.autofill)
 
     private val eventBus = InternalEventBus
-
     private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
 
     @Before
@@ -66,8 +56,6 @@ class RemoteSynchronizatorManagerTest : TestCase() {
             Dispatchers.Default,
             0
         )
-
-
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
         HorusContainer.setupSettings(storageSettings)
@@ -81,135 +69,90 @@ class RemoteSynchronizatorManagerTest : TestCase() {
 
     @Test
     fun trySynchronizeDataNotExecuteByNetworkNoAvailable() {
-        // Given
-        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { networkValidator.isNetworkAvailable() } returns false
 
-        // When
         remoteSynchronizatorManager.trySynchronizeData()
 
-        // Then
-        verify { syncControlDatabaseHelper.getPendingActions() }.wasNotInvoked()
+        verify(exactly(0)) { syncControlDatabaseHelper.getPendingActions() }
     }
 
     @Test
     fun trySynchronizeDataNotPendingActions() = runBlocking {
-        // Given
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(emptyList())
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { syncControlDatabaseHelper.getPendingActions() } returns emptyList()
 
-        // When
         remoteSynchronizatorManager.trySynchronizeData()
 
-        // Then
-        coVerify { synchronizationService.postQueueActions(any()) }.wasNotInvoked()
+        verifySuspend(exactly(0)) { synchronizationService.postQueueActions(any()) }
     }
 
     @Test
     fun trySynchronizeDataPostQueueActionsIsFailure() = runBlocking {
-
-        // Given
         val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.INSERT,
-                "entity",
-                SyncControl.ActionStatus.PENDING,
-                emptyMap(), Clock.System.now()
-                    .toLocalDateTime(
-                        TimeZone.UTC
-                    )
+                "entity", SyncControl.ActionStatus.PENDING,
+                emptyMap(), Clock.System.now().toLocalDateTime(TimeZone.UTC)
             )
         }
         var eventCounter = 0
+        eventBus.register(EventType.SYNC_PUSH_FAILED) { eventCounter++ }
 
-        eventBus.register(EventType.SYNC_PUSH_FAILED) {
-            eventCounter++
-        }
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
+        everySuspend { synchronizationService.postQueueActions(any()) } returns DataResult.Failure(Exception())
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
-        coEvery { synchronizationService.postQueueActions(any()) }.returns(
-            DataResult.Failure(
-                Exception()
-            )
-        )
-
-        // When
         remoteSynchronizatorManager.trySynchronizeData()
 
-        // Then
         delay(50)
         Assert.assertEquals(1, eventCounter)
     }
 
     @Test
     fun trySynchronizeDataCompleteActionsIsFailure() = runBlocking {
-        // Given
         val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.INSERT,
-                "entity",
-                SyncControl.ActionStatus.PENDING,
-                emptyMap(), Clock.System.now()
-                    .toLocalDateTime(
-                        TimeZone.UTC
-                    )
+                "entity", SyncControl.ActionStatus.PENDING,
+                emptyMap(), Clock.System.now().toLocalDateTime(TimeZone.UTC)
             )
         }
         var eventCounter = 0
+        eventBus.register(EventType.SYNC_PUSH_FAILED) { eventCounter++ }
 
-        eventBus.register(EventType.SYNC_PUSH_FAILED) {
-            eventCounter++
-        }
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
+        everySuspend { synchronizationService.postQueueActions(any()) } returns DataResult.Success(Unit)
+        every { syncControlDatabaseHelper.completeActions(any()) } returns false
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
-        coEvery { synchronizationService.postQueueActions(any()) }.returns(
-            DataResult.Success(Unit)
-        )
-        every { syncControlDatabaseHelper.completeActions(any()) }.returns(false)
-
-        // When
         remoteSynchronizatorManager.trySynchronizeData()
 
-        // Then
         delay(50)
         Assert.assertEquals(1, eventCounter)
     }
 
     @Test
     fun trySynchronizeDataCompleteIsSuccess() = runBlocking {
-        // Given
         val actions = generateRandomArray {
             SyncControl.Action(
                 Random.nextInt(), SyncControl.ActionType.UPDATE,
-                "entity",
-                SyncControl.ActionStatus.PENDING,
-                emptyMap(), Clock.System.now()
-                    .toLocalDateTime(
-                        TimeZone.UTC
-                    )
+                "entity", SyncControl.ActionStatus.PENDING,
+                emptyMap(), Clock.System.now().toLocalDateTime(TimeZone.UTC)
             )
         }
         var eventCounter = 0
+        eventBus.register(EventType.SYNC_PUSH_SUCCESS) { eventCounter++ }
 
-        eventBus.register(EventType.SYNC_PUSH_SUCCESS) {
-            eventCounter++
-        }
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
+        everySuspend { synchronizationService.postQueueActions(any()) } returns DataResult.Success(Unit)
+        every { mockUploadFileRepository.hasFilesToUpload() } returns false
+        every { syncControlDatabaseHelper.completeActions(any()) } returns true
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
-        coEvery { synchronizationService.postQueueActions(any()) }.returns(
-            DataResult.Success(Unit)
-        )
-        every { mockUploadFileRepository.hasFilesToUpload() }.returns(false)
-        every { syncControlDatabaseHelper.completeActions(any()) }.returns(true)
-
-        // When
         remoteSynchronizatorManager.trySynchronizeData()
 
-        // Then
         delay(50)
         Assert.assertEquals(1, eventCounter)
-        verify { networkValidator.isNetworkAvailable() }.wasInvoked(1)
+        verify(exactly(1)) { networkValidator.isNetworkAvailable() }
     }
 }
