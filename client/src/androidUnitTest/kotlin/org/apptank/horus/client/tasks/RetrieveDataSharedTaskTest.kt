@@ -1,15 +1,16 @@
 package org.apptank.horus.client.tasks
 
 import com.russhwolf.settings.Settings
-import io.mockative.Mock
-import io.mockative.any
-import io.mockative.classOf
-import io.mockative.coEvery
-import io.mockative.coVerify
-import io.mockative.eq
-import io.mockative.every
-import io.mockative.mock
-import io.mockative.verify
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.matcher.eq
+import dev.mokkery.MockMode
+import dev.mokkery.mock
+import dev.mokkery.verify
+import dev.mokkery.verifySuspend
+import dev.mokkery.verify.VerifyMode.Companion.exactly
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.TestCase
@@ -27,17 +28,10 @@ import org.junit.Test
  */
 class RetrieveDataSharedTaskTest : TestCase() {
 
-    @Mock
-    private val settings = mock(classOf<Settings>())
-
-    @Mock
-    private val networkValidator = mock(classOf<INetworkValidator>())
-
-    @Mock
-    private val databaseHelper = mock(classOf<IDataSharedDatabaseHelper>())
-
-    @Mock
-    private val syncService = mock(classOf<ISynchronizationService>())
+    private val settings = mock<Settings>(MockMode.autofill)
+    private val networkValidator = mock<INetworkValidator>(MockMode.autofill)
+    private val databaseHelper = mock<IDataSharedDatabaseHelper>(MockMode.autofill)
+    private val syncService = mock<ISynchronizationService>(MockMode.autofill)
 
     private val dependsOnTask = getMockSynchronizeDataTask()
 
@@ -60,17 +54,17 @@ class RetrieveDataSharedTaskTest : TestCase() {
     @Test
     fun `when network is not available then return success without operations`() = runBlocking {
         // Given
-        every { networkValidator.isNetworkAvailable() }.returns(false)
+        every { networkValidator.isNetworkAvailable() } returns false
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
-        coVerify { syncService.getDataShared() }.wasNotInvoked()
-        verify { databaseHelper.truncate() }.wasNotInvoked()
-        verify { databaseHelper.insert(any()) }.wasNotInvoked()
-        verify { settings.putLong(any(), any()) }.wasNotInvoked()
+        verifySuspend(exactly(0)) { syncService.getDataShared() }
+        verify(exactly(0)) { databaseHelper.truncate() }
+        verify(exactly(0)) { databaseHelper.insert(any()) }
+        verify(exactly(0)) { settings.putLong(any(), any()) }
     }
 
     /**
@@ -82,18 +76,18 @@ class RetrieveDataSharedTaskTest : TestCase() {
         val currentTimeInSeconds = Clock.System.now().epochSeconds
         val recentTimestamp = currentTimeInSeconds - (60 * 60) // 1 hour ago (less than the 24 hour TTL)
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(recentTimestamp)
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns recentTimestamp
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
-        coVerify { syncService.getDataShared() }.wasNotInvoked()
-        verify { databaseHelper.truncate() }.wasNotInvoked()
-        verify { databaseHelper.insert(any()) }.wasNotInvoked()
-        verify { settings.putLong(any(), any()) }.wasNotInvoked()
+        verifySuspend(exactly(0)) { syncService.getDataShared() }
+        verify(exactly(0)) { databaseHelper.truncate() }
+        verify(exactly(0)) { databaseHelper.insert(any()) }
+        verify(exactly(0)) { settings.putLong(any(), any()) }
     }
 
     /**
@@ -102,19 +96,19 @@ class RetrieveDataSharedTaskTest : TestCase() {
     @Test
     fun `when service returns failure then still return success`() = runBlocking {
         // Given
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        coEvery { syncService.getDataShared() }.returns(DataResult.Failure(Exception("Service error")))
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        everySuspend { syncService.getDataShared() } returns DataResult.Failure(Exception("Service error"))
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
-        coVerify { syncService.getDataShared() }.wasInvoked()
-        verify { databaseHelper.truncate() }.wasNotInvoked()
-        verify { databaseHelper.insert(any()) }.wasNotInvoked()
-        verify { settings.putLong(any(), any()) }.wasNotInvoked()
+        verifySuspend { syncService.getDataShared() }
+        verify(exactly(0)) { databaseHelper.truncate() }
+        verify(exactly(0)) { databaseHelper.insert(any()) }
+        verify(exactly(0)) { settings.putLong(any(), any()) }
     }
 
     /**
@@ -126,19 +120,19 @@ class RetrieveDataSharedTaskTest : TestCase() {
         val entity1 = createEntityResponse("entity1", "id1", mapOf("name" to "Entity 1", "value" to 42))
         val entity2 = createEntityResponse("entity2", "id2", mapOf("name" to "Entity 2", "active" to true))
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity1, entity2)))
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        everySuspend { syncService.getDataShared() } returns DataResult.Success(listOf(entity1, entity2))
 
         // When
-        val result = task.execute(null,0,10)
+        val result = task.execute(null, 0, 10)
 
         // Then
         Assert.assertTrue(result is TaskResult.Success)
-        coVerify { syncService.getDataShared() }.wasInvoked()
-        verify { databaseHelper.truncate() }.wasInvoked()
-        verify { databaseHelper.insert(any(), any()) }.wasInvoked()
-        verify { settings.putLong(eq(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED), any()) }.wasInvoked()
+        verifySuspend { syncService.getDataShared() }
+        verify { databaseHelper.truncate() }
+        verify { databaseHelper.insert(any(), any()) }
+        verify { settings.putLong(eq(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED), any()) }
     }
 
     /**
@@ -149,12 +143,12 @@ class RetrieveDataSharedTaskTest : TestCase() {
         // Given
         val entity = SyncDTO.Response.Entity(null, mapOf("id" to "id1", "name" to "Entity"))
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity)))
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        everySuspend { syncService.getDataShared() } returns DataResult.Success(listOf(entity))
 
         // When/Then
-        task.execute(null,0,10)
+        task.execute(null, 0, 10)
     }
 
     /**
@@ -165,12 +159,12 @@ class RetrieveDataSharedTaskTest : TestCase() {
         // Given
         val entityWithoutId = createEntityResponse("entity1", null, mapOf("name" to "Entity 1"))
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entityWithoutId)))
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        everySuspend { syncService.getDataShared() } returns DataResult.Success(listOf(entityWithoutId))
 
         // When/Then
-        task.execute(null,0,10)
+        task.execute(null, 0, 10)
     }
 
     /**
@@ -181,12 +175,12 @@ class RetrieveDataSharedTaskTest : TestCase() {
         // Given
         val entity = SyncDTO.Response.Entity("entity1", null)
 
-        every { networkValidator.isNetworkAvailable() }.returns(true)
-        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        coEvery { syncService.getDataShared() }.returns(DataResult.Success(listOf(entity)))
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { settings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        everySuspend { syncService.getDataShared() } returns DataResult.Success(listOf(entity))
 
         // When/Then
-        task.execute(null,0,10)
+        task.execute(null, 0, 10)
     }
 
     /**
@@ -205,4 +199,4 @@ class RetrieveDataSharedTaskTest : TestCase() {
 
         return SyncDTO.Response.Entity(entityName, data)
     }
-} 
+}

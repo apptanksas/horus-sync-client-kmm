@@ -22,10 +22,11 @@ import com.russhwolf.settings.MapSettings
 import io.ktor.utils.io.core.toByteArray
 import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.toFile
-import io.mockative.Matchers
-import io.mockative.classOf
-import io.mockative.matchers.Matcher
-import io.mockative.mock
+import dev.mokkery.MockMode
+import dev.mokkery.mock
+import dev.mokkery.answering.returns
+import dev.mokkery.answering.calls
+import dev.mokkery.matcher.any
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
@@ -103,8 +104,8 @@ abstract class TestCase {
 
     internal fun getMockValidateHashingTask(): ValidateHashingTask {
         return ValidateHashingTask(
-            mock(classOf<ISyncControlDatabaseHelper>()),
-            mock(classOf<ISynchronizationService>()),
+            mock<ISyncControlDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
             getMockValidateMigrationTask()
         )
     }
@@ -112,33 +113,33 @@ abstract class TestCase {
     internal fun getMockValidateMigrationTask(): ValidateMigrationLocalDatabaseTask {
         return ValidateMigrationLocalDatabaseTask(
             MapSettings(),
-            mock(classOf<IDatabaseDriverFactory>()),
+            mock<IDatabaseDriverFactory>(MockMode.autofill),
             getMockRetrieveDatabaseSchemeTask()
         )
     }
 
     internal fun getMockRetrieveDatabaseSchemeTask(): RetrieveDatabaseSchemeTask {
         return RetrieveDatabaseSchemeTask(
-            mock(classOf<IMigrationService>())
+            mock<IMigrationService>(MockMode.autofill)
         )
     }
 
     internal fun getMockSynchronizeInitialDataTask(): SynchronizeInitialDataTask {
         return SynchronizeInitialDataTask(
-            mock(classOf<INetworkValidator>()),
-            mock(classOf<IOperationDatabaseHelper>()),
-            mock(classOf<ISyncControlDatabaseHelper>()),
-            mock(classOf<ISynchronizationService>()),
+            mock<INetworkValidator>(MockMode.autofill),
+            mock<IOperationDatabaseHelper>(MockMode.autofill),
+            mock<ISyncControlDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
             getMockValidateHashingTask()
         )
     }
 
     internal fun getMockSynchronizeDataTask(): SynchronizeDataTask {
         return SynchronizeDataTask(
-            mock(classOf<INetworkValidator>()),
-            mock(classOf<ISyncControlDatabaseHelper>()),
-            mock(classOf<IOperationDatabaseHelper>()),
-            mock(classOf<ISynchronizationService>()),
+            mock<INetworkValidator>(MockMode.autofill),
+            mock<ISyncControlDatabaseHelper>(MockMode.autofill),
+            mock<IOperationDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
             getMockSynchronizeInitialDataTask()
         )
     }
@@ -146,9 +147,9 @@ abstract class TestCase {
     internal fun getMockRetrieveDataSharedTask(): RetrieveDataSharedTask {
         return RetrieveDataSharedTask(
             MapSettings(),
-            mock(classOf<INetworkValidator>()),
-            mock(classOf<IDataSharedDatabaseHelper>()),
-            mock(classOf<ISynchronizationService>()),
+            mock<INetworkValidator>(MockMode.autofill),
+            mock<IDataSharedDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
             getMockSynchronizeDataTask()
         )
     }
@@ -218,21 +219,6 @@ abstract class TestCase {
 
     protected fun randomHash(): String {
         return sha256(uuid())
-    }
-
-    protected fun callbackMatcher(): Callback {
-        return Matchers.enqueue(object : Matcher<Callback> {
-            override val placeholder: Callback = {}
-            override fun matches(value: Any?): Boolean {
-                // Validate is a function then execute
-                if (value is Function<*>) {
-                    (value as Callback).invoke()
-                    return true
-                }
-                return false
-            }
-
-        })
     }
 
     protected fun SqlDriver.registerEntity(entity: String, isWritable: Boolean = true, level: Int = 0) {

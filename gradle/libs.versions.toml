@@ -6,7 +6,7 @@ ktor = "3.4.2"
 sqldelight = "2.3.2"
 kotlinxDateTime = "0.6.1"
 kotlinCrypto = "0.8.0"
-mockative = "2.2.2"
+mokkery = "3.0.0"
 settings = "1.3.0"
 storageFiles = "0.6.1"
 storageOkio = "3.17.0"
@@ -34,8 +34,8 @@ sqldelight-driver-ios = { module = "app.cash.sqldelight:native-driver", version.
 # Utils
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDateTime" }
 kotlin-crypto = { module = "org.kotlincrypto.hash:sha2", version.ref = "kotlinCrypto" }
-# KSP
-ksp-mockative = { module = "io.mockative:mockative-processor", version.ref = "mockative" }
+# Mokkery
+test-mokkery-coroutines = { module = "dev.mokkery:mokkery-coroutines", version.ref = "mokkery" }
 # Local Storage
 storage-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "settings" }
 storage-files = { module = "io.matthewnelson.kmp-file:file", version.ref = "storageFiles" }
@@ -45,7 +45,6 @@ storage-okio = { module = "com.squareup.okio:okio", version.ref = "storageOkio" 
 test-kotlin = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 test-ktor = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 test-sqldelight = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
-test-mockative = { module = "io.mockative:mockative", version.ref = "mockative" }
 test-storage-settings = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
 
 # Android
@@ -55,3 +54,4 @@ android-test-robolectric = { module = "org.robolectric:robolectric", version.ref
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
+mokkery = { id = "dev.mokkery", version.ref = "mokkery" }

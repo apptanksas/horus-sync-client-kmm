@@ -15,7 +15,7 @@ plugins {
     id("kotlin-kapt")
     kotlin("plugin.serialization") version "2.2.20"
     id("maven-publish")
-    id("com.google.devtools.ksp") version "2.2.20-2.0.4"
+    alias(libs.plugins.mokkery)
     // To publish the library to the maven repository
     id("com.vanniktech.maven.publish") version "0.29.0"
 }
@@ -65,7 +65,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
-            implementation(libs.test.mockative)
+            implementation(libs.test.mokkery.coroutines)
             implementation(libs.test.storage.settings)
         }
         // Android dependencies
@@ -97,14 +97,6 @@ android {
     }
 }
 
-dependencies {
-    // Configuration mockative
-    configurations
-        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
-        .forEach {
-            add(it.name, libs.ksp.mockative)
-        }
-}
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // PUBLISH CONFIGURATION TO MAVEN REPOSITORY

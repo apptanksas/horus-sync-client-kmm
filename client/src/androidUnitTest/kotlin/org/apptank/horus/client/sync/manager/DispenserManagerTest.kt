@@ -1,10 +1,11 @@
 package org.apptank.horus.client.sync.manager
 
-import io.mockative.Mock
-import io.mockative.classOf
-import io.mockative.every
-import io.mockative.mock
-import io.mockative.verify
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.MockMode
+import dev.mokkery.mock
+import dev.mokkery.verify
+import dev.mokkery.verify.VerifyMode.Companion.exactly
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -27,20 +28,11 @@ import com.russhwolf.settings.Settings
 
 class DispenserManagerTest : TestCase() {
 
-    @Mock
-    val networkValidator = mock(classOf<INetworkValidator>())
-
-    @Mock
-    val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
-
-    @Mock
-    val synchronizationService = mock(classOf<ISynchronizationService>())
-
-    @Mock
-    val mockUploadFileRepository = mock(classOf<IUploadFileRepository>())
-
-    @Mock
-    val storageSettings = mock(classOf<Settings>())
+    val networkValidator = mock<INetworkValidator>(MockMode.autofill)
+    val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
+    val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
+    val mockUploadFileRepository = mock<IUploadFileRepository>(MockMode.autofill)
+    val storageSettings = mock<Settings>(MockMode.autofill)
 
     private val eventBus = InternalEventBus
 
@@ -93,9 +85,9 @@ class DispenserManagerTest : TestCase() {
             )
         }
 
-        every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { syncControlDatabaseHelper.getLastActionCompleted() }.returns(null)
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
+        every { networkValidator.isNetworkAvailable() } returns false
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns null
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
 
         // When
         for (i in 1..BATCH_SIZE) {
@@ -103,7 +95,7 @@ class DispenserManagerTest : TestCase() {
         }
 
         // Then
-        verify { networkValidator.isNetworkAvailable() }.wasInvoked(1)
+        verify(exactly(1)) { networkValidator.isNetworkAvailable() }
     }
 
     @Test
@@ -120,14 +112,14 @@ class DispenserManagerTest : TestCase() {
             )
         }
 
-        every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { syncControlDatabaseHelper.getLastActionCompleted() }.returns(actions.last())
-        every { syncControlDatabaseHelper.getPendingActions() }.returns(actions)
+        every { networkValidator.isNetworkAvailable() } returns false
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns actions.last()
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
 
         // When
         dispenserManager.processBatch()
 
         // Then
-        verify { networkValidator.isNetworkAvailable() }.wasInvoked(1)
+        verify(exactly(1)) { networkValidator.isNetworkAvailable() }
     }
 }

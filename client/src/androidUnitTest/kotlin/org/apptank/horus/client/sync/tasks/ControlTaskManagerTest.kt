@@ -16,12 +16,14 @@ import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.tasks.ControlTaskManager
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.Settings
-import io.mockative.Mock
-import io.mockative.any
-import io.mockative.classOf
-import io.mockative.coEvery
-import io.mockative.every
-import io.mockative.mock
+import dev.mokkery.answering.returns
+import dev.mokkery.answering.sequentiallyReturns
+import dev.mokkery.every
+import dev.mokkery.everySuspend
+import dev.mokkery.matcher.any
+import dev.mokkery.matcher.matches
+import dev.mokkery.MockMode
+import dev.mokkery.mock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -54,23 +56,12 @@ class ControlTaskManagerTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
 
-    @Mock
-    val networkValidator: INetworkValidator = mock(classOf<INetworkValidator>())
-
-    @Mock
-    val migrationService = mock(classOf<IMigrationService>())
-
-    @Mock
-    val synchronizationService = mock(classOf<ISynchronizationService>())
-
-    @Mock
-    val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
-
-    @Mock
-    val syncControlDatabaseHelper = mock(classOf<ISyncControlDatabaseHelper>())
-
-    @Mock
-    val storageSettings = mock(classOf<Settings>())
+    val networkValidator = mock<INetworkValidator>(MockMode.autofill)
+    val migrationService = mock<IMigrationService>(MockMode.autofill)
+    val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
+    val databaseDriverFactory = mock<IDatabaseDriverFactory>(MockMode.autofill)
+    val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
+    val storageSettings = mock<Settings>(MockMode.autofill)
 
 
     @Before
@@ -78,10 +69,10 @@ class ControlTaskManagerTest : TestCase() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         val database = HorusDatabase("database.db", driver)
 
-        every { databaseDriverFactory.getDatabaseName() }.returns("database.db")
-        every { databaseDriverFactory.getDriver() }.returns(driver)
-        every { databaseDriverFactory.getDatabase() }.returns(database)
-        every { databaseDriverFactory.getSchema() }.returns(HorusDatabase.Schema)
+        every { databaseDriverFactory.getDatabaseName() } returns "database.db"
+        every { databaseDriverFactory.getDriver() } returns driver
+        every { databaseDriverFactory.getDatabase() } returns database
+        every { databaseDriverFactory.getSchema() } returns HorusDatabase.Schema
 
         with(HorusContainer) {
             setupNetworkValidator(networkValidator)
@@ -136,40 +127,27 @@ class ControlTaskManagerTest : TestCase() {
             }
         }
 
-        coEvery { migrationService.getMigration() }.returns(DataResult.Success(entitiesScheme))
-        every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) }.returns(null)
-        every { storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) }.returns(null)
-        every { storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) }.returns(null)
+        everySuspend { migrationService.getMigration() } returns DataResult.Success(entitiesScheme)
+        every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) } returns null
+        every { storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        every { storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
 
-        coEvery { synchronizationService.postValidateHashing(any()) }.returns(
-            DataResult.Success(
-                SyncDTO.Response.HashingValidation(
-                    randomHash(),
-                    randomHash(),
-                    true
-                )
-            )
+        everySuspend { synchronizationService.postValidateHashing(any()) } returns DataResult.Success(
+            SyncDTO.Response.HashingValidation(randomHash(), randomHash(), true)
         )
-        coEvery {
-            synchronizationService.getData(any())
-        }.returns(DataResult.Success(entitiesData))
+        everySuspend { synchronizationService.getData(any()) } returns DataResult.Success(entitiesData)
 
-        // SynchronizationService mock responses
-        coEvery { synchronizationService.postStartSync(any()) }.returns(DataResult.Success(Unit))
-        coEvery { synchronizationService.getSyncStatus(any()) }.returns(DataResult.Success(syncDataStatus))
-        coEvery {
+        everySuspend { synchronizationService.postStartSync(any()) } returns DataResult.Success(Unit)
+        everySuspend { synchronizationService.getSyncStatus(any()) } returns DataResult.Success(syncDataStatus)
+        everySuspend {
             synchronizationService.downloadSyncData(
-                io.mockative.matches { it == syncDataStatus.downloadUrl },
-                io.mockative.matches { true })
-        }.returns(
-            DataResult.Success(
-                path
-            )
-        )
+                matches { it == syncDataStatus.downloadUrl },
+                matches { true })
+        } returns DataResult.Success(path)
 
-        coEvery { synchronizationService.getDataShared() }.returns(DataResult.Success(entitiesData))
+        everySuspend { synchronizationService.getDataShared() } returns DataResult.Success(entitiesData)
 
-        every { networkValidator.isNetworkAvailable() }.returnsMany(true, true, false, true, true,false)
+        every { networkValidator.isNetworkAvailable() } sequentiallyReturns listOf(true, true, false, true, true, false)
 
         var isCompleted = false
 
@@ -203,8 +181,8 @@ class ControlTaskManagerTest : TestCase() {
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
         HorusContainer.setupNetworkValidator(networkValidator)
 
-        every { networkValidator.isNetworkAvailable() }.returns(false)
-        every { syncControlDatabaseHelper.getEntityNames() }.returns(emptyList())
+        every { networkValidator.isNetworkAvailable() } returns false
+        every { syncControlDatabaseHelper.getEntityNames() } returns emptyList()
 
         var isFailed = false
         var eventBusCalled = false

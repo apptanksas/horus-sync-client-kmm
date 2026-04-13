@@ -12,10 +12,10 @@ import org.apptank.horus.client.migration.network.toScheme
 import org.apptank.horus.client.tasks.TaskResult
 import org.apptank.horus.client.tasks.ValidateMigrationLocalDatabaseTask
 import com.russhwolf.settings.MapSettings
-import io.mockative.Mock
-import io.mockative.classOf
-import io.mockative.every
-import io.mockative.mock
+import dev.mokkery.answering.returns
+import dev.mokkery.every
+import dev.mokkery.MockMode
+import dev.mokkery.mock
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Before
@@ -28,17 +28,16 @@ class ValidateMigrationLocalDatabaseTaskTest : TestCase() {
     private lateinit var settings: MapSettings
     private lateinit var task: ValidateMigrationLocalDatabaseTask
 
-    @Mock
-    val databaseDriverFactory = mock(classOf<IDatabaseDriverFactory>())
+    val databaseDriverFactory = mock<IDatabaseDriverFactory>(MockMode.autofill)
 
     @Before
     fun setup() {
         settings = MapSettings()
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
 
-        every { databaseDriverFactory.getDriver() }.returns(driver)
-        every { databaseDriverFactory.getDatabaseName() }.returns("test")
-        every { databaseDriverFactory.getSchema() }.returns(HorusDatabase.Schema)
+        every { databaseDriverFactory.getDriver() } returns driver
+        every { databaseDriverFactory.getDatabaseName() } returns "test"
+        every { databaseDriverFactory.getSchema() } returns HorusDatabase.Schema
 
         task = ValidateMigrationLocalDatabaseTask(
             settings,
