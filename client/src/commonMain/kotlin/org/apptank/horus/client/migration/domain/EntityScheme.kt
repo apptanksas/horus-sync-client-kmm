@@ -90,6 +90,7 @@ enum class AttributeType {
     Custom,
     Timestamp,
     UUID,
+    Coordinates,
     RefFile,
     RelationOneOfMany,
     RelationOneOfOne

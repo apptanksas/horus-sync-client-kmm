@@ -79,6 +79,7 @@ private fun String?.toAttributeType(): AttributeType {
         "custom" -> AttributeType.Custom
         "timestamp" -> AttributeType.Timestamp
         "uuid" -> AttributeType.UUID
+        "coordinates" -> AttributeType.Coordinates
         "ref_file" -> AttributeType.RefFile
         "relation_one_of_many" -> AttributeType.RelationOneOfMany
         "relation_one_of_one" -> AttributeType.RelationOneOfOne

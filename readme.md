@@ -37,6 +37,8 @@ it could have breaking changes in the API.
     - [Update data of a record](#update-data-of-a-record)
     - [Delete a record](#delete-a-record)
   - [Simple record query](#simple-record-query)
+    - [Complex query](#complex-query)
+    - [Query by geographic coordinates (Nearby search)](#query-by-geographic-coordinates-nearby-search)
     - [Get a record by ID](#get-a-record-by-id)
     - [Upload files](#upload-files)
 - [Utilities](#utilities)
@@ -470,6 +472,49 @@ val builder = SimpleQueryBuilder("entity").where(
 
 HorusDataFacade.query(builder)
 ```
+
+### Query by geographic coordinates (Nearby search)
+
+To find records within a certain distance from a geographic point, use the **SQL.Coordinates.WithIn** extension.
+This is useful for location-based queries, such as finding nearby places or points of interest.
+
+The coordinates must be stored in the database as a string with the format `"latitude,longitude"` (e.g., `"4.6097,-74.0817"`).
+
+**Parameters:**
+- `column`: The name of the column containing the coordinates
+- `point`: The reference point (`Horus.Point`) containing latitude and longitude.
+- `distanceInKm`: The maximum distance in kilometers from the reference point.
+
+```kotlin
+// Reference point (e.g., user's current location)
+val currentLocation = Horus.Point(
+    latitude = 4.6097,
+    longitude = -74.0817
+)
+
+// Find all places within 5 km from the current location
+val builder = SimpleQueryBuilder("places").withExtension(
+    SQL.Coordinates.WithIn(
+        column = "location",
+        point = currentLocation,
+        distanceInKm = 5.0
+    )
+)
+
+HorusDataFacade.query(builder).fold(
+    onSuccess = { nearbyPlaces ->
+        // Process the nearby places
+        nearbyPlaces.forEach { place ->
+            println("Found: ${place["name"]}")
+        }
+    },
+    onFailure = { error ->
+        // Handle error
+    }
+)
+```
+
+**Note:** The coordinate extension uses a bounding box approximation for efficient filtering. This works well for distances up to several hundred kilometers.
 
 ### Get a record by ID
 

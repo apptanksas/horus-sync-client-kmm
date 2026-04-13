@@ -1,5 +1,10 @@
 # Changelog
 
+# v0.17.0
+- Added support to a new attribute type in the entities called `coordinates` to store geolocation data with latitude and longitude values.
+- Added `SQL.Coordinates.WithIn` extension to query records within a specified distance from a geographic point (nearby search).
+- Update AGP version to 8.13.2
+
 # v0.16.4
 - Fixed issue in synchronization manager when get last actions after initial sync.
 
