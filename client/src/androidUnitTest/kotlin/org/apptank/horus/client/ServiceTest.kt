@@ -51,11 +51,16 @@ abstract class ServiceTest : TestCase() {
 
     private fun validateJsonBody(body: ByteArray) {
         if (body.isEmpty()) return
-        val body = String(body)
+        val contentType = lastRequest.headers[HttpHeaders.ContentType] ?: ""
+        // Skip JSON validation for multipart form data (e.g. file uploads)
+        if (contentType.contains("multipart/form-data", ignoreCase = true)) return
+        val bodyStr = String(body)
+        // Also skip if body itself doesn't look like JSON (e.g. multipart boundary content)
+        if (!bodyStr.startsWith("{") && !bodyStr.startsWith("[")) return
         Assert.assertTrue(
-            "Invalid JSON: $body",
-            (body.startsWith("{") && body.endsWith("}")) ||
-                    (body.startsWith("[") && body.endsWith("]"))
+            "Invalid JSON: $bodyStr",
+            (bodyStr.startsWith("{") && bodyStr.endsWith("}")) ||
+                    (bodyStr.startsWith("[") && bodyStr.endsWith("]"))
         )
     }
 

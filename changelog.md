@@ -1,7 +1,8 @@
 # Changelog
 
 # v0.18.0
-- 
+- Update AGP version to 9.0.1
+- Update dependencies versions.
 
 # v0.17.0
 - Added support to a new attribute type in the entities called `coordinates` to store geolocation data with latitude and longitude values.
