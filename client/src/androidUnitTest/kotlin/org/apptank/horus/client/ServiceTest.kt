@@ -18,21 +18,25 @@ abstract class ServiceTest : TestCase() {
         const val BASE_URL = "http://dev.api"
     }
 
-    private lateinit var lastRequest: HttpRequestData
-    private lateinit var lastRequestBody: ByteArray
+    @Volatile
+    private var lastRequest: HttpRequestData? = null
+
+    @Volatile
+    private var lastRequestBody: ByteArray = ByteArray(0)
 
     @Before
     fun setup() {
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+        lastRequest = null
+        lastRequestBody = ByteArray(0)
     }
 
     fun createMockResponse(content: String? = null, status: HttpStatusCode = HttpStatusCode.OK) =
         MockEngine { request ->
             lastRequest = request
-
             lastRequestBody = request.body.toByteArray()
             validateUrl(request.url.toString())
-            validateJsonBody(request.body.toByteArray())
+            validateJsonBody(lastRequestBody)
             validateHeaders()
 
             respond(
@@ -51,7 +55,8 @@ abstract class ServiceTest : TestCase() {
 
     private fun validateJsonBody(body: ByteArray) {
         if (body.isEmpty()) return
-        val contentType = lastRequest.headers[HttpHeaders.ContentType] ?: ""
+        val req = lastRequest ?: return
+        val contentType = req.headers[HttpHeaders.ContentType] ?: ""
         // Skip JSON validation for multipart form data (e.g. file uploads)
         if (contentType.contains("multipart/form-data", ignoreCase = true)) return
         val bodyStr = String(body)
@@ -65,22 +70,25 @@ abstract class ServiceTest : TestCase() {
     }
 
     protected fun assertRequestContainsQueryParam(queryParam: String, value: String) {
+        val req = requireNotNull(lastRequest) { "No HTTP request was captured. Make sure the service call completed before asserting." }
         Assert.assertEquals(
             "Query param \"$queryParam\" invalid",
             value,
-            lastRequest.url.parameters[queryParam].toString()
+            req.url.parameters[queryParam].toString()
         )
     }
 
     protected fun assertRequestMissingQueryParam(queryParam: String) {
+        val req = requireNotNull(lastRequest) { "No HTTP request was captured. Make sure the service call completed before asserting." }
         Assert.assertNull(
             "Query param \"$queryParam\" should not be present",
-            lastRequest.url.parameters[queryParam]
+            req.url.parameters[queryParam]
         )
     }
 
     protected fun assertRequestHeader(header: String, value: String) {
-        Assert.assertEquals("Header $header is invalid!", value, lastRequest.headers[header])
+        val req = requireNotNull(lastRequest) { "No HTTP request was captured. Make sure the service call completed before asserting." }
+        Assert.assertEquals("Header $header is invalid!", value, req.headers[header])
     }
 
     protected fun assertRequestBody(body: String) {
@@ -88,10 +96,10 @@ abstract class ServiceTest : TestCase() {
     }
 
     private fun validateHeaders() {
-        assertRequestHeader(HttpHeader.ACCEPT, "application/json")
-        assertRequestHeader(HttpHeader.AUTHORIZATION, "Bearer $USER_ACCESS_TOKEN")
-        assertTrue(lastRequest.headers.contains(HttpHeader.X_REQUEST_ID))
+        val req = lastRequest ?: return
+        Assert.assertEquals("Header ${HttpHeader.ACCEPT} is invalid!", "application/json", req.headers[HttpHeader.ACCEPT])
+        Assert.assertEquals("Header ${HttpHeader.AUTHORIZATION} is invalid!", "Bearer $USER_ACCESS_TOKEN", req.headers[HttpHeader.AUTHORIZATION])
+        assertTrue(req.headers.contains(HttpHeader.X_REQUEST_ID))
     }
-
 
 }
