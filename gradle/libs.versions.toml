@@ -1,15 +1,15 @@
 [versions]
 agp = "9.0.1"
 kotlin = "2.2.21"
-kotlinxSerialization = "1.8.1"
-ktor = "3.3.3"
-sqldelight = "2.3.2"
+kotlinxSerialization = "1.7.2"
+ktor = "3.0.0"
+sqldelight = "2.0.2"
 kotlinxDateTime = "0.6.1"
-kotlinCrypto = "0.8.0"
+kotlinCrypto = "0.5.1"
 mokkery = "3.0.0"
-settings = "1.3.0"
-storageFiles = "0.6.1"
-storageOkio = "3.17.0"
+settings = "1.2.0"
+storageFiles = "0.1.1"
+storageOkio = "3.9.1"
 
 # Android
 androidRobolectric = "4.16.1"
