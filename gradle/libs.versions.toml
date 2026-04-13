@@ -1,6 +1,6 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.1.10"
+agp = "9.0.1"
+kotlin = "2.2.20"
 kotlinxSerialization = "1.7.2"
 ktor = "3.0.0"
 sqldelight = "2.0.2"

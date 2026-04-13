@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.18.0
+- 
+
 # v0.17.0
 - Added support to a new attribute type in the entities called `coordinates` to store geolocation data with latitude and longitude values.
 - Added `SQL.Coordinates.WithIn` extension to query records within a specified distance from a geographic point (nearby search).

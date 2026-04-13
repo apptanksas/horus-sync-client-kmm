@@ -13,9 +13,9 @@ plugins {
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
     id("kotlin-kapt")
-    kotlin("plugin.serialization") version "2.1.10"
+    kotlin("plugin.serialization") version "2.2.20"
     id("maven-publish")
-    id("com.google.devtools.ksp") version "2.1.10-1.0.29"
+    id("com.google.devtools.ksp") version "2.2.20-2.0.4"
     // To publish the library to the maven repository
     id("com.vanniktech.maven.publish") version "0.29.0"
 }
