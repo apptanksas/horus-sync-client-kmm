@@ -4,6 +4,8 @@ val libGroupId = project.findProperty("lib.groupId") as String
 val libArtifactId = project.findProperty("lib.artifactId") as String
 val libVersion = project.findProperty("lib.version") as String
 
+val isMacOs = org.gradle.internal.os.OperatingSystem.current().isMacOsX
+
 
 group = libGroupId
 version = libVersion
@@ -13,12 +15,13 @@ plugins {
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.androidLibrary)
     id("kotlin-kapt")
-    kotlin("plugin.serialization") version "2.1.10"
+    kotlin("plugin.serialization") version "2.2.21"
     id("maven-publish")
-    id("com.google.devtools.ksp") version "2.1.10-1.0.29"
+    alias(libs.plugins.mokkery)
     // To publish the library to the maven repository
     id("com.vanniktech.maven.publish") version "0.29.0"
 }
+
 
 kotlin {
     androidTarget {
@@ -65,7 +68,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.test.kotlin)
             implementation(libs.test.ktor)
-            implementation(libs.test.mockative)
+            implementation(libs.test.mokkery.coroutines)
             implementation(libs.test.storage.settings)
         }
         // Android dependencies
@@ -78,9 +81,11 @@ kotlin {
             implementation(libs.android.test.robolectric)
         }
         // IOS dependencies
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.driver.ios)
+        if (isMacOs) {
+            iosMain.dependencies {
+                implementation(libs.ktor.client.darwin)
+                implementation(libs.sqldelight.driver.ios)
+            }
         }
     }
 }
@@ -97,14 +102,6 @@ android {
     }
 }
 
-dependencies {
-    // Configuration mockative
-    configurations
-        .filter { it.name.startsWith("ksp") && it.name.contains("Test") }
-        .forEach {
-            add(it.name, libs.ksp.mockative)
-        }
-}
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // PUBLISH CONFIGURATION TO MAVEN REPOSITORY
@@ -163,4 +160,18 @@ if (!isPublishToMavenLocal) {
     }
 } else {
     logger.lifecycle("Publishing to Maven Local, skipping Maven Central configuration")
+}
+
+// Disable iOS compilation tasks on non-macOS systems (Windows/Linux)
+// so that publishToMavenLocal only builds and publishes Android artifacts.
+if (!isMacOs) {
+    tasks.configureEach {
+        if (name.contains("Ios", ignoreCase = true) &&
+            (name.startsWith("compile") || name.startsWith("link") ||
+             name.startsWith("cinterop") || name.startsWith("generateProjectStructure") ||
+             name.startsWith("transformCommonMainDependencies"))
+        ) {
+            enabled = false
+        }
+    }
 }
