@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.18.1
+- Added configurable TTL (Time-To-Live) for refreshing readable entities in `HorusConfig` with a default value of 24 hours
+
 # v0.18.0
 - Update AGP version to 9.0.1
 - Update Kotlin version to 2.2.21

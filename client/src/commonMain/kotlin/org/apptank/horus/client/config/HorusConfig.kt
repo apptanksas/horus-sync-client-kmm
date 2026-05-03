@@ -11,6 +11,7 @@ import org.apptank.horus.client.sync.upload.data.FileMimeType
  * @property uploadFilesConfig Configuration for uploading files to the server.
  * @property pushPendingActionsConfig Configuration for managing the batch size and expiration time for pending actions.
  * @property customHeaders Optional custom headers to include in HTTP requests.
+ * @property refreshReadableEntitiesTTL Time-to-live in hours for refreshing readable entities. Default is `24` hours.
  * @property isDebug Flag to enable or disable debug mode. Default is `false`.
  * @property onGlobalCallbackFailure A callback function that is invoked when a global failure occurs during synchronization.
  */
@@ -19,6 +20,7 @@ data class HorusConfig(
     val uploadFilesConfig: UploadFilesConfig,
     val pushPendingActionsConfig: PushPendingActionsConfig = PushPendingActionsConfig(),
     val customHeaders: Map<String, String> = emptyMap(),
+    val refreshReadableEntitiesTTL: Int = 24,
     val isDebug: Boolean = false,
     val onGlobalCallbackFailure: ((String, Throwable?) -> Unit)? = { _, _ -> },
 )

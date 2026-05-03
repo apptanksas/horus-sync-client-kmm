@@ -80,6 +80,13 @@ internal object ControlTaskManager {
         HorusContainer.getSynchronizationService(),
         HorusContainer.getOperationDatabaseHelper(),
         HorusContainer.getSyncControlDatabaseHelper(),
+        with(HorusContainer) {
+            if (existsConfig()) {
+                getConfig().refreshReadableEntitiesTTL
+            } else {
+                24
+            }
+        },
         retrieveDataSharedTask
     )
 
@@ -133,7 +140,10 @@ internal object ControlTaskManager {
             when {
                 syncControlDatabaseHelper.getEntityNames().isEmpty() -> {
                     onStatus(Status.FAILED)
-                    InternalEventBus.emit(EventType.SYNC_FAILED, Event(mutableMapOf("exception" to NetworkException("Network is not available"))))
+                    InternalEventBus.emit(
+                        EventType.SYNC_FAILED,
+                        Event(mutableMapOf("exception" to NetworkException("Network is not available")))
+                    )
                 }
 
                 else -> emitEventOnReady()
@@ -248,7 +258,10 @@ internal object ControlTaskManager {
             is TaskResult.Failure -> {
                 logException("[ControlTask] Error executing task", taskResult.error)
                 onStatus(Status.FAILED)
-                InternalEventBus.emit(EventType.SYNC_FAILED, Event(mutableMapOf("exception" to taskResult.error)))
+                InternalEventBus.emit(
+                    EventType.SYNC_FAILED,
+                    Event(mutableMapOf("exception" to taskResult.error))
+                )
             }
         }
     }
