@@ -47,6 +47,7 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
             syncService,
             operationDatabaseHelper,
             syncControlDatabaseHelper,
+            24, // TTL of 24 hours
             dependsOnTask
         )
     }
@@ -78,7 +79,8 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
     fun `when last refresh is within TTL then return success without operations`() = runBlocking {
         // Given
         val currentTimeInSeconds = Clock.System.now().epochSeconds
-        val recentTimestamp = currentTimeInSeconds - (12 * 60 * 60) // 12 hours ago (less than the 24 hour TTL)
+        val recentTimestamp =
+            currentTimeInSeconds - (12 * 60 * 60) // 12 hours ago (less than the 24 hour TTL)
 
         every { networkValidator.isNetworkAvailable() } returns true
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns recentTimestamp
@@ -99,75 +101,107 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
      * When no readable entities are found, the task should return success without fetching data.
      */
     @Test
-    fun `when no readable entities found then return success without fetching data`() = runBlocking {
-        // Given
-        every { networkValidator.isNetworkAvailable() } returns true
-        every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
-        every { syncControlDatabaseHelper.getReadableEntityNames() } returns emptyList()
+    fun `when no readable entities found then return success without fetching data`() =
+        runBlocking {
+            // Given
+            every { networkValidator.isNetworkAvailable() } returns true
+            every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
+            every { syncControlDatabaseHelper.getReadableEntityNames() } returns emptyList()
 
-        // When
-        val result = task.execute(null, 0, 10)
+            // When
+            val result = task.execute(null, 0, 10)
 
-        // Then
-        Assert.assertTrue(result is TaskResult.Success)
-        verify(exactly(1)) { syncControlDatabaseHelper.getReadableEntityNames() }
-        verifySuspend(exactly(0)) { syncService.getDataEntity(any(), any(), any()) }
-        verify(exactly(0)) { operationDatabaseHelper.truncate(any()) }
-        verify(exactly(0)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
-        verify(exactly(1)) { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }
-    }
+            // Then
+            Assert.assertTrue(result is TaskResult.Success)
+            verify(exactly(1)) { syncControlDatabaseHelper.getReadableEntityNames() }
+            verifySuspend(exactly(0)) { syncService.getDataEntity(any(), any(), any()) }
+            verify(exactly(0)) { operationDatabaseHelper.truncate(any()) }
+            verify(exactly(0)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
+            verify(exactly(1)) {
+                settings.putLong(
+                    eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES),
+                    any()
+                )
+            }
+        }
 
     /**
      * When the service returns valid data for multiple entities, the task should process and store it successfully.
      */
     @Test
-    fun `when service returns data for multiple entities then insert all into database`() = runBlocking {
-        // Given
-        val entityNames = listOf("entity1", "entity2", "entity3")
+    fun `when service returns data for multiple entities then insert all into database`() =
+        runBlocking {
+            // Given
+            val entityNames = listOf("entity1", "entity2", "entity3")
 
-        every { networkValidator.isNetworkAvailable() } returns true
-        every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
-        every { syncControlDatabaseHelper.getReadableEntityNames() } returns entityNames
+            every { networkValidator.isNetworkAvailable() } returns true
+            every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
+            every { syncControlDatabaseHelper.getReadableEntityNames() } returns entityNames
 
-        everySuspend { syncService.getDataEntity("entity1") } returns DataResult.Success(
-            listOf(
-                SyncDTO.Response.Entity("entity1", mapOf("id" to "id1", "name" to "Entity 1 Item 1")),
-                SyncDTO.Response.Entity("entity1", mapOf("id" to "id2", "name" to "Entity 1 Item 2"))
+            everySuspend { syncService.getDataEntity("entity1") } returns DataResult.Success(
+                listOf(
+                    SyncDTO.Response.Entity(
+                        "entity1",
+                        mapOf("id" to "id1", "name" to "Entity 1 Item 1")
+                    ),
+                    SyncDTO.Response.Entity(
+                        "entity1",
+                        mapOf("id" to "id2", "name" to "Entity 1 Item 2")
+                    )
+                )
             )
-        )
 
-        everySuspend { syncService.getDataEntity("entity2") } returns DataResult.Success(
-            listOf(SyncDTO.Response.Entity("entity2", mapOf("id" to "id3", "name" to "Entity 2 Item 1")))
-        )
-
-        everySuspend { syncService.getDataEntity("entity3") } returns DataResult.Success(
-            listOf(
-                SyncDTO.Response.Entity("entity3", mapOf("id" to "id4", "name" to "Entity 3 Item 1")),
-                SyncDTO.Response.Entity("entity3", mapOf("id" to "id5", "name" to "Entity 3 Item 2")),
-                SyncDTO.Response.Entity("entity3", mapOf("id" to "id6", "name" to "Entity 3 Item 3"))
+            everySuspend { syncService.getDataEntity("entity2") } returns DataResult.Success(
+                listOf(
+                    SyncDTO.Response.Entity(
+                        "entity2",
+                        mapOf("id" to "id3", "name" to "Entity 2 Item 1")
+                    )
+                )
             )
-        )
 
-        every { operationDatabaseHelper.truncate(any()) } returns Unit
-        every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns true
-        every { settings.putLong(any(), any()) }
-        every { syncControlDatabaseHelper.getEntityLevel(any()) } returns 1
+            everySuspend { syncService.getDataEntity("entity3") } returns DataResult.Success(
+                listOf(
+                    SyncDTO.Response.Entity(
+                        "entity3",
+                        mapOf("id" to "id4", "name" to "Entity 3 Item 1")
+                    ),
+                    SyncDTO.Response.Entity(
+                        "entity3",
+                        mapOf("id" to "id5", "name" to "Entity 3 Item 2")
+                    ),
+                    SyncDTO.Response.Entity(
+                        "entity3",
+                        mapOf("id" to "id6", "name" to "Entity 3 Item 3")
+                    )
+                )
+            )
 
-        // When
-        val result = task.execute(null, 0, 10)
+            every { operationDatabaseHelper.truncate(any()) } returns Unit
+            every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns true
+            every { settings.putLong(any(), any()) }
+            every { syncControlDatabaseHelper.getEntityLevel(any()) } returns 1
 
-        // Then
-        Assert.assertTrue(result is TaskResult.Success)
-        verify(exactly(1)) { syncControlDatabaseHelper.getReadableEntityNames() }
-        verifySuspend(exactly(1)) { syncService.getDataEntity("entity1") }
-        verifySuspend(exactly(1)) { syncService.getDataEntity("entity2") }
-        verifySuspend(exactly(1)) { syncService.getDataEntity("entity3") }
-        verify(exactly(1)) { operationDatabaseHelper.truncate("entity1") }
-        verify(exactly(1)) { operationDatabaseHelper.truncate("entity2") }
-        verify(exactly(1)) { operationDatabaseHelper.truncate("entity3") }
-        verify(exactly(3)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
-        verify(exactly(1)) { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }
-    }
+            // When
+            val result = task.execute(null, 0, 10)
+
+            // Then
+            Assert.assertTrue(result is TaskResult.Success)
+            verify(exactly(1)) { syncControlDatabaseHelper.getReadableEntityNames() }
+            verifySuspend(exactly(1)) { syncService.getDataEntity("entity1") }
+            verifySuspend(exactly(1)) { syncService.getDataEntity("entity2") }
+            verifySuspend(exactly(1)) { syncService.getDataEntity("entity3") }
+            verify(exactly(1)) { operationDatabaseHelper.truncate("entity1") }
+            verify(exactly(1)) { operationDatabaseHelper.truncate("entity2") }
+            verify(exactly(1)) { operationDatabaseHelper.truncate("entity3") }
+            verify(exactly(3)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
+            verify(exactly(1)) {
+                settings.putLong(
+                    eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES),
+                    any()
+                )
+            }
+        }
 
     /**
      * When null is passed as the previous task data, the task should still work correctly.
@@ -181,7 +215,12 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
         every { syncControlDatabaseHelper.getReadableEntityNames() } returns entityNames
         everySuspend { syncService.getDataEntity("entity1") } returns DataResult.Success(
-            listOf(SyncDTO.Response.Entity("entity1", mapOf("id" to "id1", "name" to "Entity Item 1")))
+            listOf(
+                SyncDTO.Response.Entity(
+                    "entity1",
+                    mapOf("id" to "id1", "name" to "Entity Item 1")
+                )
+            )
         )
         every { operationDatabaseHelper.truncate(any()) } returns Unit
         every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns true
@@ -196,7 +235,12 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         verifySuspend(exactly(1)) { syncService.getDataEntity("entity1") }
         verify(exactly(1)) { operationDatabaseHelper.truncate("entity1") }
         verify(exactly(1)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
-        verify(exactly(1)) { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }
+        verify(exactly(1)) {
+            settings.putLong(
+                eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES),
+                any()
+            )
+        }
     }
 
     @Test
@@ -204,13 +248,19 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         // Given
         val entityNames = listOf("entity1")
         val currentTimeInSeconds = Clock.System.now().epochSeconds
-        val recentTimestamp = currentTimeInSeconds - (25 * 60 * 60) // 25 hours ago (greater than the 24 hour TTL)
+        val recentTimestamp =
+            currentTimeInSeconds - (25 * 60 * 60) // 25 hours ago (greater than the 24 hour TTL)
 
         every { networkValidator.isNetworkAvailable() } returns true
         every { syncControlDatabaseHelper.getReadableEntityNames() } returns entityNames
         every { settings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns recentTimestamp
         everySuspend { syncService.getDataEntity("entity1") } returns DataResult.Success(
-            listOf(SyncDTO.Response.Entity("entity1", mapOf("id" to "id1", "name" to "Entity Item 1")))
+            listOf(
+                SyncDTO.Response.Entity(
+                    "entity1",
+                    mapOf("id" to "id1", "name" to "Entity Item 1")
+                )
+            )
         )
         every { operationDatabaseHelper.truncate(any()) } returns Unit
         every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns true
@@ -225,6 +275,11 @@ class RefreshReadableEntitiesTaskTest : TestCase() {
         verifySuspend(exactly(1)) { syncService.getDataEntity("entity1") }
         verify(exactly(1)) { operationDatabaseHelper.truncate("entity1") }
         verify(exactly(1)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
-        verify(exactly(1)) { settings.putLong(eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES), any()) }
+        verify(exactly(1)) {
+            settings.putLong(
+                eq(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES),
+                any()
+            )
+        }
     }
 }
