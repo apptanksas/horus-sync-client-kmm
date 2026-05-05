@@ -1,5 +1,10 @@
 # Changelog
 
+# v0.18.2
+- Fixed crash `DrawScope.drawRect-n-J9OG0$default` (`IncompatibleClassChangeError`) caused by the `-Xdebug` compiler flag being present in production builds and by Ktor remaining at version 3.0.0 instead of the intended 3.3.3
+- Removed `-Xdebug` from Android target compiler options (it must not be present in production; it alters how Kotlin compiles coroutines/lambdas and can produce calling-convention mismatches with Compose's rendering internals)
+- Updated Ktor from 3.0.0 to 3.3.3 (the v0.18.0 changelog stated this update but the dependency version was never changed; an older Ktor pulls in an older `kotlinx-coroutines`, which can contribute to runtime incompatibilities with Compose)
+
 # v0.18.1
 - Added configurable TTL (Time-To-Live) for refreshing readable entities in `HorusConfig` with a default value of 24 hours
 
