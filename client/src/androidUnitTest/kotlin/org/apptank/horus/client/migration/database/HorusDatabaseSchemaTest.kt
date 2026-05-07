@@ -11,6 +11,11 @@ import org.apptank.horus.client.buildEntitiesSchemeFromJSON
 import org.apptank.horus.client.database.HorusDatabase
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.extensions.notContains
+import org.apptank.horus.client.control.scheme.EntitiesTable
+import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.struct.Column
+import org.apptank.horus.client.database.struct.Cursor
+import org.apptank.horus.client.database.struct.CursorValue
 import org.apptank.horus.client.migration.domain.getLastVersion
 import org.apptank.horus.client.migration.network.toScheme
 import org.junit.Assert
@@ -301,5 +306,96 @@ class HorusDatabaseSchemaTest : TestCase() {
 
         Assert.assertTrue(tableWritable?.isWritable == true)
         Assert.assertTrue(tableReadable?.isWritable == false)
+    }
+
+    /**
+     * Regression test for the iOS ClassCastException:
+     * "class kotlin.Long cannot be cast to class kotlin.Int"
+     *
+     * On Kotlin/Native (iOS), SQLite INTEGER columns are always returned as Long by the driver
+     * (see SQLiteHelper.buildCursorValues: "INTEGER" -> CursorValue(cursor.getLong(...), column)).
+     * Without the fix in Cursor.getValue, the raw Long flows through the unchecked generic cast.
+     *
+     * The result is captured as Any? to prevent JVM auto-conversion at the assignment site,
+     * exposing the actual runtime class of the value returned by getValue<Int>():
+     *   Without fix: runtime class is Long  → assertion FAILS
+     *   With fix:    runtime class is Integer → assertion PASSES
+     */
+    @Test
+    fun getTableEntitiesLevelIsReadAsIntWithoutClassCastException() {
+        // Given - schema with hierarchical entities (level 0, 1, 2)
+        val entities = buildEntitiesSchemeFromJSON(DATA_MIGRATION_VERSION_1).map { it.toScheme() }
+        schema.create(driver, entities)
+
+        // Then - correct numeric values (sanity check)
+        val tableEntities = database.getTableEntities()
+        Assert.assertEquals(0, tableEntities.find { it.name == "products" }?.level)
+        Assert.assertEquals(1, tableEntities.find { it.name == "lots" }?.level)
+        Assert.assertEquals(2, tableEntities.find { it.name == "categories_lots" }?.level)
+
+        // Critical: query again via queryResult + getValue<Int>(), capturing result as Any?
+        // so JVM cannot auto-unbox/convert the Long before we inspect its class.
+        //
+        // Without fix: getValue<Int>() uses unchecked cast (value as T); T is erased to Any,
+        //   so the Long passes through untouched. Captured as Any? → javaClass == Long → FAILS.
+        // With fix (reified + coerceValue): Long is converted to Int before return.
+        //   Captured as Any? → javaClass == Integer → PASSES.
+        val rawLevelValues: List<Any?> = database.queryResult(
+            SimpleQueryBuilder(EntitiesTable.TABLE_NAME).build()
+        ) { cursor ->
+            cursor.getValue<Int>(EntitiesTable.ATTR_LEVEL) as Any?
+        }
+
+        Assert.assertTrue("Expected at least one entity with a level", rawLevelValues.isNotEmpty())
+        rawLevelValues.forEach { rawLevel ->
+            Assert.assertEquals(
+                "getValue<Int>() returned ${rawLevel?.javaClass?.simpleName} at runtime, " +
+                        "expected Integer. Without fix this is Long, causing ClassCastException on iOS.",
+                Int::class.javaObjectType,
+                rawLevel?.javaClass
+            )
+        }
+    }
+
+    /**
+     * Unit test that directly simulates the iOS ClassCastException scenario at the Cursor level.
+     *
+     * Without fix: Cursor.getValue uses `value as T` (unchecked generic cast).
+     *   The Long stored in CursorValue passes through as T=Int (erased).
+     *   Captured as Any? → javaClass == Long  → assertion FAILS
+     *   On iOS: Kotlin/Native enforces the type strictly → throws ClassCastException
+     *
+     * With fix (reified + coerceValue): Long is explicitly converted to Int.
+     *   Captured as Any? → javaClass == Integer → assertion PASSES
+     */
+    @Test
+    fun cursorCoerceValueHandlesLongToIntConversion() {
+        // Given - CursorValue holds Long (what SQLiteHelper.buildCursorValues stores for INTEGER)
+        val column = Column(position = 0, name = "level", type = "INTEGER", nullable = false)
+        val cursor = Cursor(
+            index = 0,
+            table = "horus_entities",
+            values = listOf(CursorValue(2L, column))
+        )
+
+        // When - capture as Any? to prevent JVM unboxing/conversion from hiding the underlying type
+        val rawResult: Any? = cursor.getValue<Int>("level") as Any?
+
+        // Then
+        Assert.assertEquals(
+            "getValue<Int>() returned ${rawResult?.javaClass?.simpleName} at runtime, " +
+                    "expected Integer. Without fix the unchecked cast returns Long, " +
+                    "which causes ClassCastException on iOS (Kotlin/Native enforces generic types).",
+            Int::class.javaObjectType,
+            rawResult?.javaClass
+        )
+        Assert.assertEquals(2, rawResult)
+
+        // Verify Double → Float coercion as well
+        val colDouble = Column(position = 0, name = "score", type = "REAL", nullable = false)
+        val cursorDouble = Cursor(index = 0, table = "test", values = listOf(CursorValue(3.14, colDouble)))
+        val rawScore: Any? = cursorDouble.getValue<Float>("score") as Any?
+        Assert.assertEquals(Float::class.javaObjectType, rawScore?.javaClass)
+        Assert.assertEquals(3.14f, rawScore)
     }
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.18.2
+- Fixed `ClassCastException` on iOS when reading `INTEGER` columns from SQLite (`Long` cannot be cast to `Int` in Kotlin/Native). Implemented numeric type coercion in `Cursor.getValue` using reified type parameters to handle the conversion transparently on all platforms.
+
 # v0.18.1
 - Added configurable TTL (Time-To-Live) for refreshing readable entities in `HorusConfig` with a default value of 24 hours
 
