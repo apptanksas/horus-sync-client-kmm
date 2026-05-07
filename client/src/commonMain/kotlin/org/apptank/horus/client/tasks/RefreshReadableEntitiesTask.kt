@@ -34,6 +34,7 @@ internal class RefreshReadableEntitiesTask(
     private val syncService: ISynchronizationService,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
+    private val refreshTTL: Int = REFRESH_TTL,
     dependsOnTask: RetrieveDataSharedTask
 ) : BaseTask(dependsOnTask) {
 
@@ -53,7 +54,11 @@ internal class RefreshReadableEntitiesTask(
      * @param previousDataTask  Result or output of the dependent task (unused).
      * @return [TaskResult.success] always, even on no-op or after completion.
      */
-    override suspend fun execute(previousDataTask: Any?, weightProgressSum: Int, totalProgressWeight: Int): TaskResult {
+    override suspend fun execute(
+        previousDataTask: Any?,
+        weightProgressSum: Int,
+        totalProgressWeight: Int
+    ): TaskResult {
         // Skip if offline
         if (networkValidator.isNetworkAvailable().not()) {
             return TaskResult.success()
@@ -63,12 +68,13 @@ internal class RefreshReadableEntitiesTask(
         val diffInHours = (lastDate?.diffInHoursFromNow() ?: Int.MAX_VALUE)
 
         // Skip if within TTL window
-        if (diffInHours < REFRESH_TTL) {
+        if (diffInHours < refreshTTL) {
             return TaskResult.success()
         }
 
         // Refresh each readable entity
-        val entitiesSorted = syncControlDatabaseHelper.getReadableEntityNames().sortedBy { syncControlDatabaseHelper.getEntityLevel(it) }
+        val entitiesSorted = syncControlDatabaseHelper.getReadableEntityNames()
+            .sortedBy { syncControlDatabaseHelper.getEntityLevel(it) }
         entitiesSorted.forEach { entityName ->
 
             when (val response = syncService.getDataEntity(entityName)) {
@@ -81,7 +87,8 @@ internal class RefreshReadableEntitiesTask(
                                     entitiesToTruncate.addAll(entities.map { it.name })
                                 }
                             }
-                        }.flatMap { it.toRecordsInsert() }.sortedBy { syncControlDatabaseHelper.getEntityLevel(it.table) }
+                        }.flatMap { it.toRecordsInsert() }
+                        .sortedBy { syncControlDatabaseHelper.getEntityLevel(it.table) }
 
                     // Remove existing records and insert fresh data
                     entitiesToTruncate.forEach {
