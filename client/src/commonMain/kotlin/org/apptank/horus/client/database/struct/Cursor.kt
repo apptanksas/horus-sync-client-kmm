@@ -38,23 +38,31 @@ internal data class Cursor(
     val values: List<CursorValue<*>>
 ) {
     /**
-     * Retrieves the value of a specified column.
+     * Retrieves the value of a specified column, coercing numeric types as needed.
+     *
+     * On Kotlin/Native (iOS), SQLite INTEGER columns are always stored as Long. Without
+     * type coercion, requesting the value as Int causes a ClassCastException on iOS.
+     * Using a reified type parameter allows detecting the expected type at runtime and
+     * converting accordingly.
      *
      * @param attribute The name of the column to retrieve the value from.
-     * @return The value of the specified column.
+     * @return The value of the specified column, coerced to T if needed.
      */
-    fun <T> getValue(attribute: String): T {
-        return values.first { it.column.name == attribute }.value as T
+    inline fun <reified T> getValue(attribute: String): T {
+        val raw = values.first { it.column.name == attribute }.value
+        return coerceValue<T>(raw)
     }
 
     /**
-     * Retrieves the value of a specified column or null if the column does not exist.
+     * Retrieves the value of a specified column or null if the column does not exist,
+     * coercing numeric types as needed.
      *
      * @param attribute The name of the column to retrieve the value from.
      * @return The value of the specified column or null if the column does not exist.
      */
-    fun <T> getValueOrNull(attribute: String): T? {
-        return values.firstOrNull { it.column.name == attribute }?.value as T?
+    inline fun <reified T> getValueOrNull(attribute: String): T? {
+        val raw = values.firstOrNull { it.column.name == attribute }?.value ?: return null
+        return coerceValue<T>(raw)
     }
 
     /**
@@ -67,6 +75,52 @@ internal data class Cursor(
         val value = getValue<String>(attributeName)
         return decoder.decodeFromString<DataMap>(value)
     }
+
+    /**
+     * Coerces [raw] to type [T], handling numeric type mismatches that occur on
+     * iOS/Kotlin Native where SQLite INTEGER columns are always stored as [Long].
+     *
+     * Supported conversions:
+     * - [Long]   → [Int], [Short], [Byte], [Float], [Double]
+     * - [Int]    → [Long]
+     * - [Double] → [Float]
+     */
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> coerceValue(raw: Any?): T {
+
+        if (raw == null) return unsafeCast(null)
+
+        return when (T::class) {
+            Int::class -> when (raw) {
+                is Long -> raw.toInt(); is Double -> raw.toInt(); else -> raw
+            }
+
+            Long::class -> when (raw) {
+                is Int -> raw.toLong(); is Double -> raw.toLong(); else -> raw
+            }
+
+            Short::class -> when (raw) {
+                is Long -> raw.toShort(); is Int -> raw.toShort(); else -> raw
+            }
+
+            Byte::class -> when (raw) {
+                is Long -> raw.toByte(); is Int -> raw.toByte(); else -> raw
+            }
+
+            Float::class -> when (raw) {
+                is Double -> raw.toFloat(); is Long -> raw.toFloat(); is Int -> raw.toFloat(); else -> raw
+            }
+
+            Double::class -> when (raw) {
+                is Long -> raw.toDouble(); is Int -> raw.toDouble(); is Float -> raw.toDouble(); else -> raw
+            }
+
+            else -> raw
+        } as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> unsafeCast(value: Any?): T = value as T
 
     private companion object {
         private val decoder = Json {
