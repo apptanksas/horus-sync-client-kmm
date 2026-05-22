@@ -13,9 +13,12 @@ import org.apptank.horus.client.bus.Event
 import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -24,7 +27,6 @@ import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
-import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -362,7 +364,8 @@ internal class SyncControlDatabaseHelper(
      */
     override fun getEntityLevel(entityName: String): Int {
         return entityLevelCache.getOrPut(entityName) {
-            getTableEntities().find { it.name == entityName }?.level ?: throw IllegalArgumentException("Entity $entityName does not exist")
+            getTableEntities().find { it.name == entityName }?.level
+                ?: throw IllegalArgumentException("Entity $entityName does not exist")
         }
     }
 
@@ -475,9 +478,77 @@ internal class SyncControlDatabaseHelper(
                 .select(QueueActionsSequenceTable.ATTR_SEQUENCE)
                 .build()
 
-            return queryResult(sqlSentence) { it.getValue<String>(QueueActionsSequenceTable.ATTR_SEQUENCE).toLong() }
+            return queryResult(sqlSentence) {
+                it.getValue<String>(QueueActionsSequenceTable.ATTR_SEQUENCE).toLong()
+            }
         }
     }
+
+    /**
+     * Queries the database for actions that match the specified criteria.
+     *
+     * @param entityNames A list of entity names to filter actions by.
+     * @param dataFilter A map of data attributes to filter actions by.
+     * @param minDate The minimum local date to filter actions by.
+     * @param maxDate An optional maximum local date to filter actions by.
+     * @param timeZone The time zone to be used for date filtering.
+     *
+     * @return A list of synchronization actions that match the specified criteria.
+     */
+    override fun queryActions(
+        entityNames: List<String>,
+        dataFilter: Map<String, Any?>,
+        minDate: LocalDate,
+        maxDate: LocalDate?,
+        timeZone: TimeZone
+    ): List<SyncControl.Action> {
+        driver.handle {
+            // Convert LocalDate to epoch (seconds) respecting the timezone
+            val minEpoch = minDate.atStartOfDayIn(timeZone).epochSeconds
+            val maxEpoch = (maxDate ?: minDate).atEndOfDayIn(timeZone).epochSeconds
+
+            val queryBuilder = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
+                .whereIn(QueueActionsTable.ATTR_ENTITY, entityNames)
+                .where(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            QueueActionsTable.ATTR_DATETIME,
+                            minEpoch
+                        ),
+                        SQL.Comparator.GREATER_THAN_OR_EQUALS
+                    )
+                )
+
+            queryBuilder.where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        QueueActionsTable.ATTR_DATETIME,
+                        maxEpoch
+                    ),
+                    SQL.Comparator.LESS_THAN_OR_EQUALS
+                )
+            )
+
+            dataFilter.forEach { (key, value) ->
+                queryBuilder.where(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            "json_extract(" + QueueActionsTable.ATTR_DATA + ", '\$.$key')",
+                            value
+                        )
+                    )
+                )
+            }
+
+            val sqlSentence = queryBuilder.build()
+
+            return queryResult(sqlSentence) { createSyncActionFromCursor(it) }
+        }
+    }
+
+    //-----------------------------------------------------------
+    // Private helper methods
+    //-----------------------------------------------------------
 
     /**
      * Creates a `SyncControl.Action` object from a database cursor.
@@ -571,7 +642,15 @@ internal class SyncControlDatabaseHelper(
      * @param id The identifier of the entity.
      */
     private fun emitEntityDeleted(entity: String, id: String) {
-        InternalEventBus.emit(EventType.ENTITY_DELETED, Event(mutableMapOf("entity" to entity, "id" to id)))
+        InternalEventBus.emit(
+            EventType.ENTITY_DELETED,
+            Event(mutableMapOf("entity" to entity, "id" to id))
+        )
+    }
+
+    private fun LocalDate.atEndOfDayIn(timeZone: TimeZone): Instant {
+        val localDateTime = this.atTime(23, 59, 59)
+        return localDateTime.toInstant(timeZone)
     }
 
     companion object {

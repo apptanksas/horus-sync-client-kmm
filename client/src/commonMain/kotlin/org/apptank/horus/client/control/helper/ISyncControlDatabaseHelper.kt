@@ -1,5 +1,7 @@
 package org.apptank.horus.client.control.helper
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.data.Horus
@@ -197,4 +199,23 @@ interface ISyncControlDatabaseHelper {
      * @return A list of existing action sequence numbers.
      */
     fun getExistsActionSequences(sequences: List<Long>): List<Long>
+
+
+    /**
+     * Queries the database for actions that match the specified criteria.
+     *
+     * @param entityNames A list of entity names to filter actions by.
+     * @param dataFilter A map of data attributes to filter actions by.
+     * @param minDate The minimum local date to filter actions by.
+     * @param maxDate An optional maximum local date to filter actions by.
+     * @param timeZone The time zone to use for date filtering.
+     * @return A list of synchronization actions that match the specified criteria.
+     */
+    fun queryActions(
+        entityNames: List<String>,
+        dataFilter: Map<String, Any?>,
+        minDate: LocalDate,
+        maxDate: LocalDate? = null,
+        timeZone: TimeZone
+    ): List<SyncControl.Action>
 }

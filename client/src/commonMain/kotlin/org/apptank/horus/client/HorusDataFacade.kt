@@ -1,6 +1,8 @@
 package org.apptank.horus.client
 
 import com.russhwolf.settings.Settings
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.CallbackEvent
@@ -26,6 +28,7 @@ import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
+import org.apptank.horus.client.data.toTypeExpose
 import org.apptank.horus.client.exception.AttributeRestrictedException
 import org.apptank.horus.client.exception.EntityNotExistsException
 import org.apptank.horus.client.exception.EntityNotWritableException
@@ -194,7 +197,8 @@ object HorusDataFacade {
             // --- Prepare batch: INSERT
             val (recordInserts, insertIds) = prepareInsertBatch(batch.filterIsInstance<Horus.Batch.Insert>())
             // --- Prepare batch: UPDATE
-            val (recordUpdates, updateIds) = prepareUpdateBatch(batch.filterIsInstance<Horus.Batch.Update>(),
+            val (recordUpdates, updateIds) = prepareUpdateBatch(
+                batch.filterIsInstance<Horus.Batch.Update>(),
                 insertIds.map { Horus.Entity(it.second, it.third) }
                     .associateBy { it.getRequireString(Horus.Attribute.ID) })
             // --- Prepare batch: DELETE
@@ -221,7 +225,10 @@ object HorusDataFacade {
                 processPostInsertActions(insertIds)
                 processPostUpdateActions(updateIds)
                 deleteIds.forEach { (entity, id) ->
-                    syncControlDatabaseHelper?.addActionDelete(entity, Horus.Attribute(Horus.Attribute.ID, id))
+                    syncControlDatabaseHelper?.addActionDelete(
+                        entity,
+                        Horus.Attribute(Horus.Attribute.ID, id)
+                    )
                 }
             }
             if (result == true) {
@@ -298,7 +305,8 @@ object HorusDataFacade {
             return DataResult.Failure(IllegalStateException("Attribute restricted"))
         }
 
-        val uuid = attributes.find { it.name == Horus.Attribute.ID }?.value as? String ?: generateUUID()
+        val uuid =
+            attributes.find { it.name == Horus.Attribute.ID }?.value as? String ?: generateUUID()
         val id = Horus.Attribute(Horus.Attribute.ID, uuid)
         val effectiveUserId = getEntityUserOwnerId(entity, attributes)
 
@@ -374,7 +382,8 @@ object HorusDataFacade {
         }
 
         return runCatching {
-            val result = operationDatabaseHelper?.updateWithTransaction(recordUpdates, onUpdateActions)
+            val result =
+                operationDatabaseHelper?.updateWithTransaction(recordUpdates, onUpdateActions)
             if (result.isTrue()) {
                 return@runCatching DataResult.Success(Unit)
             }
@@ -602,7 +611,10 @@ object HorusDataFacade {
     /**
      * Retrieves the count of records from entity based on the specified conditions.
      */
-    suspend fun countRecordFromEntity(entity: String, vararg whereCondition: SQL.WhereCondition): DataResult<Int> {
+    suspend fun countRecordFromEntity(
+        entity: String,
+        vararg whereCondition: SQL.WhereCondition
+    ): DataResult<Int> {
 
         return kotlin.runCatching {
 
@@ -725,8 +737,8 @@ object HorusDataFacade {
                 )
             }
         }
-        callbackSyncPushSuccess = { onSuccess?.invoke();removeListeners.invoke() }
-        callbackSyncPushFailure = { onFailure?.invoke();removeListeners.invoke() }
+        callbackSyncPushSuccess = { onSuccess?.invoke(); removeListeners.invoke() }
+        callbackSyncPushFailure = { onFailure?.invoke(); removeListeners.invoke() }
 
         with(controlTaskManager) {
             setOnCallbackStatusListener {
@@ -802,7 +814,8 @@ object HorusDataFacade {
      */
     fun uploadFile(fileData: FileData): Horus.FileReference {
         validateIsReady()
-        return uploadFileRepository?.createFileLocal(fileData) ?: throw IllegalStateException("Upload file repository is not initialized")
+        return uploadFileRepository?.createFileLocal(fileData)
+            ?: throw IllegalStateException("Upload file repository is not initialized")
     }
 
     /**
@@ -867,7 +880,9 @@ object HorusDataFacade {
                     SQL.WhereCondition(
                         SQL.ColumnValue(
                             DataSharedTable.ATTR_DATA,
-                            "%\"${attribute.name}\":%${attribute.value.prepareSQLValueAsString().replace("'", "")}%"
+                            "%\"${attribute.name}\":%${
+                                attribute.value.prepareSQLValueAsString().replace("'", "")
+                            }%"
                         ),
                         SQL.Comparator.LIKE
                     )
@@ -897,6 +912,47 @@ object HorusDataFacade {
         return isReady
     }
 
+
+    /**
+     * Queries the sync queue filtering by entities, data and a date range.
+     *
+     * @param entityNames List of entity names to query.
+     * @param dataFilter Map of data filters (key -> value) applied to the actions.
+     * @param minDate Minimum date (inclusive) of the range to query.
+     * @param maxDate Maximum date (inclusive) of the range to query; if `null` there is no upper bound.
+     * @param timeZone Time zone used to interpret the dates.
+     * @return A [DataResult] with the list of [Horus.QueueAction] found or [DataResult.Failure] in case of error.
+     */
+    suspend fun queryQueueActions(
+        entityNames: List<String>,
+        dataFilter: Map<String, Any?>,
+        minDate: LocalDate,
+        maxDate: LocalDate?,
+        timeZone: TimeZone
+    ): DataResult<List<Horus.QueueAction>> {
+
+        return runCatching {
+            val result = syncControlDatabaseHelper?.queryActions(
+                entityNames,
+                dataFilter,
+                minDate,
+                maxDate,
+                timeZone
+            ) ?: emptyList()
+
+            DataResult.Success(result.map {
+                Horus.QueueAction(
+                    it.entity,
+                    it.getEntityId(),
+                    it.action.toTypeExpose()
+                )
+            })
+
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Private methods
     // ---------------------------------------------------------------------------------------------
@@ -913,7 +969,8 @@ object HorusDataFacade {
 
         val recordInserts = mutableListOf<DatabaseOperation.InsertRecord>()
         // ID, entity, attributes
-        val insertIds = mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
+        val insertIds =
+            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
 
         val batchGroupedByEntity = batch.groupBy { it.entity }
 
@@ -974,7 +1031,8 @@ object HorusDataFacade {
     ): Pair<List<DatabaseOperation.UpdateRecord>, List<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>> {
 
         val recordUpdates = mutableListOf<DatabaseOperation.UpdateRecord>()
-        val updateIds = mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
+        val updateIds =
+            mutableListOf<Triple<Horus.Attribute<String>, String, List<Horus.Attribute<*>>>>()
 
         // Prepare update actions
         batch.forEach { it ->
@@ -1189,13 +1247,16 @@ object HorusDataFacade {
             return HorusAuthentication.getUserAuthenticatedId() ?: getEffectiveUserId()
         }
 
-        val entitiesRelated = syncControlDatabaseHelper?.getEntitiesRelated(entityName) ?: emptyList()
+        val entitiesRelated =
+            syncControlDatabaseHelper?.getEntitiesRelated(entityName) ?: emptyList()
 
         entitiesRelated.forEach { entityRelated ->
 
             entityRelated.attributesLinked.forEach forEachAttributes@{ attributeLinked ->
 
-                val entityRelatedId = (attributes.find { it.name == attributeLinked }?.value as? String?) ?: return@forEachAttributes
+                val entityRelatedId =
+                    (attributes.find { it.name == attributeLinked }?.value as? String?)
+                        ?: return@forEachAttributes
 
                 val relatedInBatch = insertBatchPending.find {
                     it.entity == entityRelated.entity && it.getAttribute<String>(Horus.Attribute.ID) == entityRelatedId
@@ -1203,10 +1264,17 @@ object HorusDataFacade {
 
                 // If the related entity is in the batch, we must to try to get the owner ID from entities with upper level
                 if (relatedInBatch != null) {
-                    return getEntityUserOwnerId(entityRelated.entity, relatedInBatch.attributes, insertBatchPending)
+                    return getEntityUserOwnerId(
+                        entityRelated.entity,
+                        relatedInBatch.attributes,
+                        insertBatchPending
+                    )
                 }
 
-                getEntityUserOwnerIdFromDatabase(entityRelated.entity, entityRelatedId)?.let { ownerId ->
+                getEntityUserOwnerIdFromDatabase(
+                    entityRelated.entity,
+                    entityRelatedId
+                )?.let { ownerId ->
                     return ownerId
                 }
 
@@ -1256,9 +1324,10 @@ object HorusDataFacade {
         }
 
         // Try to get the owner ID from entity related
-        operationDatabaseHelper?.queryRecords(queryBuilder)?.map { it[Horus.Attribute.OWNER_ID]?.toString() }?.firstOrNull()?.let {
-            return it
-        }
+        operationDatabaseHelper?.queryRecords(queryBuilder)
+            ?.map { it[Horus.Attribute.OWNER_ID]?.toString() }?.firstOrNull()?.let {
+                return it
+            }
 
         return null
     }

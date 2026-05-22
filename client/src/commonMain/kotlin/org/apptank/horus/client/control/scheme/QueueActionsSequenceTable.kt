@@ -3,7 +3,7 @@ package org.apptank.horus.client.control.scheme
 /**
  * Defines the schema and utility functions for the `sync_control_sequence` table.
  */
-object QueueActionsSequenceTable {
+internal object QueueActionsSequenceTable {
 
     const val TABLE_NAME = "horus_queue_actions_sequence"
 

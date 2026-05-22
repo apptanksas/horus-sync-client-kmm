@@ -1,6 +1,7 @@
 package org.apptank.horus.client.data
 
 import org.apptank.horus.client.base.DataMap
+import org.apptank.horus.client.control.SyncControl
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -366,5 +367,28 @@ sealed class Horus {
                 return Point(latitude, longitude)
             }
         }
+    }
+
+    data class QueueAction(
+        val entity: String,
+        val id: String,
+        val type: ActionType
+    )
+}
+
+
+enum class ActionType(val id: Int) {
+    INSERT(1),
+    UPDATE(2),
+    DELETE(3),
+    MOVE(4);
+}
+
+fun SyncControl.ActionType.toTypeExpose(): ActionType {
+    return when (this) {
+        SyncControl.ActionType.INSERT -> ActionType.INSERT
+        SyncControl.ActionType.UPDATE -> ActionType.UPDATE
+        SyncControl.ActionType.DELETE -> ActionType.DELETE
+        SyncControl.ActionType.MOVE -> ActionType.MOVE
     }
 }

@@ -46,6 +46,7 @@ it could have breaking changes in the API.
   - [Force synchronization](#force-synchronization)
   - [Validate if exists data to synchronize](#validate-if-exists-data-to-synchronize)
   - [Get the last synchronization date](#get-the-last-synchronization-date)
+  - [Query queued actions](#query-queued-actions)
 - [Authentication](#authentication)
   - [Setup access token](#setup-access-token)
   - [Clear session](#clear-session)
@@ -578,8 +579,7 @@ val fileReference = HorusDataFacade.uploadFile(fileData)
 
 val fileUrl = HorusDataFacade.getFileUrl(fileReference)
 
-```  
-
+```
 
 ## Utilities
 
@@ -618,6 +618,45 @@ timestamp in seconds.
 
 ```kotlin
 val lastSyncDate = HorusDataFacade.getLastSyncDate()
+```
+
+### Query queued actions
+
+Use the `queryQueueActions` method to retrieve queued actions stored in the local queue (table `horus_queue_actions`). This is useful to inspect which entities and records have queued operations for synchronization and what type of operations (INSERT, UPDATE, DELETE, MOVE) will be processed.
+
+Parameters:
+- `entityNames: List<String>` — list of entities to include in the query.
+- `dataFilter: Map<String, Any?>` — optional map of key-values used to filter the action JSON payload (uses `json_extract` in SQL).
+- `minDate: LocalDate` — minimum date (inclusive) used to filter actions. Combined with `timeZone` to convert to epoch seconds.
+- `maxDate: LocalDate?` — optional maximum date (inclusive). If `null`, the implementation uses `minDate` as the upper bound (query matches that exact day).
+- `timeZone: TimeZone` — timezone used to interpret dates when converting to epoch seconds.
+
+Returns:
+- `DataResult<List<Horus.QueueAction>>` — on success returns a list of `Horus.QueueAction(entity, id, type)`.
+
+Example:
+
+```kotlin
+val timeZone = TimeZone.of("America/Bogota")
+val minDate = LocalDate(2026, 5, 21)
+
+val result = HorusDataFacade.queryQueueActions(
+  entityNames = listOf("measures"),
+  dataFilter = emptyMap(),
+  minDate = minDate,
+  maxDate = null,
+  timeZone = timeZone
+)
+
+result.fold({ actions ->
+  actions.forEach {
+    println("Entity: ${it.entity}, id: ${it.id}, type: ${it.type}")
+  }
+}, { error ->
+  // Handle error
+})
+
+
 ```
 
 ## Authentication

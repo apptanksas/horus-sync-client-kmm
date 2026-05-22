@@ -36,6 +36,12 @@ import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
+import org.apptank.horus.client.data.ActionType
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
+import kotlinx.serialization.encodeToString
+import org.apptank.horus.client.serialization.AnySerializer
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.scheme.DataSharedTable
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
@@ -61,13 +67,9 @@ import dev.mokkery.answering.calls
 import dev.mokkery.every
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
-import dev.mokkery.matcher.eq
-import dev.mokkery.matcher.matches
 import dev.mokkery.MockMode
 import dev.mokkery.mock
 import dev.mokkery.verify
-import dev.mokkery.verifySuspend
-import dev.mokkery.verify.VerifyMode.Companion.exactly
 import org.robolectric.annotation.Config
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -1132,6 +1134,305 @@ class AndroidHorusDataFacadeTest : TestCase() {
 
         // Then
         assertFalse(result)
+    }
+
+    @Test
+    fun `queryQueueActions returns empty list when no actions exist`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entityName = "measures"
+            val minDate = LocalDate(2026, 5, 22)
+            val timeZone = TimeZone.of("America/Bogota")
+
+            // When
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entityName),
+                dataFilter = emptyMap(),
+                minDate = minDate,
+                maxDate = null,
+                timeZone = timeZone
+            )
+
+            // Then
+            result.fold(
+                { queueActions ->
+                    Assert.assertTrue(queueActions.isEmpty())
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `queryQueueActions returns actions filtered by entity name`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entity1 = "measures"
+            val entity2 = "product_breeds"
+            val timeZone = TimeZone.of("America/Bogota")
+            val testDate = LocalDate(2026, 5, 22)
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+
+            // Insert actions in queue table
+            val row1 = mapOf(
+                QueueActionsTable.ATTR_ENTITY to entity1,
+                QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.INSERT.id,
+                QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to "1", "measure" to "w")),
+                QueueActionsTable.ATTR_DATETIME to epoch
+            )
+            val row2 = mapOf(
+                QueueActionsTable.ATTR_ENTITY to entity2,
+                QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.UPDATE.id,
+                QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to "2", "name" to "breed1")),
+                QueueActionsTable.ATTR_DATETIME to epoch
+            )
+
+            driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row1)
+            driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row2)
+
+            // When: Query only entity1
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entity1),
+                dataFilter = emptyMap(),
+                minDate = testDate,
+                maxDate = null,
+                timeZone = timeZone
+            )
+
+            // Then
+            result.fold(
+                { queueActions ->
+                    Assert.assertEquals(1, queueActions.size)
+                    Assert.assertEquals(entity1, queueActions[0].entity)
+                    Assert.assertEquals("1", queueActions[0].id)
+                    Assert.assertEquals(ActionType.INSERT, queueActions[0].type)
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `queryQueueActions filters by multiple entity names`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entity1 = "measures"
+            val entity2 = "product_breeds"
+            val entity3 = "other_entity"
+            val timeZone = TimeZone.of("America/Bogota")
+            val testDate = LocalDate(2026, 5, 22)
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+
+            // Insert 3 actions for different entities
+            listOf(
+                Triple(entity1, SyncControl.ActionType.INSERT, "1"),
+                Triple(entity2, SyncControl.ActionType.UPDATE, "2"),
+                Triple(entity3, SyncControl.ActionType.DELETE, "3")
+            ).forEach { (entity, actionType, id) ->
+                val row = mapOf(
+                    QueueActionsTable.ATTR_ENTITY to entity,
+                    QueueActionsTable.ATTR_ACTION_TYPE to actionType.id,
+                    QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                    QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to id, "name" to "test")),
+                    QueueActionsTable.ATTR_DATETIME to epoch
+                )
+                driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row)
+            }
+
+            // When: Query entities 1 and 2
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entity1, entity2),
+                dataFilter = emptyMap(),
+                minDate = testDate,
+                maxDate = null,
+                timeZone = timeZone
+            )
+
+            // Then
+            result.fold(
+                { queueActions ->
+                    Assert.assertEquals(2, queueActions.size)
+                    val entityNames = queueActions.map { it.entity }
+                    Assert.assertTrue(entityNames.contains(entity1))
+                    Assert.assertTrue(entityNames.contains(entity2))
+                    Assert.assertFalse(entityNames.contains(entity3))
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `queryQueueActions filters by date range`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entity = "measures"
+            val timeZone = TimeZone.of("America/Bogota")
+
+            // Create actions on different dates
+            val dates = listOf(
+                LocalDate(2026, 5, 20),
+                LocalDate(2026, 5, 21),
+                LocalDate(2026, 5, 22),
+                LocalDate(2026, 5, 23)
+            )
+
+            dates.forEach { date ->
+                val epoch = date.atTime(12, 0).toInstant(timeZone).epochSeconds
+                val row = mapOf(
+                    QueueActionsTable.ATTR_ENTITY to entity,
+                    QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.INSERT.id,
+                    QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                    QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to "id_${date.dayOfMonth}", "measure" to "w")),
+                    QueueActionsTable.ATTR_DATETIME to epoch
+                )
+                driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row)
+            }
+
+            // When: Query between 2026-05-21 and 2026-05-23 (inclusive)
+            val minDate = LocalDate(2026, 5, 21)
+            val maxDate = LocalDate(2026, 5, 23)
+
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entity),
+                dataFilter = emptyMap(),
+                minDate = minDate,
+                maxDate = maxDate,
+                timeZone = timeZone
+            )
+
+            // Then: Should return 3 actions (21, 22, 23)
+            result.fold(
+                { queueActions ->
+                    Assert.assertEquals(3, queueActions.size)
+                    val ids = queueActions.map { it.id }
+                    Assert.assertTrue(ids.contains("id_21"))
+                    Assert.assertTrue(ids.contains("id_22"))
+                    Assert.assertTrue(ids.contains("id_23"))
+                    Assert.assertFalse(ids.contains("id_20"))
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `queryQueueActions filters by minimum date only`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entity = "measures"
+            val timeZone = TimeZone.of("America/Bogota")
+
+            val dates = listOf(
+                LocalDate(2026, 5, 20),
+                LocalDate(2026, 5, 21),
+                LocalDate(2026, 5, 22)
+            )
+
+            dates.forEach { date ->
+                val epoch = date.atTime(12, 0).toInstant(timeZone).epochSeconds
+                val row = mapOf(
+                    QueueActionsTable.ATTR_ENTITY to entity,
+                    QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.INSERT.id,
+                    QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                    QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to "id_${date.dayOfMonth}", "measure" to "w")),
+                    QueueActionsTable.ATTR_DATETIME to epoch
+                )
+                driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row)
+            }
+
+            // When: Query with minDate=21 and no maxDate.
+            // When maxDate is null, the implementation uses minDate as maxDate (queries only that exact day)
+            val minDate = LocalDate(2026, 5, 21)
+
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entity),
+                dataFilter = emptyMap(),
+                minDate = minDate,
+                maxDate = null,
+                timeZone = timeZone
+            )
+
+            // Then: Should return only the action on May 21 (maxDate defaults to minDate)
+            result.fold(
+                { queueActions ->
+                    Assert.assertEquals(1, queueActions.size)
+                    Assert.assertEquals("id_21", queueActions[0].id)
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `queryQueueActions returns different action types correctly`(): Unit = runBlocking {
+        // Given
+        prepareEnvironment {
+            driver.execute("DELETE FROM ${QueueActionsTable.TABLE_NAME}")
+            val entity = "measures"
+            val timeZone = TimeZone.of("America/Bogota")
+            val testDate = LocalDate(2026, 5, 22)
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+
+            // Insert actions with different types
+            val actionTypes = listOf(
+                SyncControl.ActionType.INSERT,
+                SyncControl.ActionType.UPDATE,
+                SyncControl.ActionType.DELETE,
+                SyncControl.ActionType.MOVE
+            )
+
+            actionTypes.forEachIndexed { index, actionType ->
+                val row = mapOf(
+                    QueueActionsTable.ATTR_ENTITY to entity,
+                    QueueActionsTable.ATTR_ACTION_TYPE to actionType.id,
+                    QueueActionsTable.ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
+                    QueueActionsTable.ATTR_DATA to AnySerializer.decoderJSON.encodeToString(mapOf("id" to "id_$index", "measure" to "w")),
+                    QueueActionsTable.ATTR_DATETIME to epoch
+                )
+                driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row)
+            }
+
+            // When
+            val result = HorusDataFacade.queryQueueActions(
+                entityNames = listOf(entity),
+                dataFilter = emptyMap(),
+                minDate = testDate,
+                maxDate = null,
+                timeZone = timeZone
+            )
+
+            // Then
+            result.fold(
+                { queueActions ->
+                    Assert.assertEquals(4, queueActions.size)
+                    Assert.assertTrue(queueActions.any { it.type == ActionType.INSERT })
+                    Assert.assertTrue(queueActions.any { it.type == ActionType.UPDATE })
+                    Assert.assertTrue(queueActions.any { it.type == ActionType.DELETE })
+                    Assert.assertTrue(queueActions.any { it.type == ActionType.MOVE })
+                },
+                { exception ->
+                    Assert.fail(exception.message)
+                }
+            )
+        }
     }
 
     //---------------------------------------------
