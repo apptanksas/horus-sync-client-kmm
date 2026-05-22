@@ -1,5 +1,18 @@
 # Changelog
 
+# v0.19.0
+- Added `queryQueueActions` to `HorusDataFacade`.
+  - New method to query queued actions stored in the local queue (table `horus_queue_actions`).
+  - Supports filtering by:
+    - `entityNames`: list of entity names to include.
+    - `dataFilter`: map of json-extracted attributes to match against action data.
+    - `minDate` and optional `maxDate`: date range (inclusive) used with a timezone to convert to epoch seconds.
+    - `timeZone`: timezone used to convert LocalDate to epoch boundaries.
+  - Returns a list of `Horus.QueueAction` with fields `(entity, id, type)` where `type` maps to the exposed `ActionType` (INSERT, UPDATE, DELETE, MOVE).
+  - Behavior notes:
+    - If `maxDate` is `null`, the implementation uses `minDate` as the upper bound (the query matches that exact day).
+    - `dataFilter` values are compared using `json_extract(horus_queue_actions.data, '$.<key>')` in SQL.
+
 # v0.18.2
 - Fixed `ClassCastException` on iOS when reading `INTEGER` columns from SQLite (`Long` cannot be cast to `Int` in Kotlin/Native). Implemented numeric type coercion in `Cursor.getValue` using reified type parameters to handle the conversion transparently on all platforms.
 

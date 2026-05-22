@@ -1,6 +1,6 @@
 package org.apptank.horus.client.control.scheme
 
-object DataSharedTable {
+internal object DataSharedTable {
 
     const val TABLE_NAME = "horus_data_shared"
 

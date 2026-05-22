@@ -8,7 +8,7 @@ import org.apptank.horus.client.migration.domain.AttributeType
  * @author John Ospina
  * @year 2024
  */
-object EntityAttributesTable {
+internal object EntityAttributesTable {
 
     const val TABLE_NAME = "horus_entity_attributes"
 
