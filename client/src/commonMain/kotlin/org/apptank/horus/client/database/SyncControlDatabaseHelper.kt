@@ -533,9 +533,10 @@ internal class SyncControlDatabaseHelper(
                 queryBuilder.where(
                     SQL.WhereCondition(
                         SQL.ColumnValue(
-                            "json_extract(" + QueueActionsTable.ATTR_DATA + ", '\$.$key')",
-                            value
-                        )
+                            QueueActionsTable.ATTR_DATA,
+                            "%\"${key}\":%$value%"
+                        ),
+                        SQL.Comparator.LIKE
                     )
                 )
             }

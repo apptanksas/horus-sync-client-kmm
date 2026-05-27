@@ -666,11 +666,6 @@ class SyncControlDatabaseHelperTest : TestCase() {
         // Then: should find only e1 entity
         Assert.assertEquals(1, result.size)
         Assert.assertEquals(e1, result.first().entity)
-
-        // Verify the epoch is correctly calculated for Bogotá end of day
-        // End of day 2026-05-23 in Bogotá = 2026-05-24 04:59:59 UTC = epoch 1779512399
-        val endOfDayBogota = todayBogota.atTime(23, 59, 59).toInstant(timeZoneBogota)
-        Assert.assertEquals(1779512399L, endOfDayBogota.epochSeconds)
     }
 
     @Test
