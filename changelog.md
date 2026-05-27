@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.19.1
+- Fixed queryQueueActions with compatible query.
+
 # v0.19.0
 - Added `queryQueueActions` to `HorusDataFacade`.
   - New method to query queued actions stored in the local queue (table `horus_queue_actions`).
