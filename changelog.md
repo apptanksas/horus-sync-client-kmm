@@ -1,5 +1,12 @@
 # Changelog
 
+# v0.20.0
+- Added `JoinableQueryBuilder` to support SQL Joins (`INNER` and `LEFT JOIN`).
+- Added `UnionQueryBuilder` to support `UNION` and `UNION ALL` operations.
+- Added `asExists()` method to `QueryBuilder` to wrap queries in `SELECT EXISTS`.
+- Refactored `countRecords` to support all `QueryBuilder` implementations.
+
+
 # v0.19.1
 - Fixed queryQueueActions with compatible query.
 

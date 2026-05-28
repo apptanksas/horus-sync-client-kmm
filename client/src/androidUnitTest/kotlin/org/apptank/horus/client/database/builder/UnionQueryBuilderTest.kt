@@ -67,4 +67,16 @@ class UnionQueryBuilderTest {
         Assert.assertTrue(tables.contains("table2"))
         Assert.assertTrue(tables.contains("table3"))
     }
+
+    @Test
+    fun validateSelectCount() {
+        val expected = "SELECT COUNT(*) FROM (SELECT * FROM table1 UNION ALL SELECT * FROM table2)"
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder("table1"))
+            .add(SimpleQueryBuilder("table2"))
+            .selectCount()
+
+        val result = builder.build()
+        Assert.assertEquals(expected, result)
+    }
 }

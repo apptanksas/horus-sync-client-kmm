@@ -47,7 +47,7 @@ class JoinableQueryBuilder(
      *
      * @return The current instance of [JoinableQueryBuilder] for method chaining.
      */
-    fun selectCount(): JoinableQueryBuilder {
+    override fun selectCount(): JoinableQueryBuilder {
         selectCount = true
         return this
     }

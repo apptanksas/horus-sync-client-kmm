@@ -109,6 +109,13 @@ abstract class QueryBuilder {
     }
 
     /**
+     * Specifies that the query should return the count of records.
+     *
+     * @return The current instance of [QueryBuilder] for method chaining.
+     */
+    abstract fun selectCount(): QueryBuilder
+
+    /**
      * Sets the limit on the number of results returned by the query.
      *
      * @param limit The maximum number of results to return.

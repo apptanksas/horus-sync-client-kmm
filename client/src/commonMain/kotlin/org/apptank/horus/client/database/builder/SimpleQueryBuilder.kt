@@ -14,7 +14,7 @@ class SimpleQueryBuilder(
         }
     }
 
-    fun selectCount(): SimpleQueryBuilder {
+    override fun selectCount(): SimpleQueryBuilder {
         selectCount = true
         return this
     }

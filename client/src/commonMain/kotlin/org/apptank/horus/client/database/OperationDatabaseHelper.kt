@@ -200,12 +200,12 @@ internal class OperationDatabaseHelper(
     }
 
     /**
-     * Executes a query using the provided SimpleQueryBuilder and returns the count of records.
-     * @param builder the SimpleQueryBuilder used to build the SQL query.
+     * Executes a query using the provided QueryBuilder and returns the count of records.
+     * @param builder the QueryBuilder used to build the SQL query.
      *
      * @return the count of records from the query result.
      */
-    override fun countRecords(builder: SimpleQueryBuilder): Int {
+    override fun countRecords(builder: QueryBuilder): Int {
         val queryBuilder = builder.selectCount()
         var count = 0
         rawQuery(queryBuilder.build()) { cursor ->

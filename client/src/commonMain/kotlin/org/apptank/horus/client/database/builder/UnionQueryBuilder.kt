@@ -12,6 +12,7 @@ class UnionQueryBuilder : QueryBuilder() {
 
     private val queries = mutableListOf<QueryBuilder>()
     private var isUnionAll = true
+    private var selectCount = false
 
     /**
      * Adds a subquery to the union.
@@ -60,6 +61,11 @@ class UnionQueryBuilder : QueryBuilder() {
         return this
     }
 
+    override fun selectCount(): UnionQueryBuilder {
+        selectCount = true
+        return this
+    }
+
     override fun getTables(): List<String> {
         return queries.flatMap { it.getTables() }.distinct()
     }
@@ -72,12 +78,19 @@ class UnionQueryBuilder : QueryBuilder() {
         val operator = if (isUnionAll) " UNION ALL " else " UNION "
         val combinedQueries = queries.joinToString(operator) { it.build() }
 
-        val base = StringBuilder(combinedQueries)
-
-        // Append standard clauses from QueryBuilder if they apply to the entire union
-        base.append(buildOrderBy())
-        base.append(buildLimit())
-        base.append(buildOffset())
+        val base = StringBuilder()
+        if (selectCount) {
+            base.append("SELECT COUNT(*) FROM ($combinedQueries")
+            base.append(buildOrderBy())
+            base.append(buildLimit())
+            base.append(buildOffset())
+            base.append(")")
+        } else {
+            base.append(combinedQueries)
+            base.append(buildOrderBy())
+            base.append(buildLimit())
+            base.append(buildOffset())
+        }
 
         return wrapInExists(base.toString().trim())
     }

@@ -635,7 +635,7 @@ object HorusDataFacade {
     /**
      * Retrieves the count of records based on the specified query builder.
      */
-    suspend fun countRecords(queryBuilder: SimpleQueryBuilder): DataResult<Int> {
+    suspend fun countRecords(queryBuilder: QueryBuilder): DataResult<Int> {
         return kotlin.runCatching {
             operationDatabaseHelper?.countRecords(queryBuilder)?.let {
                 return DataResult.Success(it)
