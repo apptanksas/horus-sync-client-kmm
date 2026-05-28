@@ -78,6 +78,16 @@ sealed class SQL {
         DESC
     }
 
+    /**
+     * Enum class representing the types of joins in SQL queries.
+     */
+    enum class JoinType(val value: String) {
+        INNER("INNER JOIN"),
+        LEFT("LEFT JOIN"),
+        RIGHT("RIGHT JOIN"),
+        FULL("FULL JOIN")
+    }
+
 
     /**
      * A sealed interface representing extensions for SQL queries, allowing for additional filtering or functionality.

@@ -2,6 +2,7 @@ package org.apptank.horus.client.database.builder
 
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.prepareSQLValueAsString
+import kotlin.math.cos
 
 /**
  * Abstract class for constructing SQL queries with support for selecting attributes, applying filters,
@@ -35,6 +36,8 @@ abstract class QueryBuilder {
 
     protected var attributeSelection = mutableListOf<String>()
 
+    protected var wrapExists = false
+
     private var extensions = mutableListOf<SQL.Extension>()
 
     private var conditions =
@@ -53,7 +56,7 @@ abstract class QueryBuilder {
      * @param joinOperator The logic operator to use when joining multiple conditions (default is `AND`).
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun where(
+    open fun where(
         vararg condition: SQL.WhereCondition,
         joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): QueryBuilder {
@@ -67,7 +70,7 @@ abstract class QueryBuilder {
      * @param joinOperator The logic operator to use when joining multiple conditions (default is `AND`).
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun whereOr(
+    open fun whereOr(
         vararg condition: SQL.WhereCondition,
         joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
     ): QueryBuilder {
@@ -82,7 +85,7 @@ abstract class QueryBuilder {
      * @param joinOperator The logic operator to use when joining multiple conditions (default is `AND`).
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun whereIn(
+    open fun whereIn(
         column: String,
         values: List<Any>,
         joinOperator: SQL.LogicOperator = SQL.LogicOperator.AND
@@ -100,7 +103,7 @@ abstract class QueryBuilder {
      * @param attributes The list of attributes to select.
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun select(vararg attributes: String): QueryBuilder {
+    open fun select(vararg attributes: String): QueryBuilder {
         attributeSelection.addAll(attributes)
         return this
     }
@@ -111,7 +114,7 @@ abstract class QueryBuilder {
      * @param limit The maximum number of results to return.
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun limit(limit: Int): QueryBuilder {
+    open fun limit(limit: Int): QueryBuilder {
         this.limit = limit
         return this
     }
@@ -122,7 +125,7 @@ abstract class QueryBuilder {
      * @param offset The number of results to skip before starting to return results.
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun offset(offset: Int): QueryBuilder {
+    open fun offset(offset: Int): QueryBuilder {
         this.offset = offset
         return this
     }
@@ -134,7 +137,7 @@ abstract class QueryBuilder {
      * @param orderBy The order direction (default is descending).
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun orderBy(column: String, orderBy: SQL.OrderBy = SQL.OrderBy.DESC): QueryBuilder {
+    open fun orderBy(column: String, orderBy: SQL.OrderBy = SQL.OrderBy.DESC): QueryBuilder {
         if (this.orderBy == null) {
             this.orderBy = mutableListOf()
         }
@@ -148,8 +151,18 @@ abstract class QueryBuilder {
      * @param extension The extension to add.
      * @return The current instance of [QueryBuilder] for method chaining.
      */
-    fun withExtension(extension: SQL.Extension): QueryBuilder {
+    open fun withExtension(extension: SQL.Extension): QueryBuilder {
         extensions.add(extension)
+        return this
+    }
+
+    /**
+     * Wraps the query in a SELECT EXISTS(...) statement.
+     *
+     * @return The current instance of [QueryBuilder] for method chaining.
+     */
+    open fun asExists(): QueryBuilder {
+        this.wrapExists = true
         return this
     }
 
@@ -255,6 +268,49 @@ abstract class QueryBuilder {
     }
 
     /**
+     * Builds the coordinate extension filter for the query.
+     * Uses a bounding box approximation for filtering points within a distance.
+     *
+     * The formula uses the fact that:
+     * - 1 degree of latitude ≈ 111.32 km
+     * - 1 degree of longitude ≈ 111.32 * cos(latitude) km
+     *
+     * @return The WHERE clause fragment for coordinate filtering.
+     */
+    protected fun buildCoordinateExtension(): String {
+        val coordinateExtension =
+            getExtensions().filterIsInstance<SQL.Coordinates.WithIn>().firstOrNull() ?: return ""
+
+        val column = coordinateExtension.column
+        val refLat = coordinateExtension.point.latitude
+        val refLon = coordinateExtension.point.longitude
+        val distanceKm = coordinateExtension.distanceInKm
+
+        // Earth's radius in km
+        val earthRadiusKm = 6371.0
+
+        // Calculate the delta for latitude and longitude based on distance
+        val deltaLat = distanceKm / earthRadiusKm * (180.0 / kotlin.math.PI)
+        val refLatRadians = refLat * kotlin.math.PI / 180.0
+        val deltaLon = distanceKm / (earthRadiusKm * cos(refLatRadians)) * (180.0 / kotlin.math.PI)
+
+        // Calculate bounding box
+        val minLat = refLat - deltaLat
+        val maxLat = refLat + deltaLat
+        val minLon = refLon - deltaLon
+        val maxLon = refLon + deltaLon
+
+        // SQL expressions to extract latitude and longitude from "lat,lon" format
+        val latExpr = "CAST(SUBSTR($column, 1, INSTR($column, ',') - 1) AS REAL)"
+        val lonExpr = "CAST(SUBSTR($column, INSTR($column, ',') + 1) AS REAL)"
+
+        // Build the WHERE clause using bounding box
+        val wherePrefix = if (buildWhere().isEmpty()) " WHERE " else " AND "
+
+        return "$wherePrefix$latExpr >= $minLat AND $latExpr <= $maxLat AND $lonExpr >= $minLon AND $lonExpr <= $maxLon"
+    }
+
+    /**
      * Returns a list of tables used in the query.
      *
      * @return A list of table names.
@@ -267,4 +323,14 @@ abstract class QueryBuilder {
      * @return The complete SQL query string.
      */
     abstract fun build(): String
+
+    /**
+     * Wraps the given SQL query in a SELECT EXISTS(...) statement if wrapExists is true.
+     *
+     * @param sql The SQL query to wrap.
+     * @return The wrapped SQL query or the original query.
+     */
+    protected fun wrapInExists(sql: String): String {
+        return if (wrapExists) "SELECT EXISTS($sql)" else sql
+    }
 }
