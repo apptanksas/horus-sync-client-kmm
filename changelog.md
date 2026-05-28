@@ -3,7 +3,7 @@
 # v0.20.0
 - Added `JoinableQueryBuilder` to support SQL Joins (`INNER` and `LEFT JOIN`).
 - Added `UnionQueryBuilder` to support `UNION` and `UNION ALL` operations.
-- Added `asExists()` method to `QueryBuilder` to wrap queries in `SELECT EXISTS`.
+- Added `asExists()` method to `QueryBuilder` and `queryExists` to `HorusDataFacade` to check for record existence.
 - Refactored `countRecords` to support all `QueryBuilder` implementations.
 
 
