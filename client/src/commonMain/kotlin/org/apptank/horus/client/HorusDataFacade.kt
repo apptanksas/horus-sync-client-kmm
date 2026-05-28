@@ -648,6 +648,21 @@ object HorusDataFacade {
     }
 
     /**
+     * Checks if a record exists based on the specified query builder.
+     */
+    suspend fun queryExists(queryBuilder: QueryBuilder): DataResult<Boolean> {
+        return kotlin.runCatching {
+            operationDatabaseHelper?.queryExists(queryBuilder)?.let {
+                return DataResult.Success(it)
+            } ?: run {
+                return DataResult.Failure(IllegalStateException("Query exists failure"))
+            }
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
+    }
+
+    /**
      * Retrieves a single record from the database by its ID.
      *
      * @param entity The name of the entity to retrieve.
@@ -833,7 +848,6 @@ object HorusDataFacade {
 
         return uploadFileRepository?.getFileUrl(reference)
     }
-
 
     /**
      * Retrieves a list of records from data shared based on the specified conditions.

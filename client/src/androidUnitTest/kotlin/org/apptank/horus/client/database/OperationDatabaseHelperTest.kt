@@ -25,6 +25,8 @@ import org.junit.Test
 import kotlin.math.cos
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 
 class OperationDatabaseHelperTest : TestCase() {
@@ -883,6 +885,55 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // Then
         assertEquals(3, result)
+    }
+
+    @Test
+    fun validateCountRecordsWithUnionQueryBuilderIsSuccessUsingExists() {
+        // Given
+        val tableA = "tableA_union"
+        val tableB = "tableB_union"
+        driver.createTable(tableA, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+        driver.createTable(tableB, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 1), SQL.ColumnValue("val", "A1"))),
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 2), SQL.ColumnValue("val", "A2")))
+        ))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableB, listOf(SQL.ColumnValue("id", 3), SQL.ColumnValue("val", "B1")))
+        ))
+
+        // When
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder(tableA))
+            .add(SimpleQueryBuilder(tableB))
+            .unionAll()
+
+        val result = databaseHelper.queryExists(builder)
+
+        // Then
+        assertTrue(result)
+    }
+
+    @Test
+    fun validateCountRecordsWithUnionQueryBuilderIsSuccessUsingExistsThenEmpty() {
+        // Given
+        val tableA = "tableA_union"
+        val tableB = "tableB_union"
+        driver.createTable(tableA, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+        driver.createTable(tableB, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+
+        // When
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder(tableA))
+            .add(SimpleQueryBuilder(tableB))
+            .unionAll().asExists()
+
+        val result = databaseHelper.queryExists(builder)
+
+        // Then
+        assertFalse(result)
     }
 
     @Test

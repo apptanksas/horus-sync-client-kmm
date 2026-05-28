@@ -108,6 +108,14 @@ interface IOperationDatabaseHelper {
 
 
     /**
+     * Executes a query using the provided QueryBuilder and returns true if any records exist, false otherwise.
+     * @param builder the QueryBuilder used to build the SQL query.
+     *
+     * @return true if records exist, false otherwise.
+     */
+    fun queryExists(builder: QueryBuilder): Boolean
+
+    /**
      * Truncates the specified entity from the database.
      *
      * @param entity The name of the entity to be truncated.
