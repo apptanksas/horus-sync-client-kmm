@@ -32,7 +32,6 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.base.encodeToJSON
-import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
@@ -48,7 +47,7 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.restrictions.MaxCountEntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
-import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.RefreshReadableEntitiesTask
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
@@ -366,7 +365,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
                 setupOperationDatabaseHelper(mockOperationDatabaseHelper)
                 setupRemoteSynchronizatorManager(
-                    RemoteSynchronizatorManager(
+                    PushDataRemoteSynchronizatorManager(
                         mockNetworkValidator,
                         mockSyncControlDatabaseHelper,
                         mockSyncService,

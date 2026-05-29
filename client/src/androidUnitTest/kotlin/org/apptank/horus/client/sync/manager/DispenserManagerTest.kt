@@ -36,7 +36,7 @@ class DispenserManagerTest : TestCase() {
 
     private val eventBus = InternalEventBus
 
-    private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
+    private lateinit var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager
     private lateinit var dispenserManager: DispenserManager
 
     private val BATCH_SIZE = 10
@@ -44,7 +44,7 @@ class DispenserManagerTest : TestCase() {
 
     @Before
     fun setup() {
-        remoteSynchronizatorManager = RemoteSynchronizatorManager(
+        pushDataRemoteSynchronizatorManager = PushDataRemoteSynchronizatorManager(
             networkValidator,
             syncControlDatabaseHelper,
             synchronizationService,
@@ -57,7 +57,7 @@ class DispenserManagerTest : TestCase() {
             BATCH_SIZE,
             EXPIRATION_TIME_SECONDS,
             syncControlDatabaseHelper,
-            remoteSynchronizatorManager
+            pushDataRemoteSynchronizatorManager
         )
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)

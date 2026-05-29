@@ -170,7 +170,7 @@ internal class SynchronizatorManager(
      *
      * @return `true` if there is data to sync, `false` otherwise, or `null` if an error occurred.
      */
-    private suspend fun existsDataToSync(): Boolean? {
+    suspend fun existsDataToSync(): Boolean? {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
         val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)

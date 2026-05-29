@@ -40,7 +40,7 @@ import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
  * @param dispatcher A coroutine dispatcher for background operations (default is `Dispatchers.IO`).
  * @param maxAttempts The maximum number of retry attempts for synchronization operations (default is 3).
  */
-internal class RemoteSynchronizatorManager(
+internal class PushDataRemoteSynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val synchronizationService: ISynchronizationService,

@@ -41,7 +41,8 @@ import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.restrictions.EntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
-import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.SynchronizatorManager
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.ControlTaskManager
@@ -88,10 +89,10 @@ object HorusDataFacade {
             return field
         }
 
-    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+    private var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager? = null
         get() {
             if (field == null) {
-                field = HorusContainer.getRemoteSynchronizatorManager()
+                field = HorusContainer.getPushDataRemoteSynchronizatorManager()
             }
             return field
         }
@@ -100,6 +101,14 @@ object HorusDataFacade {
         get() {
             if (field == null) {
                 field = HorusContainer.getSyncFileUploadedManager()
+            }
+            return field
+        }
+
+    private var synchronizatorManager: SynchronizatorManager? = null
+        get() {
+            if (field == null) {
+                field = HorusContainer.getSynchronizatorManager()
             }
             return field
         }
@@ -766,7 +775,7 @@ object HorusDataFacade {
                 InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
                 InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
 
-                remoteSynchronizatorManager?.trySynchronizeData()
+                pushDataRemoteSynchronizatorManager?.trySynchronizeData()
             }
             syncFileUploadedManager?.syncFiles {
                 start()
@@ -779,11 +788,12 @@ object HorusDataFacade {
      *
      * @return `true` if there are pending actions to synchronize, `false` otherwise.
      */
-    fun hasDataToSync(): Boolean {
-        val hasDataPending = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+    suspend fun hasDataToSync(): Boolean {
+        val hasLocalDataPendingToPush = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasRemoteDataPendingToPull = (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataToSync() ?: false)
         val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
 
-        return hasDataPending || hasFilesPending
+        return hasLocalDataPendingToPush || hasFilesPending || hasRemoteDataPendingToPull
     }
 
     /**
@@ -1357,7 +1367,7 @@ object HorusDataFacade {
         networkValidator = null
         operationDatabaseHelper = null
         syncControlDatabaseHelper = null
-        remoteSynchronizatorManager = null
+        pushDataRemoteSynchronizatorManager = null
         uploadFileRepository = null
     }
 }
