@@ -6,7 +6,10 @@ import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.cache.MemoryCache
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.data.Horus
+import org.apptank.horus.client.database.builder.JoinableQueryBuilder
+import org.apptank.horus.client.database.builder.QueryBuilder
 import org.apptank.horus.client.database.builder.SimpleQueryBuilder
+import org.apptank.horus.client.database.builder.UnionQueryBuilder
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.extensions.execute
@@ -22,6 +25,8 @@ import org.junit.Test
 import kotlin.math.cos
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 
 class OperationDatabaseHelperTest : TestCase() {
@@ -822,6 +827,113 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // Then
         assertEquals(0, result)
+    }
+
+    @Test
+    fun validateCountRecordsWithJoinableQueryBuilderIsSuccess() {
+        // Given
+        val table1 = "table1_join"
+        val table2 = "table2_join"
+        driver.createTable(table1, mapOf("id" to "INTEGER PRIMARY KEY", "name" to "TEXT"))
+        driver.createTable(table2, mapOf("id" to "INTEGER PRIMARY KEY", "table1_id" to "INTEGER", "extra" to "TEXT"))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(table1, listOf(SQL.ColumnValue("id", 1), SQL.ColumnValue("name", "T1-1"))),
+            DatabaseOperation.InsertRecord(table1, listOf(SQL.ColumnValue("id", 2), SQL.ColumnValue("name", "T1-2")))
+        ))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(table2, listOf(SQL.ColumnValue("id", 1), SQL.ColumnValue("table1_id", 1), SQL.ColumnValue("extra", "E1"))),
+            DatabaseOperation.InsertRecord(table2, listOf(SQL.ColumnValue("id", 2), SQL.ColumnValue("table1_id", 1), SQL.ColumnValue("extra", "E2"))),
+            DatabaseOperation.InsertRecord(table2, listOf(SQL.ColumnValue("id", 3), SQL.ColumnValue("table1_id", 2), SQL.ColumnValue("extra", "E3")))
+        ))
+
+        // When
+        val builder = JoinableQueryBuilder(table1)
+            .innerJoin(table2, "$table1.id = $table2.table1_id")
+            .where(SQL.WhereCondition(SQL.ColumnValue("$table1.id", 1)))
+
+        val result = databaseHelper.countRecords(builder)
+
+        // Then
+        assertEquals(2, result)
+    }
+
+    @Test
+    fun validateCountRecordsWithUnionQueryBuilderIsSuccess() {
+        // Given
+        val tableA = "tableA_union"
+        val tableB = "tableB_union"
+        driver.createTable(tableA, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+        driver.createTable(tableB, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 1), SQL.ColumnValue("val", "A1"))),
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 2), SQL.ColumnValue("val", "A2")))
+        ))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableB, listOf(SQL.ColumnValue("id", 3), SQL.ColumnValue("val", "B1")))
+        ))
+
+        // When
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder(tableA))
+            .add(SimpleQueryBuilder(tableB))
+
+        val result = databaseHelper.countRecords(builder)
+
+        // Then
+        assertEquals(3, result)
+    }
+
+    @Test
+    fun validateCountRecordsWithUnionQueryBuilderIsSuccessUsingExists() {
+        // Given
+        val tableA = "tableA_union"
+        val tableB = "tableB_union"
+        driver.createTable(tableA, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+        driver.createTable(tableB, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 1), SQL.ColumnValue("val", "A1"))),
+            DatabaseOperation.InsertRecord(tableA, listOf(SQL.ColumnValue("id", 2), SQL.ColumnValue("val", "A2")))
+        ))
+
+        databaseHelper.insertWithTransaction(listOf(
+            DatabaseOperation.InsertRecord(tableB, listOf(SQL.ColumnValue("id", 3), SQL.ColumnValue("val", "B1")))
+        ))
+
+        // When
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder(tableA))
+            .add(SimpleQueryBuilder(tableB))
+            .unionAll()
+
+        val result = databaseHelper.queryExists(builder)
+
+        // Then
+        assertTrue(result)
+    }
+
+    @Test
+    fun validateCountRecordsWithUnionQueryBuilderIsSuccessUsingExistsThenEmpty() {
+        // Given
+        val tableA = "tableA_union"
+        val tableB = "tableB_union"
+        driver.createTable(tableA, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+        driver.createTable(tableB, mapOf("id" to "INTEGER PRIMARY KEY", "val" to "TEXT"))
+
+        // When
+        val builder = UnionQueryBuilder()
+            .add(SimpleQueryBuilder(tableA))
+            .add(SimpleQueryBuilder(tableB))
+            .unionAll().asExists()
+
+        val result = databaseHelper.queryExists(builder)
+
+        // Then
+        assertFalse(result)
     }
 
     @Test

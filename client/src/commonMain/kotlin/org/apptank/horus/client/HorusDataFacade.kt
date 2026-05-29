@@ -635,12 +635,27 @@ object HorusDataFacade {
     /**
      * Retrieves the count of records based on the specified query builder.
      */
-    suspend fun countRecords(queryBuilder: SimpleQueryBuilder): DataResult<Int> {
+    suspend fun countRecords(queryBuilder: QueryBuilder): DataResult<Int> {
         return kotlin.runCatching {
             operationDatabaseHelper?.countRecords(queryBuilder)?.let {
                 return DataResult.Success(it)
             } ?: run {
                 return DataResult.Failure(IllegalStateException("Count records failure"))
+            }
+        }.getOrElse {
+            DataResult.Failure(it)
+        }
+    }
+
+    /**
+     * Checks if a record exists based on the specified query builder.
+     */
+    suspend fun queryExists(queryBuilder: QueryBuilder): DataResult<Boolean> {
+        return kotlin.runCatching {
+            operationDatabaseHelper?.queryExists(queryBuilder)?.let {
+                return DataResult.Success(it)
+            } ?: run {
+                return DataResult.Failure(IllegalStateException("Query exists failure"))
             }
         }.getOrElse {
             DataResult.Failure(it)
@@ -833,7 +848,6 @@ object HorusDataFacade {
 
         return uploadFileRepository?.getFileUrl(reference)
     }
-
 
     /**
      * Retrieves a list of records from data shared based on the specified conditions.

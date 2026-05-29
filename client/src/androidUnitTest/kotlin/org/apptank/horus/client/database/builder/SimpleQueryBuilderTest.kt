@@ -313,7 +313,17 @@ class SimpleQueryBuilderTest {
         )
 
         val result = builder.build()
+        Assert.assertEquals(expected, result)
+    }
 
+    @Test
+    fun validateAsExists() {
+        val expected = "SELECT EXISTS(SELECT * FROM category WHERE id = 1)"
+        val builder = SimpleQueryBuilder("category")
+            .where(SQL.WhereCondition(SQL.ColumnValue("id", 1)))
+            .asExists()
+
+        val result = builder.build()
         Assert.assertEquals(expected, result)
     }
 }

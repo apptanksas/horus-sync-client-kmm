@@ -72,7 +72,7 @@ internal class EntityRestrictionValidator(
                 )
             )
         )
-        val count = operationDatabaseHelper.countRecords(queryBuilder as SimpleQueryBuilder)
+        val count = operationDatabaseHelper.countRecords(queryBuilder)
         initialCountByEntity[entityName] = count
 
         // Initialize pending counters

@@ -442,6 +442,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
         validateCountRecordsWithConditions()
         validateQueryWithWhereLikeConditions()
         validateQueryWithWhereLikeConditionsAlternative()
+        validateQueryExists()
         queryDataSharedSuccess()
         validateSyncFailedEventWhenForceInitialSync()
 
@@ -1085,6 +1086,35 @@ class AndroidHorusDataFacadeTest : TestCase() {
             { exception ->
                 Assert.fail(exception.message)
             }
+        )
+    }
+
+    private suspend fun validateQueryExists() = prepareInternalTest {
+        // Given
+        val measure = createDataMeasureRecord()
+        val resultInsert = HorusDataFacade.insert("measures", measure)
+        val id = (resultInsert as DataResult.Success).data
+
+        // When - Query for existing record
+        val builderExists = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("id", id))
+        )
+        val resultExists = HorusDataFacade.queryExists(builderExists)
+
+        // When - Query for non-existing record
+        val builderNotExists = SimpleQueryBuilder("measures").where(
+            SQL.WhereCondition(SQL.ColumnValue("id", "non-existent-id"))
+        )
+        val resultNotExists = HorusDataFacade.queryExists(builderNotExists)
+
+        // Then
+        resultExists.fold(
+            { exists -> Assert.assertTrue("Record should exist", exists) },
+            { fail(it.message) }
+        )
+        resultNotExists.fold(
+            { exists -> Assert.assertFalse("Record should not exist", exists) },
+            { fail(it.message) }
         )
     }
 

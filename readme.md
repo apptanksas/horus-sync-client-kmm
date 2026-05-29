@@ -38,8 +38,12 @@ it could have breaking changes in the API.
     - [Delete a record](#delete-a-record)
   - [Simple record query](#simple-record-query)
     - [Complex query](#complex-query)
+    - [SQL Joins](#sql-joins)
+    - [SQL Unions](#sql-unions)
     - [Query by geographic coordinates (Nearby search)](#query-by-geographic-coordinates-nearby-search)
     - [Get a record by ID](#get-a-record-by-id)
+    - [Get count records in a entity](#get-count-records-in-a-entity)
+    - [Check if record exists](#check-if-record-exists)
     - [Upload files](#upload-files)
 - [Utilities](#utilities)
   - [Get entities name](#get-entities-name)
@@ -482,6 +486,39 @@ val builder = SimpleQueryBuilder("entity").where(
 HorusDataFacade.query(builder)
 ```
 
+### SQL Joins
+
+To perform queries with Joins, use **JoinableQueryBuilder**. It supports `INNER JOIN` and `LEFT JOIN`.
+
+```kotlin
+val builder = JoinableQueryBuilder("orders")
+    .innerJoin("users", "user_id", "id")
+    .where(SQL.WhereCondition(SQL.ColumnValue("users.name", "John")))
+
+HorusDataFacade.query(builder).fold(
+    onSuccess = { orders ->
+        // Handle result
+    },
+    onFailure = { error ->
+        // Handle error
+    }
+)
+```
+
+### SQL Unions
+
+To combine the results of multiple queries, use **UnionQueryBuilder**. It supports `UNION` and `UNION ALL`.
+
+```kotlin
+val builder1 = SimpleQueryBuilder("table1").where(SQL.WhereCondition(SQL.ColumnValue("animal_id", 1)))
+val builder2 = SimpleQueryBuilder("table2").where(SQL.WhereCondition(SQL.ColumnValue("animal_id", 1)))
+
+val unionBuilder = UnionQueryBuilder(builder1)
+    .unionAll(builder2)
+
+HorusDataFacade.query(unionBuilder)
+```
+
 ### Query by geographic coordinates (Nearby search)
 
 To find records within a certain distance from a geographic point, use the **SQL.Coordinates.WithIn** extension.
@@ -543,9 +580,10 @@ if (user != null) {
 
 ### Get count records in a entity
 
-To get the number of records in an entity, use the **countRecordFromEntity** method passing the entity name.
+To get the number of records in an entity or from a specific query, use the **countRecordFromEntity** or **countRecords** methods.
 
 ```kotlin
+// Count from entity
 HorusDataFacade.countRecordFromEntity("users").fold(
   onSuccess = { count ->
     //** YOUR CODE HERE WHEN SUCCESS */
@@ -554,7 +592,38 @@ HorusDataFacade.countRecordFromEntity("users").fold(
     //** YOUR CODE HERE WHEN FAILURE */
   }
 )
-``` 
+
+// Count from a complex query (Joinable, Union, etc)
+val builder = JoinableQueryBuilder("tasks")
+    .innerJoin("users", "user_id", "id")
+    .where(SQL.WhereCondition(SQL.ColumnValue("users.active", true)))
+
+HorusDataFacade.countRecords(builder).fold(
+    onSuccess = { count -> /* ... */ },
+    onFailure = { /* ... */ }
+)
+```
+
+### Check if record exists
+
+To check if a record exists matching certain conditions, use the **queryExists** method. It's more efficient than counting records if you only need to know if at least one exists.
+
+```kotlin
+val builder = SimpleQueryBuilder("users").where(
+    SQL.WhereCondition(SQL.ColumnValue("email", "john.doe@example.com"))
+)
+
+HorusDataFacade.queryExists(builder).fold(
+    onSuccess = { exists ->
+        if (exists) {
+            // Record exists
+        }
+    },
+    onFailure = { /* Handle error */ }
+)
+```
+
+You can also use `.asExists()` on any QueryBuilder to wrap it in a `SELECT EXISTS` statement manually.
 
 ### Query Data shared
 

@@ -9,6 +9,7 @@ import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
+import org.apptank.horus.client.extensions.getRequireBoolean
 import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.log
@@ -32,7 +33,11 @@ internal class OperationDatabaseHelper(
      * @param postOperation Callback to be executed after the operations.
      * @throws DatabaseOperationFailureException if any operation fails.
      */
-    override fun executeOperations(actions: List<DatabaseOperation>, ignoreIsFailure: Boolean, postOperation: Callback) =
+    override fun executeOperations(
+        actions: List<DatabaseOperation>,
+        ignoreIsFailure: Boolean,
+        postOperation: Callback
+    ) =
         executeTransaction { _ ->
             actions.forEach { action ->
 
@@ -79,7 +84,10 @@ internal class OperationDatabaseHelper(
         }
 
 
-    override fun executeOperations(actions: List<DatabaseOperation>, postOperation: Callback): Boolean {
+    override fun executeOperations(
+        actions: List<DatabaseOperation>,
+        postOperation: Callback
+    ): Boolean {
         return executeOperations(actions, false, postOperation)
     }
 
@@ -93,7 +101,8 @@ internal class OperationDatabaseHelper(
         "Use executeOperations(actions: List<DatabaseOperation>, postOperation: Callback) instead, because not has postOperation parameter.",
         replaceWith = ReplaceWith("executeOperations(actions.toList(), postOperation)")
     )
-    override fun executeOperations(vararg actions: DatabaseOperation) = executeOperations(actions.toList())
+    override fun executeOperations(vararg actions: DatabaseOperation) =
+        executeOperations(actions.toList())
 
     /**
      * Inserts records into the database within a transaction.
@@ -200,18 +209,34 @@ internal class OperationDatabaseHelper(
     }
 
     /**
-     * Executes a query using the provided SimpleQueryBuilder and returns the count of records.
-     * @param builder the SimpleQueryBuilder used to build the SQL query.
+     * Executes a query using the provided QueryBuilder and returns the count of records.
+     * @param builder the QueryBuilder used to build the SQL query.
      *
      * @return the count of records from the query result.
      */
-    override fun countRecords(builder: SimpleQueryBuilder): Int {
+    override fun countRecords(builder: QueryBuilder): Int {
         val queryBuilder = builder.selectCount()
         var count = 0
         rawQuery(queryBuilder.build()) { cursor ->
             count = cursor.getRequireInt(0)
         }
         return count
+    }
+
+
+    /**
+     * Executes a query using the provided QueryBuilder and returns whether any records exist.
+     * @param builder the QueryBuilder used to build the SQL query.
+     *
+     * @return true if records exist, false otherwise.
+     */
+    override fun queryExists(builder: QueryBuilder): Boolean {
+        val queryBuilder = builder.asExists()
+        var exists = false
+        rawQuery(queryBuilder.build()) { cursor ->
+            exists = cursor.getRequireBoolean(0)
+        }
+        return exists
     }
 
     /**
@@ -238,7 +263,10 @@ internal class OperationDatabaseHelper(
      * @param executeBody A function to be executed within the transaction.
      * @return True if the transaction was successful, false otherwise.
      */
-    private fun executeTransaction(executeBody: (SqlDriver) -> Unit, onFailure: () -> Unit = {}): Boolean {
+    private fun executeTransaction(
+        executeBody: (SqlDriver) -> Unit,
+        onFailure: () -> Unit = {}
+    ): Boolean {
         return runCatching {
             transaction {
                 executeBody(driver)

@@ -708,7 +708,7 @@ internal class SynchronizatorManager(
                     val isNotExists = operationDatabaseHelper.countRecords(
                         SimpleQueryBuilder(entityName).select(Horus.Attribute.ID).apply {
                             where(SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, id)))
-                        } as SimpleQueryBuilder
+                        }
                     ) == 0
 
                     if (isNotExists) {
