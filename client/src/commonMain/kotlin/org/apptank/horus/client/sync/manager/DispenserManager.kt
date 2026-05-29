@@ -16,13 +16,13 @@ private const val TAG = "DispenserManager"
  * @property batchSize The number of actions required to trigger a synchronization.
  * @property expirationTime The maximum time allowed between synchronizations before forcing a new one.
  * @property syncControlDatabaseHelper Provides access to the database to retrieve pending actions and the last completed action.
- * @property remoteSynchronizatorManager Handles the remote synchronization process.
+ * @property pushDataRemoteSynchronizatorManager Handles the remote synchronization process.
  */
 internal class DispenserManager(
     private val batchSize: Int,
     private val expirationTime: Long,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
-    private val remoteSynchronizatorManager: RemoteSynchronizatorManager
+    private val pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager
 ) {
     // Tracks the current count of processed actions before synchronization is triggered
     private var batchCounter = 0
@@ -68,7 +68,7 @@ internal class DispenserManager(
 
         if (mustSynchronizeByBatch || mustSynchronizeByTime) {
             info("Pushing pending actions to server...")
-            remoteSynchronizatorManager.trySynchronizeData()
+            pushDataRemoteSynchronizatorManager.tryPushData()
             batchCounter = 0
         }
     }

@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.21.0
+- From now the force synchronization from Facade will validate if there are data from remote server and pull and then push if there are data to sync.
+
 # v0.20.0
 - Added `JoinableQueryBuilder` to support SQL Joins (`INNER` and `LEFT JOIN`).
 - Added `UnionQueryBuilder` to support `UNION` and `UNION ALL` operations.

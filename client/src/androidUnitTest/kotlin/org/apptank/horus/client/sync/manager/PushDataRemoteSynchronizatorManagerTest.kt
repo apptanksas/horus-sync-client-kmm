@@ -34,7 +34,7 @@ import org.junit.Test
 import kotlin.random.Random
 
 
-class RemoteSynchronizatorManagerTest : TestCase() {
+class PushDataRemoteSynchronizatorManagerTest : TestCase() {
 
     val networkValidator = mock<INetworkValidator>(MockMode.autofill)
     val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
@@ -43,11 +43,11 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     val storageSettings = mock<Settings>(MockMode.autofill)
 
     private val eventBus = InternalEventBus
-    private lateinit var remoteSynchronizatorManager: RemoteSynchronizatorManager
+    private lateinit var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager
 
     @Before
     fun setup() {
-        remoteSynchronizatorManager = RemoteSynchronizatorManager(
+        pushDataRemoteSynchronizatorManager = PushDataRemoteSynchronizatorManager(
             networkValidator,
             syncControlDatabaseHelper,
             synchronizationService,
@@ -71,7 +71,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
     fun trySynchronizeDataNotExecuteByNetworkNoAvailable() {
         every { networkValidator.isNetworkAvailable() } returns false
 
-        remoteSynchronizatorManager.trySynchronizeData()
+        pushDataRemoteSynchronizatorManager.tryPushData()
 
         verify(exactly(0)) { syncControlDatabaseHelper.getPendingActions() }
     }
@@ -81,7 +81,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         every { networkValidator.isNetworkAvailable() } returns true
         every { syncControlDatabaseHelper.getPendingActions() } returns emptyList()
 
-        remoteSynchronizatorManager.trySynchronizeData()
+        pushDataRemoteSynchronizatorManager.tryPushData()
 
         verifySuspend(exactly(0)) { synchronizationService.postQueueActions(any()) }
     }
@@ -102,7 +102,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         every { syncControlDatabaseHelper.getPendingActions() } returns actions
         everySuspend { synchronizationService.postQueueActions(any()) } returns DataResult.Failure(Exception())
 
-        remoteSynchronizatorManager.trySynchronizeData()
+        pushDataRemoteSynchronizatorManager.tryPushData()
 
         delay(50)
         Assert.assertEquals(1, eventCounter)
@@ -125,7 +125,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         everySuspend { synchronizationService.postQueueActions(any()) } returns DataResult.Success(Unit)
         every { syncControlDatabaseHelper.completeActions(any()) } returns false
 
-        remoteSynchronizatorManager.trySynchronizeData()
+        pushDataRemoteSynchronizatorManager.tryPushData()
 
         delay(50)
         Assert.assertEquals(1, eventCounter)
@@ -149,7 +149,7 @@ class RemoteSynchronizatorManagerTest : TestCase() {
         every { mockUploadFileRepository.hasFilesToUpload() } returns false
         every { syncControlDatabaseHelper.completeActions(any()) } returns true
 
-        remoteSynchronizatorManager.trySynchronizeData()
+        pushDataRemoteSynchronizatorManager.tryPushData()
 
         delay(50)
         Assert.assertEquals(1, eventCounter)

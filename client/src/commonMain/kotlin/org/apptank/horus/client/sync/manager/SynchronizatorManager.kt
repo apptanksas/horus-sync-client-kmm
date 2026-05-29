@@ -78,12 +78,6 @@ internal class SynchronizatorManager(
             return onStatus(SynchronizationStatus.IDLE, true)
         }
 
-        // Validate if there are pending actions to sync with the server
-        if (syncControlDatabaseHelper.getPendingActions().isNotEmpty()) {
-            log("[SynchronizatorManager] There are pending actions")
-            return onStatus(SynchronizationStatus.IDLE, true)
-        }
-
         onStatus(SynchronizationStatus.IN_PROGRESS, false)
 
         val userId = HorusAuthentication.getEffectiveUserId()
@@ -170,7 +164,7 @@ internal class SynchronizatorManager(
      *
      * @return `true` if there is data to sync, `false` otherwise, or `null` if an error occurred.
      */
-    private suspend fun existsDataToSync(): Boolean? {
+    suspend fun existsDataToSync(): Boolean? {
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
         val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
@@ -181,8 +175,20 @@ internal class SynchronizatorManager(
 
         when (resultActions) {
             is DataResult.Success -> {
+
+                val actionSequences = resultActions.data.mapNotNull { it.sequence }.toMutableList()
+
+                // -------------------------------------------------
+                // Filter actions that are already processed
+                // -------------------------------------------------
+
+                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
+                actionSequences.removeAll(actionsAlreadyProcessed)
+
                 // If there are actions, it means that there is data to sync
-                return resultActions.data.isNotEmpty()
+                return resultActions.data.any { action ->
+                    action.sequence?.let { actionSequences.contains(it) } ?: true
+                }
             }
 
             is DataResult.Failure -> {
@@ -421,17 +427,6 @@ internal class SynchronizatorManager(
 
                 // -------------------------------------------------
 
-                val lastCheckInitialSync = syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
-                val currentTime = SystemTime.getCurrentTimestamp()
-                val diffLastCheckInitialSync = currentTime - lastCheckInitialSync
-
-                if (diffLastCheckInitialSync <= INITIAL_SYNC_VALIDATION_CHECK_IN_SECS) {
-                    log("[SynchronizatorManager:synchronizeData] Initial synchronization recently completed. Skipping data synchronization.")
-                    // Insert processed action sequences
-                    syncControlDatabaseHelper.insertActionSequences(actionSequences)
-                    return true
-                }
-
                 val actionsToProcess = actions.data.filter { action ->
                     action.sequence?.let { actionSequences.contains(it) } ?: true
                 }
@@ -624,8 +619,12 @@ internal class SynchronizatorManager(
      * @return A list of entity hash validation results.
      */
     private suspend fun validateRemoteEntitiesData(entitiesHashes: List<Horus.EntityHash>, userId: String): List<InternalModel.EntityHashValidation> {
-        when (val result =
-            synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest(), userId)) {
+
+        if (entitiesHashes.isEmpty()) {
+            return emptyList()
+        }
+
+        when (val result = synchronizationService.postValidateEntitiesData(entitiesHashes.toDTORequest(), userId)) {
             is DataResult.Success -> {
                 return result.data.map { it.toInternalModel() }
             }
@@ -848,6 +847,5 @@ internal class SynchronizatorManager(
 
     companion object {
         const val CHECKPOINT_GAP = 6 * 60 * 60 // 6 hours in seconds
-        const val INITIAL_SYNC_VALIDATION_CHECK_IN_SECS = 30L // 30 seconds
     }
 }

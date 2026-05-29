@@ -6,7 +6,7 @@ import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.OperationDatabaseHelper
 import org.apptank.horus.client.migration.network.service.IMigrationService
 import org.apptank.horus.client.migration.network.service.MigrationService
-import org.apptank.horus.client.sync.manager.RemoteSynchronizatorManager
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.sync.network.service.SynchronizationService
 import com.russhwolf.settings.Settings
@@ -22,6 +22,7 @@ import org.apptank.horus.client.restrictions.EntityRestrictionValidator
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
+import org.apptank.horus.client.sync.manager.SynchronizatorManager
 import org.apptank.horus.client.sync.network.service.FileSynchronizationService
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
@@ -68,7 +69,9 @@ object HorusContainer {
 
     private var logger: ILogger? = null
 
-    private var remoteSynchronizatorManager: RemoteSynchronizatorManager? = null
+    private var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager? = null
+
+    private var synchronizatorManager: SynchronizatorManager? = null
 
     private var syncFileUploadedManager: ISyncFileUploadedManager? = null
 
@@ -108,10 +111,10 @@ object HorusContainer {
     /**
      * Sets up the remote synchronizator manager.
      *
-     * @param manager The [RemoteSynchronizatorManager] instance to set up.
+     * @param manager The [PushDataRemoteSynchronizatorManager] instance to set up.
      */
-    internal fun setupRemoteSynchronizatorManager(manager: RemoteSynchronizatorManager) {
-        remoteSynchronizatorManager = manager
+    internal fun setupRemoteSynchronizatorManager(manager: PushDataRemoteSynchronizatorManager) {
+        pushDataRemoteSynchronizatorManager = manager
     }
 
     /**
@@ -241,7 +244,11 @@ object HorusContainer {
      * @throws IllegalStateException if the migration service is not set.
      */
     internal fun getMigrationService(): IMigrationService {
-        return migrationService ?: MigrationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
+        return migrationService ?: MigrationService(
+            httpClient.engine,
+            getConfig().baseUrl,
+            getConfig().customHeaders
+        )
     }
 
     /**
@@ -252,7 +259,12 @@ object HorusContainer {
      */
     internal fun getSynchronizationService(): ISynchronizationService {
         if (synchronizationService == null) {
-            synchronizationService = SynchronizationService(getConfig(), httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
+            synchronizationService = SynchronizationService(
+                getConfig(),
+                httpClient.engine,
+                getConfig().baseUrl,
+                getConfig().customHeaders
+            )
         }
         return synchronizationService!!
     }
@@ -265,7 +277,11 @@ object HorusContainer {
      */
     internal fun getFileSynchronizationService(): IFileSynchronizationService {
         if (fileSynchronizationService == null) {
-            fileSynchronizationService = FileSynchronizationService(httpClient.engine, getConfig().baseUrl, getConfig().customHeaders)
+            fileSynchronizationService = FileSynchronizationService(
+                httpClient.engine,
+                getConfig().baseUrl,
+                getConfig().customHeaders
+            )
         }
         return fileSynchronizationService!!
     }
@@ -367,18 +383,35 @@ object HorusContainer {
     /**
      * Retrieves the remote synchronizator manager.
      *
-     * @return A new instance of [RemoteSynchronizatorManager].
+     * @return A new instance of [PushDataRemoteSynchronizatorManager].
      */
-    internal fun getRemoteSynchronizatorManager(): RemoteSynchronizatorManager {
-        if (remoteSynchronizatorManager == null) {
-            remoteSynchronizatorManager = RemoteSynchronizatorManager(
+    internal fun getPushDataRemoteSynchronizatorManager(): PushDataRemoteSynchronizatorManager {
+        if (pushDataRemoteSynchronizatorManager == null) {
+            pushDataRemoteSynchronizatorManager = PushDataRemoteSynchronizatorManager(
                 getNetworkValidator(),
                 getSyncControlDatabaseHelper(),
                 getSynchronizationService(),
                 getUploadFileRepository()
             )
         }
-        return remoteSynchronizatorManager!!
+        return pushDataRemoteSynchronizatorManager!!
+    }
+
+    /**
+     * Retrieves the synchronizator manager.
+     *
+     * @return A new instance of [SynchronizatorManager].
+     */
+    internal fun getSynchronizatorManager(): SynchronizatorManager {
+        if (synchronizatorManager == null) {
+            synchronizatorManager = SynchronizatorManager(
+                getNetworkValidator(),
+                getSyncControlDatabaseHelper(),
+                getOperationDatabaseHelper(),
+                getSynchronizationService()
+            )
+        }
+        return synchronizatorManager!!
     }
 
     /**
@@ -407,7 +440,7 @@ object HorusContainer {
                 getConfig().pushPendingActionsConfig.batchSize,
                 getConfig().pushPendingActionsConfig.expirationTime,
                 getSyncControlDatabaseHelper(),
-                getRemoteSynchronizatorManager()
+                getPushDataRemoteSynchronizatorManager()
             )
         }
         return dispenserManager!!
