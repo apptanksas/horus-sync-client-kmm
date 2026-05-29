@@ -68,7 +68,7 @@ internal class DispenserManager(
 
         if (mustSynchronizeByBatch || mustSynchronizeByTime) {
             info("Pushing pending actions to server...")
-            pushDataRemoteSynchronizatorManager.trySynchronizeData()
+            pushDataRemoteSynchronizatorManager.tryPushData()
             batchCounter = 0
         }
     }

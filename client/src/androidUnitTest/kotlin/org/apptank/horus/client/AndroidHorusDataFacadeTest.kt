@@ -350,6 +350,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 )
             )
 
+            every { mockSyncControlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
+            every { mockSyncControlDatabaseHelper.getExistsActionSequences(any()) } returns emptyList()
+            everySuspend { synchronizationService.getQueueActions(any()) } returns DataResult.Success(emptyList())
+            every { mockSyncControlDatabaseHelper.getWritableEntityNames() }.returns(emptyList())
+
             everySuspend { mockSyncService.postQueueActions(any()) } returns (DataResult.Success(Unit))
             every { mockSyncControlDatabaseHelper.completeActions(any()) } returns (true)
             every { mockSyncUploadFileManager.syncFiles(any()) } calls { args ->

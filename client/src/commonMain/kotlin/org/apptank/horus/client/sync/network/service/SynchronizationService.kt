@@ -27,6 +27,8 @@ import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.log
+import org.apptank.horus.client.utils.SystemTime
 
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
@@ -181,6 +183,7 @@ internal class SynchronizationService(
         exclude: List<Long>
     ): DataResult<List<SyncDTO.Response.SyncAction>> {
 
+        val currentTime = SystemTime.getCurrentTimestamp()
         val queryParams = mutableMapOf<String, String>()
         timestampAfter?.let { queryParams["after"] = it.toString() }
 
@@ -190,16 +193,22 @@ internal class SynchronizationService(
 
         val cacheKey = queryParams.entries.joinToString("&") { "${it.key}=${it.value}" }
 
+
         val retrieveResult = suspend {
+            log("[SynchronizationService] Retrieving queue actions with params: $queryParams")
             get<List<SyncDTO.Response.SyncAction>>("queue/actions", queryParams) { it.serialize() }.also { result ->
                 if (result is DataResult.Success) {
-                    cacheGetQueueActions[cacheKey] = result
+                    cacheGetQueueActions[cacheKey] = Pair(currentTime,result)
                 }
             }
         }
 
-        if (cacheGetQueueActions.containsKey(cacheKey)) {
-            return cacheGetQueueActions[cacheKey] ?: retrieveResult().apply {
+        val lastCheck = cacheGetQueueActions[cacheKey]?.first?:0L
+        val diffLastCheckInitialSync = currentTime - lastCheck
+
+        if (cacheGetQueueActions.containsKey(cacheKey) && diffLastCheckInitialSync < TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS){
+            log("[SynchronizationService] Cache hit for getQueueActions with key: $cacheKey")
+            return cacheGetQueueActions[cacheKey]?.second ?: retrieveResult().apply {
                 cacheGetQueueActions.clear()
             }
         }
@@ -333,7 +342,8 @@ internal class SynchronizationService(
 
     internal companion object {
         const val HORUS_PATH_FILES = "horus/sync/service"
-        val cacheGetQueueActions = mutableMapOf<String, DataResult<List<SyncDTO.Response.SyncAction>>>()
+        const val TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS = 5
+        val cacheGetQueueActions = mutableMapOf<String, Pair<Long,DataResult<List<SyncDTO.Response.SyncAction>>>>()
     }
 
 }

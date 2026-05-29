@@ -775,8 +775,9 @@ object HorusDataFacade {
                 InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
                 InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
 
-                pushDataRemoteSynchronizatorManager?.trySynchronizeData()
+                pushDataRemoteSynchronizatorManager?.tryPushData()
             }
+
             syncFileUploadedManager?.syncFiles {
                 start()
             }

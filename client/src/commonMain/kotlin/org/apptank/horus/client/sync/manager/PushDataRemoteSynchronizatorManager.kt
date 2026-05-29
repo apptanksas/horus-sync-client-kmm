@@ -1,7 +1,6 @@
 package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
-import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
@@ -23,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
+import org.apptank.horus.client.utils.OperationAttempter
 
 
 /**
@@ -52,12 +52,12 @@ internal class PushDataRemoteSynchronizatorManager(
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     /**
-     * Attempts to synchronize pending data with the remote server.
+     * Attempts to push pending data to the remote server.
      *
      * This method checks for network availability and initiates synchronization if there are pending actions in the local
      * sync control database. It handles retry logic and error reporting for synchronization operations.
      */
-    fun trySynchronizeData() {
+    fun tryPushData() {
 
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated")
@@ -91,7 +91,7 @@ internal class PushDataRemoteSynchronizatorManager(
                     return@launch
                 }
 
-                attemptOperationResult {
+                OperationAttempter.attempt(maxAttempts) {
                     synchronizationService.postQueueActions(pendingActions.map { it.toRequest() })
                 }.coFold(
                     onSuccess = {
@@ -166,30 +166,6 @@ internal class PushDataRemoteSynchronizatorManager(
         } while (!isSuccess && attempts < maxAttempts)
 
         return isSuccess
-    }
-
-    /**
-     * Attempts to execute an operation that returns a `DataResult` with retry logic.
-     *
-     * This method retries the operation up to a maximum number of attempts if it returns a failure result. It includes a delay between retries.
-     *
-     * @param callback A suspending function that performs the operation and returns a `DataResult`.
-     * @return The result of the operation, which may be a success or failure.
-     */
-    private suspend fun <T> attemptOperationResult(
-        callback: suspend () -> DataResult<T>
-    ): DataResult<T> {
-        var attempts = 0L
-        var result: DataResult<T>
-        do {
-            result = callback()
-            if (attempts > 0) {
-                delay(2000 * attempts)
-            }
-            attempts++
-        } while (result is DataResult.Failure && attempts < maxAttempts)
-
-        return result
     }
 
 

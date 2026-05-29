@@ -92,6 +92,8 @@ class SynchronizeDataTaskTest : TestCase() {
         every { controlDatabaseHelper.getPendingActions() } returns emptyList()
         every { controlDatabaseHelper.getLastDatetimeCheckpoint() } returns 0
         every { controlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
+        every { controlDatabaseHelper.getExistsActionSequences(any()) } returns emptyList()
+        everySuspend { synchronizationService.getQueueActions(any(),any()) } returns DataResult.Success(emptyList())
 
         everySuspend { synchronizationService.getQueueActions(any(), any()) } returns DataResult.Success(
             listOf(SyncDTO.Response.SyncAction())

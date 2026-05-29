@@ -76,21 +76,30 @@ class SynchronizatorManagerTest : TestCase() {
     }
 
     @Test
-    fun `when exists data pending to push then do nothing`() = runBlocking {
+    fun `when exists data pending to push then synchronize`() = runBlocking {
         // Given
         val actions = generateSyncActions(SyncControl.ActionType.INSERT)
+        val responseActions = generateResponseSyncActions(SyncControl.ActionType.INSERT)
+        val checkpointTimestamp = Clock.System.now().toEpochMilliseconds()
+
         every { networkValidator.isNetworkAvailable() } returns (true)
         every { syncControlDatabaseHelper.getPendingActions() } returns (actions)
+        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (checkpointTimestamp)
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
+        every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (emptyList())
+        everySuspend { synchronizationService.getQueueActions(any(), any()) } returns (DataResult.Success(responseActions))
+        everySuspend { synchronizationService.getQueueActions(any()) } returns (DataResult.Success(responseActions))
+        every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
 
         // When
         synchronizatorManager.start { status, isCompleted ->
             if (isCompleted) {
-                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.IDLE, status)
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
             }
         }
 
         // Then
-        verify(exactly(0)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
+        verify(exactly(2)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
     }
 
     @Test
@@ -347,7 +356,7 @@ class SynchronizatorManagerTest : TestCase() {
         }
 
     @Test
-    fun `when exists data to sync and there is a checkpoint initial sync was recently then do not nothing`() =
+    fun `when exists data to sync and there is a checkpoint initial sync was recently then synchronize data`() =
         runBlocking {
 
             // Given
@@ -370,8 +379,18 @@ class SynchronizatorManagerTest : TestCase() {
                 )
             } returns (DataResult.Success(responseActions))
 
+            everySuspend {
+                synchronizationService.getQueueActions(
+                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP)
+                )
+            } returns (DataResult.Success(responseActions))
+
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                ownNewActions)
+                emptyList())
+
+            every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
+
+            every { syncControlDatabaseHelper.getEntityLevel(any()) } returns (0)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -381,7 +400,8 @@ class SynchronizatorManagerTest : TestCase() {
             }
 
             // Then
-            verify(exactly(0)) {
+            delay(50)
+            verify(exactly(1)) {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
                     SyncControl.Status.COMPLETED
@@ -631,6 +651,7 @@ class SynchronizatorManagerTest : TestCase() {
 
         // ---> Get entities name
         every { syncControlDatabaseHelper.getWritableEntityNames() } returns (entityNames)
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
         // ---> Get entities hash
         every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
         // ---> Validate entities data
@@ -704,6 +725,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             // ---> Get entities name
             every { syncControlDatabaseHelper.getWritableEntityNames() } returns (entityNames)
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
             // ---> Get entities hash
             every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
             // ---> Validate entities data
@@ -799,6 +821,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             // ---> Get entities name
             every { syncControlDatabaseHelper.getWritableEntityNames() } returns (entityNames)
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
             // ---> Get entities hash
             every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
             // ---> Validate entities data
@@ -960,6 +983,9 @@ class SynchronizatorManagerTest : TestCase() {
         } returns (DataResult.Success(responseActions))
 
         every { syncControlDatabaseHelper.getExistsActionSequences(existingSequences) } returns (existingSequences)
+        every { syncControlDatabaseHelper.getWritableEntityNames() } returns (emptyList())
+        everySuspend { synchronizationService.postValidateEntitiesData(any(), any()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getQueueActions(any()) } returns (DataResult.Success(responseActions))
         every { operationDatabaseHelper.executeOperations(eq(emptyList()), any(), any()) } returns (true)
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
@@ -972,11 +998,10 @@ class SynchronizatorManagerTest : TestCase() {
 
         // Then
         delay(50)
-        verifySuspend(exactly(1)) { operationDatabaseHelper.executeOperations(eq(emptyList()), any(), any()) }
-        verify(exactly(1)) {
+        verify(exactly(0)) {
             syncControlDatabaseHelper.addSyncTypeStatus(
                 SyncControl.OperationType.CHECKPOINT,
-                SyncControl.Status.COMPLETED
+                any()
             )
         }
     }
