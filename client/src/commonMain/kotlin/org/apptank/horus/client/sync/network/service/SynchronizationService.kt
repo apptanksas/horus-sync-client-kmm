@@ -69,7 +69,10 @@ internal class SynchronizationService(
      * @return [DataResult] containing the downloaded data as a path file [String] if successful.
      */
 
-    override suspend fun downloadSyncData(url: String, onProgress: (Int) -> Unit): DataResult<Path> {
+    override suspend fun downloadSyncData(
+        url: String,
+        onProgress: (Int) -> Unit
+    ): DataResult<Path> {
 
         val fileSystem = FileSystem.SYSTEM
         val fileName = extractFileName(url)
@@ -163,7 +166,8 @@ internal class SynchronizationService(
         return if (results.all { it is DataResult.Success }) {
             DataResult.Success(Unit)
         } else {
-            return (results.find { it !is DataResult.Success } ?: DataResult.Failure(Exception("Failed to post queue actions"))).also {
+            return (results.find { it !is DataResult.Success }
+                ?: DataResult.Failure(Exception("Failed to post queue actions"))).also {
                 if (it is DataResult.ClientError) {
                     emitEventSyncError(it)
                 }
@@ -196,20 +200,23 @@ internal class SynchronizationService(
 
         val retrieveResult = suspend {
             log("[SynchronizationService] Retrieving queue actions with params: $queryParams")
-            get<List<SyncDTO.Response.SyncAction>>("queue/actions", queryParams) { it.serialize() }.also { result ->
+            get<List<SyncDTO.Response.SyncAction>>(
+                "queue/actions",
+                queryParams
+            ) { it.serialize() }.also { result ->
                 if (result is DataResult.Success) {
-                    cacheGetQueueActions[cacheKey] = Pair(currentTime,result)
+                    cacheGetQueueActions[cacheKey] = Pair(currentTime, result)
                 }
             }
         }
 
-        val lastCheck = cacheGetQueueActions[cacheKey]?.first?:0L
-        val diffLastCheckInitialSync = currentTime - lastCheck
+        val cachedEntry = cacheGetQueueActions[cacheKey]
 
-        if (cacheGetQueueActions.containsKey(cacheKey) && diffLastCheckInitialSync < TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS){
-            log("[SynchronizationService] Cache hit for getQueueActions with key: $cacheKey")
-            return cacheGetQueueActions[cacheKey]?.second ?: retrieveResult().apply {
-                cacheGetQueueActions.clear()
+        if (cachedEntry != null) {
+            val diffLastCheckInitialSync = currentTime - cachedEntry.first
+            if (diffLastCheckInitialSync < TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS) {
+                log("[SynchronizationService] Cache hit for getQueueActions with key: $cacheKey")
+                return cachedEntry.second
             }
         }
 
@@ -260,7 +267,10 @@ internal class SynchronizationService(
      * @param userId Optional user ID to filter the hashes.
      * @return [DataResult] containing a list of [SyncDTO.Response.EntityIdHash] if successful.
      */
-    override suspend fun getEntityHashes(entity: String, userId: String?): DataResult<List<SyncDTO.Response.EntityIdHash>> {
+    override suspend fun getEntityHashes(
+        entity: String,
+        userId: String?
+    ): DataResult<List<SyncDTO.Response.EntityIdHash>> {
         val queryParams = mutableMapOf<String, String>()
         userId?.let { queryParams["user_id"] = it }
         return get("entity/$entity/hashes", queryParams) { it.serialize() }
@@ -286,7 +296,8 @@ internal class SynchronizationService(
      * @return The [File] object representing the temporary file.
      */
     private fun getTemporalFile(filename: String): File {
-        val basePath = File(normalizePath(config.uploadFilesConfig.baseStoragePath + HORUS_PATH_FILES))
+        val basePath =
+            File(normalizePath(config.uploadFilesConfig.baseStoragePath + HORUS_PATH_FILES))
 
         if (!basePath.exists()) {
             basePath.mkdirs()
@@ -342,8 +353,9 @@ internal class SynchronizationService(
 
     internal companion object {
         const val HORUS_PATH_FILES = "horus/sync/service"
-        const val TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS = 5
-        val cacheGetQueueActions = mutableMapOf<String, Pair<Long,DataResult<List<SyncDTO.Response.SyncAction>>>>()
+        const val TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS = 10
+        val cacheGetQueueActions =
+            mutableMapOf<String, Pair<Long, DataResult<List<SyncDTO.Response.SyncAction>>>>()
     }
 
 }
