@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.21.1
+- Increase TTL Cache in 10 secs in get queue actions service.
+
 # v0.21.0
 - From now the force synchronization from Facade will validate if there are data from remote server and pull and then push if there are data to sync.
 
