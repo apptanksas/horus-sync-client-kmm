@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.22.0
+- Added `ignoreNetworkStatus` to `HorusConfigurator` to allow ignoring network status checks.
+
 # v0.21.1
 - Increase TTL Cache in 10 secs in get queue actions service.
 

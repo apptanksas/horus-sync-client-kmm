@@ -31,7 +31,7 @@ class HorusConfigurator(
             )
             setupConfig(config)
             setupDatabaseFactory(DatabaseDriverFactory(context))
-            setupNetworkValidator(NetworkValidator(context))
+            setupNetworkValidator(NetworkValidator(context, config))
             if (config.isDebug) setupLogger(AndroidLogger())
         }
     }

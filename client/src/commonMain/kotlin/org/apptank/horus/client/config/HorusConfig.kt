@@ -13,6 +13,7 @@ import org.apptank.horus.client.sync.upload.data.FileMimeType
  * @property customHeaders Optional custom headers to include in HTTP requests.
  * @property refreshReadableEntitiesTTL Time-to-live in hours for refreshing readable entities. Default is `24` hours.
  * @property isDebug Flag to enable or disable debug mode. Default is `false`.
+ * @property ignoreNetworkStatus Flag to ignore network status validation. Default is `false`.
  * @property onGlobalCallbackFailure A callback function that is invoked when a global failure occurs during synchronization.
  */
 data class HorusConfig(
@@ -22,6 +23,7 @@ data class HorusConfig(
     val customHeaders: Map<String, String> = emptyMap(),
     val refreshReadableEntitiesTTL: Int = 24,
     val isDebug: Boolean = false,
+    val ignoreNetworkStatus: Boolean = false,
     val onGlobalCallbackFailure: ((String, Throwable?) -> Unit)? = { _, _ -> },
 )
 
