@@ -16,6 +16,7 @@ import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
 import org.apptank.horus.client.bus.HorusClientNetworkEventBus
 import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.config.HorusPreferences
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.warn
 
@@ -84,8 +85,7 @@ import org.apptank.horus.client.extensions.warn
  *  - Test mobile-signal behavior on a physical device with a SIM card. Emulators do not reliably emulate signal strength or cell info.
  */
 internal class NetworkValidator(
-    private val context: Context,
-    private val config: HorusConfig,
+    private val context: Context
 ) : INetworkValidator {
 
     // Lazily obtain ConnectivityManager; may be null on extremely constrained contexts.
@@ -146,8 +146,13 @@ internal class NetworkValidator(
      */
     @SuppressLint("MissingPermission")
     override fun isNetworkAvailable(): Boolean {
+
+        if(HorusPreferences.offlineMode){
+            return false
+        }
+
         // Ignore network status if user wants to
-        if (config.ignoreNetworkStatus) {
+        if (HorusPreferences.ignoreNetworkStatus) {
             return true
         }
 

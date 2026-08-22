@@ -45,6 +45,7 @@ it could have breaking changes in the API.
     - [Get count records in a entity](#get-count-records-in-a-entity)
     - [Check if record exists](#check-if-record-exists)
     - [Upload files](#upload-files)
+- [Preferences](#preferences)
 - [Utilities](#utilities)
   - [Get entities name](#get-entities-name)
   - [Force synchronization](#force-synchronization)
@@ -74,6 +75,7 @@ Use Horus in server side to synchronize the data with the clients.
 - Validates data integrity across clients.
 - Support for file uploads.
 - Support for entity restrictions.
+- Support for offline mode.
 
 
 # 1. How to start
@@ -648,6 +650,19 @@ val fileReference = HorusDataFacade.uploadFile(fileData)
 
 val fileUrl = HorusDataFacade.getFileUrl(fileReference)
 
+```
+
+
+## Preferences
+
+The `HorusPreferences` object allows you to modify the behavior of the synchronization system at runtime.
+
+* **ignoreNetworkStatus**: A flag indicating whether to ignore the network connectivity status during synchronization. When set to `true`, the system will attempt to synchronize even if no network connection is detected. Default is `false`.
+* **offlineMode**: A flag indicating whether the system should operate in offline mode. When set to `true`, no network requests will be made, and the system will rely on local data. Default is `false`.
+
+```kotlin
+HorusPreferences.ignoreNetworkStatus = true
+HorusPreferences.offlineMode = true
 ```
 
 ## Utilities
