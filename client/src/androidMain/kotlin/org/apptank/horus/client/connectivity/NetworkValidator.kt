@@ -15,6 +15,8 @@ import android.telephony.CellInfoNr
 import android.telephony.CellInfoWcdma
 import android.telephony.TelephonyManager
 import org.apptank.horus.client.bus.HorusClientNetworkEventBus
+import org.apptank.horus.client.config.HorusConfig
+import org.apptank.horus.client.config.HorusPreferences
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.warn
 
@@ -117,7 +119,10 @@ internal class NetworkValidator(
             emitNetworkChange()
         }
 
-        override fun onCapabilitiesChanged(network: android.net.Network, networkCapabilities: NetworkCapabilities) {
+        override fun onCapabilitiesChanged(
+            network: android.net.Network,
+            networkCapabilities: NetworkCapabilities
+        ) {
             super.onCapabilitiesChanged(network, networkCapabilities)
             emitNetworkChange()
         }
@@ -141,6 +146,16 @@ internal class NetworkValidator(
      */
     @SuppressLint("MissingPermission")
     override fun isNetworkAvailable(): Boolean {
+
+        if(HorusPreferences.offlineMode){
+            return false
+        }
+
+        // Ignore network status if user wants to
+        if (HorusPreferences.ignoreNetworkStatus) {
+            return true
+        }
+
         return isNetworkIsAvailableByService() && getNetworkInfo().hasValidConnection() && isAirplaneModeOn().not()
     }
 
@@ -214,17 +229,29 @@ internal class NetworkValidator(
             return Network.noConnections()
         }
 
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return Network.noConnections()
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return Network.noConnections()
+        val capabilities =
+            connectivityManager.getNetworkCapabilities(network) ?: return Network.noConnections()
         val connections = mutableListOf<NetworkConnection>()
 
         if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-            connections.add(NetworkConnection(type = ConnectionType.WIFI, level = getWifiSignalLevel(context)))
+            connections.add(
+                NetworkConnection(
+                    type = ConnectionType.WIFI,
+                    level = getWifiSignalLevel(context)
+                )
+            )
         }
 
         if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-            connections.add(NetworkConnection(type = ConnectionType.CELLULAR, level = getMobileNetworkType(context)))
+            connections.add(
+                NetworkConnection(
+                    type = ConnectionType.CELLULAR,
+                    level = getMobileNetworkType(context)
+                )
+            )
         }
 
         return Network(connections)
@@ -234,7 +261,8 @@ internal class NetworkValidator(
      * Compute Wi-Fi signal level (0..4 converted to ConnectionLevel) using WifiManager.rssi.
      */
     private fun getWifiSignalLevel(context: Context): ConnectionLevel {
-        val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val wifiManager =
+            context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val info = wifiManager.connectionInfo
         val level = WifiManager.calculateSignalLevel(info.rssi, 5)
 
@@ -258,7 +286,8 @@ internal class NetworkValidator(
         }
 
 
-        val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        val telephonyManager =
+            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         return when (telephonyManager.networkType) {
             // 2G
@@ -301,7 +330,8 @@ internal class NetworkValidator(
     @SuppressLint("MissingPermission")
     private fun getMobileSignalLevel(context: Context): Int {
 
-        val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        val telephonyManager =
+            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         val cellInfoList = telephonyManager.allCellInfo
         if (!cellInfoList.isNullOrEmpty()) {
             val cellInfo = cellInfoList[0]
@@ -368,7 +398,11 @@ internal class NetworkValidator(
      * Note: This method does not require special permissions.
      */
     private fun isAirplaneModeOn(): Boolean {
-        return Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+        return Settings.Global.getInt(
+            context.contentResolver,
+            Settings.Global.AIRPLANE_MODE_ON,
+            0
+        ) != 0
     }
 
 
