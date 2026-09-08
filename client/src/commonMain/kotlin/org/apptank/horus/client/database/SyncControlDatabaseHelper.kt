@@ -68,6 +68,7 @@ internal class SyncControlDatabaseHelper(
      *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun getLastDatetimeCheckpoint(type: SyncControl.OperationType?): Long {
         validateMigrationHorusTables()
         driver.handle {
@@ -185,6 +186,32 @@ internal class SyncControlDatabaseHelper(
         validateIfEntityExists(entity)
         addAction(entity, SyncControl.ActionType.DELETE, mapOf("id" to id.value))
         emitEntityDeleted(entity, id.value)
+    }
+
+
+    /**
+     * Completes an action for an entity in the database.
+     *
+     * @param actionType The type of the action.
+     * @param entity The name of the entity.
+     * @param jsonData The JSON data associated with the action.
+     * @param dateTime The timestamp of the action completion.
+     * @param eventId The event identifier.
+     */
+    override fun addActionCompleted(
+        actionType: SyncControl.ActionType,
+        entity: String,
+        jsonData: Map<String, Any?>,
+        dateTime: Long,
+        eventId: String
+    ) {
+        validateIfEntityExists(entity)
+        driver.handle {
+            insertOrThrow(
+                QueueActionsTable.TABLE_NAME,
+                QueueActionsTable.mapToComplete(actionType, entity, jsonData, dateTime, eventId)
+            )
+        }
     }
 
     /**

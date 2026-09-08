@@ -33,6 +33,7 @@ interface ISyncControlDatabaseHelper {
      *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun getLastDatetimeCheckpoint(type: SyncControl.OperationType? = null): Long
 
     /**
@@ -76,6 +77,23 @@ interface ISyncControlDatabaseHelper {
     fun addActionDelete(
         entity: String,
         id: Horus.Attribute<String>
+    )
+
+    /**
+     * Completes an action for an entity in the database.
+     *
+     * @param actionType The type of the action.
+     * @param entity The name of the entity.
+     * @param jsonData The JSON data associated with the action.
+     * @param dateTime The timestamp of the action completion.
+     * @param eventId The event identifier.
+     */
+    fun addActionCompleted(
+        actionType: SyncControl.ActionType,
+        entity: String,
+        jsonData: Map<String, Any?>,
+        dateTime: Long,
+        eventId: String
     )
 
     /**

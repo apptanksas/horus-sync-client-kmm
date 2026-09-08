@@ -163,6 +163,60 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         assert(result is TaskResult.Success)
     }
 
+    @Test
+    fun `when add action completed then store action as completed with expected event id`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
+        HorusDatabase.Schema.create(driver, entitiesScheme)
+
+        val entity = syncControlDatabaseHelper.getEntityNames().first()
+        val eventId = "event-id-1"
+        val datetime = 1_726_000_000L
+        val data = mapOf("id" to "1", "name" to "John")
+
+        syncControlDatabaseHelper.addActionCompleted(
+            SyncControl.ActionType.INSERT,
+            entity,
+            data,
+            datetime,
+            eventId
+        )
+
+        val action = syncControlDatabaseHelper.getLastActionCompleted()
+
+        assert(action != null)
+        assert(action?.action == SyncControl.ActionType.INSERT)
+        assert(action?.entity == entity)
+        assert(action?.status == SyncControl.ActionStatus.COMPLETED)
+        assert(action?.data == data)
+        assert(action?.eventId == eventId)
+    }
+
+    @Test
+    fun `when add action completed with invalid entity then throw illegal argument exception`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
+        HorusDatabase.Schema.create(driver, entitiesScheme)
+
+        var isExpectedException = false
+
+        try {
+            syncControlDatabaseHelper.addActionCompleted(
+                SyncControl.ActionType.UPDATE,
+                "entity_not_exists",
+                mapOf("id" to "1"),
+                1_726_000_001L,
+                "event-id-2"
+            )
+        } catch (_: IllegalArgumentException) {
+            isExpectedException = true
+        }
+
+        assert(isExpectedException)
+    }
+
     private suspend fun mockDownloadSyncData(url: String?) {
         val filename = "sync_data_" + (Random.nextUInt()) + ".ndjson"
         val pathFile = getLocalTestPath(filename)

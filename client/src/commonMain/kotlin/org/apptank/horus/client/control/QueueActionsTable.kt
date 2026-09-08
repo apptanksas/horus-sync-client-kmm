@@ -59,7 +59,7 @@ internal object QueueActionsTable {
      * @return A map of column names to values for insertion into the table.
      */
     @OptIn(ExperimentalUuidApi::class)
-    inline fun mapToCreate(
+    fun mapToCreate(
         actionType: SyncControl.ActionType,
         entity: String,
         jsonData: Map<String, Any?>
@@ -71,4 +71,20 @@ internal object QueueActionsTable {
         ATTR_DATETIME to SystemTime.getCurrentTimestamp(),
         ATTR_EVENT_ID to Uuid.random().toString()
     )
+
+    fun mapToComplete(
+        actionType: SyncControl.ActionType,
+        entity: String,
+        jsonData: Map<String, Any?>,
+        dateTime: Long,
+        eventId: String
+    ) = mapOf(
+        ATTR_ACTION_TYPE to actionType.id,
+        ATTR_ENTITY to entity,
+        ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
+        ATTR_STATUS to SyncControl.ActionStatus.COMPLETED.id,
+        ATTR_DATETIME to dateTime,
+        ATTR_EVENT_ID to eventId
+    )
+
 }
