@@ -75,7 +75,7 @@ class SynchronizeDataTaskTest : TestCase() {
         every { controlDatabaseHelper.getLastDatetimeCheckpoint() } returns 0
         every { controlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
 
-        everySuspend { synchronizationService.getQueueActions(any(), any()) } returns DataResult.Failure(Exception())
+        everySuspend { synchronizationService.getQueueActions(any<Long>(), any()) } returns DataResult.Failure(Exception())
 
         // When
         val result = task.execute(null, 0, 10)
@@ -93,9 +93,9 @@ class SynchronizeDataTaskTest : TestCase() {
         every { controlDatabaseHelper.getLastDatetimeCheckpoint() } returns 0
         every { controlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
         every { controlDatabaseHelper.getExistsActionSequences(any()) } returns emptyList()
-        everySuspend { synchronizationService.getQueueActions(any(),any()) } returns DataResult.Success(emptyList())
+        everySuspend { synchronizationService.getQueueActions(any<Long>(),any()) } returns DataResult.Success(emptyList())
 
-        everySuspend { synchronizationService.getQueueActions(any(), any()) } returns DataResult.Success(
+        everySuspend { synchronizationService.getQueueActions(any<Long>(), any()) } returns DataResult.Success(
             listOf(SyncDTO.Response.SyncAction())
         )
 

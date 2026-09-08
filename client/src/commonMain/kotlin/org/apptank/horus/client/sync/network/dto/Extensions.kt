@@ -113,7 +113,8 @@ internal fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
         action = this.action.name,
         entity = this.entity,
         data = this.data,
-        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds
+        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        eventId = this.eventId
     )
 }
 

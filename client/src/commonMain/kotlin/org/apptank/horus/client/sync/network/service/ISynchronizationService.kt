@@ -3,6 +3,7 @@ package org.apptank.horus.client.sync.network.service
 import okio.Path
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.sync.network.dto.SyncDTO
+import kotlin.uuid.Uuid
 
 /**
  * Interface defining the synchronization service operations.
@@ -76,6 +77,21 @@ interface ISynchronizationService {
     suspend fun getQueueActions(
         timestampAfter: Long? = null,
         exclude: List<Long> = emptyList()
+    ): DataResult<List<SyncDTO.Response.SyncAction>>
+
+
+    /**
+     * Retrieves synchronization actions from the server, optionally after a specified timestamp and excluding certain IDs.
+     *
+     * @param after Optional timestamp to get actions updated after this time.
+     * @param exclude List of IDs to exclude from the results.
+     * @param limit Optional limit on the number of results returned.
+     * @return [DataResult] containing a list of [SyncDTO.Response.SyncAction] if successful.
+     */
+    suspend fun getQueueActions(
+        after: String? = null,
+        exclude: List<String> = emptyList(),
+        limit: Int? = null
     ): DataResult<List<SyncDTO.Response.SyncAction>>
 
     /**

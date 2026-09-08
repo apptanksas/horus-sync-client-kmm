@@ -163,7 +163,8 @@ class SynchronizationServiceTest : ServiceTest() {
                         "double" to 1.0,
                         "float" to 1.0f,
                     )
-                ), timestamp() + (it * 60)
+                ), timestamp() + (it * 60),
+                uuid()
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
@@ -212,7 +213,8 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        val service =
+            SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L)
         // When
         val response = service.postQueueActions(actions)
         // Then
@@ -240,6 +242,7 @@ class SynchronizationServiceTest : ServiceTest() {
                     Assert.assertFalse(it.data?.isEmpty() ?: true)
                     Assert.assertNotNull(it.actionedAt)
                     Assert.assertNotNull(it.syncedAt)
+                    Assert.assertNotNull(it.eventId)
                 }
             },
             onFailure = {
@@ -308,6 +311,70 @@ class SynchronizationServiceTest : ServiceTest() {
         assertRequestContainsQueryParam("after", timestampAfter.toString())
         assertRequestContainsQueryParam("exclude", excludeTimestamp.toString())
     }
+
+
+    @Test
+    fun getQueueActionsWithEventIdAfter() = runBlocking {
+        // Given
+        val eventId = uuid()
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventId)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventId)
+        assertRequestMissingQueryParam("exclude")
+    }
+
+    @Test
+    fun getQueueActionsWithExcludeEventIds() = runBlocking {
+        // Given
+        val exclude = generateRandomArray { uuid() + it }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(exclude = exclude)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
+        assertRequestMissingQueryParam("after")
+        assertRequestMissingQueryParam("limit")
+    }
+
+    @Test
+    fun getQueueActionsWithEventIdsAfterAndExclude() = runBlocking {
+        // Given
+        val eventIdAfter = uuid()
+        val exclude = generateRandomArray { uuid() }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventIdAfter, exclude)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventIdAfter)
+        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
+    }
+
+    @Test
+    fun getQueueActionsWithEventIdsAfterAndExcludeUniques() = runBlocking {
+        // Given
+        val eventIdAfter = uuid()
+        val excludeEventId = uuid()
+        val limit = 100
+        val exclude = generateArray(10) { excludeEventId }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventIdAfter, exclude, limit)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventIdAfter)
+        assertRequestContainsQueryParam("exclude", excludeEventId)
+        assertRequestContainsQueryParam("limit", limit.toString())
+    }
+
 
     @Test
     fun postValidateEntitiesData() = runBlocking {

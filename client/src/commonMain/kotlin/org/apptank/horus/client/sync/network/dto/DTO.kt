@@ -46,7 +46,8 @@ sealed class SyncDTO {
             val action: String,
             val entity: String,
             val data: DataMap,
-            @SerialName("actioned_at") val actionedAt: Long
+            @SerialName("actioned_at") val actionedAt: Long,
+            @SerialName("event_id") val eventId: String? = null
         )
 
         /**
@@ -144,7 +145,8 @@ sealed class SyncDTO {
             val entity: String? = null,
             val data: DataMap? = null,
             @SerialName("actioned_at") val actionedAt: Long? = null,
-            @SerialName("synced_at") val syncedAt: Long? = null
+            @SerialName("synced_at") val syncedAt: Long? = null,
+            @SerialName("event_id") val eventId: String? = null
         )
 
         /**
