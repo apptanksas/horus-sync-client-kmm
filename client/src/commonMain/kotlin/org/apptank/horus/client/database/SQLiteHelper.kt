@@ -364,20 +364,23 @@ abstract class SQLiteHelper(
         ).value
 
         if (!columnExists) {
+
             execute(
                 identifier = null,
                 sql = "ALTER TABLE $table ADD COLUMN $column TEXT",
                 parameters = 0
             )
+
             if (asUnique) {
                 execute(
                     identifier = null,
-                    sql = "CREATE UNIQUE INDEX ${table}_${column}_unique\n" +
+                    sql = "CREATE UNIQUE INDEX IF NOT EXISTS ${table}_${column}_unique\n" +
                             "ON $table ($column);",
                     parameters = 0
                 )
             }
         }
+
     }
 
     /**

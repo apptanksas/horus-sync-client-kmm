@@ -86,7 +86,10 @@ class HorusDatabase(
                 execute(EntitiesTable.SQL_CREATE_TABLE)
                 execute(SyncControlTable.SQL_CREATE_TABLE)
                 execute(QueueActionsTable.SQL_CREATE_TABLE).also {
-                    execute(QueueActionsTable.SQL_MIGRATION_ADD_COLUMN_EVENT_ID)
+                    runCatching {
+                        execute(QueueActionsTable.SQL_MIGRATION_ADD_COLUMN_EVENT_ID)
+                        execute(QueueActionsTable.SQL_MIGRATION_ADD_UNIQUE_INDEX_EVENT_ID)
+                    }
                 }
                 execute(SyncFileTable.SQL_CREATE_TABLE)
                 execute(EntityAttributesTable.SQL_CREATE_TABLE)

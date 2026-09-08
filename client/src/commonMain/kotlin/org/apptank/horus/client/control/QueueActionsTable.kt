@@ -44,8 +44,10 @@ internal object QueueActionsTable {
                 "$ATTR_DATETIME INTEGER NOT NULL)"
 
     const val SQL_MIGRATION_ADD_COLUMN_EVENT_ID =
-        "ALTER TABLE $TABLE_NAME ADD COLUMN $ATTR_EVENT_ID TEXT;" +
-                "CREATE UNIQUE INDEX ${TABLE_NAME}_${ATTR_EVENT_ID}_unique\n" +
+        "ALTER TABLE $TABLE_NAME ADD COLUMN $ATTR_EVENT_ID TEXT;"
+
+    const val SQL_MIGRATION_ADD_UNIQUE_INDEX_EVENT_ID =
+        "CREATE UNIQUE INDEX IF NOT EXISTS ${TABLE_NAME}_${ATTR_EVENT_ID}_unique\n" +
                 "ON $TABLE_NAME ($ATTR_EVENT_ID);"
 
     /**
