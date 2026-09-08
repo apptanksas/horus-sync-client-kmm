@@ -564,7 +564,8 @@ internal class SyncControlDatabaseHelper(
             cursor.getValue("entity"),
             SyncControl.ActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
-            Instant.fromEpochSeconds(cursor.getValue("datetime")).toLocalDateTime(TimeZone.UTC)
+            Instant.fromEpochSeconds(cursor.getValue("datetime")).toLocalDateTime(TimeZone.UTC),
+            cursor.getValue("event_id")
         )
     }
 

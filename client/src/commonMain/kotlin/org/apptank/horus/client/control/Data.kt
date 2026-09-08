@@ -173,6 +173,7 @@ sealed class SyncControl {
      * @param status The status of the action.
      * @param data A map of data related to the action.
      * @param actionedAt The time at which the action was performed.
+     * @param eventId The unique identifier for the event associated with the action.
      */
     data class Action(
         val id: Int,
@@ -180,7 +181,8 @@ sealed class SyncControl {
         val entity: String,
         val status: ActionStatus,
         val data: DataMap,
-        val actionedAt: LocalDateTime
+        val actionedAt: LocalDateTime,
+        val eventId: String? = null
     ) {
 
         /**

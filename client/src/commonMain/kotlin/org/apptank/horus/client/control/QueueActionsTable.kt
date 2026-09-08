@@ -5,6 +5,8 @@ import org.apptank.horus.client.utils.SystemTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Object containing constants and utility functions related to the "queue_actions" table in the database.
@@ -26,6 +28,9 @@ internal object QueueActionsTable {
     const val ATTR_STATUS = "status"
     const val ATTR_DATETIME = "datetime"
 
+    // New column
+    const val ATTR_EVENT_ID = "event_id"
+
     /**
      * SQL statement to create the queue_actions table if it does not already exist.
      */
@@ -38,6 +43,11 @@ internal object QueueActionsTable {
                 "$ATTR_STATUS INTEGER NOT NULL," +
                 "$ATTR_DATETIME INTEGER NOT NULL)"
 
+    const val SQL_MIGRATION_ADD_COLUMN_EVENT_ID =
+        "ALTER TABLE $TABLE_NAME ADD COLUMN $ATTR_EVENT_ID TEXT;" +
+                "CREATE UNIQUE INDEX ${TABLE_NAME}_${ATTR_EVENT_ID}_unique\n" +
+                "ON $TABLE_NAME ($ATTR_EVENT_ID);"
+
     /**
      * Maps the details of an action to a format suitable for insertion into the queue_actions table.
      *
@@ -46,11 +56,17 @@ internal object QueueActionsTable {
      * @param jsonData The data associated with the action, serialized as a JSON string.
      * @return A map of column names to values for insertion into the table.
      */
-    inline fun mapToCreate(actionType: SyncControl.ActionType, entity: String, jsonData: Map<String, Any?>) = mapOf(
+    @OptIn(ExperimentalUuidApi::class)
+    inline fun mapToCreate(
+        actionType: SyncControl.ActionType,
+        entity: String,
+        jsonData: Map<String, Any?>
+    ) = mapOf(
         ATTR_ACTION_TYPE to actionType.id,
         ATTR_ENTITY to entity,
         ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
-        ATTR_DATETIME to SystemTime.getCurrentTimestamp()
+        ATTR_DATETIME to SystemTime.getCurrentTimestamp(),
+        ATTR_EVENT_ID to Uuid.random().toString()
     )
 }
