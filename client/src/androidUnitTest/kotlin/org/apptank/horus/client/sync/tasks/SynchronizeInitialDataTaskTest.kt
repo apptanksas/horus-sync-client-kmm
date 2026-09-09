@@ -28,6 +28,9 @@ import dev.mokkery.MockMode
 import dev.mokkery.mock
 import dev.mokkery.verify
 import dev.mokkery.verifySuspend
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toPath
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
@@ -174,13 +177,20 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         val eventId = "event-id-1"
         val datetime = 1_726_000_000L
         val data = mapOf("id" to "1", "name" to "John")
+        val actionDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
 
-        syncControlDatabaseHelper.addActionCompleted(
-            SyncControl.ActionType.INSERT,
-            entity,
-            data,
-            datetime,
-            eventId
+        syncControlDatabaseHelper.addActionsCompleted(
+            listOf(
+                SyncControl.Action(
+                    id = 0,
+                    action = SyncControl.ActionType.INSERT,
+                    entity = entity,
+                    status = SyncControl.ActionStatus.COMPLETED,
+                    data = data,
+                    actionedAt = actionDateTime,
+                    eventId = eventId
+                )
+            )
         )
 
         val action = syncControlDatabaseHelper.getLastActionCompleted()
@@ -201,14 +211,21 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         HorusDatabase.Schema.create(driver, entitiesScheme)
 
         var isExpectedException = false
+        val actionDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
 
         try {
-            syncControlDatabaseHelper.addActionCompleted(
-                SyncControl.ActionType.UPDATE,
-                "entity_not_exists",
-                mapOf("id" to "1"),
-                1_726_000_001L,
-                "event-id-2"
+            syncControlDatabaseHelper.addActionsCompleted(
+                listOf(
+                    SyncControl.Action(
+                        id = 0,
+                        action = SyncControl.ActionType.UPDATE,
+                        entity = "entity_not_exists",
+                        status = SyncControl.ActionStatus.COMPLETED,
+                        data = mapOf("id" to "1"),
+                        actionedAt = actionDateTime,
+                        eventId = "event-id-2"
+                    )
+                )
             )
         } catch (_: IllegalArgumentException) {
             isExpectedException = true

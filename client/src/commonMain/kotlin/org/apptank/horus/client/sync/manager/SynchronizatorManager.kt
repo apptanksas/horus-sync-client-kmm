@@ -23,6 +23,7 @@ import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.hashing.AttributeHasher
 import org.apptank.horus.client.extensions.warn
+import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.dto.toInternalModel
@@ -166,12 +167,7 @@ internal class SynchronizatorManager(
      */
     suspend fun existsDataToSync(): Boolean? {
 
-        val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
-
-        val resultActions = synchronizationService.getQueueActions(
-            validateCheckpointTimestamp(checkpointTimestamp),
-            lastActions.map { it.getActionedAtTimestamp() })
+        val resultActions = getLastActions()
 
         when (resultActions) {
             is DataResult.Success -> {
@@ -206,6 +202,65 @@ internal class SynchronizatorManager(
         }
 
         return null
+    }
+
+    private suspend fun getLastActions(): DataResult<List<SyncDTO.Response.SyncAction>> {
+
+        var checkpointLastAction = syncControlDatabaseHelper.getLastActionCompleted()
+
+        if (checkpointLastAction == null) {
+            when (val lastAction = synchronizationService.getLastQueueAction()) {
+                is DataResult.Success -> {
+                    checkpointLastAction = lastAction.data.toDomain()
+                    syncControlDatabaseHelper.addActionsCompleted(listOf(lastAction.data.toDomain()))
+                }
+
+                else -> {
+                    log("[SynchronizatorManager] Error getting last queue action")
+                }
+            }
+        }
+
+
+        // -----------------------------
+        // GET ACTIONS WITH EVENT IDS
+        // -----------------------------
+
+        checkpointLastAction?.eventId?.let { eventId ->
+
+            val actions = mutableListOf<SyncDTO.Response.SyncAction>()
+            var isEmpty: Boolean
+            var eventIdTarget = eventId
+
+            do {
+                val result = synchronizationService.getQueueActions(eventIdTarget, limit = 1000)
+                when (result) {
+                    is DataResult.Success -> {
+                        actions.addAll(result.data)
+                        isEmpty = result.data.isEmpty()
+                        eventIdTarget = result.data.lastOrNull()?.eventId ?: eventId
+                    }
+
+                    else -> {
+                        return result
+                    }
+                }
+            } while (!isEmpty)
+
+            return DataResult.Success(actions)
+        }
+
+        // -----------------------------
+        // GET ACTIONS USING CHECKPOINT TIMESTAMP (DEPRECATED)
+        // -----------------------------
+
+        val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
+        val lastActions =
+            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+
+        return synchronizationService.getQueueActions(
+            validateCheckpointTimestamp(checkpointTimestamp),
+            lastActions.map { it.getActionedAtTimestamp() })
     }
 
     /**
@@ -402,36 +457,16 @@ internal class SynchronizatorManager(
      */
     private suspend fun synchronizeData(): Boolean {
 
-        val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-
-        if (checkpointDatetime == 0L) {
-            log("[SynchronizatorManager] No checkpoint datetime")
-            return true
-        }
-
-        log("[SynchronizatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
-
-        val actions = synchronizationService.getQueueActions(validateCheckpointTimestamp(checkpointDatetime))
+        val actions = getLastActions()
 
         when (actions) {
             is DataResult.Success -> {
 
-                val actionSequences = actions.data.mapNotNull { it.sequence }.toMutableList()
+                val actionsWithEventIdsNotProcessed = syncControlDatabaseHelper
+                    .getExistsActionEventIds(actions.data.mapNotNull { it.eventId }.toList())
+                    .filter { it.value.not() }.map { it.key }
 
-                // -------------------------------------------------
-                // Filter actions that are already processed
-                // -------------------------------------------------
-
-                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
-                actionSequences.removeAll(actionsAlreadyProcessed)
-
-                // -------------------------------------------------
-
-                val actionsToProcess = actions.data.filter { action ->
-                    action.sequence?.let { actionSequences.contains(it) } ?: true
-                }
-                val newActions = filterOwnActions(actionsToProcess.map { it.toDomain() }, checkpointDatetime)
-
+                val newActions = actions.data.filter { actionsWithEventIdsNotProcessed.contains(it.eventId) }.map { it.toDomain() }
                 val (moveActions, insertActions, updateActions, deleteActions) = organizeActions(newActions)
 
                 if (executeMoveActions(moveActions).not()) {
@@ -444,7 +479,9 @@ internal class SynchronizatorManager(
                 }
 
                 val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
-                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty())
+                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty()) {
+                    syncControlDatabaseHelper.addActionsCompleted((moveActions + insertActions + updateActions + deleteActions))
+                }
 
                 val syncControlStatus = if (result) {
                     log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
@@ -453,12 +490,20 @@ internal class SynchronizatorManager(
                     log("[SynchronizatorManager:synchronizeData] Error synchronizing data")
                     SyncControl.Status.FAILED
                 }
+
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
                     syncControlStatus
                 )
 
-                // Insert processed action sequences
+                // -------------------------------------------------
+                // Filter actions that are already processed (DEPRECATED)
+                // -------------------------------------------------
+
+                val actionSequences = actions.data.mapNotNull { it.sequence }.toMutableList()
+                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
+                actionSequences.removeAll(actionsAlreadyProcessed)
+
                 syncControlDatabaseHelper.insertActionSequences(actionSequences)
 
                 return result
@@ -483,27 +528,6 @@ internal class SynchronizatorManager(
                 log("[SynchronizatorManager] Client error: ${actions.type}")
                 return false
             }
-        }
-    }
-
-    /**
-     * Filters out actions that are not present in the local database.
-     *
-     * @param actions A list of synchronization actions.
-     * @param checkpointTimestamp The timestamp of the last checkpoint.
-     * @return A filtered list of actions to be processed.
-     */
-    private fun filterOwnActions(
-        actions: List<SyncControl.Action>,
-        checkpointTimestamp: Long
-    ): List<SyncControl.Action> {
-
-        val ownActions =
-            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
-
-        // Filter the actions that are not in the local database
-        return actions.filterNot { action ->
-            ownActions.find { it.getActionedAtTimestamp() == action.getActionedAtTimestamp() } != null
         }
     }
 

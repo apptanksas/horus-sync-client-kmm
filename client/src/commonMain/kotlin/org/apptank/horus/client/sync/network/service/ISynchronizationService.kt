@@ -74,6 +74,7 @@ interface ISynchronizationService {
      * @param exclude List of IDs to exclude from the results.
      * @return [DataResult] containing a list of [SyncDTO.Response.SyncAction] if successful.
      */
+    @Deprecated("Use getQueueActions with after parameter instead.")
     suspend fun getQueueActions(
         timestampAfter: Long? = null,
         exclude: List<Long> = emptyList()

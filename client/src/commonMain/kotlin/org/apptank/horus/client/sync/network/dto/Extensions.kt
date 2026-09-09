@@ -134,7 +134,8 @@ internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
         data = data ?: mapOf(),
         actionedAt = actionedAt?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
-        } ?: throw IllegalArgumentException("DatetimeAction is null")
+        } ?: throw IllegalArgumentException("DatetimeAction is null"),
+        eventId = eventId
     )
 }
 

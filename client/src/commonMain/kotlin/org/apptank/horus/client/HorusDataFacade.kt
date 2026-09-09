@@ -3,6 +3,7 @@ package org.apptank.horus.client
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.CallbackEvent
@@ -790,8 +791,10 @@ object HorusDataFacade {
      * @return `true` if there are pending actions to synchronize, `false` otherwise.
      */
     suspend fun hasDataToSync(): Boolean {
-        val hasLocalDataPendingToPush = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
-        val hasRemoteDataPendingToPull = (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataToSync() ?: false)
+        val hasLocalDataPendingToPush =
+            syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasRemoteDataPendingToPull =
+            (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataToSync() ?: false)
         val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
 
         return hasLocalDataPendingToPush || hasFilesPending || hasRemoteDataPendingToPull
@@ -803,7 +806,7 @@ object HorusDataFacade {
      * @return The last synchronization timestamp, or `null` if no synchronization has occurred.
      */
     fun getLastSyncDate(): Long? {
-        return syncControlDatabaseHelper?.getLastDatetimeCheckpoint()
+        return syncControlDatabaseHelper?.getLastActionCompleted()?.actionedAt?.toInstant(TimeZone.UTC)?.epochSeconds
     }
 
     /**

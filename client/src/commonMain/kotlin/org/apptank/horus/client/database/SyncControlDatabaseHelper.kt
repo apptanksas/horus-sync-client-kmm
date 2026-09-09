@@ -476,6 +476,7 @@ internal class SyncControlDatabaseHelper(
      *
      * @param sequences The list of action sequence IDs to be inserted.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun insertActionSequences(sequences: List<Long>) {
         driver.handle {
 
@@ -501,6 +502,7 @@ internal class SyncControlDatabaseHelper(
      * @param sequences The list of action sequence IDs to be checked.
      * @return A list of existing action sequence IDs.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
         driver.handle {
 

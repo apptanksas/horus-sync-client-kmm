@@ -72,19 +72,20 @@ internal object QueueActionsTable {
         ATTR_EVENT_ID to Uuid.random().toString()
     )
 
+    @OptIn(ExperimentalUuidApi::class)
     fun mapToComplete(
         actionType: SyncControl.ActionType,
         entity: String,
         jsonData: Map<String, Any?>,
         dateTime: Long,
-        eventId: String
+        eventId: String?
     ) = mapOf(
         ATTR_ACTION_TYPE to actionType.id,
         ATTR_ENTITY to entity,
         ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.COMPLETED.id,
         ATTR_DATETIME to dateTime,
-        ATTR_EVENT_ID to eventId
+        ATTR_EVENT_ID to (eventId ?: Uuid.random().toString())
     )
 
 }

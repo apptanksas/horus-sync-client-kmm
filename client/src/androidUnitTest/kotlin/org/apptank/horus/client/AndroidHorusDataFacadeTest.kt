@@ -254,20 +254,28 @@ class AndroidHorusDataFacadeTest : TestCase() {
     fun `when getLastSyncDate return null`(): Unit = runBlocking {
         // Given
         val mockSyncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
-        val timestampExpected = Clock.System.now().epochSeconds
+        val lastActionExpected =  SyncControl.Action(
+            Random.nextInt(), SyncControl.ActionType.INSERT,
+            "entity",
+            SyncControl.ActionStatus.COMPLETED,
+            emptyMap(), Clock.System.now()
+                .toLocalDateTime(
+                    TimeZone.UTC
+                )
+        )
 
         with(HorusContainer) {
             setupSyncControlDatabaseHelper(mockSyncControlDatabaseHelper)
         }
 
         every {
-            mockSyncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        } returns (timestampExpected)
+            mockSyncControlDatabaseHelper.getLastActionCompleted()
+        } returns (lastActionExpected)
 
         // When
         val result = HorusDataFacade.getLastSyncDate()
         // Then
-        Assert.assertEquals(timestampExpected, result)
+        Assert.assertEquals(lastActionExpected.getActionedAtTimestamp(), result)
     }
 
     @Test

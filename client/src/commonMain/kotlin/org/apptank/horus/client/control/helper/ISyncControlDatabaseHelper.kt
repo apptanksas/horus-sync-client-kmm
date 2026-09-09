@@ -198,6 +198,7 @@ interface ISyncControlDatabaseHelper {
      *
      * @param sequences The list of action sequence numbers to insert.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun insertActionSequences(sequences: List<Long>)
 
     /**
@@ -206,6 +207,7 @@ interface ISyncControlDatabaseHelper {
      * @param sequences The list of action sequence numbers to check.
      * @return A list of existing action sequence numbers.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun getExistsActionSequences(sequences: List<Long>): List<Long>
 
     /**
