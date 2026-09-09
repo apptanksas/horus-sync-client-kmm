@@ -301,6 +301,92 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun addActionsCompletedIsSuccess() {
+        // Given
+        val entity = "entity_completed_123"
+        val datetime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
+        val actions = listOf(
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.INSERT,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "1", "name" to "John"),
+                actionedAt = datetime,
+                eventId = "event-completed-1"
+            ),
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.UPDATE,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "2", "name" to "Alice"),
+                actionedAt = datetime,
+                eventId = "event-completed-2"
+            )
+        )
+
+        // When
+        controlManagerDatabaseHelper.addActionsCompleted(actions)
+
+        // Then
+        val completedActions = controlManagerDatabaseHelper.getCompletedActionsAfterDatetime(0)
+        Assert.assertEquals(2, completedActions.size)
+        Assert.assertEquals(setOf("event-completed-1", "event-completed-2"), completedActions.map { it.eventId }.toSet())
+    }
+
+    @Test
+    fun addActionsCompletedRollbackWhenSecondActionFailsIsSuccess() {
+        // Given
+        val entity = "entity_transaction_123"
+        val datetime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
+        val actions = listOf(
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.INSERT,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "1", "name" to "John"),
+                actionedAt = datetime,
+                eventId = "event-transaction-1"
+            ),
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.UPDATE,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "2", "invalid" to Exception("invalid value")),
+                actionedAt = datetime,
+                eventId = "event-transaction-2"
+            )
+        )
+
+        // When
+        try {
+            controlManagerDatabaseHelper.addActionsCompleted(actions)
+            fail("Expected an exception due invalid data serialization")
+        } catch (_: Exception) {
+            // Then
+            val insertedRows = driver.executeQuery(
+                null,
+                "SELECT COUNT(*) FROM ${QueueActionsTable.TABLE_NAME}",
+                {
+                    QueryResult.Value(it.getLong(0))
+                },
+                0
+            ).value
+
+            Assert.assertEquals(0L, insertedRows)
+        }
+    }
+
+    @Test
     fun getPendingActionsIsSuccess() {
         // Given
         val entity = "entity123"

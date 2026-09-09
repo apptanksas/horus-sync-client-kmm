@@ -190,27 +190,35 @@ internal class SyncControlDatabaseHelper(
 
 
     /**
-     * Completes an action for an entity in the database.
+     * Completes a list of actions for entities in the database.
      *
-     * @param actionType The type of the action.
-     * @param entity The name of the entity.
-     * @param jsonData The JSON data associated with the action.
-     * @param dateTime The timestamp of the action completion.
-     * @param eventId The event identifier.
+     * @param actions The list of synchronization actions to be completed.
      */
-    override fun addActionCompleted(
-        actionType: SyncControl.ActionType,
-        entity: String,
-        jsonData: Map<String, Any?>,
-        dateTime: Long,
-        eventId: String
-    ) {
-        validateIfEntityExists(entity)
+    override fun addActionsCompleted(actions: List<SyncControl.Action>) {
+        val entities = actions.map { it.entity }.distinct()
+
+        entities.forEach {
+            validateIfEntityExists(it)
+        }
+
         driver.handle {
-            insertOrThrow(
-                QueueActionsTable.TABLE_NAME,
-                QueueActionsTable.mapToComplete(actionType, entity, jsonData, dateTime, eventId)
-            )
+
+            transaction {
+
+                actions.forEach { action ->
+                    insertOrThrow(
+                        QueueActionsTable.TABLE_NAME,
+                        QueueActionsTable.mapToComplete(
+                            action.action,
+                            action.entity,
+                            action.data,
+                            action.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+                            action.eventId
+                        )
+                    )
+                }
+            }
+
         }
     }
 
