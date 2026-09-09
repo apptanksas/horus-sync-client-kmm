@@ -738,6 +738,78 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun `when getExistsActionEventIds is success`() {
+        // Given
+        val entity = "entity_event_id_exists"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val row1 = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "A"),
+            1000L,
+            "event-id-1"
+        )
+        val row2 = queueActionMapToCreate(
+            SyncControl.ActionType.UPDATE,
+            entity,
+            mapOf("id" to "2", "name" to "B"),
+            1001L,
+            "event-id-2"
+        )
+
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row1)
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row2)
+
+        // When
+        val result = controlManagerDatabaseHelper.getExistsActionEventIds(
+            listOf("event-id-1", "event-id-x", "event-id-2")
+        )
+
+        // Then
+        Assert.assertEquals(3, result.size)
+        Assert.assertEquals(true, result["event-id-1"])
+        Assert.assertEquals(false, result["event-id-x"])
+        Assert.assertEquals(true, result["event-id-2"])
+    }
+
+    @Test
+    fun `when getExistsActionEventIds with many eventIds then validate using chunked`() {
+        // Given
+        val entity = "entity_event_id_chunked"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val existingEventIds = listOf("event-id-10", "event-id-999", "event-id-1500", "event-id-2005")
+
+        existingEventIds.forEachIndexed { index, eventId ->
+            driver.insertOrThrow(
+                QueueActionsTable.TABLE_NAME,
+                queueActionMapToCreate(
+                    SyncControl.ActionType.INSERT,
+                    entity,
+                    mapOf("id" to (index + 1).toString(), "name" to "Item-$index"),
+                    2000L + index,
+                    eventId
+                )
+            )
+        }
+
+        val eventIdsToCheck = (1..2005).map { "event-id-$it" }
+
+        // When
+        val result = controlManagerDatabaseHelper.getExistsActionEventIds(eventIdsToCheck)
+
+        // Then
+        Assert.assertEquals(eventIdsToCheck.size, result.size)
+        existingEventIds.forEach { Assert.assertEquals(true, result[it]) }
+        Assert.assertFalse(result.containsKey("event-id-2006"))
+        Assert.assertEquals(false, result["event-id-500"])
+        Assert.assertEquals(false, result["event-id-1"])
+    }
+
+    @Test
     fun `when insert actions using same event id then throw exception`() {
         // Given
         val e1 = "products_q1"

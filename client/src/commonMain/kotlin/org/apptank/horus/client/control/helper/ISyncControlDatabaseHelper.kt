@@ -208,6 +208,14 @@ interface ISyncControlDatabaseHelper {
      */
     fun getExistsActionSequences(sequences: List<Long>): List<Long>
 
+    /**
+     * Validates a list of event IDs and indicates which of them exist in the database.
+     *
+     * @param eventIds The list of event IDs to validate.
+     * @return A map where each event ID is associated with `true` if it exists, or `false` otherwise.
+     */
+    fun getExistsActionEventIds(eventIds: List<String>): Map<String, Boolean>
+
 
     /**
      * Queries the database for actions that match the specified criteria.

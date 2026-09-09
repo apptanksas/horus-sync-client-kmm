@@ -520,6 +520,41 @@ internal class SyncControlDatabaseHelper(
     }
 
     /**
+     * Validates a list of event IDs and indicates which of them exist in queue actions.
+     *
+     * Uses chunking to avoid SQLite parameter limits when querying large lists.
+     *
+     * @param eventIds The list of event IDs to validate.
+     * @return A map where each event ID is associated with `true` if it exists, or `false` otherwise.
+     */
+    override fun getExistsActionEventIds(eventIds: List<String>): Map<String, Boolean> {
+
+        if (eventIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        driver.handle {
+            val uniqueEventIds = eventIds.distinct()
+            val existsEventIds = mutableSetOf<String>()
+
+            uniqueEventIds.chunked(SQLITE_MAX_IN_PARAMS).forEach { chunk ->
+                val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
+                    .whereIn(QueueActionsTable.ATTR_EVENT_ID, chunk)
+                    .select(QueueActionsTable.ATTR_EVENT_ID)
+                    .build()
+
+                existsEventIds.addAll(
+                    queryResult(sqlSentence) {
+                        it.getValue<String>(QueueActionsTable.ATTR_EVENT_ID)
+                    }
+                )
+            }
+
+            return uniqueEventIds.associateWith { existsEventIds.contains(it) }
+        }
+    }
+
+    /**
      * Queries the database for actions that match the specified criteria.
      *
      * @param entityNames A list of entity names to filter actions by.
@@ -691,6 +726,7 @@ internal class SyncControlDatabaseHelper(
     }
 
     companion object {
+        private const val SQLITE_MAX_IN_PARAMS = 900
         private val entityWritableCache = mutableMapOf<String, Boolean>()
         private val entityLevelCache = mutableMapOf<String, Int>()
         private val entitiesRelatedCache = mutableMapOf<String, List<EntityRelated>>()
