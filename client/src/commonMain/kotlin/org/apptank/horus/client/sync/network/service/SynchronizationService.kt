@@ -43,7 +43,8 @@ internal class SynchronizationService(
     engine: HttpClientEngine,
     baseUrl: String,
     customHeaders: Map<String, String> = emptyMap(),
-    private val delayChunked: Long = 5000L
+    private val delayChunked: Long = 5000L,
+    private val chunkSize: Int = 300
 ) : BaseService(engine, baseUrl, customHeaders), ISynchronizationService {
 
 
@@ -155,26 +156,31 @@ internal class SynchronizationService(
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
 
-        val chunks = actions.sortedBy { it.actionedAt }.chunked(300)
-        val results = mutableListOf<DataResult<Unit>>()
+        val chunks = actions.sortedBy { it.actionedAt }.chunked(chunkSize)
 
         chunks.forEach { chunk ->
-            results.add(post("queue/actions", chunk) { it.serialize() })
+
+            val result: DataResult<Unit> = post("queue/actions", chunk) { it.serialize() }
+
+            when (result) {
+                is DataResult.Success -> Unit
+                is DataResult.ClientError -> {
+                    return result.also {
+                        emitEventSyncError(result)
+                    }
+                }
+
+                is DataResult.Failure, is DataResult.NotAuthorized -> {
+                    return result
+                }
+            }
+
             if (chunks.size > 1) {
                 delay(delayChunked)
             }
         }
 
-        return if (results.all { it is DataResult.Success }) {
-            DataResult.Success(Unit)
-        } else {
-            return (results.find { it !is DataResult.Success }
-                ?: DataResult.Failure(Exception("Failed to post queue actions"))).also {
-                if (it is DataResult.ClientError) {
-                    emitEventSyncError(it)
-                }
-            }
-        }
+        return DataResult.Success(Unit)
     }
 
     /**

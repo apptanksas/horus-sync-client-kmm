@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.network.service
 
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.HttpHeaders
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_ENTITY
@@ -213,12 +214,53 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
-        val service =
-            SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L)
         // When
         val response = service.postQueueActions(actions)
         // Then
         assert(response is DataResult.Success)
+    }
+
+    @Test
+    fun postQueueActionsChunkedWithFirstChunkFailure() = runBlocking {
+
+        // Given
+        val chunkSize = 100
+        val actions = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        }
+
+        var requestCounter = 0
+
+        val mockEngine = MockEngine { request ->
+            requestCounter += 1
+
+            if (Json.decodeFromString<List<SyncDTO.Request.SyncActionRequest>>(String(request.body.toByteArray())).size == chunkSize) {
+                return@MockEngine respond(
+                    content = "",
+                    status = HttpStatusCode.Forbidden,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+
+            respond(
+                content = "",
+                status = HttpStatusCode.Created,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L, chunkSize)
+        // When
+        val response = service.postQueueActions(actions)
+        // Then
+        assert(response is DataResult.NotAuthorized)
+        assertEquals(requestCounter, 1)
     }
 
     @Test
