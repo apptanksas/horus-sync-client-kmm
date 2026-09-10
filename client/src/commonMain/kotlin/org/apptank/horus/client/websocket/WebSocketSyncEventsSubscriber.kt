@@ -17,6 +17,7 @@ import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.logException
+import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.service.IBroadcastService
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.dto.toDomain
@@ -26,18 +27,20 @@ import org.apptank.horus.client.websocket.data.WebSocketEvent
 import org.apptank.horus.client.websocket.data.WebSocketPusherEventName
 import kotlin.math.min
 
-class WebSocketSyncEventsSubscriber(
+internal class WebSocketSyncEventsSubscriber(
     private val httpClient: HttpClient,
     private val config: HorusConfig,
     private val broadcastService: IBroadcastService
-) {
+) : RealtimeSyncEventsSubscriber {
+
     private val decoderJson = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
     internal val outgoingChannel = Channel<WebSocketEvent>(Channel.BUFFERED)
 
-    suspend fun subscriber(ownerId: String, onActionReceived: (SyncControl.Action) -> Unit) {
+    override suspend fun subscriber(ownerId: String, onActionReceived: (SyncControl.Action) -> Unit) {
 
         var currentDelay = 1000L
 
@@ -80,7 +83,7 @@ class WebSocketSyncEventsSubscriber(
                 }
             } catch (e: Exception) {
                 sendJob?.cancel()
-                logException("[WebSocketSyncEventsSubscriber] Error while receiving WebSocket events", e)
+                warn("[WebSocketSyncEventsSubscriber] Error while receiving WebSocket events: ${e.message}")
                 if (!currentCoroutineContext().isActive) break
             }
 

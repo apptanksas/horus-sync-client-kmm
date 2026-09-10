@@ -8,6 +8,7 @@ import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
+import org.apptank.horus.client.sync.manager.RealtimeSynchronizatorManager
 import org.apptank.horus.client.tasks.ControlTaskManager
 
 
@@ -15,6 +16,7 @@ object HorusLifeCycle : ILifeCycle {
 
     private val dispenserManager: DispenserManager by lazy { HorusContainer.getDispenserManager() }
     private val syncFileUploadedManager: ISyncFileUploadedManager by lazy { HorusContainer.getSyncFileUploadedManager() }
+    private val realTimeSynchronizatorManager: RealtimeSynchronizatorManager by lazy { HorusContainer.getRealTimeSynchronizatorManager() }
 
     private var callbackEventActionCreated: CallbackEvent = {
         dispenserManager.processBatch()
@@ -22,6 +24,7 @@ object HorusLifeCycle : ILifeCycle {
 
     private var callbackSetupChanged: CallbackEvent = {
         ControlTaskManager.start()
+        realTimeSynchronizatorManager.start()
     }
 
     private val networkValidator: INetworkValidator by lazy { HorusContainer.getNetworkValidator() }
@@ -37,6 +40,7 @@ object HorusLifeCycle : ILifeCycle {
 
         networkValidator.registerNetworkCallback()
         ControlTaskManager.start()
+        realTimeSynchronizatorManager.start()
         syncFileUploadedManager.syncFiles()
     }
 

@@ -24,6 +24,7 @@ import org.apptank.horus.client.database.SyncFileDatabaseHelper
 import org.apptank.horus.client.restrictions.EntityRestrictionValidator
 import org.apptank.horus.client.sync.manager.DispenserManager
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
+import org.apptank.horus.client.sync.manager.RealtimeSynchronizatorManager
 import org.apptank.horus.client.sync.manager.SyncFileUploadedManager
 import org.apptank.horus.client.sync.manager.SynchronizatorManager
 import org.apptank.horus.client.sync.network.service.FileSynchronizationService
@@ -78,6 +79,8 @@ object HorusContainer {
     private var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager? = null
 
     private var synchronizatorManager: SynchronizatorManager? = null
+
+    private var realTimeSynchronizatorManager: RealtimeSynchronizatorManager? = null
 
     private var syncFileUploadedManager: ISyncFileUploadedManager? = null
 
@@ -445,6 +448,23 @@ object HorusContainer {
             )
         }
         return synchronizatorManager!!
+    }
+
+    /**
+     * Retrieves the real-time synchronizator manager.
+     *
+     * @return A new instance of [RealtimeSynchronizatorManager].
+     */
+    internal fun getRealTimeSynchronizatorManager(): RealtimeSynchronizatorManager {
+        if (realTimeSynchronizatorManager == null) {
+            realTimeSynchronizatorManager = RealtimeSynchronizatorManager(
+                getNetworkValidator(),
+                getSyncControlDatabaseHelper(),
+                getWebSocketSyncEventsSubscriber(),
+                getOperationDatabaseHelper()
+            )
+        }
+        return realTimeSynchronizatorManager!!
     }
 
     /**

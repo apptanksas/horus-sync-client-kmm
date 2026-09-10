@@ -15,8 +15,6 @@ import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.struct.toDeleteRecord
 import org.apptank.horus.client.database.struct.toInsertRecord
 import org.apptank.horus.client.database.struct.toRecordsInsert
-import org.apptank.horus.client.database.struct.toUpdateRecord
-import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.log
@@ -28,7 +26,6 @@ import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.dto.toInternalModel
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
-import org.apptank.horus.client.utils.SystemTime
 
 /**
  * Manages data synchronization between local storage and a remote server.
@@ -44,9 +41,9 @@ import org.apptank.horus.client.utils.SystemTime
 internal class SynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
-    private val operationDatabaseHelper: IOperationDatabaseHelper,
+    operationDatabaseHelper: IOperationDatabaseHelper,
     private val synchronizationService: ISynchronizationService
-) {
+) : BaseSynchronizator(operationDatabaseHelper) {
 
     /**
      * Represents the status of the synchronization process.
@@ -255,8 +252,7 @@ internal class SynchronizatorManager(
         // -----------------------------
 
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions =
-            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
         return synchronizationService.getQueueActions(
             validateCheckpointTimestamp(checkpointTimestamp),
@@ -548,17 +544,9 @@ internal class SynchronizatorManager(
      * @return A list of update operations.
      */
     private fun mapToUpdateOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.UpdateRecord> {
-
-        val actionsUpdate = actions.mapNotNull {
-            getEntityById(it.entity, it.getEntityId())?.let { entity ->
-                it.toUpdateRecord(entity)
-            } ?: run {
-                log("[SynchronizatorManager] Error updating data. [${it.data}]")
-                null
-            }
+        return actions.mapNotNull {
+            mapActionToUpdateDatabaseOperation(it)
         }
-
-        return actionsUpdate
     }
 
     /**
@@ -571,40 +559,6 @@ internal class SynchronizatorManager(
         return actions.sortedByDescending { syncControlDatabaseHelper.getEntityLevel(it.entity) }.map { it.toDeleteRecord() }
     }
 
-    /**
-     * Retrieves an entity by its ID.
-     *
-     * @param entity The name of the entity.
-     * @param id The ID of the entity.
-     * @return The entity if found, `null` otherwise.
-     */
-    private fun getEntityById(entity: String, id: String): Horus.Entity? {
-
-        val queryBuilder = SimpleQueryBuilder(entity).apply {
-            where(
-                SQL.WhereCondition(
-                    SQL.ColumnValue(Horus.Attribute.ID, id)
-                )
-            )
-        }
-
-        return operationDatabaseHelper.queryRecords(queryBuilder).map {
-            Horus.Entity(
-                entity,
-                it.map { Horus.Attribute(it.key, it.value) }
-            )
-        }.firstOrNull()
-    }
-
-    /**
-     * Retrieves the authenticated user ID.
-     *
-     * @return The authenticated user ID.
-     * @throws UserNotAuthenticatedException If the user is not authenticated.
-     */
-    private fun getUserId(): String {
-        return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
-    }
 
     /**
      * Retrieves remote entity hashes.
