@@ -1,6 +1,8 @@
 # Changelog
 
 # v0.23.0
+- Added Real time synchronization support.
+- From now the datetime action is stored in milliseconds.
 - Added `BroadcastService` to handle broadcasting authentication requests.
 - Added `postForm` method to `BaseService` to support `application/x-www-form-urlencoded` POST requests.
 - Enhanced `SynchronizationService` to handle multiple chunks of data and emit events for errors.

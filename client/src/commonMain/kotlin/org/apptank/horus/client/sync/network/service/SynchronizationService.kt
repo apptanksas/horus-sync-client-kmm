@@ -27,6 +27,8 @@ import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.isTimestampInMillis
+import org.apptank.horus.client.extensions.isTimestampInSeconds
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.utils.SystemTime
 
@@ -156,9 +158,10 @@ internal class SynchronizationService(
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
 
-        val chunks = actions.sortedBy { it.actionedAt }.chunked(chunkSize)
+        val chunksWithTimestamp = actions.filter { it.actionedAt.isTimestampInSeconds() }.sortedBy { it.actionedAt }.chunked(chunkSize)
+        val chunksWithTimestampInMillis = actions.filter { it.actionedAt.isTimestampInMillis() }.sortedBy { it.actionedAt }.chunked(chunkSize)
 
-        chunks.forEach { chunk ->
+        (chunksWithTimestamp + chunksWithTimestampInMillis).forEach { chunk ->
 
             val result: DataResult<Unit> = post("queue/actions", chunk) { it.serialize() }
 
@@ -175,7 +178,7 @@ internal class SynchronizationService(
                 }
             }
 
-            if (chunks.size > 1) {
+            if (chunksWithTimestamp.size > 1) {
                 delay(delayChunked)
             }
         }

@@ -824,7 +824,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
         val eventId = uuid()
 
         val row1 = queueActionMapToCreate(
@@ -909,7 +909,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
         val eventIdRow2 = uuid()
 
         val row1 = queueActionMapToCreate(
@@ -977,7 +977,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             LocalDate(2026, 5, 22),
             LocalDate(2026, 5, 23)
         ).forEach {
-            val epoch = it.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+            val epoch = it.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
             val row = queueActionMapToCreate(
                 SyncControl.ActionType.INSERT,
                 entity,
@@ -1015,8 +1015,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val date1 = LocalDate(2026, 5, 20)
         val date2 = LocalDate(2026, 5, 22)
 
-        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
-        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -1057,7 +1057,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -1099,7 +1099,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val rowTrue = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -1155,7 +1155,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -1211,8 +1211,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val date1 = LocalDate(2026, 5, 20)
         val date2 = LocalDate(2026, 5, 22)
 
-        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
-        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         // Products on date1 and date2
         val p1 = queueActionMapToCreate(

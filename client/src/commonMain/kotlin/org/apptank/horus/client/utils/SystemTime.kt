@@ -18,4 +18,9 @@ internal object SystemTime {
     fun getCurrentTimestamp(): Long {
         return Clock.System.now().toLocalDateTime(TimeZone.UTC).toInstant(TimeZone.UTC).epochSeconds
     }
+
+    fun getCurrentTimestampInMilliseconds(): Long {
+        return Clock.System.now().toLocalDateTime(TimeZone.UTC).toInstant(TimeZone.UTC).toEpochMilliseconds()
+    }
+    
 }

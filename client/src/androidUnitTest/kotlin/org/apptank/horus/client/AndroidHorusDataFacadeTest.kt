@@ -1217,7 +1217,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val entity2 = "product_breeds"
             val timeZone = TimeZone.of("America/Bogota")
             val testDate = LocalDate(2026, 5, 22)
-            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).toEpochMilliseconds()
 
             // Insert actions in queue table
             val row1 = mapOf(
@@ -1272,7 +1272,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val entity3 = "other_entity"
             val timeZone = TimeZone.of("America/Bogota")
             val testDate = LocalDate(2026, 5, 22)
-            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).toEpochMilliseconds()
 
             // Insert 3 actions for different entities
             listOf(
@@ -1332,7 +1332,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             )
 
             dates.forEach { date ->
-                val epoch = date.atTime(12, 0).toInstant(timeZone).epochSeconds
+                val epoch = date.atTime(12, 0).toInstant(timeZone).toEpochMilliseconds()
                 val row = mapOf(
                     QueueActionsTable.ATTR_ENTITY to entity,
                     QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.INSERT.id,
@@ -1387,7 +1387,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             )
 
             dates.forEach { date ->
-                val epoch = date.atTime(12, 0).toInstant(timeZone).epochSeconds
+                val epoch = date.atTime(12, 0).toInstant(timeZone).toEpochMilliseconds()
                 val row = mapOf(
                     QueueActionsTable.ATTR_ENTITY to entity,
                     QueueActionsTable.ATTR_ACTION_TYPE to SyncControl.ActionType.INSERT.id,
@@ -1431,7 +1431,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             val entity = "measures"
             val timeZone = TimeZone.of("America/Bogota")
             val testDate = LocalDate(2026, 5, 22)
-            val epoch = testDate.atTime(12, 0).toInstant(timeZone).epochSeconds
+            val epoch = testDate.atTime(12, 0).toInstant(timeZone).toEpochMilliseconds()
 
             // Insert actions with different types
             val actionTypes = listOf(

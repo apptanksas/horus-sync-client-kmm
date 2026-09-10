@@ -68,7 +68,7 @@ internal object QueueActionsTable {
         ATTR_ENTITY to entity,
         ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
-        ATTR_DATETIME to SystemTime.getCurrentTimestamp(),
+        ATTR_DATETIME to SystemTime.getCurrentTimestampInMilliseconds(),
         ATTR_EVENT_ID to Uuid.random().toString()
     )
 

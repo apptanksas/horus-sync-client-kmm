@@ -29,10 +29,14 @@ import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
+import org.apptank.horus.client.extensions.isTimestampInMillis
+import org.apptank.horus.client.extensions.isTimestampInSeconds
 import org.junit.After
 import org.junit.Assert
 import org.junit.Test
+import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 
@@ -262,6 +266,63 @@ class SynchronizationServiceTest : ServiceTest() {
         assert(response is DataResult.NotAuthorized)
         assertEquals(requestCounter, 1)
     }
+
+    @Test
+    fun postQueueActionsChunkedWithMillisInAnotherRequest() = runBlocking {
+
+        // Given
+        val chunkSize = 100
+        val actionsWithTimestampInSeconds = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        }
+        val actionsWithTimestampInMillis = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestampMillis() - (it * 60)
+            )
+        }
+
+        var requestCounter = 0
+
+        val mockEngine = MockEngine { request ->
+            requestCounter += 1
+            val actions = Json.decodeFromString<List<SyncDTO.Request.SyncActionRequest>>(String(request.body.toByteArray()))
+
+            when {
+                requestCounter <= 2 -> {
+                    assert(actions.all { it.actionedAt.isTimestampInSeconds() })
+                    assertFalse(actions.any { it.actionedAt.isTimestampInMillis() })
+                }
+
+                else -> {
+                    assert(actions.all { it.actionedAt.isTimestampInMillis() })
+                    assertFalse(actions.any { it.actionedAt.isTimestampInSeconds() })
+                }
+            }
+
+
+            respond(
+                content = "",
+                status = HttpStatusCode.Created,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L, chunkSize)
+        // When
+        val response = service.postQueueActions((actionsWithTimestampInSeconds + actionsWithTimestampInMillis).sortedBy { Random.nextInt() })
+        // Then
+        assert(response is DataResult.Success)
+        assertEquals(requestCounter, 4)
+    }
+
 
     @Test
     fun getQueueActionsDefault() = runBlocking {

@@ -214,7 +214,11 @@ abstract class TestCase {
     }
 
     protected fun timestamp(): Long {
-        return Clock.System.now().toEpochMilliseconds() / 1000
+        return Clock.System.now().epochSeconds
+    }
+
+    protected fun timestampMillis(): Long {
+        return Clock.System.now().toEpochMilliseconds()
     }
 
     protected fun randomHash(): String {

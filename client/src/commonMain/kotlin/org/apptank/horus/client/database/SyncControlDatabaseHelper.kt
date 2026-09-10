@@ -212,7 +212,7 @@ internal class SyncControlDatabaseHelper(
                             action.action,
                             action.entity,
                             action.data,
-                            action.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+                            action.actionedAt.toInstant(TimeZone.UTC).toEpochMilliseconds(),
                             action.eventId
                         )
                     )
@@ -576,8 +576,8 @@ internal class SyncControlDatabaseHelper(
     ): List<SyncControl.Action> {
         driver.handle {
             // Convert LocalDate to epoch (seconds) respecting the timezone
-            val minEpoch = minDate.atStartOfDayIn(timeZone).epochSeconds
-            val maxEpoch = (maxDate ?: minDate).atEndOfDayIn(timeZone).epochSeconds
+            val minEpoch = minDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
+            val maxEpoch = (maxDate ?: minDate).atEndOfDayIn(timeZone).toEpochMilliseconds()
 
             val queryBuilder = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .whereIn(QueueActionsTable.ATTR_ENTITY, entityNames)
