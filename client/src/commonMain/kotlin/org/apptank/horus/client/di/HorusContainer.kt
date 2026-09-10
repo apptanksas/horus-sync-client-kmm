@@ -9,9 +9,12 @@ import org.apptank.horus.client.migration.network.service.MigrationService
 import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 import org.apptank.horus.client.sync.network.service.SynchronizationService
+import org.apptank.horus.client.sync.network.service.IBroadcastService
+import org.apptank.horus.client.sync.network.service.BroadcastService
 import com.russhwolf.settings.Settings
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.websocket.WebSockets
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
@@ -27,6 +30,7 @@ import org.apptank.horus.client.sync.network.service.FileSynchronizationService
 import org.apptank.horus.client.sync.network.service.IFileSynchronizationService
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.sync.upload.repository.UploadFileRepository
+import org.apptank.horus.client.websocket.WebSocketSyncEventsSubscriber
 
 
 /**
@@ -53,6 +57,8 @@ object HorusContainer {
 
     private var synchronizationService: ISynchronizationService? = null
 
+    private var broadcastService: IBroadcastService? = null
+
     private var fileSynchronizationService: IFileSynchronizationService? = null
 
     private var syncControlDatabaseHelper: ISyncControlDatabaseHelper? = null
@@ -77,6 +83,8 @@ object HorusContainer {
 
     private var dispenserManager: DispenserManager? = null
 
+    private var webSocketSyncEventsSubscriber: WebSocketSyncEventsSubscriber? = null
+
     // ------------------------------------------------------------------------
     // Setters
     // ------------------------------------------------------------------------
@@ -97,6 +105,15 @@ object HorusContainer {
      */
     internal fun setupSynchronizationService(service: ISynchronizationService) {
         synchronizationService = service
+    }
+
+    /**
+     * Sets up the broadcasting service.
+     *
+     * @param service The [IBroadcastService] instance to set up.
+     */
+    internal fun setupBroadcastService(service: IBroadcastService) {
+        broadcastService = service
     }
 
     /**
@@ -267,6 +284,22 @@ object HorusContainer {
             )
         }
         return synchronizationService!!
+    }
+
+    /**
+     * Retrieves the broadcasting service.
+     *
+     * @return The [IBroadcastService] instance.
+     */
+    internal fun getBroadcastService(): IBroadcastService {
+        if (broadcastService == null) {
+            broadcastService = BroadcastService(
+                httpClient.engine,
+                getConfig().baseUrl,
+                getConfig().customHeaders
+            )
+        }
+        return broadcastService!!
     }
 
     /**
@@ -465,6 +498,21 @@ object HorusContainer {
         return uploadFileRepository!!
     }
 
+    internal fun getWebSocketSyncEventsSubscriber(): WebSocketSyncEventsSubscriber {
+        if (webSocketSyncEventsSubscriber == null) {
+            webSocketSyncEventsSubscriber = WebSocketSyncEventsSubscriber(
+                HttpClient {
+                    install(WebSockets) {
+                        pingIntervalMillis = 15_000
+                    }
+                },
+                getConfig(),
+                getBroadcastService()
+            )
+        }
+        return webSocketSyncEventsSubscriber!!
+    }
+
     // ------------------------------------------------------------------------
     // Clear
     // ------------------------------------------------------------------------
@@ -478,6 +526,7 @@ object HorusContainer {
         config = null
         migrationService = null
         synchronizationService = null
+        broadcastService = null
         syncControlDatabaseHelper = null
         operationDatabaseHelper = null
         dataSharedDatabaseHelper = null

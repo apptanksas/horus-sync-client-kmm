@@ -25,6 +25,7 @@ The project follows a standard Kotlin Multiplatform structure, centered around t
 
 ### 1. Code Style & Standards
 - Strictly follow the existing Kotlin coding style in the project.
+- All code, comments, logs, and documentation must be in English. No Spanish text is allowed.
 - Use **Spaces** (4) for indentation, consistent with the existing codebase.
 - Keep the `HorusDataFacade` as the single entry point for end-users whenever possible.
 

@@ -4,6 +4,8 @@
 - Added `BroadcastService` to handle broadcasting authentication requests.
 - Added `postForm` method to `BaseService` to support `application/x-www-form-urlencoded` POST requests.
 - Enhanced `SynchronizationService` to handle multiple chunks of data and emit events for errors.
+- Implemented unit tests for `WebSocketSyncEventsSubscriber` covering all received event scenarios.
+- Fixed an issue in `WebSocketSyncEventsSubscriber` where sync actions received via WebSocket failed to deserialize correctly by adding DTO to domain conversion.
 
 # v0.22.0
 - Added HorusPreferences with flag `ignoreNetworkStatus` allow ignoring network status checks.
