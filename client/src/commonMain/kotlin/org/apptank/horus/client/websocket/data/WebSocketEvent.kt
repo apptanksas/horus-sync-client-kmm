@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class WebSocketEvent(
-    val event: String,
+    val event: WebSocketPusherEventName,
     val data: String = "{}",
     val channel: String? = null
 )

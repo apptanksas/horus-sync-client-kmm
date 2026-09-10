@@ -49,7 +49,6 @@ The project follows a standard Kotlin Multiplatform structure, centered around t
 
 ### 5. Documentation & Versioning
 - **README**: Update `readme.md` if the public API changes or new features are added.
-- **Changelog**: Every significant change or bug fix MUST be documented in `changelog.md` under the next version header.
 - **Guidelines**: These guidelines (`.junie/guidelines.md`) should be kept up to date as the project evolves.
 
 ## Synchronization Architecture

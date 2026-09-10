@@ -10,6 +10,8 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.WebsocketConfig
@@ -45,7 +47,7 @@ class WebSocketSyncEventsSubscriberTest {
         subscriber.processFrame(frame, "ownerId") { }
 
         val response = subscriber.outgoingChannel.receive()
-        assertEquals(WebSocketPusherEventName.PONG.id, response.event)
+        assertEquals(WebSocketPusherEventName.PONG, response.event)
     }
 
     @Test
@@ -63,7 +65,7 @@ class WebSocketSyncEventsSubscriberTest {
 
         verifySuspend { broadcastService.postAuth(socketId, "private-horus.sync.$ownerId") }
         val response = subscriber.outgoingChannel.receive()
-        assertEquals(WebSocketPusherEventName.SUBSCRIBE.id, response.event)
+        assertEquals(WebSocketPusherEventName.SUBSCRIBE, response.event)
         assertTrue(response.data.contains("auth-token"))
         assertTrue(response.data.contains("private-horus.sync.$ownerId"))
     }
@@ -105,7 +107,7 @@ class WebSocketSyncEventsSubscriberTest {
             Exception("Auth failed")
         )
 
-        subscriber.setupSubscriberChannel(ownerId, data)
+        subscriber.setupSubscriberChannel(ownerId, Json.decodeFromString(data))
 
         // It should log the error and not send anything to the channel
         assertTrue(subscriber.outgoingChannel.isEmpty)

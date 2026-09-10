@@ -96,38 +96,36 @@ class WebSocketSyncEventsSubscriber(
         onActionReceived: (SyncControl.Action) -> Unit
     ) {
         if (frame is Frame.Text) {
-            val text = frame.readText()
+            val event = decoderJson.decodeFromString<WebSocketEvent>(frame.readText())
 
-            when {
-                text.contains(WebSocketPusherEventName.PING.id) -> {
+            when (event.event) {
+                WebSocketPusherEventName.PING -> {
                     outgoingChannel.send(
-                        WebSocketEvent(WebSocketPusherEventName.PONG.id)
+                        WebSocketEvent(WebSocketPusherEventName.PONG)
                     )
                 }
 
-                text.contains(WebSocketPusherEventName.CONNECTION_ESTABLISHED.id) -> {
-                    setupSubscriberChannel(ownerId, text)
+                WebSocketPusherEventName.CONNECTION_ESTABLISHED -> {
+                    setupSubscriberChannel(ownerId, event)
                 }
 
-                text.contains(WebSocketPusherEventName.SUBSCRIPTION_SUCCEEDED.id) -> {
+                WebSocketPusherEventName.SUBSCRIPTION_SUCCEEDED -> {
                     info("[WebSocketSyncEventsSubscriber] Subscription succeeded")
                 }
 
-                text.contains(WebSocketPusherEventName.SYNC_ACTION.id) -> {
-                    val webSocketEvent = decoderJson.decodeFromString<WebSocketEvent>(text)
-                    info("[WebSocketSyncEventsSubscriber] Received Sync Action: $text")
-                    onActionReceived(decoderJson.decodeFromString<SyncDTO.Response.SyncAction>(webSocketEvent.data).toDomain())
+                WebSocketPusherEventName.SYNC_ACTION -> {
+                    info("[WebSocketSyncEventsSubscriber] Received Sync Action: ${event.data}")
+                    onActionReceived(decoderJson.decodeFromString<SyncDTO.Response.SyncAction>(event.data).toDomain())
                 }
 
                 else -> {
-                    info("[WebSocketSyncEventsSubscriber] Unknown event received: $text")
+                    info("[WebSocketSyncEventsSubscriber] Unknown event received: $event")
                 }
             }
         }
     }
 
-    internal suspend fun setupSubscriberChannel(userOwnerId: String, data: String) {
-        val webSocketEvent = decoderJson.decodeFromString<WebSocketEvent>(data)
+    internal suspend fun setupSubscriberChannel(userOwnerId: String, webSocketEvent: WebSocketEvent) {
         val socketConnectionData = decoderJson.decodeFromString<SocketConnectionData>(webSocketEvent.data)
         val channelName = "private-horus.sync.$userOwnerId"
         info("[WebSocketSyncEventsSubscriber] Channel Authentication...")
@@ -137,7 +135,7 @@ class WebSocketSyncEventsSubscriber(
                 info("[WebSocketSyncEventsSubscriber] Channel Authentication successful: ${it.auth}")
                 outgoingChannel.send(
                     WebSocketEvent(
-                        WebSocketPusherEventName.SUBSCRIBE.id,
+                        WebSocketPusherEventName.SUBSCRIBE,
                         decoderJson.encodeToString(SubscribeData(it.auth, channelName))
                     )
                 )
