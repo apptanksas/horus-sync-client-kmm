@@ -234,13 +234,9 @@ object HorusDataFacade {
             val result = operationDatabaseHelper?.executeOperations(operations) {
                 processPostInsertActions(insertIds)
                 processPostUpdateActions(updateIds)
-                deleteIds.forEach { (entity, id) ->
-                    syncControlDatabaseHelper?.addActionDelete(
-                        entity,
-                        Horus.Attribute(Horus.Attribute.ID, id)
-                    )
-                }
+                processPostDeleteActions(deleteIds)
             }
+
             if (result == true) {
                 return DataResult.Success(Unit)
             }
@@ -1132,6 +1128,15 @@ object HorusDataFacade {
                 entity,
                 id,
                 attributes
+            )
+        }
+    }
+
+    private fun processPostDeleteActions(deleteIds: List<Horus.Batch.Delete>) {
+        deleteIds.forEach { (entity, id) ->
+            syncControlDatabaseHelper?.addActionDelete(
+                entity,
+                Horus.Attribute(Horus.Attribute.ID, id)
             )
         }
     }
