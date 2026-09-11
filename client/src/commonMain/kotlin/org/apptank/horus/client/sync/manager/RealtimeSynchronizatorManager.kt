@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.apptank.horus.client.auth.HorusAuthentication
+import org.apptank.horus.client.bus.HorusClientRealTimeQueueActionEventBus
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -15,7 +16,7 @@ import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.database.struct.toDeleteRecord
 import org.apptank.horus.client.database.struct.toInsertRecord
 import org.apptank.horus.client.extensions.info
-import org.apptank.horus.client.extensions.logException
+import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.websocket.RealtimeSyncEventsSubscriber
 
 internal class RealtimeSynchronizatorManager(
@@ -83,12 +84,13 @@ internal class RealtimeSynchronizatorManager(
                     }
 
                     if (result) {
+                        HorusClientRealTimeQueueActionEventBus.emit(action)
                         info("[RealtimeSynchronizatorManager] Event action processed: $action")
                     } else {
-                        logException("[RealtimeSynchronizatorManager] Error processing event action: ${action.action}")
+                        warn("[RealtimeSynchronizatorManager] Error processing event action: ${action.action}")
                     }
                 }.getOrElse { exception ->
-                    logException("[RealtimeSynchronizatorManager] Error processing event action: ${action.action}", exception)
+                    warn("[RealtimeSynchronizatorManager] Error processing event action [EventID: ${action.eventId}]: ${exception.message}")
                 }
             }
         }
