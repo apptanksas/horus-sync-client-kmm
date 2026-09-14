@@ -19,12 +19,14 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.base.encodeToJSON
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
+import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.migration.domain.AttributeType
@@ -618,6 +620,53 @@ internal class SyncControlDatabaseHelper(
             return queryResult(sqlSentence) { createSyncActionFromCursor(it) }
         }
     }
+
+    /**
+     * Executes a series of database operations.
+     *
+     * @param deleteActions A list of action IDs to delete.
+     * @param insertActions A list of actions to insert.
+     */
+    override fun execute(deleteActions: List<String>, insertActions: List<SyncControl.Action>) {
+        driver.handle {
+
+            transaction {
+
+                // Delete operations
+                deleteActions.forEach { eventId ->
+                    delete(
+                        QueueActionsTable.TABLE_NAME,
+                        buildWhereEvaluation(
+                            listOf(
+                                SQL.WhereCondition(
+                                    SQL.ColumnValue(
+                                        QueueActionsTable.ATTR_EVENT_ID,
+                                        eventId
+                                    )
+                                )
+                            )
+                        )
+                    )
+                }
+
+                // Insert operations
+                insertActions.forEach { action ->
+                    insertOrThrow(
+                        QueueActionsTable.TABLE_NAME,
+                        QueueActionsTable.mapToCustom(
+                            action.action,
+                            action.entity,
+                            action.data,
+                            action.actionedAt.toInstant(TimeZone.UTC).toEpochMilliseconds(),
+                            action.status,
+                            action.eventId
+                        )
+                    )
+                }
+            }
+        }
+    }
+
 
     //-----------------------------------------------------------
     // Private helper methods

@@ -168,7 +168,17 @@ internal class SynchronizatorManager(
 
         when (resultActions) {
             is DataResult.Success -> {
-                return resultActions.data.isNotEmpty()
+                val eventIds = resultActions.data.mapNotNull { it.eventId }
+                val eventIdsAlreadyExists = syncControlDatabaseHelper.getExistsActionEventIds(eventIds).filter { it.value }.map { it.key }
+
+                if (eventIdsAlreadyExists.isNotEmpty()) {
+                    syncControlDatabaseHelper.execute(
+                        deleteActions = eventIdsAlreadyExists,
+                        insertActions = resultActions.data.filter { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.map { it.toDomain() }
+                    )
+                }
+
+                return resultActions.data.filterNot { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.isNotEmpty()
             }
 
             is DataResult.Failure -> {

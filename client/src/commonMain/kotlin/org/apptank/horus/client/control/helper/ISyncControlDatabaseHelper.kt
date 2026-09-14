@@ -236,4 +236,16 @@ interface ISyncControlDatabaseHelper {
         maxDate: LocalDate? = null,
         timeZone: TimeZone
     ): List<SyncControl.Action>
+
+
+    /**
+     * Executes a series of database operations.
+     *
+     * @param deleteActions A list of action IDs to delete.
+     * @param insertActions A list of actions to insert.
+     */
+    fun execute(
+        deleteActions: List<String> = emptyList(),
+        insertActions: List<SyncControl.Action> = emptyList()
+    )
 }

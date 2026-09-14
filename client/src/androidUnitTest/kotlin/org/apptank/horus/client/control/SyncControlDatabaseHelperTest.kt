@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
@@ -468,7 +469,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val lastActionCompleted = controlManagerDatabaseHelper.getLastActionCompleted()
 
         // Then
-        Assert.assertEquals(pendingActions.last().id, lastActionCompleted?.id)
+        Assert.assertEquals(pendingActions.maxOf { it.id }, lastActionCompleted?.id)
     }
 
     @Test
@@ -1253,6 +1254,145 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(2, result.size)
         val ids = result.map { it.data["id"] as String }.sorted()
         Assert.assertEquals(listOf("o1", "p2"), ids)
+    }
+
+    @Test
+    fun `execute deletes and inserts correctly`() {
+        // Given
+        val entity = "entity_execute_all"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-1"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        val actionToInsert = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "2", "name" to "Inserted"),
+            actionedAt = Instant.fromEpochMilliseconds(2000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-inserted-1"
+        )
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = listOf(eventIdToDelete),
+            insertActions = listOf(actionToInsert)
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete, "event-inserted-1"))
+        Assert.assertEquals(false, exists[eventIdToDelete])
+        Assert.assertEquals(true, exists["event-inserted-1"])
+    }
+
+    @Test
+    fun `execute only deletes`() {
+        // Given
+        val entity = "entity_execute_delete"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-2"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = listOf(eventIdToDelete),
+            insertActions = emptyList()
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete))
+        Assert.assertEquals(false, exists[eventIdToDelete])
+    }
+
+    @Test
+    fun `execute only inserts`() {
+        // Given
+        val entity = "entity_execute_insert"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val actionToInsert = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "3", "name" to "Inserted Only"),
+            actionedAt = Instant.fromEpochMilliseconds(3000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-inserted-2"
+        )
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = emptyList(),
+            insertActions = listOf(actionToInsert)
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf("event-inserted-2"))
+        Assert.assertEquals(true, exists["event-inserted-2"])
+    }
+
+    @Test
+    fun `execute rolls back on failure`() {
+        // Given
+        val entity = "entity_execute_rollback"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-rollback"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        // Acción que fallará por datos no serializables (causará excepción en QueueActionsTable.mapToCustom)
+        val actionToInsertFailing = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "3", "invalid" to Exception("fail")),
+            actionedAt = Instant.fromEpochMilliseconds(2000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-failing"
+        )
+
+        // When
+        try {
+            controlManagerDatabaseHelper.execute(
+                deleteActions = listOf(eventIdToDelete),
+                insertActions = listOf(actionToInsertFailing)
+            )
+            Assert.fail("Should have thrown an exception")
+        } catch (e: Exception) {
+            // Expected
+        }
+
+        // Then: eventIdToDelete should STILL exist because of rollback
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete))
+        Assert.assertEquals(true, exists[eventIdToDelete])
     }
 
 

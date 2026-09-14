@@ -5,7 +5,6 @@ import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.DataMap
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.database.builder.QueryBuilder
-import org.apptank.horus.client.database.builder.SimpleQueryBuilder
 import org.apptank.horus.client.database.struct.DatabaseOperation
 import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.exception.DatabaseOperationFailureException
@@ -75,14 +74,21 @@ internal class OperationDatabaseHelper(
 
                 } catch (e: Exception) {
 
-                    if (action is DatabaseOperation.DeleteRecord && e.message?.contains("FOREIGN KEY constraint failed", true) == true) {
-                        warn("Delete operation failed due to foreign key constraint. Attempting cascade delete.")
-                        executeDeleteOnCascade(
-                            action.table,
-                            action.conditions,
-                            action.operator
-                        )
-                        return@forEach
+                    if (isForeignKeyConstraintFailure(e)) {
+                        if (action is DatabaseOperation.DeleteRecord) {
+                            warn("Delete operation failed due to foreign key constraint. Attempting cascade delete.")
+                            executeDeleteOnCascade(
+                                action.table,
+                                action.conditions,
+                                action.operator
+                            )
+                            return@forEach
+                        }
+
+                        if (isOperationRelatedToMissingForeignEntity(action)) {
+                            warn("Operation skipped due to missing foreign key reference. Action: $action")
+                            return@forEach
+                        }
                     }
 
                     logException("Error processing action: $action", e)
@@ -293,6 +299,76 @@ internal class OperationDatabaseHelper(
     //------------------------------------------------------------------
     // PRIVATE METHODS
     //------------------------------------------------------------------
+
+    private fun isForeignKeyConstraintFailure(exception: Exception): Boolean {
+        return exception.message?.contains("FOREIGN KEY constraint failed", true) == true
+    }
+
+    private fun isOperationRelatedToMissingForeignEntity(action: DatabaseOperation): Boolean {
+        return when (action) {
+            is DatabaseOperation.InsertRecord -> hasMissingForeignKeyReference(action.table, action.values)
+            is DatabaseOperation.UpdateRecord -> hasMissingForeignKeyReference(action.table, action.values)
+            else -> false
+        }
+    }
+
+    private fun hasMissingForeignKeyReference(
+        table: String,
+        values: List<SQL.ColumnValue>
+    ): Boolean {
+        if (values.isEmpty()) {
+            return false
+        }
+
+        val valuesByColumn = values.associateBy { it.column }
+        val relationsByConstraint = getForeignKeysByConstraint(table)
+
+        relationsByConstraint.values.forEach { relationGroup ->
+            val parentConditions = relationGroup.mapNotNull { relation ->
+                val value = valuesByColumn[relation.childColumn]?.value ?: return@mapNotNull null
+
+                SQL.WhereCondition(
+                    SQL.ColumnValue(relation.parentColumn, value)
+                )
+            }
+
+            if (parentConditions.size != relationGroup.size) {
+                return@forEach
+            }
+
+            val whereEvaluation = buildWhereEvaluation(parentConditions, SQL.LogicOperator.AND)
+            val parentTable = relationGroup.first().parentTable
+            val parentExists = rawQuery("SELECT EXISTS(SELECT 1 FROM $parentTable WHERE $whereEvaluation)") {
+                it.getRequireBoolean(0)
+            }.firstOrNull() == true
+
+            if (!parentExists) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun getForeignKeysByConstraint(table: String): Map<Int, List<ForeignKeyRelation>> {
+        val query = "PRAGMA foreign_key_list('$table')"
+        return rawQuery(query) { cursor ->
+            val parentTable = cursor.getString(2)
+            val childColumn = cursor.getString(3)
+
+            if (parentTable == null || childColumn == null) {
+                null
+            } else {
+                ForeignKeyRelation(
+                    constraintId = cursor.getRequireInt(0),
+                    parentTable = parentTable,
+                    childTable = table,
+                    parentColumn = cursor.getString(4) ?: "id",
+                    childColumn = childColumn
+                )
+            }
+        }.groupBy { it.constraintId }
+    }
 
     private fun executeDeleteOnCascadeRecursive(
         table: String,
