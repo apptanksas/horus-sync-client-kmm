@@ -90,6 +90,23 @@ interface IOperationDatabaseHelper {
     ): DatabaseOperation.Result
 
     /**
+     * Deletes records from a specified table and all dependent records linked by foreign keys.
+     *
+     * This behaves like a runtime `ON DELETE CASCADE`: children are deleted first and then
+     * the target records are removed, avoiding foreign key constraint failures.
+     *
+     * @param table The name of the target table.
+     * @param conditions The list of conditions for deletion.
+     * @param operator The logical operator to combine conditions (AND/OR).
+     * @return The result of the operation.
+     */
+    fun executeDeleteOnCascade(
+        table: String,
+        conditions: List<SQL.WhereCondition>,
+        operator: SQL.LogicOperator = SQL.LogicOperator.AND
+    ): DatabaseOperation.Result
+
+    /**
      * Executes a query using the provided QueryBuilder and returns the results as a list of maps.
      * Each map represents a record, where the keys are the column names and the values are the corresponding values.
      *

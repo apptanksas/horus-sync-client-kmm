@@ -790,7 +790,7 @@ object HorusDataFacade {
         val hasLocalDataPendingToPush =
             syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
         val hasRemoteDataPendingToPull =
-            (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataToSync() ?: false)
+            (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataRemoteToSync() ?: false)
         val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
 
         return hasLocalDataPendingToPush || hasFilesPending || hasRemoteDataPendingToPull

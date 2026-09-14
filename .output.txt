@@ -1,0 +1,376 @@
+diff --git a/client/src/androidUnitTest/kotlin/org/apptank/horus/client/database/OperationDatabaseHelperTest.kt b/client/src/androidUnitTest/kotlin/org/apptank/horus/client/database/OperationDatabaseHelperTest.kt
+index 4b47230..4eabe10 100644
+--- a/client/src/androidUnitTest/kotlin/org/apptank/horus/client/database/OperationDatabaseHelperTest.kt
++++ b/client/src/androidUnitTest/kotlin/org/apptank/horus/client/database/OperationDatabaseHelperTest.kt
+@@ -1066,6 +1066,192 @@ class OperationDatabaseHelperTest : TestCase() {
+         Assert.assertTrue(result.isSuccess)
+     }
+
++    @Test
++    fun validateExecuteDeleteOnCascadeWhenConstraintsEnabled() {
++        // Given
++        val parentEntityName = "parent_entity"
++        val childEntityName = "child_entity"
++        val grandChildEntityName = "grand_child_entity"
++
++        driver.createTable(
++            parentEntityName,
++            mapOf(
++                "id" to "STRING PRIMARY KEY",
++                "name" to "TEXT"
++            )
++        )
++
++        driver.createTable(
++            childEntityName,
++            mapOf(
++                "id" to "STRING PRIMARY KEY",
++                "name" to "TEXT",
++                "parent_id" to "STRING"
++            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
++        )
++
++        driver.createTable(
++            grandChildEntityName,
++            mapOf(
++                "id" to "STRING PRIMARY KEY",
++                "name" to "TEXT",
++                "child_id" to "STRING"
++            ), listOf("FOREIGN KEY (child_id) REFERENCES $childEntityName(id)")
++        )
++
++        driver.execute("PRAGMA foreign_keys=ON")
++
++        val parentId = uuid()
++        val childId = uuid()
++        val grandChildId = uuid()
++
++        databaseHelper.insertWithTransaction(
++            listOf(
++                DatabaseOperation.InsertRecord(
++                    parentEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", parentId),
++                        SQL.ColumnValue("name", "parent")
++                    )
++                ),
++                DatabaseOperation.InsertRecord(
++                    childEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", childId),
++                        SQL.ColumnValue("name", "child"),
++                        SQL.ColumnValue("parent_id", parentId)
++                    )
++                ),
++                DatabaseOperation.InsertRecord(
++                    grandChildEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", grandChildId),
++                        SQL.ColumnValue("name", "grand_child"),
++                        SQL.ColumnValue("child_id", childId)
++                    )
++                )
++            )
++        )
++
++        // When
++        val result = databaseHelper.executeDeleteOnCascade(
++            parentEntityName,
++            listOf(
++                SQL.WhereCondition(
++                    SQL.ColumnValue("id", parentId)
++                )
++            )
++        )
++
++        // Then
++        assertTrue(result.isSuccess)
++        assertEquals(3, result.rowsAffected)
++        assertEquals(0, getCountFromTable(parentEntityName))
++        assertEquals(0, getCountFromTable(childEntityName))
++        assertEquals(0, getCountFromTable(grandChildEntityName))
++    }
++
++    @Test
++    fun validateExecuteDeleteOnCascadeDeleteOnlyRelatedRecords() {
++        // Given
++        val parentEntityName = "parent_entity"
++        val childEntityName = "child_entity"
++
++        driver.createTable(
++            parentEntityName,
++            mapOf(
++                "id" to "STRING PRIMARY KEY",
++                "name" to "TEXT"
++            )
++        )
++
++        driver.createTable(
++            childEntityName,
++            mapOf(
++                "id" to "STRING PRIMARY KEY",
++                "name" to "TEXT",
++                "parent_id" to "STRING"
++            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
++        )
++
++        driver.execute("PRAGMA foreign_keys=ON")
++
++        val parentId1 = uuid()
++        val parentId2 = uuid()
++
++        databaseHelper.insertWithTransaction(
++            listOf(
++                DatabaseOperation.InsertRecord(
++                    parentEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", parentId1),
++                        SQL.ColumnValue("name", "parent_1")
++                    )
++                ),
++                DatabaseOperation.InsertRecord(
++                    parentEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", parentId2),
++                        SQL.ColumnValue("name", "parent_2")
++                    )
++                ),
++                DatabaseOperation.InsertRecord(
++                    childEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", uuid()),
++                        SQL.ColumnValue("name", "child_1"),
++                        SQL.ColumnValue("parent_id", parentId1)
++                    )
++                ),
++                DatabaseOperation.InsertRecord(
++                    childEntityName,
++                    listOf(
++                        SQL.ColumnValue("id", uuid()),
++                        SQL.ColumnValue("name", "child_2"),
++                        SQL.ColumnValue("parent_id", parentId2)
++                    )
++                )
++            )
++        )
++
++        // When
++        val result = databaseHelper.executeDeleteOnCascade(
++            parentEntityName,
++            listOf(
++                SQL.WhereCondition(
++                    SQL.ColumnValue("id", parentId1)
++                )
++            )
++        )
++
++        // Then
++        assertTrue(result.isSuccess)
++        assertEquals(2, result.rowsAffected)
++        assertEquals(1, getCountFromTable(parentEntityName))
++        assertEquals(1, getCountFromTable(childEntityName))
++
++        val parent2Count = driver.executeQuery(
++            null,
++            "SELECT COUNT(*) FROM $parentEntityName WHERE id = '$parentId2'",
++            {
++                QueryResult.Value(it.getRequireInt(0))
++            },
++            0
++        ).value
++
++        val childRelatedToParent2Count = driver.executeQuery(
++            null,
++            "SELECT COUNT(*) FROM $childEntityName WHERE parent_id = '$parentId2'",
++            {
++                QueryResult.Value(it.getRequireInt(0))
++            },
++            0
++        ).value
++
++        assertEquals(1, parent2Count)
++        assertEquals(1, childRelatedToParent2Count)
++    }
++
+     @Test
+     fun validateTruncate() {
+         // Given
+
+diff --git a/client/src/commonMain/kotlin/org/apptank/horus/client/control/helper/IOperationDatabaseHelper.kt b/client/src/commonMain/kotlin/org/apptank/horus/client/control/helper/IOperationDatabaseHelper.kt
+index 1fac0b8..7c490f5 100644
+--- a/client/src/commonMain/kotlin/org/apptank/horus/client/control/helper/IOperationDatabaseHelper.kt
++++ b/client/src/commonMain/kotlin/org/apptank/horus/client/control/helper/IOperationDatabaseHelper.kt
+@@ -89,6 +89,23 @@ interface IOperationDatabaseHelper {
+         disableForeignKeys: Boolean = false
+     ): DatabaseOperation.Result
+
++    /**
++     * Deletes records from a specified table and all dependent records linked by foreign keys.
++     *
++     * This behaves like a runtime `ON DELETE CASCADE`: children are deleted first and then
++     * the target records are removed, avoiding foreign key constraint failures.
++     *
++     * @param table The name of the target table.
++     * @param conditions The list of conditions for deletion.
++     * @param operator The logical operator to combine conditions (AND/OR).
++     * @return The result of the operation.
++     */
++    fun executeDeleteOnCascade(
++        table: String,
++        conditions: List<SQL.WhereCondition>,
++        operator: SQL.LogicOperator = SQL.LogicOperator.AND
++    ): DatabaseOperation.Result
++
+     /**
+      * Executes a query using the provided QueryBuilder and returns the results as a list of maps.
+      * Each map represents a record, where the keys are the column names and the values are the corresponding values.
+
+diff --git a/client/src/commonMain/kotlin/org/apptank/horus/client/database/OperationDatabaseHelper.kt b/client/src/commonMain/kotlin/org/apptank/horus/client/database/OperationDatabaseHelper.kt
+index ffe8208..a26c049 100644
+--- a/client/src/commonMain/kotlin/org/apptank/horus/client/database/OperationDatabaseHelper.kt
++++ b/client/src/commonMain/kotlin/org/apptank/horus/client/database/OperationDatabaseHelper.kt
+@@ -167,6 +167,30 @@ internal class OperationDatabaseHelper(
+         return executeDelete(table, conditions, operator, disableForeignKeys)
+     }
+
++    override fun executeDeleteOnCascade(
++        table: String,
++        conditions: List<SQL.WhereCondition>,
++        operator: SQL.LogicOperator
++    ): DatabaseOperation.Result {
++        if (conditions.isEmpty()) {
++            throw IllegalArgumentException("conditions not can be empty")
++        }
++
++        var rowsAffected = 0
++        val relationsByParent = getForeignKeysGroupedByParentTable()
++        val operationIsSuccess = executeTransaction { _ ->
++            rowsAffected = executeDeleteOnCascadeRecursive(
++                table = table,
++                conditions = conditions,
++                operator = operator,
++                relationsByParent = relationsByParent,
++                processedScopes = mutableSetOf()
++            )
++        }
++
++        return DatabaseOperation.Result(operationIsSuccess && rowsAffected > 0, rowsAffected)
++    }
++
+     /**
+      * Deletes records from the database within a transaction.
+      *
+@@ -256,6 +280,99 @@ internal class OperationDatabaseHelper(
+     // PRIVATE METHODS
+     //------------------------------------------------------------------
+
++    private fun executeDeleteOnCascadeRecursive(
++        table: String,
++        conditions: List<SQL.WhereCondition>,
++        operator: SQL.LogicOperator,
++        relationsByParent: Map<String, List<ForeignKeyRelation>>,
++        processedScopes: MutableSet<String>
++    ): Int {
++        val whereEvaluation = buildWhereEvaluation(conditions, operator)
++        val scopeKey = "$table::$whereEvaluation"
++
++        if (!processedScopes.add(scopeKey)) {
++            return 0
++        }
++
++        var rowsAffected = 0
++
++        val relationsGroupedByConstraint = relationsByParent[table]
++            .orEmpty()
++            .groupBy { "${it.childTable}::${it.constraintId}" }
++
++        relationsGroupedByConstraint.values.forEach { relationGroup ->
++            val parentColumns = relationGroup.map { it.parentColumn }.distinct()
++            val parentRows = queryParentRowsByColumns(table, parentColumns, whereEvaluation)
++
++            parentRows.forEach { parentRow ->
++                val childConditions = relationGroup.map { relation ->
++                    SQL.WhereCondition(
++                        SQL.ColumnValue(
++                            relation.childColumn,
++                            parentRow[relation.parentColumn]
++                        )
++                    )
++                }
++
++                rowsAffected += executeDeleteOnCascadeRecursive(
++                    table = relationGroup.first().childTable,
++                    conditions = childConditions,
++                    operator = SQL.LogicOperator.AND,
++                    relationsByParent = relationsByParent,
++                    processedScopes = processedScopes
++                )
++            }
++        }
++
++        rowsAffected += delete(table, whereEvaluation).toInt()
++        return rowsAffected
++    }
++
++    private fun queryParentRowsByColumns(
++        table: String,
++        parentColumns: List<String>,
++        whereEvaluation: String
++    ): List<Map<String, Any?>> {
++        val selectColumns = parentColumns.joinToString(", ")
++        val query = "SELECT $selectColumns FROM $table WHERE $whereEvaluation"
++
++        return queryResult(query) { cursor ->
++            parentColumns.associateWith { parentColumn ->
++                cursor.getValue<Any?>(parentColumn)
++            }
++        }
++    }
++
++    private fun getForeignKeysGroupedByParentTable(): Map<String, List<ForeignKeyRelation>> {
++        val output = mutableMapOf<String, MutableList<ForeignKeyRelation>>()
++
++        getTables().forEach { childTable ->
++            val query = "PRAGMA foreign_key_list('$childTable')"
++            val foreignKeys = rawQuery(query) { cursor ->
++                val parentTable = cursor.getString(2)
++                val childColumn = cursor.getString(3)
++
++                if (parentTable == null || childColumn == null) {
++                    null
++                } else {
++                    ForeignKeyRelation(
++                        constraintId = cursor.getRequireInt(0),
++                        parentTable = parentTable,
++                        childTable = childTable,
++                        parentColumn = cursor.getString(4) ?: "id",
++                        childColumn = childColumn
++                    )
++                }
++            }
++
++            foreignKeys.forEach { relation ->
++                output.getOrPut(relation.parentTable) { mutableListOf() }.add(relation)
++            }
++        }
++
++        return output
++    }
++
+
+     /**
+      * Executes a transaction with the provided body function.
+@@ -333,4 +450,12 @@ internal class OperationDatabaseHelper(
+         }, whereEvaluation)
+         return DatabaseOperation.Result(result > 0, result.toInt())
+     }
++
++    private data class ForeignKeyRelation(
++        val constraintId: Int,
++        val parentTable: String,
++        val childTable: String,
++        val parentColumn: String,
++        val childColumn: String,
++    )
+ }
+\ No newline at end of file

@@ -1067,6 +1067,192 @@ class OperationDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun validateExecuteDeleteOnCascadeWhenConstraintsEnabled() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+        val grandChildEntityName = "grand_child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.createTable(
+            grandChildEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "child_id" to "STRING"
+            ), listOf("FOREIGN KEY (child_id) REFERENCES $childEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId = uuid()
+        val childId = uuid()
+        val grandChildId = uuid()
+
+        databaseHelper.insertWithTransaction(
+            listOf(
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId),
+                        SQL.ColumnValue("name", "parent")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", childId),
+                        SQL.ColumnValue("name", "child"),
+                        SQL.ColumnValue("parent_id", parentId)
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    grandChildEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", grandChildId),
+                        SQL.ColumnValue("name", "grand_child"),
+                        SQL.ColumnValue("child_id", childId)
+                    )
+                )
+            )
+        )
+
+        // When
+        val result = databaseHelper.executeDeleteOnCascade(
+            parentEntityName,
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", parentId)
+                )
+            )
+        )
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(3, result.rowsAffected)
+        assertEquals(0, getCountFromTable(parentEntityName))
+        assertEquals(0, getCountFromTable(childEntityName))
+        assertEquals(0, getCountFromTable(grandChildEntityName))
+    }
+
+    @Test
+    fun validateExecuteDeleteOnCascadeDeleteOnlyRelatedRecords() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId1 = uuid()
+        val parentId2 = uuid()
+
+        databaseHelper.insertWithTransaction(
+            listOf(
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId1),
+                        SQL.ColumnValue("name", "parent_1")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId2),
+                        SQL.ColumnValue("name", "parent_2")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", uuid()),
+                        SQL.ColumnValue("name", "child_1"),
+                        SQL.ColumnValue("parent_id", parentId1)
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", uuid()),
+                        SQL.ColumnValue("name", "child_2"),
+                        SQL.ColumnValue("parent_id", parentId2)
+                    )
+                )
+            )
+        )
+
+        // When
+        val result = databaseHelper.executeDeleteOnCascade(
+            parentEntityName,
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", parentId1)
+                )
+            )
+        )
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.rowsAffected)
+        assertEquals(1, getCountFromTable(parentEntityName))
+        assertEquals(1, getCountFromTable(childEntityName))
+
+        val parent2Count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $parentEntityName WHERE id = '$parentId2'",
+            {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        val childRelatedToParent2Count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $childEntityName WHERE parent_id = '$parentId2'",
+            {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        assertEquals(1, parent2Count)
+        assertEquals(1, childRelatedToParent2Count)
+    }
+
+    @Test
     fun validateTruncate() {
         // Given
         val entityName = "my_entity"

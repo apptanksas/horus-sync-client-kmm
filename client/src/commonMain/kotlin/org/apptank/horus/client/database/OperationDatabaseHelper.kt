@@ -14,6 +14,7 @@ import org.apptank.horus.client.extensions.getRequireInt
 import org.apptank.horus.client.extensions.handle
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.extensions.logException
+import org.apptank.horus.client.extensions.warn
 
 /**
  * Helper class for performing database operations, extending [SQLiteHelper] and implementing [IOperationDatabaseHelper].
@@ -73,7 +74,19 @@ internal class OperationDatabaseHelper(
                     }
 
                 } catch (e: Exception) {
+
+                    if (action is DatabaseOperation.DeleteRecord && e.message?.contains("FOREIGN KEY constraint failed", true) == true) {
+                        warn("Delete operation failed due to foreign key constraint. Attempting cascade delete.")
+                        executeDeleteOnCascade(
+                            action.table,
+                            action.conditions,
+                            action.operator
+                        )
+                        return@forEach
+                    }
+
                     logException("Error processing action: $action", e)
+
                     if (!ignoreIsFailure) {
                         throw e
                     }
@@ -167,6 +180,31 @@ internal class OperationDatabaseHelper(
         return executeDelete(table, conditions, operator, disableForeignKeys)
     }
 
+    override fun executeDeleteOnCascade(
+        table: String,
+        conditions: List<SQL.WhereCondition>,
+        operator: SQL.LogicOperator
+    ): DatabaseOperation.Result {
+
+        if (conditions.isEmpty()) {
+            throw IllegalArgumentException("conditions not can be empty")
+        }
+
+        var rowsAffected = 0
+        val relationsByParent = getForeignKeysGroupedByParentTable()
+        val operationIsSuccess = executeTransaction { _ ->
+            rowsAffected = executeDeleteOnCascadeRecursive(
+                table = table,
+                conditions = conditions,
+                operator = operator,
+                relationsByParent = relationsByParent,
+                processedScopes = mutableSetOf()
+            )
+        }
+
+        return DatabaseOperation.Result(operationIsSuccess && rowsAffected > 0, rowsAffected)
+    }
+
     /**
      * Deletes records from the database within a transaction.
      *
@@ -256,6 +294,99 @@ internal class OperationDatabaseHelper(
     // PRIVATE METHODS
     //------------------------------------------------------------------
 
+    private fun executeDeleteOnCascadeRecursive(
+        table: String,
+        conditions: List<SQL.WhereCondition>,
+        operator: SQL.LogicOperator,
+        relationsByParent: Map<String, List<ForeignKeyRelation>>,
+        processedScopes: MutableSet<String>
+    ): Int {
+        val whereEvaluation = buildWhereEvaluation(conditions, operator)
+        val scopeKey = "$table::$whereEvaluation"
+
+        if (!processedScopes.add(scopeKey)) {
+            return 0
+        }
+
+        var rowsAffected = 0
+
+        val relationsGroupedByConstraint = relationsByParent[table]
+            .orEmpty()
+            .groupBy { "${it.childTable}::${it.constraintId}" }
+
+        relationsGroupedByConstraint.values.forEach { relationGroup ->
+            val parentColumns = relationGroup.map { it.parentColumn }.distinct()
+            val parentRows = queryParentRowsByColumns(table, parentColumns, whereEvaluation)
+
+            parentRows.forEach { parentRow ->
+                val childConditions = relationGroup.map { relation ->
+                    SQL.WhereCondition(
+                        SQL.ColumnValue(
+                            relation.childColumn,
+                            parentRow[relation.parentColumn]
+                        )
+                    )
+                }
+
+                rowsAffected += executeDeleteOnCascadeRecursive(
+                    table = relationGroup.first().childTable,
+                    conditions = childConditions,
+                    operator = SQL.LogicOperator.AND,
+                    relationsByParent = relationsByParent,
+                    processedScopes = processedScopes
+                )
+            }
+        }
+
+        rowsAffected += delete(table, whereEvaluation).toInt()
+        return rowsAffected
+    }
+
+    private fun queryParentRowsByColumns(
+        table: String,
+        parentColumns: List<String>,
+        whereEvaluation: String
+    ): List<Map<String, Any?>> {
+        val selectColumns = parentColumns.joinToString(", ")
+        val query = "SELECT $selectColumns FROM $table WHERE $whereEvaluation"
+
+        return queryResult(query) { cursor ->
+            parentColumns.associateWith { parentColumn ->
+                cursor.getValue<Any?>(parentColumn)
+            }
+        }
+    }
+
+    private fun getForeignKeysGroupedByParentTable(): Map<String, List<ForeignKeyRelation>> {
+        val output = mutableMapOf<String, MutableList<ForeignKeyRelation>>()
+
+        getTables().forEach { childTable ->
+            val query = "PRAGMA foreign_key_list('$childTable')"
+            val foreignKeys = rawQuery(query) { cursor ->
+                val parentTable = cursor.getString(2)
+                val childColumn = cursor.getString(3)
+
+                if (parentTable == null || childColumn == null) {
+                    null
+                } else {
+                    ForeignKeyRelation(
+                        constraintId = cursor.getRequireInt(0),
+                        parentTable = parentTable,
+                        childTable = childTable,
+                        parentColumn = cursor.getString(4) ?: "id",
+                        childColumn = childColumn
+                    )
+                }
+            }
+
+            foreignKeys.forEach { relation ->
+                output.getOrPut(relation.parentTable) { mutableListOf() }.add(relation)
+            }
+        }
+
+        return output
+    }
+
 
     /**
      * Executes a transaction with the provided body function.
@@ -333,4 +464,12 @@ internal class OperationDatabaseHelper(
         }, whereEvaluation)
         return DatabaseOperation.Result(result > 0, result.toInt())
     }
+
+    private data class ForeignKeyRelation(
+        val constraintId: Int,
+        val parentTable: String,
+        val childTable: String,
+        val parentColumn: String,
+        val childColumn: String,
+    )
 }

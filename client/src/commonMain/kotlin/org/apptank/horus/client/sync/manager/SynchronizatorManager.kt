@@ -81,7 +81,7 @@ internal class SynchronizatorManager(
         val userId = HorusAuthentication.getEffectiveUserId()
 
         // Stage 1: Validate if there are new data to sync with the server
-        val validateIsExistsDataToSync = existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
+        val validateIsExistsDataToSync = existsDataRemoteToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
 
         if (validateIsExistsDataToSync.isTrue()) {
             log("[SynchronizatorManager] There are new data to sync with the server")
@@ -162,26 +162,13 @@ internal class SynchronizatorManager(
      *
      * @return `true` if there is data to sync, `false` otherwise, or `null` if an error occurred.
      */
-    suspend fun existsDataToSync(): Boolean? {
+    suspend fun existsDataRemoteToSync(): Boolean? {
 
-        val resultActions = getLastActions()
+        val resultActions = getRemoteLastActions()
 
         when (resultActions) {
             is DataResult.Success -> {
-
-                val actionSequences = resultActions.data.mapNotNull { it.sequence }.toMutableList()
-
-                // -------------------------------------------------
-                // Filter actions that are already processed
-                // -------------------------------------------------
-
-                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
-                actionSequences.removeAll(actionsAlreadyProcessed)
-
-                // If there are actions, it means that there is data to sync
-                return resultActions.data.any { action ->
-                    action.sequence?.let { actionSequences.contains(it) } ?: true
-                }
+                return resultActions.data.isNotEmpty()
             }
 
             is DataResult.Failure -> {
@@ -201,7 +188,7 @@ internal class SynchronizatorManager(
         return null
     }
 
-    private suspend fun getLastActions(): DataResult<List<SyncDTO.Response.SyncAction>> {
+    private suspend fun getRemoteLastActions(): DataResult<List<SyncDTO.Response.SyncAction>> {
 
         var checkpointLastAction = syncControlDatabaseHelper.getLastActionCompleted()
 
@@ -453,7 +440,7 @@ internal class SynchronizatorManager(
      */
     private suspend fun synchronizeData(): Boolean {
 
-        val actions = getLastActions()
+        val actions = getRemoteLastActions()
 
         when (actions) {
             is DataResult.Success -> {
