@@ -8,7 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.apptank.horus.client.auth.HorusAuthentication
-import org.apptank.horus.client.bus.HorusClientRealTimeQueueActionEventBus
+import org.apptank.horus.client.bus.HorusClientQueueActionReceivedEventBus
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -84,7 +84,7 @@ internal class RealtimeSynchronizatorManager(
                     }
 
                     if (result) {
-                        HorusClientRealTimeQueueActionEventBus.emit(action)
+                        HorusClientQueueActionReceivedEventBus.emit(action)
                         info("[RealtimeSynchronizatorManager] Event action processed: $action")
                     } else {
                         warn("[RealtimeSynchronizatorManager] Error processing event action: ${action.action}")

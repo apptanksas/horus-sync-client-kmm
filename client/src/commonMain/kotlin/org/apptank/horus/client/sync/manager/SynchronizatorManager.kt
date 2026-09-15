@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.bus.HorusClientQueueActionReceivedEventBus
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -477,6 +478,12 @@ internal class SynchronizatorManager(
                 }
 
                 val syncControlStatus = if (result) {
+
+                    // Emit actions to
+                    (moveActions + insertActions + updateActions + deleteActions).forEach {
+                        HorusClientQueueActionReceivedEventBus.emit(it)
+                    }
+
                     log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
                     SyncControl.Status.COMPLETED
                 } else {

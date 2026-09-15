@@ -2,7 +2,7 @@ package org.apptank.horus.client.bus
 
 import org.apptank.horus.client.control.SyncControl
 
-object HorusClientRealTimeQueueActionEventBus {
+object HorusClientQueueActionReceivedEventBus {
 
     private var listener: ((SyncControl.Action) -> Unit)? = null
 
