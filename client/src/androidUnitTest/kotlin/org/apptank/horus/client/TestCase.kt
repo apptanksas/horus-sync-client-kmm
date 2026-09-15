@@ -3,7 +3,6 @@ package org.apptank.horus.client
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
-import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -24,13 +23,11 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.toFile
 import dev.mokkery.MockMode
 import dev.mokkery.mock
-import dev.mokkery.answering.returns
-import dev.mokkery.answering.calls
-import dev.mokkery.matcher.any
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
@@ -49,6 +46,7 @@ abstract class TestCase {
 
     @After
     fun tearDownEnd() {
+        HorusContainer.clear()
         clearLocalPathStorage()
     }
 

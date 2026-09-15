@@ -388,6 +388,22 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 setupSyncFileUploadedManager(mockSyncUploadFileManager)
             }
 
+            every {
+                mockSyncControlDatabaseHelper.getExistsActionEventIds(any())
+            } returns emptyMap()
+
+            everySuspend {
+                synchronizationService.getQueueActions(
+                    any<String>(),
+                    any<List<String>>(),
+                    any<Int>()
+                )
+            } returns DataResult.Success(emptyList())
+
+            everySuspend {
+                synchronizationService.postValidateEntitiesData(any(), any())
+            } returns DataResult.Success(emptyList())
+
             // When
             HorusDataFacade.forceSync(onSuccess = {
                 invokedOnSuccess = true
@@ -396,7 +412,11 @@ class AndroidHorusDataFacadeTest : TestCase() {
             })
 
             // Then
-            delay(500)
+            var attempts = 0
+            while (!invokedOnSuccess && !invokedOnFailure && attempts < 50) {
+                delay(100)
+                attempts++
+            }
             verify { mockNetworkValidator.isNetworkAvailable() }
             Assert.assertFalse(invokedOnFailure)
             assert(invokedOnSuccess)

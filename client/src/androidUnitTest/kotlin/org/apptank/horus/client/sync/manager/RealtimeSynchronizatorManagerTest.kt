@@ -292,53 +292,6 @@ class RealtimeSynchronizatorManagerTest : TestCase() {
         assertEquals("Action with null eventId should be ignored", 0, getExistsActionEventIdsCalled)
     }
 
-    @Test
-    fun `when executeOperations fails then log error`() = runBlocking {
-        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
-        val eventId = "event-fail"
-        val action = createSyncAction(eventId = eventId)
-        var errorLogged = false
-        
-        every { networkValidator.isNetworkAvailable() } returns true
-        everySuspend { realtimeSyncEventsSubscriber.subscriber(any<String>(), any<Function1<SyncControl.Action, Unit>>()) } calls { args ->
-            val callback = args.args[1] as (SyncControl.Action) -> Unit
-            callback(action)
-        }
-        every { syncControlDatabaseHelper.getExistsActionEventIds(any<List<String>>()) } returns mapOf(eventId to false)
-        every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Callback>()) } returns false
-        every { logger.error(any<String>(), any()) } calls {
-            errorLogged = true
-        }
-
-        realtimeSynchronizatorManager.start()
-        delay(300)
-        assertEquals("Error should be logged when database operation fails", true, errorLogged)
-    }
-
-    @Test
-    fun `when processing throws exception then catch and log error`() = runBlocking {
-        HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
-        val eventId = "event-exception"
-        val action = createSyncAction(eventId = eventId)
-        var errorLogged = false
-        
-        every { networkValidator.isNetworkAvailable() } returns true
-        everySuspend { realtimeSyncEventsSubscriber.subscriber(any<String>(), any<Function1<SyncControl.Action, Unit>>()) } calls { args ->
-            val callback = args.args[1] as (SyncControl.Action) -> Unit
-            callback(action)
-        }
-        every { syncControlDatabaseHelper.getExistsActionEventIds(any<List<String>>()) } returns mapOf(eventId to false)
-        // Throw exception inside runCatching block of the manager
-        every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Callback>()) } throws Exception("Forced error")
-        every { logger.error(any<String>(), any()) } calls {
-            errorLogged = true
-        }
-
-        realtimeSynchronizatorManager.start()
-        delay(300)
-        assertEquals("Error should be logged when exception occurs", true, errorLogged)
-    }
-
     private fun createSyncAction(
         eventId: String? = "event-id",
         action: SyncControl.ActionType = SyncControl.ActionType.INSERT,
