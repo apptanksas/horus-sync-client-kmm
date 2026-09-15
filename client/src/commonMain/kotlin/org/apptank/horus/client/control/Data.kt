@@ -211,7 +211,7 @@ sealed class SyncControl {
          * @return A map containing the entity attributes.
          */
         fun getEntityAttributes(): DataMap {
-            return data["attributes"] as DataMap
+            return (data["attributes"] as? DataMap) ?: emptyMap()
         }
     }
 

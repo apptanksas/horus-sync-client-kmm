@@ -795,11 +795,11 @@ internal class SynchronizatorManager(
     private fun filterMoveActions(actions: List<SyncControl.Action>, moveActions: List<SyncControl.Action>): List<SyncControl.Action> {
         return actions.filter { action ->
 
-            val actionData = action.data.values.flatMap {
-                if (it is Map<*, *>) {
-                    it.values.toList()
+            val actionData = action.data.values.flatMap { value ->
+                if (value is Map<*, *>) {
+                    value.values.toList()
                 } else {
-                    listOf(it)
+                    listOf(value)
                 }
             }
 
