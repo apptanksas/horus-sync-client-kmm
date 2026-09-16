@@ -15,7 +15,7 @@ object HorusClientQueueActionReceivedEventBus {
     }
 
     fun emit(action: SyncControl.Action) {
-        listener?.invoke(action)
+        runCatching { listener?.invoke(action) }
     }
 
 

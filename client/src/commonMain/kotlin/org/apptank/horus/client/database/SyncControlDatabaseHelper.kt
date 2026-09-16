@@ -29,6 +29,7 @@ import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.extensions.isTimestampInMillis
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -558,6 +559,36 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
+
+    override fun getLastCheckpoints(limit: Int): List<Long> {
+
+        val sqlSentence = SimpleQueryBuilder(SyncControlTable.TABLE_NAME)
+            .select(SyncControlTable.ATTR_DATETIME)
+            .where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        SyncControlTable.ATTR_TYPE,
+                        SyncControl.OperationType.CHECKPOINT.id
+                    )
+                )
+            )
+            .where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        SyncControlTable.ATTR_STATUS,
+                        SyncControl.Status.COMPLETED.id
+                    )
+                )
+            )
+            .orderBy(SyncControlTable.ATTR_ID)
+            .limit(limit)
+            .build()
+
+        return queryResult(sqlSentence) {
+            it.getValue<Long>(QueueActionsTable.ATTR_DATETIME)
+        }
+    }
+
     /**
      * Queries the database for actions that match the specified criteria.
      *
@@ -679,13 +710,22 @@ internal class SyncControlDatabaseHelper(
      * @return The `SyncControl.Action` object.
      */
     private fun createSyncActionFromCursor(cursor: Cursor): SyncControl.Action {
+
+        val datetime = cursor.getValue<Long>("datetime")
+
+        val actionedAt = if (datetime.isTimestampInMillis()) {
+            Instant.fromEpochMilliseconds(datetime)
+        } else {
+            Instant.fromEpochSeconds(datetime)
+        }
+
         return SyncControl.Action(
             cursor.getValue("id"),
             SyncControl.ActionType.fromId(cursor.getValue("action_type")),
             cursor.getValue("entity"),
             SyncControl.ActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
-            Instant.fromEpochSeconds(cursor.getValue("datetime")).toLocalDateTime(TimeZone.UTC),
+            actionedAt.toLocalDateTime(TimeZone.UTC),
             cursor.getValue("event_id")
         )
     }

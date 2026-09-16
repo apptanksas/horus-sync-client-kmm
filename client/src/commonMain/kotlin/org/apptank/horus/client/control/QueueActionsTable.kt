@@ -103,7 +103,7 @@ internal object QueueActionsTable {
         ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.COMPLETED.id,
         ATTR_DATETIME to dateTime,
-        ATTR_EVENT_ID to (eventId ?: Uuid.random().toString())
+        ATTR_EVENT_ID to eventId
     )
 
 

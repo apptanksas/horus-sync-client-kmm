@@ -139,6 +139,17 @@ internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
     )
 }
 
+internal fun SyncControl.Action.toDTO(): SyncDTO.Response.SyncAction {
+    return SyncDTO.Response.SyncAction(
+        action = this.action.name,
+        entity = this.entity,
+        data = this.data,
+        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        syncedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        eventId = this.eventId
+    )
+}
+
 /**
  * Converts a [SyncDTO.Response.EntityIdHash] to an [InternalModel.EntityIdHash].
  *

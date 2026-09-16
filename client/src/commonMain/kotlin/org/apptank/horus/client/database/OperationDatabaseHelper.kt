@@ -75,6 +75,7 @@ internal class OperationDatabaseHelper(
                 } catch (e: Exception) {
 
                     if (isForeignKeyConstraintFailure(e)) {
+
                         if (action is DatabaseOperation.DeleteRecord) {
                             warn("Delete operation failed due to foreign key constraint. Attempting cascade delete.")
                             executeDeleteOnCascade(
@@ -514,7 +515,7 @@ internal class OperationDatabaseHelper(
 
         val whereEvaluation = buildWhereEvaluation(conditions, operator)
         val result = delete(table, whereEvaluation, disableForeignKeys)
-        return DatabaseOperation.Result(result > 0, result.toInt())
+        return DatabaseOperation.Result(true, result.toInt())
     }
 
     /**

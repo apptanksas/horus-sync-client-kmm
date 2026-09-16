@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.base.fold
 import org.apptank.horus.client.bus.HorusClientQueueActionReceivedEventBus
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
@@ -23,9 +24,11 @@ import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.hashing.AttributeHasher
 import org.apptank.horus.client.extensions.warn
 import org.apptank.horus.client.sync.network.dto.SyncDTO
+import org.apptank.horus.client.sync.network.dto.toDTO
 import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.dto.toInternalModel
+import org.apptank.horus.client.sync.network.dto.toRequest
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
 
 /**
@@ -171,12 +174,18 @@ internal class SynchronizatorManager(
             is DataResult.Success -> {
                 val eventIds = resultActions.data.mapNotNull { it.eventId }
                 val eventIdsAlreadyExists = syncControlDatabaseHelper.getExistsActionEventIds(eventIds).filter { it.value }.map { it.key }
+                val actionsWithNoEventId = resultActions.data.filter { it.eventId == null }
 
                 if (eventIdsAlreadyExists.isNotEmpty()) {
                     syncControlDatabaseHelper.execute(
                         deleteActions = eventIdsAlreadyExists,
                         insertActions = resultActions.data.filter { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.map { it.toDomain() }
                     )
+                }
+
+                if (eventIds.isEmpty() && actionsWithNoEventId.isNotEmpty()) {
+                    val lastActionCompleted = syncControlDatabaseHelper.getLastActionCompleted()
+                    return actionsWithNoEventId.any { lastActionCompleted?.toDTO() != it }
                 }
 
                 return resultActions.data.filterNot { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.isNotEmpty()
@@ -202,12 +211,29 @@ internal class SynchronizatorManager(
     private suspend fun getRemoteLastActions(): DataResult<List<SyncDTO.Response.SyncAction>> {
 
         var checkpointLastAction = syncControlDatabaseHelper.getLastActionCompleted()
+        val actions = mutableListOf<SyncDTO.Response.SyncAction>().apply {
+            checkpointLastAction?.let {
+                add(checkpointLastAction.toDTO())
+            }
+        }
 
         if (checkpointLastAction == null) {
             when (val lastAction = synchronizationService.getLastQueueAction()) {
                 is DataResult.Success -> {
+
                     checkpointLastAction = lastAction.data.toDomain()
-                    syncControlDatabaseHelper.addActionsCompleted(listOf(lastAction.data.toDomain()))
+                    actions.add(lastAction.data)
+
+                    val (_, insertActions, updateActions, deleteActions) = organizeActions(listOf(checkpointLastAction))
+                    val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
+
+                    operationDatabaseHelper.executeOperations(operations) {
+                        syncControlDatabaseHelper.addActionsCompleted(listOf(checkpointLastAction))
+                    }
+
+                    (insertActions + updateActions + deleteActions).forEach {
+                        HorusClientQueueActionReceivedEventBus.emit(it)
+                    }
                 }
 
                 else -> {
@@ -221,6 +247,7 @@ internal class SynchronizatorManager(
         // GET ACTIONS WITH EVENT IDS
         // -----------------------------
 
+
         checkpointLastAction?.eventId?.let { eventId ->
 
             val actions = mutableListOf<SyncDTO.Response.SyncAction>()
@@ -228,12 +255,12 @@ internal class SynchronizatorManager(
             var eventIdTarget = eventId
 
             do {
-                val result = synchronizationService.getQueueActions(eventIdTarget, limit = 1000)
+                val result = synchronizationService.getQueueActions(after = eventIdTarget, limit = 1000)
                 when (result) {
                     is DataResult.Success -> {
                         actions.addAll(result.data)
                         isEmpty = result.data.isEmpty()
-                        eventIdTarget = result.data.lastOrNull()?.eventId ?: eventId
+                        eventIdTarget = result.data.lastOrNull()?.eventId ?: break
                     }
 
                     else -> {
@@ -242,19 +269,28 @@ internal class SynchronizatorManager(
                 }
             } while (!isEmpty)
 
-            return DataResult.Success(actions)
+            actions.addAll(actions)
         }
 
         // -----------------------------
         // GET ACTIONS USING CHECKPOINT TIMESTAMP (DEPRECATED)
         // -----------------------------
 
-        val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val maxLimit = 5
+        val checkpointTimestamps = syncControlDatabaseHelper.getLastCheckpoints(maxLimit)
+        val checkpointTimestamp = checkpointTimestamps.min()
 
-        return synchronizationService.getQueueActions(
-            validateCheckpointTimestamp(checkpointTimestamp),
-            lastActions.map { it.getActionedAtTimestamp() })
+        synchronizationService.getQueueActions(checkpointTimestamp).fold(
+            onSuccess = { result ->
+                actions.addAll(result)
+            },
+            onFailure = { error ->
+                logException("Error retrieving actions: ${error.message}", error)
+            }
+        )
+
+
+        return DataResult.Success(actions.distinctBy { it.sequence })
     }
 
     /**
@@ -668,10 +704,6 @@ internal class SynchronizatorManager(
                 return true
             }
 
-            val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
-                .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
-                .sortedByDescending { it.second }
-
             val groupedByEntity = actions.groupBy { it.entity }
 
             groupedByEntity.forEach foreachGroupedEntity@{
@@ -712,7 +744,15 @@ internal class SynchronizatorManager(
                 // 3. DELETE RELATED RECORDS
                 //---------------------------------------
 
-                deleteEntitiesRelated(entityName, entitiesIdsToDelete, entitiesSorted)
+                if (operationDatabaseHelper.executeDeleteOnCascade(
+                        entityName,
+                        listOf(
+                            SQL.WhereCondition(SQL.ColumnValue("id", entitiesIdsMissing), SQL.Comparator.IN)
+                        )
+                    ).isFailure
+                ) {
+                    return false
+                }
             }
 
             return true
@@ -722,81 +762,6 @@ internal class SynchronizatorManager(
         }
 
         return false
-    }
-
-    private fun deleteEntitiesRelated(
-        entityToDelete: String,
-        ids: List<String>,
-        entitiesSorted: List<Pair<String, Int>>,
-        entitiesProcessed: List<String> = emptyList()
-    ): Boolean {
-
-        if (ids.isEmpty()) return false
-
-        // ---------------------------------------
-        // DELETE RELATED RECORDS
-        // ---------------------------------------
-
-        entitiesSorted.forEach { entitySorted ->
-
-            val entity = entitySorted.first
-            val entityLevel = entitySorted.second
-
-            if (entitiesProcessed.contains(entity)) return@forEach
-
-            syncControlDatabaseHelper.getEntitiesRelated(entity).forEach { entityRelated ->
-
-                val entityRelatedName = entityRelated.entity
-                val entityRelatedLevel = syncControlDatabaseHelper.getEntityLevel(entityRelated.entity)
-
-                if (entityRelatedLevel < entityLevel) {
-
-                    val entityRelatedAttributes = syncControlDatabaseHelper.getEntityAttributes(entityRelatedName)
-                    val entityRelatedIds = operationDatabaseHelper.queryRecords(
-                        SimpleQueryBuilder(entityRelatedName).select(Horus.Attribute.ID).apply {
-                            entityRelatedAttributes.forEach {
-                                whereIn(it, ids, SQL.LogicOperator.OR)
-                            }
-                        }
-                    ).map { it[Horus.Attribute.ID].toString() }
-
-                    // Delete related records
-
-                    if (entityRelatedIds.isNotEmpty()) {
-                        operationDatabaseHelper.deleteRecords(
-                            entity,
-                            entityRelatedIds.map { id ->
-                                entityRelated.attributesLinked.map { attribute ->
-                                    SQL.WhereCondition(SQL.ColumnValue(attribute, id))
-                                }
-                            }.flatten(),
-                            SQL.LogicOperator.OR
-                        )
-                        // Recursive delete
-                        deleteEntitiesRelated(entityRelatedName, entityRelatedIds, entitiesSorted, entitiesProcessed + entity)
-                    }
-                }
-
-            }
-
-        }
-
-        // ---------------------------------------
-        // DELETE PRIMARY RECORDS
-        // ---------------------------------------
-
-        val deleteResult = operationDatabaseHelper.deleteRecords(
-            entityToDelete,
-            ids.map { id -> SQL.WhereCondition(SQL.ColumnValue(Horus.Attribute.ID, id)) },
-            SQL.LogicOperator.OR
-        )
-
-        if (deleteResult.isFailure) {
-            log("[SynchronizatorManager:executeUpdateOrDeleteActions] Error deleting records for entity: $entityToDelete")
-            return false
-        }
-
-        return true
     }
 
     private fun filterMoveActions(actions: List<SyncControl.Action>, moveActions: List<SyncControl.Action>): List<SyncControl.Action> {

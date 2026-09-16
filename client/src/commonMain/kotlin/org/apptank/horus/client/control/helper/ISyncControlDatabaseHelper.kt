@@ -220,6 +220,15 @@ interface ISyncControlDatabaseHelper {
 
 
     /**
+     * Retrieves the last checkpoint timestamps from the database.
+     *
+     * @param limit The maximum number of checkpoint timestamps to retrieve.
+     * @return A list of the last checkpoint timestamps.
+     */
+    fun getLastCheckpoints(limit: Int): List<Long>
+
+
+    /**
      * Queries the database for actions that match the specified criteria.
      *
      * @param entityNames A list of entity names to filter actions by.
