@@ -61,6 +61,11 @@ class SynchronizatorManagerTest : TestCase() {
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
 
         mockEventIdsAsNotProcessed()
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns (null)
+        everySuspend { synchronizationService.getQueueActions(any<Long>(), any<List<Long>>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getQueueActions(any<Long>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), any<Int?>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getLastQueueAction() } returns (DataResult.Failure(Exception("No last queue action")))
     }
 
     private fun mockEventIdsAsNotProcessed() {
@@ -121,7 +126,7 @@ class SynchronizatorManagerTest : TestCase() {
         }
 
         // Then
-        verify(exactly(2)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
+        verify(exactly(3)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
     }
 
     @Test
@@ -184,7 +189,7 @@ class SynchronizatorManagerTest : TestCase() {
                     )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (
@@ -239,7 +244,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -296,7 +301,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -361,7 +366,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -417,14 +422,14 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (SystemTime.getCurrentTimestamp())
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP)
+                    eq(checkpointTimestamp)
                 )
             } returns (DataResult.Success(responseActions))
 
@@ -496,7 +501,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -563,7 +568,7 @@ class SynchronizatorManagerTest : TestCase() {
 
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -615,7 +620,7 @@ class SynchronizatorManagerTest : TestCase() {
 
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -687,7 +692,7 @@ class SynchronizatorManagerTest : TestCase() {
                 )
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(emptyList()))
@@ -761,7 +766,7 @@ class SynchronizatorManagerTest : TestCase() {
                     )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(emptyList()))
@@ -857,7 +862,7 @@ class SynchronizatorManagerTest : TestCase() {
                     )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP,
+                    checkpointTimestamp,
                     emptyList()
                 )
             } returns (DataResult.Success(emptyList()))
@@ -913,7 +918,7 @@ class SynchronizatorManagerTest : TestCase() {
                 )
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -968,7 +973,7 @@ class SynchronizatorManagerTest : TestCase() {
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -1058,7 +1063,7 @@ class SynchronizatorManagerTest : TestCase() {
         }.sequentiallyReturns(
             listOf(
                 DataResult.Success(responseActions),
-                DataResult.Success(emptyList())
+                DataResult.Success(emptyList()),
             )
         )
         every {
@@ -1191,7 +1196,7 @@ class SynchronizatorManagerTest : TestCase() {
         every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns DataResult.Success(responseActions)
@@ -1206,7 +1211,7 @@ class SynchronizatorManagerTest : TestCase() {
         // Then
         verifySuspend(exactly(2)) {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         }

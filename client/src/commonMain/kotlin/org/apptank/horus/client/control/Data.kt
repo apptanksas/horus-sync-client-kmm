@@ -213,6 +213,30 @@ sealed class SyncControl {
         fun getEntityAttributes(): DataMap {
             return (data["attributes"] as? DataMap) ?: emptyMap()
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Action) return false
+
+            return id == other.id &&
+                    action == other.action &&
+                    entity == other.entity &&
+                    status == other.status &&
+                    data == other.data &&
+                    actionedAt == other.actionedAt &&
+                    eventId == other.eventId
+        }
+
+        override fun hashCode(): Int {
+            var result = id
+            result = 31 * result + action.hashCode()
+            result = 31 * result + entity.hashCode()
+            result = 31 * result + status.hashCode()
+            result = 31 * result + data.hashCode()
+            result = 31 * result + actionedAt.hashCode()
+            result = 31 * result + (eventId?.hashCode() ?: 0)
+            return result
+        }
     }
 
     /**

@@ -84,7 +84,7 @@ internal class RealtimeSynchronizatorManager(
                     }
 
                     if (result) {
-                        HorusClientQueueActionReceivedEventBus.emit(action)
+                        HorusClientQueueActionReceivedEventBus.emit(listOf(action))
                         info("[RealtimeSynchronizatorManager] Event action processed: $action")
                     } else {
                         warn("[RealtimeSynchronizatorManager] Error processing event action: ${action.action}")

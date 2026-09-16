@@ -4,9 +4,9 @@ import org.apptank.horus.client.control.SyncControl
 
 object HorusClientQueueActionReceivedEventBus {
 
-    private var listener: ((SyncControl.Action) -> Unit)? = null
+    private var listener: ((List<SyncControl.Action>) -> Unit)? = null
 
-    fun register(listener: (SyncControl.Action) -> Unit) {
+    fun register(listener: (List<SyncControl.Action>) -> Unit) {
         this.listener = listener
     }
 
@@ -14,7 +14,7 @@ object HorusClientQueueActionReceivedEventBus {
         listener = null
     }
 
-    fun emit(action: SyncControl.Action) {
+    fun emit(action: List<SyncControl.Action>) {
         runCatching { listener?.invoke(action) }
     }
 
