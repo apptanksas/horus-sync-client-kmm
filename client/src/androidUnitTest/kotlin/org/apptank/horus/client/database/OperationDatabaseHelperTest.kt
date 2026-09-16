@@ -120,7 +120,7 @@ class OperationDatabaseHelperTest : TestCase() {
         val uuid = uuid()
         val actions = listOf(
             createInsertAction(uuid, "dog"),
-            createDeleteAction(uuid()),
+            createUpdateAction(uuid(),"abc"),
         )
         var postOperationValidation = false
         // When

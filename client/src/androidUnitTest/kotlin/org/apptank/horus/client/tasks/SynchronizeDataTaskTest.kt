@@ -78,6 +78,7 @@ class SynchronizeDataTaskTest : TestCase() {
             SyncDTO.Response.SyncAction(
                 action = "INSERT",
                 entity = "User",
+                data = mapOf("id" to "last_id"),
                 actionedAt = 1000L,
                 eventId = "last_event"
             )
@@ -108,6 +109,7 @@ class SynchronizeDataTaskTest : TestCase() {
             SyncDTO.Response.SyncAction(
                 action = "INSERT",
                 entity = "User",
+                data = mapOf("id" to "last_id"),
                 actionedAt = 1000L,
                 eventId = "last_event"
             )
@@ -129,6 +131,7 @@ class SynchronizeDataTaskTest : TestCase() {
                 SyncDTO.Response.SyncAction(
                     action = "INSERT",
                     entity = "User",
+                    data = mapOf("id" to "id1"),
                     actionedAt = 2000L,
                     eventId = "event1"
                 )
@@ -139,6 +142,7 @@ class SynchronizeDataTaskTest : TestCase() {
                 SyncDTO.Response.SyncAction(
                     action = "INSERT",
                     entity = "User",
+                    data = mapOf("id" to "id1"),
                     actionedAt = 2000L,
                     eventId = "event1"
                 )
