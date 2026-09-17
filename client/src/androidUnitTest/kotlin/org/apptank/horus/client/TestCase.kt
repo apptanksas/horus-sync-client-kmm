@@ -38,7 +38,9 @@ import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.SynchronizeDataTask
 import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.tasks.ControlTaskManager
 import org.junit.After
+import java.lang.reflect.Modifier
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
 import java.util.UUID
@@ -49,9 +51,70 @@ abstract class TestCase {
 
     @After
     fun tearDownEnd() {
+        try {
+            resetSingletons()
+        } catch (e: Throwable) {
+            // Ignore errors during cleanup
+        }
         HorusContainer.clear()
         MemoryCache.flushCache()
         clearLocalPathStorage()
+    }
+
+    private fun resetSingletons() {
+        try {
+            org.apptank.horus.client.auth.HorusAuthentication.clearSession()
+        } catch (e: Throwable) {
+        }
+        try {
+            HorusDataFacade.clear()
+        } catch (e: Throwable) {
+        }
+        if (isContainerReadyForControlTaskManager()) {
+            try {
+                resetSingletonPrimitives(ControlTaskManager::class.java, ControlTaskManager)
+            } catch (e: Throwable) {
+            }
+        }
+    }
+
+    private fun isContainerReadyForControlTaskManager(): Boolean {
+        return try {
+            HorusContainer.getConfig()
+            HorusContainer.getNetworkValidator()
+            HorusContainer.getMigrationService()
+            HorusContainer.getSynchronizationService()
+            HorusContainer.getDatabaseFactory()
+            HorusContainer.getSettings()
+            HorusContainer.getSyncControlDatabaseHelper()
+            HorusContainer.getOperationDatabaseHelper()
+            HorusContainer.getSyncFilesDatabaseHelper()
+            HorusContainer.getDataSharedDatabaseHelper()
+            HorusContainer.getUploadFileRepository()
+            true
+        } catch (e: Throwable) {
+            false
+        }
+    }
+
+    private fun resetSingletonPrimitives(clazz: Class<*>, instance: Any) {
+        clazz.declaredFields.forEach { field ->
+            try {
+                field.isAccessible = true
+                if (!Modifier.isFinal(field.modifiers)) {
+                    val type = field.type
+                    if (type == Boolean::class.javaPrimitiveType || type == Boolean::class.java) {
+                        field.set(instance, false)
+                    } else if (type == Int::class.javaPrimitiveType || type == Int::class.java) {
+                        field.set(instance, 0)
+                    } else if (type == Long::class.javaPrimitiveType || type == Long::class.java) {
+                        field.set(instance, 0L)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore errors
+            }
+        }
     }
 
     private fun clearLocalPathStorage() {

@@ -46,7 +46,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        controlManagerDatabaseHelper = SyncControlDatabaseHelper("database_${Random.nextInt()}", driver)
 
         HorusDatabase.Schema.create(driver)
         MemoryCache.flushCache()

@@ -56,13 +56,14 @@ class ControlTaskManagerTest : TestCase() {
 
     private lateinit var driver: JdbcSqliteDriver
 
-    val networkValidator = mock<INetworkValidator>(MockMode.autofill)
-    val migrationService = mock<IMigrationService>(MockMode.autofill)
-    val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
-    val databaseDriverFactory = mock<IDatabaseDriverFactory>(MockMode.autofill)
-    val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
-    val storageSettings = mock<Settings>(MockMode.autofill)
-
+    companion object {
+        val networkValidator = mock<INetworkValidator>(MockMode.autofill)
+        val migrationService = mock<IMigrationService>(MockMode.autofill)
+        val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
+        val databaseDriverFactory = mock<IDatabaseDriverFactory>(MockMode.autofill)
+        val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
+        val storageSettings = mock<Settings>(MockMode.autofill)
+    }
 
     @Before
     fun setUp() {
@@ -75,11 +76,11 @@ class ControlTaskManagerTest : TestCase() {
         every { databaseDriverFactory.getSchema() } returns HorusDatabase.Schema
 
         with(HorusContainer) {
-            setupNetworkValidator(networkValidator)
-            setupSettings(storageSettings)
-            setupMigrationService(migrationService)
-            setupSynchronizationService(synchronizationService)
-            setupDatabaseFactory(databaseDriverFactory)
+            setupNetworkValidator(ControlTaskManagerTest.networkValidator)
+            setupSettings(ControlTaskManagerTest.storageSettings)
+            setupMigrationService(ControlTaskManagerTest.migrationService)
+            setupSynchronizationService(ControlTaskManagerTest.synchronizationService)
+            setupDatabaseFactory(ControlTaskManagerTest.databaseDriverFactory)
             setupConfig(getHorusConfigTest())
         }
 
@@ -127,27 +128,27 @@ class ControlTaskManagerTest : TestCase() {
             }
         }
 
-        everySuspend { migrationService.getMigration() } returns DataResult.Success(entitiesScheme)
-        every { storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) } returns null
-        every { storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
-        every { storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
+        everySuspend { ControlTaskManagerTest.migrationService.getMigration() } returns DataResult.Success(entitiesScheme)
+        every { ControlTaskManagerTest.storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION) } returns null
+        every { ControlTaskManagerTest.storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns null
+        every { ControlTaskManagerTest.storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns null
 
-        everySuspend { synchronizationService.postValidateHashing(any()) } returns DataResult.Success(
+        everySuspend { ControlTaskManagerTest.synchronizationService.postValidateHashing(any()) } returns DataResult.Success(
             SyncDTO.Response.HashingValidation(randomHash(), randomHash(), true)
         )
-        everySuspend { synchronizationService.getData(any()) } returns DataResult.Success(entitiesData)
+        everySuspend { ControlTaskManagerTest.synchronizationService.getData(any()) } returns DataResult.Success(entitiesData)
 
-        everySuspend { synchronizationService.postStartSync(any()) } returns DataResult.Success(Unit)
-        everySuspend { synchronizationService.getSyncStatus(any()) } returns DataResult.Success(syncDataStatus)
+        everySuspend { ControlTaskManagerTest.synchronizationService.postStartSync(any()) } returns DataResult.Success(Unit)
+        everySuspend { ControlTaskManagerTest.synchronizationService.getSyncStatus(any()) } returns DataResult.Success(syncDataStatus)
         everySuspend {
-            synchronizationService.downloadSyncData(
+            ControlTaskManagerTest.synchronizationService.downloadSyncData(
                 matches { it == syncDataStatus.downloadUrl },
                 matches { true })
         } returns DataResult.Success(path)
 
-        everySuspend { synchronizationService.getDataShared() } returns DataResult.Success(entitiesData)
+        everySuspend { ControlTaskManagerTest.synchronizationService.getDataShared() } returns DataResult.Success(entitiesData)
 
-        every { networkValidator.isNetworkAvailable() } sequentiallyReturns listOf(true, true, false, true, true, false)
+        every { ControlTaskManagerTest.networkValidator.isNetworkAvailable() } sequentiallyReturns listOf(true, true, false, true, true, false)
 
         var isCompleted = false
 
@@ -177,12 +178,11 @@ class ControlTaskManagerTest : TestCase() {
     @Test
     fun `start execution is failure by network is not available`() = runBlocking {
         // Given
-        val networkValidator = mock<INetworkValidator>(MockMode.autofill)
-        HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
-        HorusContainer.setupNetworkValidator(networkValidator)
+        HorusContainer.setupSyncControlDatabaseHelper(ControlTaskManagerTest.syncControlDatabaseHelper)
+        HorusContainer.setupNetworkValidator(ControlTaskManagerTest.networkValidator)
 
-        every { networkValidator.isNetworkAvailable() } returns false
-        every { syncControlDatabaseHelper.getEntityNames() } returns emptyList()
+        every { ControlTaskManagerTest.networkValidator.isNetworkAvailable() } returns false
+        every { ControlTaskManagerTest.syncControlDatabaseHelper.getEntityNames() } returns emptyList()
 
         var isFailed = false
         var eventBusCalled = false
