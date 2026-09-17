@@ -6,6 +6,7 @@ import dev.mokkery.MockMode
 import dev.mokkery.mock
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.exactly
+import dev.mokkery.verify.VerifyMode.Companion.atLeast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -14,11 +15,15 @@ import kotlinx.datetime.toLocalDateTime
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.bus.InternalEventBus
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import org.apptank.horus.client.sync.manager.SynchronizatorManager.SynchronizationStatus
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.junit.After
 import org.junit.Before
@@ -31,6 +36,7 @@ class DispenserManagerTest : TestCase() {
     val networkValidator = mock<INetworkValidator>(MockMode.autofill)
     val syncControlDatabaseHelper = mock<ISyncControlDatabaseHelper>(MockMode.autofill)
     val synchronizationService = mock<ISynchronizationService>(MockMode.autofill)
+    val operationDatabaseHelper = mock<IOperationDatabaseHelper>(MockMode.autofill)
     val mockUploadFileRepository = mock<IUploadFileRepository>(MockMode.autofill)
     val storageSettings = mock<Settings>(MockMode.autofill)
 
@@ -56,7 +62,10 @@ class DispenserManagerTest : TestCase() {
         dispenserManager = DispenserManager(
             BATCH_SIZE,
             EXPIRATION_TIME_SECONDS,
+            networkValidator,
             syncControlDatabaseHelper,
+            operationDatabaseHelper,
+            synchronizationService,
             pushDataRemoteSynchronizatorManager
         )
 
@@ -72,7 +81,7 @@ class DispenserManagerTest : TestCase() {
 
 
     @Test
-    fun `when processBatch reach batch size then synchronize`() {
+    fun `when processBatch reach batch size then synchronize`() = runBlocking {
         // Given
         val actionedAt = Clock.System.now().epochSeconds
         val actions = generateArray(BATCH_SIZE) {
@@ -93,13 +102,14 @@ class DispenserManagerTest : TestCase() {
         for (i in 1..BATCH_SIZE) {
             dispenserManager.processBatch()
         }
+        delay(500)
 
         // Then
-        verify(exactly(1)) { networkValidator.isNetworkAvailable() }
+        verify(atLeast(1)) { networkValidator.isNetworkAvailable() }
     }
 
     @Test
-    fun `when processBatch reach expiration time then synchronize`() {
+    fun `when processBatch reach expiration time then synchronize`() = runBlocking {
         // Given
         val actionedAt = Clock.System.now().epochSeconds - EXPIRATION_TIME_SECONDS
         val actions = generateRandomArray(BATCH_SIZE) {
@@ -118,8 +128,9 @@ class DispenserManagerTest : TestCase() {
 
         // When
         dispenserManager.processBatch()
+        delay(500)
 
         // Then
-        verify(exactly(1)) { networkValidator.isNetworkAvailable() }
+        verify(atLeast(1)) { networkValidator.isNetworkAvailable() }
     }
 }

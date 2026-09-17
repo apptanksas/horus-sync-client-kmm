@@ -33,19 +33,39 @@ kotlin {
         // Publish android variants
         publishLibraryVariants("release", "debug")
     }
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    if (isMacOs) {
+        iosX64()
+        iosArm64()
+        iosSimulatorArm64()
 
-    cocoapods {
-        summary = "Horus is a library data synchronizer between app and remote server"
-        homepage = "Link [TBD]"
-        version = libVersion
-        ios.deploymentTarget = "16.0"
-        framework {
-            baseName = "horus"
-            isStatic = false
-            linkerOpts("-lsqlite3")
+        cocoapods {
+            summary = "Horus is a library data synchronizer between app and remote server"
+            homepage = "Link [TBD]"
+            version = libVersion
+            ios.deploymentTarget = "16.0"
+            framework {
+                baseName = "horus"
+                isStatic = false
+                linkerOpts("-lsqlite3")
+            }
+        }
+    } else {
+        // Workaround for https://youtrack.jetbrains.com/issue/KT-50664
+        // The podspec task fails on Windows if no iOS targets are defined
+        // even if the task is not executed.
+        val dummyTarget = iosArm64("iosArm64")
+        cocoapods {
+            summary = "Dummy summary for Windows"
+            homepage = "Dummy homepage"
+            framework {
+                baseName = "horus"
+            }
+        }
+        // Disable all iOS related tasks
+        tasks.configureEach {
+            if (name.contains("Ios", ignoreCase = true) || name.contains("podspec", ignoreCase = true)) {
+                enabled = false
+            }
         }
     }
 
@@ -162,16 +182,3 @@ if (!isPublishToMavenLocal) {
     logger.lifecycle("Publishing to Maven Local, skipping Maven Central configuration")
 }
 
-// Disable iOS compilation tasks on non-macOS systems (Windows/Linux)
-// so that publishToMavenLocal only builds and publishes Android artifacts.
-if (!isMacOs) {
-    tasks.configureEach {
-        if (name.contains("Ios", ignoreCase = true) &&
-            (name.startsWith("compile") || name.startsWith("link") ||
-             name.startsWith("cinterop") || name.startsWith("generateProjectStructure") ||
-             name.startsWith("transformCommonMainDependencies"))
-        ) {
-            enabled = false
-        }
-    }
-}

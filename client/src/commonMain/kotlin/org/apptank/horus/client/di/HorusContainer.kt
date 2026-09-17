@@ -492,8 +492,11 @@ object HorusContainer {
             dispenserManager = DispenserManager(
                 getConfig().pushPendingActionsConfig.batchSize,
                 getConfig().pushPendingActionsConfig.expirationTime,
+                getNetworkValidator(),
                 getSyncControlDatabaseHelper(),
-                getPushDataRemoteSynchronizatorManager()
+                getOperationDatabaseHelper(),
+                getSynchronizationService(),
+                getPushDataRemoteSynchronizatorManager(),
             )
         }
         return dispenserManager!!

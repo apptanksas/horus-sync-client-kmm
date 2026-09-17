@@ -1,6 +1,7 @@
 # Changelog
 
 # v0.23.0
+- Refactor sync implementation using event ids.
 - Added Real time synchronization support.
 - From now the datetime action is stored in milliseconds.
 - Added `BroadcastService` to handle broadcasting authentication requests.

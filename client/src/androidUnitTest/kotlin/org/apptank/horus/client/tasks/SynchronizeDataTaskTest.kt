@@ -9,9 +9,11 @@ import org.apptank.horus.client.base.DataResult
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.connectivity.INetworkValidator
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.everySuspend
@@ -43,6 +45,12 @@ class SynchronizeDataTaskTest : TestCase() {
             controlDatabaseHelper,
             operationDatabaseHelper,
             synchronizationService,
+            PushDataRemoteSynchronizatorManager(
+                networkValidator,
+                controlDatabaseHelper,
+                synchronizationService,
+                mock<IUploadFileRepository>(MockMode.autofill)
+            ),
             getMockSynchronizeInitialDataTask()
         )
 

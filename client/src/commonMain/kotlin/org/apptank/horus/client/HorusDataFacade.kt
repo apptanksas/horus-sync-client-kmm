@@ -90,13 +90,6 @@ object HorusDataFacade {
             return field
         }
 
-    private var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager? = null
-        get() {
-            if (field == null) {
-                field = HorusContainer.getPushDataRemoteSynchronizatorManager()
-            }
-            return field
-        }
 
     private var syncFileUploadedManager: ISyncFileUploadedManager? = null
         get() {
@@ -768,11 +761,8 @@ object HorusDataFacade {
                 }
             }
             setOnCompleted {
-
                 InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
                 InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
-
-                pushDataRemoteSynchronizatorManager?.tryPushData()
             }
 
             syncFileUploadedManager?.syncFiles {
@@ -1376,7 +1366,6 @@ object HorusDataFacade {
         networkValidator = null
         operationDatabaseHelper = null
         syncControlDatabaseHelper = null
-        pushDataRemoteSynchronizatorManager = null
         uploadFileRepository = null
     }
 }

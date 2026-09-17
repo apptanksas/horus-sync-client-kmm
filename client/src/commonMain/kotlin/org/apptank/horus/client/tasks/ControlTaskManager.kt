@@ -63,6 +63,7 @@ internal object ControlTaskManager {
         HorusContainer.getSyncControlDatabaseHelper(),
         HorusContainer.getOperationDatabaseHelper(),
         HorusContainer.getSynchronizationService(),
+        HorusContainer.getPushDataRemoteSynchronizatorManager(),
         synchronizeInitialDataTask
     )
 

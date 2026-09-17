@@ -33,8 +33,11 @@ import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.SynchronizeDataTask
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
+import org.apptank.horus.client.cache.MemoryCache
 import org.junit.After
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
@@ -47,6 +50,7 @@ abstract class TestCase {
     @After
     fun tearDownEnd() {
         HorusContainer.clear()
+        MemoryCache.flushCache()
         clearLocalPathStorage()
     }
 
@@ -138,7 +142,17 @@ abstract class TestCase {
             mock<ISyncControlDatabaseHelper>(MockMode.autofill),
             mock<IOperationDatabaseHelper>(MockMode.autofill),
             mock<ISynchronizationService>(MockMode.autofill),
+            getMockPushDataRemoteSynchronizatorManager(),
             getMockSynchronizeInitialDataTask()
+        )
+    }
+
+    internal fun getMockPushDataRemoteSynchronizatorManager(): PushDataRemoteSynchronizatorManager {
+        return PushDataRemoteSynchronizatorManager(
+            mock<INetworkValidator>(MockMode.autofill),
+            mock<ISyncControlDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
+            mock<IUploadFileRepository>(MockMode.autofill)
         )
     }
 

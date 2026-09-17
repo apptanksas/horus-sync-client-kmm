@@ -1,12 +1,25 @@
 package org.apptank.horus.client.sync.manager
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import org.apptank.horus.client.connectivity.INetworkValidator
+import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.sync.manager.SynchronizatorManager.SynchronizationStatus
+import org.apptank.horus.client.sync.network.service.ISynchronizationService
 
 private const val TAG = "DispenserManager"
+
 /**
  * The `DispenserManager` class is responsible for managing the synchronization of pending actions
  * with a remote server in batches. It tracks the number of actions and ensures that synchronization
@@ -21,11 +34,19 @@ private const val TAG = "DispenserManager"
 internal class DispenserManager(
     private val batchSize: Int,
     private val expirationTime: Long,
+    private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
-    private val pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager
+    private val operationDatabaseHelper: IOperationDatabaseHelper,
+    private val synchronizationService: ISynchronizationService,
+    private val pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     // Tracks the current count of processed actions before synchronization is triggered
     private var batchCounter = 0
+
+
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    private val mutex = Mutex()
 
     /**
      * The `processBatch` method is responsible for handling the batching logic and
@@ -66,10 +87,36 @@ internal class DispenserManager(
             info("[$TAG] Expiration time reached")
         }
 
+        if (mutex.isLocked) {
+            return
+        }
+
         if (mustSynchronizeByBatch || mustSynchronizeByTime) {
             info("Pushing pending actions to server...")
-            pushDataRemoteSynchronizatorManager.tryPushData()
-            batchCounter = 0
+
+            val syncManager = createDataValidatorManager()
+
+            scope.launch {
+                mutex.withLock(this) {
+                    syncManager.start { status, isCompleted ->
+                        if (isCompleted) {
+                            if (status == SynchronizationStatus.SUCCESS || status == SynchronizationStatus.IDLE) {
+                                pushDataRemoteSynchronizatorManager.tryPushData()
+                            }
+                            batchCounter = 0
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private fun createDataValidatorManager(): SynchronizatorManager {
+        return SynchronizatorManager(
+            netWorkValidator,
+            syncControlDatabaseHelper,
+            operationDatabaseHelper,
+            synchronizationService
+        )
     }
 }

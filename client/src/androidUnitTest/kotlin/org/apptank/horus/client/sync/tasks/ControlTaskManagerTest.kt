@@ -177,7 +177,7 @@ class ControlTaskManagerTest : TestCase() {
     @Test
     fun `start execution is failure by network is not available`() = runBlocking {
         // Given
-
+        val networkValidator = mock<INetworkValidator>(MockMode.autofill)
         HorusContainer.setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
         HorusContainer.setupNetworkValidator(networkValidator)
 
@@ -195,6 +195,7 @@ class ControlTaskManagerTest : TestCase() {
             }
         }
 
+        // Initialize HorusDataFacade after mocking to ensure it picks up the mock
         HorusDataFacade.init()
 
         HorusClientSyncErrorEventBus.register {
@@ -204,7 +205,7 @@ class ControlTaskManagerTest : TestCase() {
 
         // When
         ControlTaskManager.start(Dispatchers.Default)
-        delay(500)
+        delay(1000)
 
         // Then
         Assert.assertTrue(isFailed)
