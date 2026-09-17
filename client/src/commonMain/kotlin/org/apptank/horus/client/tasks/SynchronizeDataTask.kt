@@ -3,6 +3,7 @@ package org.apptank.horus.client.tasks
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.connectivity.INetworkValidator
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.sync.manager.SynchronizatorManager
 import org.apptank.horus.client.sync.manager.SynchronizatorManager.SynchronizationStatus as SyncStatus
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
@@ -21,6 +22,7 @@ internal class SynchronizeDataTask(
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
+    private val pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager,
     dependsOnTask: SynchronizeInitialDataTask
 ) : BaseTask(dependsOnTask) {
 
@@ -37,10 +39,16 @@ internal class SynchronizeDataTask(
         // Variable to hold the synchronization status.
         var statusResult: SyncStatus = SyncStatus.IN_PROGRESS
 
+
         // Start the synchronization process and update the statusResult based on completion.
         manager.start { status, isCompleted ->
+
             if (isCompleted) {
                 statusResult = status
+            }
+
+            if (statusResult == SyncStatus.SUCCESS || statusResult == SyncStatus.IDLE) {
+                pushDataRemoteSynchronizatorManager.tryPushData()
             }
         }
 

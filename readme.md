@@ -76,6 +76,7 @@ Use Horus in server side to synchronize the data with the clients.
 - Support for file uploads.
 - Support for entity restrictions.
 - Support for offline mode.
+- Real-time communication to receive changes from other devices.
 
 
 # 1. How to start
@@ -141,12 +142,17 @@ It includes the size of batches and the time expiration threshold to do synchron
 * **expirationTime**: The maximum time in seconds allowed between synchronizations before forcing
   one. Default is 12 hours.
 
+The `WebsocketConfig` class defines the settings for the WebSocket connection used for real-time communication.
+* **baseUrl**: The base URL for the WebSocket connection.
+* **authKey**: The authentication key used for WebSocket communication.
+
 The `HorusConfig` class also supports the following optional parameters:
 
 * **customHeaders**: Optional custom headers to include in HTTP requests. Default is an empty map.
 * **refreshReadableEntitiesTTL**: Time-to-live in hours for refreshing readable entities. This parameter controls how often readable entities are refreshed during synchronization. Default is 24 hours.
 * **isDebug**: Flag to enable or disable debug mode. Default is `false`.
 * **onGlobalCallbackFailure**: A callback function that is invoked when a global failure occurs during synchronization.
+* **websocketConfig**: Configuration for the WebSocket connection used for real-time communication. Default is `null`.
 
 It is also necessary to register **HorusActivityLifeCycle** to listen to the
 application's life cycle.
@@ -175,7 +181,8 @@ class MainApplication : Application() {
       PushPendingActionsConfig(batchSize = 10, expirationTime = 60 * 60 * 12L),
       mapOf("custom-header" to "custom-value"),
       refreshReadableEntitiesTTL = 24, // Optional: TTL in hours for refreshing readable entities
-      isDebug = true
+      isDebug = true,
+      websocketConfig = WebsocketConfig("wss://ws.yourdomain.com", "your-auth-key")
     )
 
     HorusConfigurator(config).configure(this)

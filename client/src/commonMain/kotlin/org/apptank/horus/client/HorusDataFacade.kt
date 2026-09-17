@@ -3,6 +3,7 @@ package org.apptank.horus.client
 import com.russhwolf.settings.Settings
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.base.CallbackEvent
@@ -89,13 +90,6 @@ object HorusDataFacade {
             return field
         }
 
-    private var pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager? = null
-        get() {
-            if (field == null) {
-                field = HorusContainer.getPushDataRemoteSynchronizatorManager()
-            }
-            return field
-        }
 
     private var syncFileUploadedManager: ISyncFileUploadedManager? = null
         get() {
@@ -233,13 +227,9 @@ object HorusDataFacade {
             val result = operationDatabaseHelper?.executeOperations(operations) {
                 processPostInsertActions(insertIds)
                 processPostUpdateActions(updateIds)
-                deleteIds.forEach { (entity, id) ->
-                    syncControlDatabaseHelper?.addActionDelete(
-                        entity,
-                        Horus.Attribute(Horus.Attribute.ID, id)
-                    )
-                }
+                processPostDeleteActions(deleteIds)
             }
+
             if (result == true) {
                 return DataResult.Success(Unit)
             }
@@ -771,11 +761,8 @@ object HorusDataFacade {
                 }
             }
             setOnCompleted {
-
                 InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
                 InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
-
-                pushDataRemoteSynchronizatorManager?.tryPushData()
             }
 
             syncFileUploadedManager?.syncFiles {
@@ -790,8 +777,10 @@ object HorusDataFacade {
      * @return `true` if there are pending actions to synchronize, `false` otherwise.
      */
     suspend fun hasDataToSync(): Boolean {
-        val hasLocalDataPendingToPush = syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
-        val hasRemoteDataPendingToPull = (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataToSync() ?: false)
+        val hasLocalDataPendingToPush =
+            syncControlDatabaseHelper?.getPendingActions()?.isNotEmpty() ?: false
+        val hasRemoteDataPendingToPull =
+            (networkValidator?.isNetworkAvailable() ?: false && synchronizatorManager?.existsDataRemoteToSync() ?: false)
         val hasFilesPending = uploadFileRepository?.hasFilesToUpload() ?: false
 
         return hasLocalDataPendingToPush || hasFilesPending || hasRemoteDataPendingToPull
@@ -803,7 +792,7 @@ object HorusDataFacade {
      * @return The last synchronization timestamp, or `null` if no synchronization has occurred.
      */
     fun getLastSyncDate(): Long? {
-        return syncControlDatabaseHelper?.getLastDatetimeCheckpoint()
+        return syncControlDatabaseHelper?.getLastActionCompleted()?.actionedAt?.toInstant(TimeZone.UTC)?.epochSeconds
     }
 
     /**
@@ -1133,6 +1122,15 @@ object HorusDataFacade {
         }
     }
 
+    private fun processPostDeleteActions(deleteIds: List<Horus.Batch.Delete>) {
+        deleteIds.forEach { (entity, id) ->
+            syncControlDatabaseHelper?.addActionDelete(
+                entity,
+                Horus.Attribute(Horus.Attribute.ID, id)
+            )
+        }
+    }
+
     private fun callOnReady() {
         isReady = true
         onCallbackReady?.invoke()
@@ -1368,7 +1366,6 @@ object HorusDataFacade {
         networkValidator = null
         operationDatabaseHelper = null
         syncControlDatabaseHelper = null
-        pushDataRemoteSynchronizatorManager = null
         uploadFileRepository = null
     }
 }

@@ -19,14 +19,17 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.apptank.horus.client.base.encodeToJSON
 import org.apptank.horus.client.control.QueueActionsTable
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.model.EntityRelated
 import org.apptank.horus.client.control.scheme.QueueActionsSequenceTable
 import org.apptank.horus.client.control.scheme.SyncControlTable
+import org.apptank.horus.client.control.scheme.SyncFileTable
 import org.apptank.horus.client.database.struct.Cursor
 import org.apptank.horus.client.database.struct.SQL
+import org.apptank.horus.client.extensions.isTimestampInMillis
 import org.apptank.horus.client.migration.domain.AttributeType
 
 /**
@@ -68,6 +71,7 @@ internal class SyncControlDatabaseHelper(
      *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun getLastDatetimeCheckpoint(type: SyncControl.OperationType?): Long {
         validateMigrationHorusTables()
         driver.handle {
@@ -185,6 +189,40 @@ internal class SyncControlDatabaseHelper(
         validateIfEntityExists(entity)
         addAction(entity, SyncControl.ActionType.DELETE, mapOf("id" to id.value))
         emitEntityDeleted(entity, id.value)
+    }
+
+
+    /**
+     * Completes a list of actions for entities in the database.
+     *
+     * @param actions The list of synchronization actions to be completed.
+     */
+    override fun addActionsCompleted(actions: List<SyncControl.Action>) {
+        val entities = actions.map { it.entity }.distinct()
+
+        entities.forEach {
+            validateIfEntityExists(it)
+        }
+
+        driver.handle {
+
+            transaction {
+
+                actions.forEach { action ->
+                    insertOrThrow(
+                        QueueActionsTable.TABLE_NAME,
+                        QueueActionsTable.mapToComplete(
+                            action.action,
+                            action.entity,
+                            action.data,
+                            action.actionedAt.toInstant(TimeZone.UTC).toEpochMilliseconds(),
+                            action.eventId
+                        )
+                    )
+                }
+            }
+
+        }
     }
 
     /**
@@ -441,6 +479,7 @@ internal class SyncControlDatabaseHelper(
      *
      * @param sequences The list of action sequence IDs to be inserted.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun insertActionSequences(sequences: List<Long>) {
         driver.handle {
 
@@ -466,6 +505,7 @@ internal class SyncControlDatabaseHelper(
      * @param sequences The list of action sequence IDs to be checked.
      * @return A list of existing action sequence IDs.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     override fun getExistsActionSequences(sequences: List<Long>): List<Long> {
         driver.handle {
 
@@ -481,6 +521,71 @@ internal class SyncControlDatabaseHelper(
             return queryResult(sqlSentence) {
                 it.getValue<String>(QueueActionsSequenceTable.ATTR_SEQUENCE).toLong()
             }
+        }
+    }
+
+    /**
+     * Validates a list of event IDs and indicates which of them exist in queue actions.
+     *
+     * Uses chunking to avoid SQLite parameter limits when querying large lists.
+     *
+     * @param eventIds The list of event IDs to validate.
+     * @return A map where each event ID is associated with `true` if it exists, or `false` otherwise.
+     */
+    override fun getExistsActionEventIds(eventIds: List<String>): Map<String, Boolean> {
+
+        if (eventIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        driver.handle {
+            val uniqueEventIds = eventIds.distinct()
+            val existsEventIds = mutableSetOf<String>()
+
+            uniqueEventIds.chunked(SQLITE_MAX_IN_PARAMS).forEach { chunk ->
+                val sqlSentence = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
+                    .whereIn(QueueActionsTable.ATTR_EVENT_ID, chunk)
+                    .select(QueueActionsTable.ATTR_EVENT_ID)
+                    .build()
+
+                existsEventIds.addAll(
+                    queryResult(sqlSentence) {
+                        it.getValue<String>(QueueActionsTable.ATTR_EVENT_ID)
+                    }
+                )
+            }
+
+            return uniqueEventIds.associateWith { existsEventIds.contains(it) }
+        }
+    }
+
+
+    override fun getLastCheckpoints(limit: Int): List<Long> {
+
+        val sqlSentence = SimpleQueryBuilder(SyncControlTable.TABLE_NAME)
+            .select(SyncControlTable.ATTR_DATETIME)
+            .where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        SyncControlTable.ATTR_TYPE,
+                        SyncControl.OperationType.CHECKPOINT.id
+                    )
+                )
+            )
+            .where(
+                SQL.WhereCondition(
+                    SQL.ColumnValue(
+                        SyncControlTable.ATTR_STATUS,
+                        SyncControl.Status.COMPLETED.id
+                    )
+                )
+            )
+            .orderBy(SyncControlTable.ATTR_ID)
+            .limit(limit)
+            .build()
+
+        return queryResult(sqlSentence) {
+            it.getValue<Long>(QueueActionsTable.ATTR_DATETIME)
         }
     }
 
@@ -504,8 +609,8 @@ internal class SyncControlDatabaseHelper(
     ): List<SyncControl.Action> {
         driver.handle {
             // Convert LocalDate to epoch (seconds) respecting the timezone
-            val minEpoch = minDate.atStartOfDayIn(timeZone).epochSeconds
-            val maxEpoch = (maxDate ?: minDate).atEndOfDayIn(timeZone).epochSeconds
+            val minEpoch = minDate.atStartOfDayIn(timeZone).toEpochMilliseconds()
+            val maxEpoch = (maxDate ?: minDate).atEndOfDayIn(timeZone).toEpochMilliseconds()
 
             val queryBuilder = SimpleQueryBuilder(QueueActionsTable.TABLE_NAME)
                 .whereIn(QueueActionsTable.ATTR_ENTITY, entityNames)
@@ -547,6 +652,53 @@ internal class SyncControlDatabaseHelper(
         }
     }
 
+    /**
+     * Executes a series of database operations.
+     *
+     * @param deleteActions A list of action IDs to delete.
+     * @param insertActions A list of actions to insert.
+     */
+    override fun execute(deleteActions: List<String>, insertActions: List<SyncControl.Action>) {
+        driver.handle {
+
+            transaction {
+
+                // Delete operations
+                deleteActions.forEach { eventId ->
+                    delete(
+                        QueueActionsTable.TABLE_NAME,
+                        buildWhereEvaluation(
+                            listOf(
+                                SQL.WhereCondition(
+                                    SQL.ColumnValue(
+                                        QueueActionsTable.ATTR_EVENT_ID,
+                                        eventId
+                                    )
+                                )
+                            )
+                        )
+                    )
+                }
+
+                // Insert operations
+                insertActions.forEach { action ->
+                    insertOrThrow(
+                        QueueActionsTable.TABLE_NAME,
+                        QueueActionsTable.mapToCustom(
+                            action.action,
+                            action.entity,
+                            action.data,
+                            action.actionedAt.toInstant(TimeZone.UTC).toEpochMilliseconds(),
+                            action.status,
+                            action.eventId
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+
     //-----------------------------------------------------------
     // Private helper methods
     //-----------------------------------------------------------
@@ -558,13 +710,23 @@ internal class SyncControlDatabaseHelper(
      * @return The `SyncControl.Action` object.
      */
     private fun createSyncActionFromCursor(cursor: Cursor): SyncControl.Action {
+
+        val datetime = cursor.getValue<Long>("datetime")
+
+        val actionedAt = if (datetime.isTimestampInMillis()) {
+            Instant.fromEpochMilliseconds(datetime)
+        } else {
+            Instant.fromEpochSeconds(datetime)
+        }
+
         return SyncControl.Action(
             cursor.getValue("id"),
             SyncControl.ActionType.fromId(cursor.getValue("action_type")),
             cursor.getValue("entity"),
             SyncControl.ActionStatus.fromId(cursor.getValue("status")),
             cursor.getStringAndConvertToMap("data"),
-            Instant.fromEpochSeconds(cursor.getValue("datetime")).toLocalDateTime(TimeZone.UTC)
+            actionedAt.toLocalDateTime(TimeZone.UTC),
+            cursor.getValue("event_id")
         )
     }
 
@@ -655,6 +817,7 @@ internal class SyncControlDatabaseHelper(
     }
 
     companion object {
+        private const val SQLITE_MAX_IN_PARAMS = 900
         private val entityWritableCache = mutableMapOf<String, Boolean>()
         private val entityLevelCache = mutableMapOf<String, Int>()
         private val entitiesRelatedCache = mutableMapOf<String, List<EntityRelated>>()

@@ -28,3 +28,17 @@ fun Boolean?.isFalse(): Boolean {
 fun <T> Boolean.evaluate(trueValue: T, falseValue: T): T {
     return if (this) trueValue else falseValue
 }
+
+/**
+ * Checks if the Long value represents a timestamp in seconds.
+ *
+ * @return `true` if the Long value represents a timestamp in seconds; `false` otherwise.
+ */
+fun Long.isTimestampInSeconds(): Boolean = this < 10_000_000_000L
+
+/**
+ * Checks if the Long value represents a timestamp in milliseconds.
+ *
+ * @return `true` if the Long value represents a timestamp in milliseconds; `false` otherwise.
+ */
+fun Long.isTimestampInMillis(): Boolean = this >= 10_000_000_000L

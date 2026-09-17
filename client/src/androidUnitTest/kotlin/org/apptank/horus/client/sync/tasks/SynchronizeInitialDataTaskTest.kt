@@ -28,6 +28,9 @@ import dev.mokkery.MockMode
 import dev.mokkery.mock
 import dev.mokkery.verify
 import dev.mokkery.verifySuspend
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toPath
 import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
@@ -161,6 +164,74 @@ class SynchronizeInitialDataTaskTest : TestCase() {
         val result = task.execute(null, 0, 10)
 
         assert(result is TaskResult.Success)
+    }
+
+    @Test
+    fun `when add action completed then store action as completed with expected event id`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
+        HorusDatabase.Schema.create(driver, entitiesScheme)
+
+        val entity = syncControlDatabaseHelper.getEntityNames().first()
+        val eventId = "event-id-1"
+        val datetime = 1_726_000_000L
+        val data = mapOf("id" to "1", "name" to "John")
+        val actionDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+
+        syncControlDatabaseHelper.addActionsCompleted(
+            listOf(
+                SyncControl.Action(
+                    id = 0,
+                    action = SyncControl.ActionType.INSERT,
+                    entity = entity,
+                    status = SyncControl.ActionStatus.COMPLETED,
+                    data = data,
+                    actionedAt = actionDateTime,
+                    eventId = eventId
+                )
+            )
+        )
+
+        val action = syncControlDatabaseHelper.getLastActionCompleted()
+
+        assert(action != null)
+        assert(action?.action == SyncControl.ActionType.INSERT)
+        assert(action?.entity == entity)
+        assert(action?.status == SyncControl.ActionStatus.COMPLETED)
+        assert(action?.data == data)
+        assert(action?.eventId == eventId)
+    }
+
+    @Test
+    fun `when add action completed with invalid entity then throw illegal argument exception`() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val syncControlDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        val entitiesScheme = buildEntitiesSchemeFromJSON(DATA_MIGRATION_INITIAL_DATA_TASK).map { it.toScheme() }
+        HorusDatabase.Schema.create(driver, entitiesScheme)
+
+        var isExpectedException = false
+        val actionDateTime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+
+        try {
+            syncControlDatabaseHelper.addActionsCompleted(
+                listOf(
+                    SyncControl.Action(
+                        id = 0,
+                        action = SyncControl.ActionType.UPDATE,
+                        entity = "entity_not_exists",
+                        status = SyncControl.ActionStatus.COMPLETED,
+                        data = mapOf("id" to "1"),
+                        actionedAt = actionDateTime,
+                        eventId = "event-id-2"
+                    )
+                )
+            )
+        } catch (_: IllegalArgumentException) {
+            isExpectedException = true
+        }
+
+        assert(isExpectedException)
     }
 
     private suspend fun mockDownloadSyncData(url: String?) {

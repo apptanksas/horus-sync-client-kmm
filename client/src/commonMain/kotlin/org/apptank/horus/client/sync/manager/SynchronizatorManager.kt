@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.manager
 
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.DataResult
+import org.apptank.horus.client.bus.HorusClientQueueActionReceivedEventBus
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.control.SyncControl
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -15,19 +16,19 @@ import org.apptank.horus.client.database.struct.SQL
 import org.apptank.horus.client.database.struct.toDeleteRecord
 import org.apptank.horus.client.database.struct.toInsertRecord
 import org.apptank.horus.client.database.struct.toRecordsInsert
-import org.apptank.horus.client.database.struct.toUpdateRecord
-import org.apptank.horus.client.exception.UserNotAuthenticatedException
 import org.apptank.horus.client.extensions.evaluate
 import org.apptank.horus.client.extensions.isTrue
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.extensions.logException
 import org.apptank.horus.client.hashing.AttributeHasher
 import org.apptank.horus.client.extensions.warn
+import org.apptank.horus.client.sync.network.dto.SyncDTO
+import org.apptank.horus.client.sync.network.dto.toDTO
 import org.apptank.horus.client.sync.network.dto.toDomain
 import org.apptank.horus.client.sync.network.dto.toEntityData
 import org.apptank.horus.client.sync.network.dto.toInternalModel
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
-import org.apptank.horus.client.utils.SystemTime
+import kotlin.collections.contains
 
 /**
  * Manages data synchronization between local storage and a remote server.
@@ -43,9 +44,9 @@ import org.apptank.horus.client.utils.SystemTime
 internal class SynchronizatorManager(
     private val netWorkValidator: INetworkValidator,
     private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
-    private val operationDatabaseHelper: IOperationDatabaseHelper,
+    operationDatabaseHelper: IOperationDatabaseHelper,
     private val synchronizationService: ISynchronizationService
-) {
+) : BaseSynchronizator(operationDatabaseHelper) {
 
     /**
      * Represents the status of the synchronization process.
@@ -83,7 +84,7 @@ internal class SynchronizatorManager(
         val userId = HorusAuthentication.getEffectiveUserId()
 
         // Stage 1: Validate if there are new data to sync with the server
-        val validateIsExistsDataToSync = existsDataToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
+        val validateIsExistsDataToSync = existsDataRemoteToSync() ?: return onStatus(SynchronizationStatus.FAILED, true)
 
         if (validateIsExistsDataToSync.isTrue()) {
             log("[SynchronizatorManager] There are new data to sync with the server")
@@ -164,31 +165,29 @@ internal class SynchronizatorManager(
      *
      * @return `true` if there is data to sync, `false` otherwise, or `null` if an error occurred.
      */
-    suspend fun existsDataToSync(): Boolean? {
+    suspend fun existsDataRemoteToSync(): Boolean? {
 
-        val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
-
-        val resultActions = synchronizationService.getQueueActions(
-            validateCheckpointTimestamp(checkpointTimestamp),
-            lastActions.map { it.getActionedAtTimestamp() })
+        val resultActions = getRemoteLastActions()
 
         when (resultActions) {
             is DataResult.Success -> {
+                val eventIds = resultActions.data.mapNotNull { it.eventId }
+                val eventIdsAlreadyExists = syncControlDatabaseHelper.getExistsActionEventIds(eventIds).filter { it.value }.map { it.key }
+                val actionsWithNoEventId = resultActions.data.filter { it.eventId == null }
 
-                val actionSequences = resultActions.data.mapNotNull { it.sequence }.toMutableList()
-
-                // -------------------------------------------------
-                // Filter actions that are already processed
-                // -------------------------------------------------
-
-                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
-                actionSequences.removeAll(actionsAlreadyProcessed)
-
-                // If there are actions, it means that there is data to sync
-                return resultActions.data.any { action ->
-                    action.sequence?.let { actionSequences.contains(it) } ?: true
+                if (eventIdsAlreadyExists.isNotEmpty() && actionsWithNoEventId.isEmpty()) {
+                    syncControlDatabaseHelper.execute(
+                        deleteActions = eventIdsAlreadyExists,
+                        insertActions = resultActions.data.filter { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.map { it.toDomain() }
+                    )
                 }
+
+                if (eventIds.isEmpty() && actionsWithNoEventId.isNotEmpty()) {
+                    val lastActionCompleted = syncControlDatabaseHelper.getLastActionCompleted()
+                    return actionsWithNoEventId.any { lastActionCompleted?.toDTO() != it }
+                }
+
+                return resultActions.data.filterNot { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.isNotEmpty()
             }
 
             is DataResult.Failure -> {
@@ -206,6 +205,107 @@ internal class SynchronizatorManager(
         }
 
         return null
+    }
+
+    /**
+     * Filters out actions that are not present in the local database.
+     *
+     * @param actions A list of synchronization actions.
+     * @param checkpointTimestamp The timestamp of the last checkpoint.
+     * @return A filtered list of actions to be processed.
+     */
+    private fun filterOwnActions(
+        actions: List<SyncControl.Action>,
+        checkpointTimestamp: Long
+    ): List<SyncControl.Action> {
+
+        val ownActions =
+            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+
+        // Filter the actions that are not in the local database
+        return actions.filterNot { action ->
+            ownActions.find { it.getActionedAtTimestamp() == action.getActionedAtTimestamp() } != null
+        }
+    }
+
+
+    private suspend fun getRemoteLastActions(): DataResult<List<SyncDTO.Response.SyncAction>> {
+
+        var checkpointLastAction = syncControlDatabaseHelper.getLastActionCompleted()
+        val actions = mutableListOf<SyncDTO.Response.SyncAction>().apply {
+            checkpointLastAction?.let {
+                add(checkpointLastAction.toDTO())
+            }
+        }
+
+        if (checkpointLastAction == null) {
+            when (val lastAction = synchronizationService.getLastQueueAction()) {
+                is DataResult.Success -> {
+
+                    checkpointLastAction = lastAction.data.toDomain()
+                    actions.add(lastAction.data)
+
+                    val (_, insertActions, updateActions, deleteActions) = organizeActions(listOf(checkpointLastAction))
+                    val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
+
+                    operationDatabaseHelper.executeOperations(operations) {
+                        syncControlDatabaseHelper.addActionsCompleted(listOf(checkpointLastAction))
+                    }
+                    HorusClientQueueActionReceivedEventBus.emit(insertActions + updateActions + deleteActions)
+                }
+
+                else -> {
+                    log("[SynchronizatorManager] Error getting last queue action")
+                }
+            }
+        }
+
+
+        // -----------------------------
+        // GET ACTIONS WITH EVENT IDS
+        // -----------------------------
+
+
+        checkpointLastAction?.eventId?.let { eventId ->
+
+            val actions = mutableListOf<SyncDTO.Response.SyncAction>()
+            var isEmpty: Boolean
+            var eventIdTarget = eventId
+
+            loop@ do {
+                val result = synchronizationService.getQueueActions(after = eventIdTarget, limit = 1000)
+                when (result) {
+                    is DataResult.Success -> {
+                        actions.addAll(result.data)
+                        isEmpty = result.data.isEmpty()
+
+                        if (result.data.lastOrNull()?.eventId == null) {
+                            break@loop
+                        }
+
+                        result.data.lastOrNull()?.eventId?.let {
+                            eventIdTarget = it
+                        }
+                    }
+
+                    else -> {
+                        return result
+                    }
+                }
+
+            } while (!isEmpty)
+
+            return DataResult.Success(actions)
+        }
+
+        // -----------------------------
+        // GET ACTIONS USING CHECKPOINT TIMESTAMP (DEPRECATED)
+        // -----------------------------
+
+        val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
+        val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+
+        return synchronizationService.getQueueActions(checkpointTimestamp, lastActions.map { it.getActionedAtTimestamp() })
     }
 
     /**
@@ -402,36 +502,12 @@ internal class SynchronizatorManager(
      */
     private suspend fun synchronizeData(): Boolean {
 
-        val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
-
-        if (checkpointDatetime == 0L) {
-            log("[SynchronizatorManager] No checkpoint datetime")
-            return true
-        }
-
-        log("[SynchronizatorManager] Synchronizing data from checkpoint datetime: $checkpointDatetime")
-
-        val actions = synchronizationService.getQueueActions(validateCheckpointTimestamp(checkpointDatetime))
+        val actions = getRemoteLastActions()
 
         when (actions) {
             is DataResult.Success -> {
 
-                val actionSequences = actions.data.mapNotNull { it.sequence }.toMutableList()
-
-                // -------------------------------------------------
-                // Filter actions that are already processed
-                // -------------------------------------------------
-
-                val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
-                actionSequences.removeAll(actionsAlreadyProcessed)
-
-                // -------------------------------------------------
-
-                val actionsToProcess = actions.data.filter { action ->
-                    action.sequence?.let { actionSequences.contains(it) } ?: true
-                }
-                val newActions = filterOwnActions(actionsToProcess.map { it.toDomain() }, checkpointDatetime)
-
+                val newActions = (classifyNewActionsUsingSequence(actions) + classifyNewActionsUsingEventId(actions)).distinctBy { it.hashCode() }
                 val (moveActions, insertActions, updateActions, deleteActions) = organizeActions(newActions)
 
                 if (executeMoveActions(moveActions).not()) {
@@ -444,22 +520,33 @@ internal class SynchronizatorManager(
                 }
 
                 val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
-                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty())
+                val result = operationDatabaseHelper.executeOperations(operations, ignoreIsFailure = moveActions.isNotEmpty()) {
+                    syncControlDatabaseHelper.addActionsCompleted((moveActions + insertActions + updateActions + deleteActions))
+                }
 
                 val syncControlStatus = if (result) {
+
+                    // Emit actions to
+                    HorusClientQueueActionReceivedEventBus.emit(moveActions + insertActions + updateActions + deleteActions)
+
                     log("[SynchronizatorManager:synchronizeData] Data synchronized successfully")
                     SyncControl.Status.COMPLETED
                 } else {
                     log("[SynchronizatorManager:synchronizeData] Error synchronizing data")
                     SyncControl.Status.FAILED
                 }
+
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
                     syncControlStatus
                 )
 
-                // Insert processed action sequences
-                syncControlDatabaseHelper.insertActionSequences(actionSequences)
+                // -------------------------------------------------
+                // Filter actions that are already processed (DEPRECATED)
+                // -------------------------------------------------
+
+                val sequences = actions.data.mapNotNull { it.sequence }.toMutableList().distinct()
+                syncControlDatabaseHelper.insertActionSequences(sequences)
 
                 return result
             }
@@ -486,25 +573,34 @@ internal class SynchronizatorManager(
         }
     }
 
-    /**
-     * Filters out actions that are not present in the local database.
-     *
-     * @param actions A list of synchronization actions.
-     * @param checkpointTimestamp The timestamp of the last checkpoint.
-     * @return A filtered list of actions to be processed.
-     */
-    private fun filterOwnActions(
-        actions: List<SyncControl.Action>,
-        checkpointTimestamp: Long
-    ): List<SyncControl.Action> {
+    private fun classifyNewActionsUsingSequence(actions: DataResult.Success<List<SyncDTO.Response.SyncAction>>): List<SyncControl.Action> {
 
-        val ownActions =
-            syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
+        val checkpointDatetime = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
+        val actionSequences = actions.data.filter { it.eventId == null }.mapNotNull { it.sequence }.toMutableList()
 
-        // Filter the actions that are not in the local database
-        return actions.filterNot { action ->
-            ownActions.find { it.getActionedAtTimestamp() == action.getActionedAtTimestamp() } != null
+        // -------------------------------------------------
+        // Filter actions that are already processed
+        // -------------------------------------------------
+
+        val actionsAlreadyProcessed = syncControlDatabaseHelper.getExistsActionSequences(actionSequences)
+        actionSequences.removeAll(actionsAlreadyProcessed)
+
+        // -------------------------------------------------
+
+        val actionsToProcess = actions.data.filter { action ->
+            action.sequence?.let { actionSequences.contains(it) } ?: true
         }
+
+        return filterOwnActions(actionsToProcess.map { it.toDomain() }, checkpointDatetime)
+    }
+
+    private fun classifyNewActionsUsingEventId(actions: DataResult.Success<List<SyncDTO.Response.SyncAction>>): List<SyncControl.Action> {
+
+        val actionsWithEventIdsNotProcessed = syncControlDatabaseHelper
+            .getExistsActionEventIds(actions.data.filter { it.eventId != null }.mapNotNull { it.eventId }.toList())
+            .filter { it.value.not() }.map { it.key }
+
+        return actions.data.filter { actionsWithEventIdsNotProcessed.contains(it.eventId) }.map { it.toDomain() }
     }
 
     /**
@@ -524,17 +620,9 @@ internal class SynchronizatorManager(
      * @return A list of update operations.
      */
     private fun mapToUpdateOperation(actions: List<SyncControl.Action>): List<DatabaseOperation.UpdateRecord> {
-
-        val actionsUpdate = actions.mapNotNull {
-            getEntityById(it.entity, it.getEntityId())?.let { entity ->
-                it.toUpdateRecord(entity)
-            } ?: run {
-                log("[SynchronizatorManager] Error updating data. [${it.data}]")
-                null
-            }
+        return actions.mapNotNull {
+            mapActionToUpdateDatabaseOperation(it)
         }
-
-        return actionsUpdate
     }
 
     /**
@@ -547,40 +635,6 @@ internal class SynchronizatorManager(
         return actions.sortedByDescending { syncControlDatabaseHelper.getEntityLevel(it.entity) }.map { it.toDeleteRecord() }
     }
 
-    /**
-     * Retrieves an entity by its ID.
-     *
-     * @param entity The name of the entity.
-     * @param id The ID of the entity.
-     * @return The entity if found, `null` otherwise.
-     */
-    private fun getEntityById(entity: String, id: String): Horus.Entity? {
-
-        val queryBuilder = SimpleQueryBuilder(entity).apply {
-            where(
-                SQL.WhereCondition(
-                    SQL.ColumnValue(Horus.Attribute.ID, id)
-                )
-            )
-        }
-
-        return operationDatabaseHelper.queryRecords(queryBuilder).map {
-            Horus.Entity(
-                entity,
-                it.map { Horus.Attribute(it.key, it.value) }
-            )
-        }.firstOrNull()
-    }
-
-    /**
-     * Retrieves the authenticated user ID.
-     *
-     * @return The authenticated user ID.
-     * @throws UserNotAuthenticatedException If the user is not authenticated.
-     */
-    private fun getUserId(): String {
-        return HorusAuthentication.getUserAuthenticatedId() ?: throw UserNotAuthenticatedException()
-    }
 
     /**
      * Retrieves remote entity hashes.
@@ -686,10 +740,6 @@ internal class SynchronizatorManager(
                 return true
             }
 
-            val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
-                .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
-                .sortedByDescending { it.second }
-
             val groupedByEntity = actions.groupBy { it.entity }
 
             groupedByEntity.forEach foreachGroupedEntity@{
@@ -697,6 +747,9 @@ internal class SynchronizatorManager(
                 val entityName = it.key
                 val entitiesIdsToDelete = it.value.map { action -> action.getEntityId() }.toMutableList()
                 val entitiesIdsMissing = mutableListOf<String>()
+                val entitiesSorted = syncControlDatabaseHelper.getEntityNames()
+                    .map { it to syncControlDatabaseHelper.getEntityLevel(it) }
+                    .sortedByDescending { it.second }
 
                 //---------------------------------------
                 // 2. VALIDATE IF EXISTS RECORDS TO DELETE
@@ -820,11 +873,11 @@ internal class SynchronizatorManager(
     private fun filterMoveActions(actions: List<SyncControl.Action>, moveActions: List<SyncControl.Action>): List<SyncControl.Action> {
         return actions.filter { action ->
 
-            val actionData = action.data.values.flatMap {
-                if (it is Map<*, *>) {
-                    it.values.toList()
+            val actionData = action.data.values.flatMap { value ->
+                if (value is Map<*, *>) {
+                    value.values.toList()
                 } else {
-                    listOf(it)
+                    listOf(value)
                 }
             }
 

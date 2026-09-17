@@ -788,6 +788,7 @@ const val MOCK_RESPONSE_GET_DATA_ENTITY = """
 const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
     [
     {
+        "event_id": "bd99624d-1538-46f8-bbb0-7a62abcec9cf",
         "sequence": 102929383844,
         "action": "INSERT",
         "entity": "measures",
@@ -801,7 +802,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725044885
     },
     {
-      "sequence": 102929383845,
+      "event_id": "bd99624d-1538-46f8-bbb0-7a62abcec9af",
+        "sequence": 102929383845,
           "action": "INSERT",
         "entity": "measures",
         "data": {
@@ -814,7 +816,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
-        "sequence": 102929383846,
+       "event_id": "bd99624d-1538-46f8-bbb0-7a62abcec8cf",
+         "sequence": 102929383846,
         "action": "UPDATE",
         "entity": "measures",
         "data": {
@@ -829,7 +832,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
-        "sequence": 102929383847,
+       "event_id": "bd99624d-1538-46f8-bbb0-7a62abcec1cf",
+         "sequence": 102929383847,
         "action": "DELETE",
         "entity": "measures",
         "data": {
@@ -839,6 +843,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048331
     },
     {
+        "event_id": "bd99624d-1538-46f8-bbb0-7a61abcec9cf",
         "sequence": 102929383848,
         "action": "INSERT",
         "entity": "products",
@@ -856,7 +861,8 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725048957
     },
     {
-       "sequence": 102929383848,
+      "event_id": "bd99624d-1538-46f7-bbb0-7a62abcec9cf",
+         "sequence": 102929383848,
        "action": "INSERT",
         "entity": "products",
         "data": {
@@ -873,6 +879,7 @@ const val MOCK_RESPONSE_GET_QUEUE_ACTIONS = """
         "synced_at": 1725051913
     },
     {
+       "event_id": "bd99624d-2538-46f8-bbb0-7a62abcec9cf",
        "sequence": 102929383849,
        "action": "INSERT",
         "entity": "categories",

@@ -14,6 +14,7 @@ import org.apptank.horus.client.sync.upload.data.FileMimeType
  * @property refreshReadableEntitiesTTL Time-to-live in hours for refreshing readable entities. Default is `24` hours.
  * @property isDebug Flag to enable or disable debug mode. Default is `false`.
  * @property onGlobalCallbackFailure A callback function that is invoked when a global failure occurs during synchronization.
+ * @property websocketConfig Configuration for the WebSocket connection used for real-time communication.
  */
 data class HorusConfig(
     val baseUrl: String,
@@ -23,6 +24,7 @@ data class HorusConfig(
     val refreshReadableEntitiesTTL: Int = 24,
     val isDebug: Boolean = false,
     val onGlobalCallbackFailure: ((String, Throwable?) -> Unit)? = { _, _ -> },
+    val websocketConfig: WebsocketConfig? = null
 )
 
 /**
@@ -50,4 +52,16 @@ data class UploadFilesConfig(
     val baseStoragePath: String,
     val mimeTypesAllowed: List<FileMimeType>,
     val maxFileSize: Int
+)
+
+/**
+ * The `WebsocketConfig` class defines the settings for the WebSocket connection used for real-time communication.
+ * It includes the base URL and the authentication key.
+ *
+ * @property baseUrl The base URL for the WebSocket connection.
+ * @property authKey The authentication key used for WebSocket communication.
+ */
+data class WebsocketConfig(
+    val baseUrl: String,
+    val authKey: String
 )

@@ -17,6 +17,8 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.http.Parameters
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -197,6 +199,33 @@ internal abstract class BaseService(
         }
     }
 
+
+    /**
+     * Makes a POST request to the specified path with the provided data as form URL encoded.
+     *
+     * @param path The endpoint path to make the request to.
+     * @param data The data to be sent as the request body.
+     * @param onResponse A lambda function to process the response body into the expected type.
+     * @return A DataResult containing either the result of the request or an error.
+     */
+    protected suspend inline fun <reified T : Any> postForm(
+        path: String,
+        data: Map<String, String>,
+        onResponse: (response: String) -> T
+    ): DataResult<T> {
+        return kotlin.runCatching {
+            handleResponse(client.post(buildUrl(path)) {
+                setBody(FormDataContent(Parameters.build {
+                    data.forEach { (key, value) ->
+                        append(key, value)
+                    }
+                }))
+                setupHeaders(this)
+            }, onResponse)
+        }.getOrElse {
+            return getNetworkError(it)
+        }
+    }
 
     /**
      * Handles the HTTP response by checking for status codes, parsing the response body, and managing errors.

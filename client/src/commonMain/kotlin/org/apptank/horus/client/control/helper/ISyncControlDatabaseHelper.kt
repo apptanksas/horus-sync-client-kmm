@@ -33,6 +33,7 @@ interface ISyncControlDatabaseHelper {
      *
      * @return The timestamp of the last checkpoint in milliseconds.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun getLastDatetimeCheckpoint(type: SyncControl.OperationType? = null): Long
 
     /**
@@ -77,6 +78,13 @@ interface ISyncControlDatabaseHelper {
         entity: String,
         id: Horus.Attribute<String>
     )
+
+    /**
+     * Completes a list of actions for entities in the database.
+     *
+     * @param actions The list of synchronization actions to be completed.
+     */
+    fun addActionsCompleted(actions: List<SyncControl.Action>)
 
     /**
      * Retrieves a list of pending actions from the database.
@@ -190,6 +198,7 @@ interface ISyncControlDatabaseHelper {
      *
      * @param sequences The list of action sequence numbers to insert.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun insertActionSequences(sequences: List<Long>)
 
     /**
@@ -198,7 +207,25 @@ interface ISyncControlDatabaseHelper {
      * @param sequences The list of action sequence numbers to check.
      * @return A list of existing action sequence numbers.
      */
+    @Deprecated("This method is deprecated and will be removed in a future version.")
     fun getExistsActionSequences(sequences: List<Long>): List<Long>
+
+    /**
+     * Validates a list of event IDs and indicates which of them exist in the database.
+     *
+     * @param eventIds The list of event IDs to validate.
+     * @return A map where each event ID is associated with `true` if it exists, or `false` otherwise.
+     */
+    fun getExistsActionEventIds(eventIds: List<String>): Map<String, Boolean>
+
+
+    /**
+     * Retrieves the last checkpoint timestamps from the database.
+     *
+     * @param limit The maximum number of checkpoint timestamps to retrieve.
+     * @return A list of the last checkpoint timestamps.
+     */
+    fun getLastCheckpoints(limit: Int): List<Long>
 
 
     /**
@@ -218,4 +245,16 @@ interface ISyncControlDatabaseHelper {
         maxDate: LocalDate? = null,
         timeZone: TimeZone
     ): List<SyncControl.Action>
+
+
+    /**
+     * Executes a series of database operations.
+     *
+     * @param deleteActions A list of action IDs to delete.
+     * @param insertActions A list of actions to insert.
+     */
+    fun execute(
+        deleteActions: List<String> = emptyList(),
+        insertActions: List<SyncControl.Action> = emptyList()
+    )
 }

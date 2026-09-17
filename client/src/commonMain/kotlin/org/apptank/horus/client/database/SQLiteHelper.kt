@@ -178,6 +178,12 @@ abstract class SQLiteHelper(
                     QueueActionsSequenceTable.SQL_CREATE_TABLE
                 )
             )
+            // Migration
+            addColumnIfNotExists(
+                QueueActionsTable.TABLE_NAME,
+                QueueActionsTable.ATTR_EVENT_ID,
+                true
+            )
         }
     }
 
@@ -332,6 +338,49 @@ abstract class SQLiteHelper(
                 MemoryCache.flushCache()
             }
         }
+    }
+
+    protected fun SqlDriver.addColumnIfNotExists(
+        table: String,
+        column: String,
+        asUnique: Boolean = false
+    ) {
+        val columnExists = executeQuery(
+            identifier = null,
+            sql = "PRAGMA table_info($table)",
+            mapper = { cursor ->
+                var exists = false
+
+                while (cursor.next().value) {
+                    if (cursor.getString(1) == column) {
+                        exists = true
+                        break
+                    }
+                }
+
+                QueryResult.Value(exists)
+            },
+            parameters = 0
+        ).value
+
+        if (!columnExists) {
+
+            execute(
+                identifier = null,
+                sql = "ALTER TABLE $table ADD COLUMN $column TEXT",
+                parameters = 0
+            )
+
+            if (asUnique) {
+                execute(
+                    identifier = null,
+                    sql = "CREATE UNIQUE INDEX IF NOT EXISTS ${table}_${column}_unique\n" +
+                            "ON $table ($column);",
+                    parameters = 0
+                )
+            }
+        }
+
     }
 
     /**

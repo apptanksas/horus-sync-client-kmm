@@ -2,6 +2,7 @@ package org.apptank.horus.client.sync.network.service
 
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.HttpHeaders
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA
 import org.apptank.horus.client.MOCK_RESPONSE_GET_DATA_ENTITY
@@ -28,10 +29,14 @@ import org.apptank.horus.client.MOCK_RESPONSE_GET_SYNC_STATUS
 import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
+import org.apptank.horus.client.extensions.isTimestampInMillis
+import org.apptank.horus.client.extensions.isTimestampInSeconds
 import org.junit.After
 import org.junit.Assert
 import org.junit.Test
+import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 
@@ -163,7 +168,8 @@ class SynchronizationServiceTest : ServiceTest() {
                         "double" to 1.0,
                         "float" to 1.0f,
                     )
-                ), timestamp() + (it * 60)
+                ), timestamp() + (it * 60),
+                uuid()
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
@@ -212,12 +218,111 @@ class SynchronizationServiceTest : ServiceTest() {
             )
         }
         val mockEngine = createMockResponse(status = HttpStatusCode.Created)
-        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L)
         // When
         val response = service.postQueueActions(actions)
         // Then
         assert(response is DataResult.Success)
     }
+
+    @Test
+    fun postQueueActionsChunkedWithFirstChunkFailure() = runBlocking {
+
+        // Given
+        val chunkSize = 100
+        val actions = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        }
+
+        var requestCounter = 0
+
+        val mockEngine = MockEngine { request ->
+            requestCounter += 1
+
+            if (Json.decodeFromString<List<SyncDTO.Request.SyncActionRequest>>(String(request.body.toByteArray())).size == chunkSize) {
+                return@MockEngine respond(
+                    content = "",
+                    status = HttpStatusCode.Forbidden,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+
+            respond(
+                content = "",
+                status = HttpStatusCode.Created,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L, chunkSize)
+        // When
+        val response = service.postQueueActions(actions)
+        // Then
+        assert(response is DataResult.NotAuthorized)
+        assertEquals(requestCounter, 1)
+    }
+
+    @Test
+    fun postQueueActionsChunkedWithMillisInAnotherRequest() = runBlocking {
+
+        // Given
+        val chunkSize = 100
+        val actionsWithTimestampInSeconds = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestamp() - (it * 60)
+            )
+        }
+        val actionsWithTimestampInMillis = generateArray(chunkSize + (chunkSize / 2)) {
+            SyncDTO.Request.SyncActionRequest(
+                SyncControl.ActionType.INSERT.name, "products", mapOf(
+                    "id" to uuid(),
+                    "name" to "Product  ${uuid()}"
+                ), timestampMillis() - (it * 60)
+            )
+        }
+
+        var requestCounter = 0
+
+        val mockEngine = MockEngine { request ->
+            requestCounter += 1
+            val actions = Json.decodeFromString<List<SyncDTO.Request.SyncActionRequest>>(String(request.body.toByteArray()))
+
+            when {
+                requestCounter <= 2 -> {
+                    assert(actions.all { it.actionedAt.isTimestampInSeconds() })
+                    assertFalse(actions.any { it.actionedAt.isTimestampInMillis() })
+                }
+
+                else -> {
+                    assert(actions.all { it.actionedAt.isTimestampInMillis() })
+                    assertFalse(actions.any { it.actionedAt.isTimestampInSeconds() })
+                }
+            }
+
+
+            respond(
+                content = "",
+                status = HttpStatusCode.Created,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL, mutableMapOf(), 0L, chunkSize)
+        // When
+        val response = service.postQueueActions((actionsWithTimestampInSeconds + actionsWithTimestampInMillis).sortedBy { Random.nextInt() })
+        // Then
+        assert(response is DataResult.Success)
+        assertEquals(requestCounter, 4)
+    }
+
 
     @Test
     fun getQueueActionsDefault() = runBlocking {
@@ -240,6 +345,7 @@ class SynchronizationServiceTest : ServiceTest() {
                     Assert.assertFalse(it.data?.isEmpty() ?: true)
                     Assert.assertNotNull(it.actionedAt)
                     Assert.assertNotNull(it.syncedAt)
+                    Assert.assertNotNull(it.eventId)
                 }
             },
             onFailure = {
@@ -308,6 +414,70 @@ class SynchronizationServiceTest : ServiceTest() {
         assertRequestContainsQueryParam("after", timestampAfter.toString())
         assertRequestContainsQueryParam("exclude", excludeTimestamp.toString())
     }
+
+
+    @Test
+    fun getQueueActionsWithEventIdAfter() = runBlocking {
+        // Given
+        val eventId = uuid()
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventId)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventId)
+        assertRequestMissingQueryParam("exclude")
+    }
+
+    @Test
+    fun getQueueActionsWithExcludeEventIds() = runBlocking {
+        // Given
+        val exclude = generateRandomArray { uuid() + it }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(exclude = exclude)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
+        assertRequestMissingQueryParam("after")
+        assertRequestMissingQueryParam("limit")
+    }
+
+    @Test
+    fun getQueueActionsWithEventIdsAfterAndExclude() = runBlocking {
+        // Given
+        val eventIdAfter = uuid()
+        val exclude = generateRandomArray { uuid() }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventIdAfter, exclude)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventIdAfter)
+        assertRequestContainsQueryParam("exclude", exclude.joinToString(","))
+    }
+
+    @Test
+    fun getQueueActionsWithEventIdsAfterAndExcludeUniques() = runBlocking {
+        // Given
+        val eventIdAfter = uuid()
+        val excludeEventId = uuid()
+        val limit = 100
+        val exclude = generateArray(10) { excludeEventId }
+        val mockEngine = createMockResponse(MOCK_RESPONSE_GET_QUEUE_ACTIONS)
+        val service = SynchronizationService(getHorusConfigTest(), mockEngine, BASE_URL)
+        // When
+        val response = service.getQueueActions(eventIdAfter, exclude, limit)
+        // Then
+        assert(response is DataResult.Success)
+        assertRequestContainsQueryParam("after", eventIdAfter)
+        assertRequestContainsQueryParam("exclude", excludeEventId)
+        assertRequestContainsQueryParam("limit", limit.toString())
+    }
+
 
     @Test
     fun postValidateEntitiesData() = runBlocking {

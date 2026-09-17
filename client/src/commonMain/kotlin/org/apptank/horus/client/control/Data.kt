@@ -173,6 +173,7 @@ sealed class SyncControl {
      * @param status The status of the action.
      * @param data A map of data related to the action.
      * @param actionedAt The time at which the action was performed.
+     * @param eventId The unique identifier for the event associated with the action.
      */
     data class Action(
         val id: Int,
@@ -180,7 +181,8 @@ sealed class SyncControl {
         val entity: String,
         val status: ActionStatus,
         val data: DataMap,
-        val actionedAt: LocalDateTime
+        val actionedAt: LocalDateTime,
+        val eventId: String? = null
     ) {
 
         /**
@@ -209,7 +211,31 @@ sealed class SyncControl {
          * @return A map containing the entity attributes.
          */
         fun getEntityAttributes(): DataMap {
-            return data["attributes"] as DataMap
+            return (data["attributes"] as? DataMap) ?: emptyMap()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Action) return false
+
+            return id == other.id &&
+                    action == other.action &&
+                    entity == other.entity &&
+                    status == other.status &&
+                    data == other.data &&
+                    actionedAt == other.actionedAt &&
+                    eventId == other.eventId
+        }
+
+        override fun hashCode(): Int {
+            var result = id
+            result = 31 * result + action.hashCode()
+            result = 31 * result + entity.hashCode()
+            result = 31 * result + status.hashCode()
+            result = 31 * result + data.hashCode()
+            result = 31 * result + actionedAt.hashCode()
+            result = 31 * result + (eventId?.hashCode() ?: 0)
+            return result
         }
     }
 

@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.apptank.horus.client.TestCase
 import org.apptank.horus.client.control.scheme.SyncControlTable
 import org.apptank.horus.client.data.Horus
@@ -32,7 +33,9 @@ import org.apptank.horus.client.control.QueueActionsTable.ATTR_DATA
 import org.apptank.horus.client.control.QueueActionsTable.ATTR_DATETIME
 import org.apptank.horus.client.control.QueueActionsTable.ATTR_ENTITY
 import org.apptank.horus.client.control.QueueActionsTable.ATTR_STATUS
+import org.apptank.horus.client.control.QueueActionsTable.ATTR_EVENT_ID
 import org.apptank.horus.client.serialization.AnySerializer
+import kotlin.test.fail
 
 
 class SyncControlDatabaseHelperTest : TestCase() {
@@ -43,7 +46,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
     @Before
     fun before() {
         driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        controlManagerDatabaseHelper = SyncControlDatabaseHelper("database", driver)
+        controlManagerDatabaseHelper = SyncControlDatabaseHelper("database_${Random.nextInt()}", driver)
 
         HorusDatabase.Schema.create(driver)
         MemoryCache.flushCache()
@@ -222,6 +225,31 @@ class SyncControlDatabaseHelperTest : TestCase() {
     }
 
     @Test
+    fun addActionInsertValidatingEventIdIsSuccess() {
+        // Given
+        val entity = "entity123"
+        val attributes = listOf(
+            Horus.Attribute("id", "1"),
+            Horus.Attribute("name", "name")
+        )
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
+        // When
+        controlManagerDatabaseHelper.addActionInsert(entity, attributes)
+        // Then
+        val result = driver.executeQuery(
+            null,
+            "SELECT ${QueueActionsTable.ATTR_EVENT_ID} FROM ${QueueActionsTable.TABLE_NAME}",
+            {
+                QueryResult.Value(it.getString(0))
+            },
+            0
+        ).value
+        Assert.assertNotNull(result)
+    }
+
+    @Test
     fun addActionUpdateIsSuccess() {
         // Given
         val entity = "entity123"
@@ -271,6 +299,92 @@ class SyncControlDatabaseHelperTest : TestCase() {
             0
         ).value
         Assert.assertEquals(entity, result)
+    }
+
+    @Test
+    fun addActionsCompletedIsSuccess() {
+        // Given
+        val entity = "entity_completed_123"
+        val datetime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
+        val actions = listOf(
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.INSERT,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "1", "name" to "John"),
+                actionedAt = datetime,
+                eventId = "event-completed-1"
+            ),
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.UPDATE,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "2", "name" to "Alice"),
+                actionedAt = datetime,
+                eventId = "event-completed-2"
+            )
+        )
+
+        // When
+        controlManagerDatabaseHelper.addActionsCompleted(actions)
+
+        // Then
+        val completedActions = controlManagerDatabaseHelper.getCompletedActionsAfterDatetime(0)
+        Assert.assertEquals(2, completedActions.size)
+        Assert.assertEquals(setOf("event-completed-1", "event-completed-2"), completedActions.map { it.eventId }.toSet())
+    }
+
+    @Test
+    fun addActionsCompletedRollbackWhenSecondActionFailsIsSuccess() {
+        // Given
+        val entity = "entity_transaction_123"
+        val datetime = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        driver.execute("CREATE TABLE $entity (id TEXT, name TEXT)")
+        driver.registerEntity(entity)
+
+        val actions = listOf(
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.INSERT,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "1", "name" to "John"),
+                actionedAt = datetime,
+                eventId = "event-transaction-1"
+            ),
+            SyncControl.Action(
+                id = 0,
+                action = SyncControl.ActionType.UPDATE,
+                entity = entity,
+                status = SyncControl.ActionStatus.COMPLETED,
+                data = mapOf("id" to "2", "invalid" to Exception("invalid value")),
+                actionedAt = datetime,
+                eventId = "event-transaction-2"
+            )
+        )
+
+        // When
+        try {
+            controlManagerDatabaseHelper.addActionsCompleted(actions)
+            fail("Expected an exception due invalid data serialization")
+        } catch (_: Exception) {
+            // Then
+            val insertedRows = driver.executeQuery(
+                null,
+                "SELECT COUNT(*) FROM ${QueueActionsTable.TABLE_NAME}",
+                {
+                    QueryResult.Value(it.getLong(0))
+                },
+                0
+            ).value
+
+            Assert.assertEquals(0L, insertedRows)
+        }
     }
 
     @Test
@@ -355,7 +469,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val lastActionCompleted = controlManagerDatabaseHelper.getLastActionCompleted()
 
         // Then
-        Assert.assertEquals(pendingActions.last().id, lastActionCompleted?.id)
+        Assert.assertEquals(pendingActions.maxOf { it.id }, lastActionCompleted?.id)
     }
 
     @Test
@@ -624,6 +738,120 @@ class SyncControlDatabaseHelperTest : TestCase() {
         }
     }
 
+    @Test
+    fun `when getExistsActionEventIds is success`() {
+        // Given
+        val entity = "entity_event_id_exists"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val row1 = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "A"),
+            1000L,
+            "event-id-1"
+        )
+        val row2 = queueActionMapToCreate(
+            SyncControl.ActionType.UPDATE,
+            entity,
+            mapOf("id" to "2", "name" to "B"),
+            1001L,
+            "event-id-2"
+        )
+
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row1)
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row2)
+
+        // When
+        val result = controlManagerDatabaseHelper.getExistsActionEventIds(
+            listOf("event-id-1", "event-id-x", "event-id-2")
+        )
+
+        // Then
+        Assert.assertEquals(3, result.size)
+        Assert.assertEquals(true, result["event-id-1"])
+        Assert.assertEquals(false, result["event-id-x"])
+        Assert.assertEquals(true, result["event-id-2"])
+    }
+
+    @Test
+    fun `when getExistsActionEventIds with many eventIds then validate using chunked`() {
+        // Given
+        val entity = "entity_event_id_chunked"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val existingEventIds = listOf("event-id-10", "event-id-999", "event-id-1500", "event-id-2005")
+
+        existingEventIds.forEachIndexed { index, eventId ->
+            driver.insertOrThrow(
+                QueueActionsTable.TABLE_NAME,
+                queueActionMapToCreate(
+                    SyncControl.ActionType.INSERT,
+                    entity,
+                    mapOf("id" to (index + 1).toString(), "name" to "Item-$index"),
+                    2000L + index,
+                    eventId
+                )
+            )
+        }
+
+        val eventIdsToCheck = (1..2005).map { "event-id-$it" }
+
+        // When
+        val result = controlManagerDatabaseHelper.getExistsActionEventIds(eventIdsToCheck)
+
+        // Then
+        Assert.assertEquals(eventIdsToCheck.size, result.size)
+        existingEventIds.forEach { Assert.assertEquals(true, result[it]) }
+        Assert.assertFalse(result.containsKey("event-id-2006"))
+        Assert.assertEquals(false, result["event-id-500"])
+        Assert.assertEquals(false, result["event-id-1"])
+    }
+
+    @Test
+    fun `when insert actions using same event id then throw exception`() {
+        // Given
+        val e1 = "products_q1"
+        val e2 = "orders_q1"
+
+        driver.execute("PRAGMA foreign_keys=ON")
+        driver.createTable(e1, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.createTable(e2, mapOf("id" to "TEXT", "name" to "TEXT"))
+
+        driver.registerEntity(e1)
+        driver.registerEntity(e2)
+
+        val timeZoneBogota = TimeZone.of("America/Bogota")
+        val testDate = LocalDate(2026, 5, 22)
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val eventId = uuid()
+
+        val row1 = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            e1,
+            mapOf("id" to "1", "name" to "P1"),
+            epoch,
+            eventId
+        )
+        val row2 = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            e2,
+            mapOf("id" to "2", "name" to "O1"),
+            epoch,
+            eventId
+        )
+
+        try {
+            driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row1)
+            driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row2)
+            fail("Insertion should fail due to foreign key constraint")
+        }catch (e: Exception){
+            assert(true)
+        }
+    }
+
 
     @Test
     fun `when queryActions with timezone then filter by date correctly`(): Unit = runBlocking {
@@ -682,7 +910,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val eventIdRow2 = uuid()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -694,14 +923,15 @@ class SyncControlDatabaseHelperTest : TestCase() {
             SyncControl.ActionType.INSERT,
             e2,
             mapOf("id" to "2", "name" to "O1"),
-            epoch
+            epoch,
+            eventIdRow2
         )
 
         driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row1)
         driver.insertOrThrow(QueueActionsTable.TABLE_NAME, row2)
 
         // When: query only e1 entities
-        val result = controlManagerDatabaseHelper.queryActions(
+        val resultE1 = controlManagerDatabaseHelper.queryActions(
             listOf(e1),
             emptyMap(),
             testDate,
@@ -709,10 +939,26 @@ class SyncControlDatabaseHelperTest : TestCase() {
             timeZoneBogota
         )
 
+        val resultE2 = controlManagerDatabaseHelper.queryActions(
+            listOf(e2),
+            emptyMap(),
+            testDate,
+            null,
+            timeZoneBogota
+        )
+
         // Then: should find only e1 entity
-        Assert.assertEquals(1, result.size)
-        Assert.assertEquals(e1, result.first().entity)
-        Assert.assertEquals("1", result.first().data["id"])
+        Assert.assertEquals(1, resultE1.size)
+        Assert.assertEquals(e1, resultE1.first().entity)
+        Assert.assertEquals("1", resultE1.first().data["id"])
+        Assert.assertNull(resultE1.first().eventId)
+
+        // Then: should find only e2 entity
+        Assert.assertEquals(1, resultE2.size)
+        Assert.assertEquals(e2, resultE2.first().entity)
+        Assert.assertEquals("2", resultE2.first().data["id"])
+        Assert.assertNotNull(resultE2.first().eventId)
+        Assert.assertEquals(eventIdRow2, resultE2.first().eventId)
     }
 
     @Test
@@ -732,7 +978,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
             LocalDate(2026, 5, 22),
             LocalDate(2026, 5, 23)
         ).forEach {
-            val epoch = it.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+            val epoch = it.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
             val row = queueActionMapToCreate(
                 SyncControl.ActionType.INSERT,
                 entity,
@@ -770,8 +1016,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val date1 = LocalDate(2026, 5, 20)
         val date2 = LocalDate(2026, 5, 22)
 
-        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
-        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -812,7 +1058,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -854,7 +1100,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val rowTrue = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -910,7 +1156,7 @@ class SyncControlDatabaseHelperTest : TestCase() {
 
         val timeZoneBogota = TimeZone.of("America/Bogota")
         val testDate = LocalDate(2026, 5, 22)
-        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch = testDate.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         val row1 = queueActionMapToCreate(
             SyncControl.ActionType.INSERT,
@@ -966,8 +1212,8 @@ class SyncControlDatabaseHelperTest : TestCase() {
         val date1 = LocalDate(2026, 5, 20)
         val date2 = LocalDate(2026, 5, 22)
 
-        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
-        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).epochSeconds
+        val epoch1 = date1.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
+        val epoch2 = date2.atTime(12, 0).toInstant(timeZoneBogota).toEpochMilliseconds()
 
         // Products on date1 and date2
         val p1 = queueActionMapToCreate(
@@ -1010,18 +1256,159 @@ class SyncControlDatabaseHelperTest : TestCase() {
         Assert.assertEquals(listOf("o1", "p2"), ids)
     }
 
+    @Test
+    fun `execute deletes and inserts correctly`() {
+        // Given
+        val entity = "entity_execute_all"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-1"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        val actionToInsert = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "2", "name" to "Inserted"),
+            actionedAt = Instant.fromEpochMilliseconds(2000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-inserted-1"
+        )
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = listOf(eventIdToDelete),
+            insertActions = listOf(actionToInsert)
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete, "event-inserted-1"))
+        Assert.assertEquals(false, exists[eventIdToDelete])
+        Assert.assertEquals(true, exists["event-inserted-1"])
+    }
+
+    @Test
+    fun `execute only deletes`() {
+        // Given
+        val entity = "entity_execute_delete"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-2"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = listOf(eventIdToDelete),
+            insertActions = emptyList()
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete))
+        Assert.assertEquals(false, exists[eventIdToDelete])
+    }
+
+    @Test
+    fun `execute only inserts`() {
+        // Given
+        val entity = "entity_execute_insert"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val actionToInsert = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "3", "name" to "Inserted Only"),
+            actionedAt = Instant.fromEpochMilliseconds(3000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-inserted-2"
+        )
+
+        // When
+        controlManagerDatabaseHelper.execute(
+            deleteActions = emptyList(),
+            insertActions = listOf(actionToInsert)
+        )
+
+        // Then
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf("event-inserted-2"))
+        Assert.assertEquals(true, exists["event-inserted-2"])
+    }
+
+    @Test
+    fun `execute rolls back on failure`() {
+        // Given
+        val entity = "entity_execute_rollback"
+        driver.createTable(entity, mapOf("id" to "TEXT", "name" to "TEXT"))
+        driver.registerEntity(entity)
+
+        val eventIdToDelete = "event-to-delete-rollback"
+        val rowToDelete = queueActionMapToCreate(
+            SyncControl.ActionType.INSERT,
+            entity,
+            mapOf("id" to "1", "name" to "To Delete"),
+            1000L,
+            eventIdToDelete
+        )
+        driver.insertOrThrow(QueueActionsTable.TABLE_NAME, rowToDelete)
+
+        // Acción que fallará por datos no serializables (causará excepción en QueueActionsTable.mapToCustom)
+        val actionToInsertFailing = SyncControl.Action(
+            id = 0,
+            action = SyncControl.ActionType.INSERT,
+            entity = entity,
+            status = SyncControl.ActionStatus.PENDING,
+            data = mapOf("id" to "3", "invalid" to Exception("fail")),
+            actionedAt = Instant.fromEpochMilliseconds(2000L).toLocalDateTime(TimeZone.UTC),
+            eventId = "event-failing"
+        )
+
+        // When
+        try {
+            controlManagerDatabaseHelper.execute(
+                deleteActions = listOf(eventIdToDelete),
+                insertActions = listOf(actionToInsertFailing)
+            )
+            Assert.fail("Should have thrown an exception")
+        } catch (e: Exception) {
+            // Expected
+        }
+
+        // Then: eventIdToDelete should STILL exist because of rollback
+        val exists = controlManagerDatabaseHelper.getExistsActionEventIds(listOf(eventIdToDelete))
+        Assert.assertEquals(true, exists[eventIdToDelete])
+    }
+
 
     private fun queueActionMapToCreate(
         actionType: SyncControl.ActionType,
         entity: String,
         jsonData: Map<String, Any?>,
-        datetime: Long
+        datetime: Long,
+        eventId: String? = null
     ) = mapOf(
         ATTR_ACTION_TYPE to actionType.id,
         ATTR_ENTITY to entity,
         ATTR_DATA to AnySerializer.decoderJSON.encodeToString(jsonData),
         ATTR_STATUS to SyncControl.ActionStatus.PENDING.id,
-        ATTR_DATETIME to datetime
+        ATTR_DATETIME to datetime,
+        ATTR_EVENT_ID to eventId
     )
 
 }

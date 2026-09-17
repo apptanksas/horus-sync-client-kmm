@@ -3,7 +3,6 @@ package org.apptank.horus.client
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
-import org.apptank.horus.client.base.Callback
 import org.apptank.horus.client.control.scheme.EntitiesTable
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
@@ -24,21 +23,24 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.toFile
 import dev.mokkery.MockMode
 import dev.mokkery.mock
-import dev.mokkery.answering.returns
-import dev.mokkery.answering.calls
-import dev.mokkery.matcher.any
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
 import org.apptank.horus.client.config.UploadFilesConfig
+import org.apptank.horus.client.di.HorusContainer
 import org.apptank.horus.client.control.helper.IDataSharedDatabaseHelper
 import org.apptank.horus.client.control.scheme.EntityAttributesTable
 import org.apptank.horus.client.extensions.normalizePath
 import org.apptank.horus.client.migration.domain.AttributeType
 import org.apptank.horus.client.sync.upload.data.FileMimeTypeGroup
+import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.tasks.RetrieveDataSharedTask
 import org.apptank.horus.client.tasks.SynchronizeDataTask
+import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
+import org.apptank.horus.client.cache.MemoryCache
+import org.apptank.horus.client.tasks.ControlTaskManager
 import org.junit.After
+import java.lang.reflect.Modifier
 import org.kotlincrypto.hash.sha2.SHA256
 import java.nio.file.Paths
 import java.util.UUID
@@ -49,7 +51,70 @@ abstract class TestCase {
 
     @After
     fun tearDownEnd() {
+        try {
+            resetSingletons()
+        } catch (e: Throwable) {
+            // Ignore errors during cleanup
+        }
+        HorusContainer.clear()
+        MemoryCache.flushCache()
         clearLocalPathStorage()
+    }
+
+    private fun resetSingletons() {
+        try {
+            org.apptank.horus.client.auth.HorusAuthentication.clearSession()
+        } catch (e: Throwable) {
+        }
+        try {
+            HorusDataFacade.clear()
+        } catch (e: Throwable) {
+        }
+        if (isContainerReadyForControlTaskManager()) {
+            try {
+                resetSingletonPrimitives(ControlTaskManager::class.java, ControlTaskManager)
+            } catch (e: Throwable) {
+            }
+        }
+    }
+
+    private fun isContainerReadyForControlTaskManager(): Boolean {
+        return try {
+            HorusContainer.getConfig()
+            HorusContainer.getNetworkValidator()
+            HorusContainer.getMigrationService()
+            HorusContainer.getSynchronizationService()
+            HorusContainer.getDatabaseFactory()
+            HorusContainer.getSettings()
+            HorusContainer.getSyncControlDatabaseHelper()
+            HorusContainer.getOperationDatabaseHelper()
+            HorusContainer.getSyncFilesDatabaseHelper()
+            HorusContainer.getDataSharedDatabaseHelper()
+            HorusContainer.getUploadFileRepository()
+            true
+        } catch (e: Throwable) {
+            false
+        }
+    }
+
+    private fun resetSingletonPrimitives(clazz: Class<*>, instance: Any) {
+        clazz.declaredFields.forEach { field ->
+            try {
+                field.isAccessible = true
+                if (!Modifier.isFinal(field.modifiers)) {
+                    val type = field.type
+                    if (type == Boolean::class.javaPrimitiveType || type == Boolean::class.java) {
+                        field.set(instance, false)
+                    } else if (type == Int::class.javaPrimitiveType || type == Int::class.java) {
+                        field.set(instance, 0)
+                    } else if (type == Long::class.javaPrimitiveType || type == Long::class.java) {
+                        field.set(instance, 0L)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore errors
+            }
+        }
     }
 
     private fun clearLocalPathStorage() {
@@ -140,7 +205,17 @@ abstract class TestCase {
             mock<ISyncControlDatabaseHelper>(MockMode.autofill),
             mock<IOperationDatabaseHelper>(MockMode.autofill),
             mock<ISynchronizationService>(MockMode.autofill),
+            getMockPushDataRemoteSynchronizatorManager(),
             getMockSynchronizeInitialDataTask()
+        )
+    }
+
+    internal fun getMockPushDataRemoteSynchronizatorManager(): PushDataRemoteSynchronizatorManager {
+        return PushDataRemoteSynchronizatorManager(
+            mock<INetworkValidator>(MockMode.autofill),
+            mock<ISyncControlDatabaseHelper>(MockMode.autofill),
+            mock<ISynchronizationService>(MockMode.autofill),
+            mock<IUploadFileRepository>(MockMode.autofill)
         )
     }
 
@@ -155,7 +230,7 @@ abstract class TestCase {
     }
 
 
-    protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any>) {
+    protected fun SqlDriver.insertOrThrow(table: String, values: Map<String, Any?>) {
         val columns = values.keys.joinToString(", ")
         val valuesString = values.values.joinToString(", ") { it.prepareSQLValueAsString() }
         val query = "INSERT INTO $table ($columns) VALUES ($valuesString);"
@@ -214,7 +289,11 @@ abstract class TestCase {
     }
 
     protected fun timestamp(): Long {
-        return Clock.System.now().toEpochMilliseconds() / 1000
+        return Clock.System.now().epochSeconds
+    }
+
+    protected fun timestampMillis(): Long {
+        return Clock.System.now().toEpochMilliseconds()
     }
 
     protected fun randomHash(): String {

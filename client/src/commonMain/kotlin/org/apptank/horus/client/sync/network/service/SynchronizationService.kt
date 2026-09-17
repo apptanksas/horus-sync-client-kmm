@@ -27,6 +27,8 @@ import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
 import org.apptank.horus.client.extensions.info
+import org.apptank.horus.client.extensions.isTimestampInMillis
+import org.apptank.horus.client.extensions.isTimestampInSeconds
 import org.apptank.horus.client.extensions.log
 import org.apptank.horus.client.utils.SystemTime
 
@@ -36,12 +38,15 @@ import org.apptank.horus.client.utils.SystemTime
  * @param engine The HTTP client engine to use for making network requests.
  * @param baseUrl The base URL for the API.
  * @param customHeaders Optional custom headers to include in the requests.
+ * @param delayChunked The delay in milliseconds between chunks of data sent in the synchronization process.
  */
 internal class SynchronizationService(
     private val config: HorusConfig,
     engine: HttpClientEngine,
     baseUrl: String,
-    customHeaders: Map<String, String> = emptyMap()
+    customHeaders: Map<String, String> = emptyMap(),
+    private val delayChunked: Long = 5000L,
+    private val chunkSize: Int = 300
 ) : BaseService(engine, baseUrl, customHeaders), ISynchronizationService {
 
 
@@ -153,26 +158,32 @@ internal class SynchronizationService(
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
 
-        val chunks = actions.sortedBy { it.actionedAt }.chunked(500)
-        val results = mutableListOf<DataResult<Unit>>()
+        val chunksWithTimestamp = actions.filter { it.actionedAt.isTimestampInSeconds() }.sortedBy { it.actionedAt }.chunked(chunkSize)
+        val chunksWithTimestampInMillis = actions.filter { it.actionedAt.isTimestampInMillis() }.sortedBy { it.actionedAt }.chunked(chunkSize)
 
-        chunks.forEach { chunk ->
-            results.add(post("queue/actions", chunk) { it.serialize() })
-            if (chunks.size > 1) {
-                delay(5000)
-            }
-        }
+        (chunksWithTimestamp + chunksWithTimestampInMillis).forEach { chunk ->
 
-        return if (results.all { it is DataResult.Success }) {
-            DataResult.Success(Unit)
-        } else {
-            return (results.find { it !is DataResult.Success }
-                ?: DataResult.Failure(Exception("Failed to post queue actions"))).also {
-                if (it is DataResult.ClientError) {
-                    emitEventSyncError(it)
+            val result: DataResult<Unit> = post("queue/actions", chunk) { it.serialize() }
+
+            when (result) {
+                is DataResult.Success -> Unit
+                is DataResult.ClientError -> {
+                    return result.also {
+                        emitEventSyncError(result)
+                    }
+                }
+
+                is DataResult.Failure, is DataResult.NotAuthorized -> {
+                    return result
                 }
             }
+
+            if (chunksWithTimestamp.size > 1) {
+                delay(delayChunked)
+            }
         }
+
+        return DataResult.Success(Unit)
     }
 
     /**
@@ -185,43 +196,22 @@ internal class SynchronizationService(
     override suspend fun getQueueActions(
         timestampAfter: Long?,
         exclude: List<Long>
-    ): DataResult<List<SyncDTO.Response.SyncAction>> {
+    ): DataResult<List<SyncDTO.Response.SyncAction>> =
+        requestGetQueueActions(timestampAfter, exclude.map { it.toString() })
 
-        val currentTime = SystemTime.getCurrentTimestamp()
-        val queryParams = mutableMapOf<String, String>()
-        timestampAfter?.let { queryParams["after"] = it.toString() }
-
-        if (exclude.isNotEmpty()) {
-            queryParams["exclude"] = exclude.distinct().joinToString(",")
-        }
-
-        val cacheKey = queryParams.entries.joinToString("&") { "${it.key}=${it.value}" }
-
-
-        val retrieveResult = suspend {
-            log("[SynchronizationService] Retrieving queue actions with params: $queryParams")
-            get<List<SyncDTO.Response.SyncAction>>(
-                "queue/actions",
-                queryParams
-            ) { it.serialize() }.also { result ->
-                if (result is DataResult.Success) {
-                    cacheGetQueueActions[cacheKey] = Pair(currentTime, result)
-                }
-            }
-        }
-
-        val cachedEntry = cacheGetQueueActions[cacheKey]
-
-        if (cachedEntry != null) {
-            val diffLastCheckInitialSync = currentTime - cachedEntry.first
-            if (diffLastCheckInitialSync < TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS) {
-                log("[SynchronizationService] Cache hit for getQueueActions with key: $cacheKey")
-                return cachedEntry.second
-            }
-        }
-
-        return retrieveResult()
-    }
+    /**
+     * Retrieves synchronization actions from the server, optionally after a specified timestamp and excluding certain IDs.
+     *
+     * @param after Optional timestamp to get actions updated after this time.
+     * @param exclude List of IDs to exclude from the results.
+     * @param limit Optional limit on the number of results returned.
+     * @return [DataResult] containing a list of [SyncDTO.Response.SyncAction] if successful.
+     */
+    override suspend fun getQueueActions(
+        after: String?,
+        exclude: List<String>,
+        limit: Int?
+    ): DataResult<List<SyncDTO.Response.SyncAction>> = requestGetQueueActions(after, exclude, limit)
 
     /**
      * Submits a request to validate entity data by comparing hashes.
@@ -288,6 +278,51 @@ internal class SynchronizationService(
     // -----------------------------------------
     // PRIVATE METHODS
     // ------------------------------------------
+
+
+    private suspend fun requestGetQueueActions(
+        after: Any? = null,
+        exclude: List<String> = emptyList(),
+        limit: Int? = null
+    ): DataResult<List<SyncDTO.Response.SyncAction>> {
+
+        val currentTime = SystemTime.getCurrentTimestamp()
+        val queryParams = mutableMapOf<String, String>()
+
+        after?.let { queryParams["after"] = it.toString() }
+
+        if (exclude.isNotEmpty()) {
+            queryParams["exclude"] = exclude.distinct().joinToString(",")
+        }
+
+        limit?.let { queryParams["limit"] = it.toString() }
+
+        val cacheKey = queryParams.entries.joinToString("&") { "${it.key}=${it.value}" }
+
+        val retrieveResult = suspend {
+            log("[SynchronizationService] Retrieving queue actions with params: $queryParams")
+            get<List<SyncDTO.Response.SyncAction>>(
+                "queue/actions",
+                queryParams
+            ) { it.serialize() }.also { result ->
+                if (result is DataResult.Success) {
+                    cacheGetQueueActions[cacheKey] = Pair(currentTime, result)
+                }
+            }
+        }
+
+        val cachedEntry = cacheGetQueueActions[cacheKey]
+
+        if (cachedEntry != null) {
+            val diffLastCheckInitialSync = currentTime - cachedEntry.first
+            if (diffLastCheckInitialSync < TTL_VALIDATION_GET_QUEUE_ACTIONS_IN_SECS) {
+                log("[SynchronizationService] Cache hit for getQueueActions with key: $cacheKey")
+                return cachedEntry.second
+            }
+        }
+
+        return retrieveResult()
+    }
 
     /**
      * Gets a temporary file in the configured base storage path for uploads.

@@ -12,6 +12,7 @@ import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.dto.SyncDTO
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.everySuspend
@@ -19,6 +20,7 @@ import dev.mokkery.matcher.any
 import dev.mokkery.matcher.eq
 import dev.mokkery.matcher.matches
 import dev.mokkery.MockMode
+import dev.mokkery.answering.sequentiallyReturns
 import dev.mokkery.mock
 import dev.mokkery.verify
 import dev.mokkery.verifySuspend
@@ -57,6 +59,31 @@ class SynchronizatorManagerTest : TestCase() {
         )
 
         HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+
+        mockEventIdsAsNotProcessed()
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns (null)
+        everySuspend { synchronizationService.getQueueActions(any<Long>(), any<List<Long>>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getQueueActions(any<Long>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), any<Int?>()) } returns (DataResult.Success(emptyList()))
+        everySuspend { synchronizationService.getLastQueueAction() } returns (DataResult.Failure(Exception("No last queue action")))
+    }
+
+    private fun mockEventIdsAsNotProcessed() {
+        every { syncControlDatabaseHelper.getExistsActionEventIds(any()) } calls { args ->
+            (args.args[0] as List<String>).associateWith { false }
+        }
+    }
+
+    private fun mockGetQueueActionsByEventIdOnce(response: DataResult<List<SyncDTO.Response.SyncAction>>) {
+        var called = false
+        everySuspend { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) } calls {
+            if (called) {
+                DataResult.Success(emptyList())
+            } else {
+                called = true
+                response
+            }
+        }
     }
 
     @Test
@@ -87,8 +114,8 @@ class SynchronizatorManagerTest : TestCase() {
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (checkpointTimestamp)
         every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (emptyList())
-        everySuspend { synchronizationService.getQueueActions(any(), any()) } returns (DataResult.Success(responseActions))
-        everySuspend { synchronizationService.getQueueActions(any()) } returns (DataResult.Success(responseActions))
+        everySuspend { synchronizationService.getQueueActions(any<Long>(), any()) } returns (DataResult.Success(responseActions))
+        everySuspend { synchronizationService.getQueueActions(any<Long>()) } returns (DataResult.Success(responseActions))
         every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
 
         // When
@@ -99,7 +126,7 @@ class SynchronizatorManagerTest : TestCase() {
         }
 
         // Then
-        verify(exactly(2)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
+        verify(exactly(3)) { syncControlDatabaseHelper.getLastDatetimeCheckpoint() }
     }
 
     @Test
@@ -112,21 +139,24 @@ class SynchronizatorManagerTest : TestCase() {
             every { networkValidator.isNetworkAvailable() } returns (true)
             every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-                checkpointTimestamp
-            )
+                    checkpointTimestamp
+                    )
+            every { syncControlDatabaseHelper.getLastActionCompleted() } returns (null)
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                actions
-            )
+                    actions
+                    )
             everySuspend {
                 synchronizationService.getQueueActions(
                     eq(checkpointTimestamp),
-                    any()
+                    any<List<Long>>()
                 )
             } returns (
-                DataResult.Success(responseActions)
-            )
+                    DataResult.Success(responseActions)
+                    )
+            every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
+            every { syncControlDatabaseHelper.getEntityLevel(any()) } returns (0)
 
             // When
             synchronizatorManager.start { status, isCompleted ->
@@ -150,27 +180,27 @@ class SynchronizatorManagerTest : TestCase() {
             every { networkValidator.isNetworkAvailable() } returns (true)
             every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-                checkpointTimestamp
-            )
+                    checkpointTimestamp
+                    )
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                actions
-            )
+                    actions
+                    )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (
-                DataResult.Success(responseActions)
-            )
+                    DataResult.Success(responseActions)
+                    )
             everySuspend { synchronizationService.getQueueActions(checkpointTimestamp) } returns (
-                DataResult.Success(responseActions)
-            )
+                    DataResult.Success(responseActions)
+                    )
             everySuspend { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                emptyList()
-            )
+                    emptyList()
+                    )
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
@@ -210,17 +240,17 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                ownNewActions)
+                    ownNewActions)
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
 
             everySuspend { synchronizationService.getQueueActions(checkpointTimestamp) } returns (
-                DataResult.Success(responseActions))
+                    DataResult.Success(responseActions))
 
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
 
@@ -234,7 +264,13 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val insertInvokeExpected = 1
-            verifySuspend(exactly(insertInvokeExpected)) { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) }
+            verifySuspend(exactly(insertInvokeExpected)) {
+                operationDatabaseHelper.executeOperations(
+                    any<List<DatabaseOperation>>(),
+                    any<Boolean>(),
+                    any<Callback>()
+                )
+            }
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -261,23 +297,23 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                ownNewActions)
+                    ownNewActions)
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
 
             every { operationDatabaseHelper.queryRecords(any()) } returns (
-                listOf(ownNewActions.first().data.mapValues {
-                    it.key to it.value.toString()
-                })
-            )
+                    listOf(ownNewActions.first().data.mapValues {
+                        it.key to it.value.toString()
+                    })
+                    )
 
             everySuspend { synchronizationService.getQueueActions(checkpointTimestamp) } returns (
-                DataResult.Success(responseActions))
+                    DataResult.Success(responseActions))
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
@@ -292,7 +328,13 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val updateInvokeExpected = 1
-            verifySuspend(exactly(updateInvokeExpected)) { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) }
+            verifySuspend(exactly(updateInvokeExpected)) {
+                operationDatabaseHelper.executeOperations(
+                    any<List<DatabaseOperation>>(),
+                    any<Boolean>(),
+                    any<Callback>()
+                )
+            }
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -320,17 +362,17 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                ownNewActions)
+                    ownNewActions)
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
 
             everySuspend { synchronizationService.getQueueActions(checkpointTimestamp) } returns (
-                DataResult.Success(responseActions))
+                    DataResult.Success(responseActions))
 
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
 
@@ -346,7 +388,13 @@ class SynchronizatorManagerTest : TestCase() {
             // Then
             delay(50)
             val deleteInvokeExpected = 1
-            verifySuspend(exactly(deleteInvokeExpected)) { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) }
+            verifySuspend(exactly(deleteInvokeExpected)) {
+                operationDatabaseHelper.executeOperations(
+                    any<List<DatabaseOperation>>(),
+                    any<Boolean>(),
+                    any<Callback>()
+                )
+            }
             verify {
                 syncControlDatabaseHelper.addSyncTypeStatus(
                     SyncControl.OperationType.CHECKPOINT,
@@ -374,19 +422,19 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (SystemTime.getCurrentTimestamp())
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP)
+                    eq(checkpointTimestamp)
                 )
             } returns (DataResult.Success(responseActions))
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                emptyList())
+                    emptyList())
 
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
 
@@ -436,24 +484,24 @@ class SynchronizatorManagerTest : TestCase() {
             every { networkValidator.isNetworkAvailable() } returns (true)
             every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-                checkpointTimestamp
-            )
+                    checkpointTimestamp
+                    )
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
 
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                insertActions + updateActions + deleteActions
-            )
+                    insertActions + updateActions + deleteActions
+                    )
 
             every { operationDatabaseHelper.queryRecords(any()) } returns (
-                listOf(updateActions.first().data.mapValues {
-                    it.key to it.value.toString()
-                })
-            )
+                    listOf(updateActions.first().data.mapValues {
+                        it.key to it.value.toString()
+                    })
+                    )
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -506,21 +554,21 @@ class SynchronizatorManagerTest : TestCase() {
         every { networkValidator.isNetworkAvailable() } returns (true)
         every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-            checkpointTimestamp
-        )
+                checkpointTimestamp
+                )
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-            insertActions + updateActions + deleteActions
-        )
+                insertActions + updateActions + deleteActions
+                )
 
         every { operationDatabaseHelper.queryRecords(any()) } returns (
-            listOf(updateActions.first().data.mapValues {
-                it.key to it.value.toString()
-            })
-        )
+                listOf(updateActions.first().data.mapValues {
+                    it.key to it.value.toString()
+                })
+                )
 
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -563,8 +611,8 @@ class SynchronizatorManagerTest : TestCase() {
         every { networkValidator.isNetworkAvailable() } returns (true)
         every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-            checkpointTimestamp
-        )
+                checkpointTimestamp
+                )
         every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
 
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (pendingActions)
@@ -572,7 +620,7 @@ class SynchronizatorManagerTest : TestCase() {
 
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -637,14 +685,14 @@ class SynchronizatorManagerTest : TestCase() {
         every { networkValidator.isNetworkAvailable() } returns (true)
         every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-            checkpointTimestamp
-        )
+                checkpointTimestamp
+                )
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-            emptyList()
-        )
+                emptyList()
+                )
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(emptyList()))
@@ -656,12 +704,12 @@ class SynchronizatorManagerTest : TestCase() {
         every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
         // ---> Validate entities data
         everySuspend { synchronizationService.postValidateEntitiesData(any(), any()) } returns (
-            DataResult.Success(entitiesHashesValidation)
-        )
+                DataResult.Success(entitiesHashesValidation)
+                )
         // ---> Get entity hashes
         everySuspend { synchronizationService.getEntityHashes(any(), any()) } returns (
-            DataResult.Success(emptyList())
-        )
+                DataResult.Success(emptyList())
+                )
 
         // When
         synchronizatorManager.start { status, isCompleted ->
@@ -711,14 +759,14 @@ class SynchronizatorManagerTest : TestCase() {
             every { networkValidator.isNetworkAvailable() } returns (true)
             every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-                checkpointTimestamp
-            )
+                    checkpointTimestamp
+                    )
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                emptyList()
-            )
+                    emptyList()
+                    )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(emptyList()))
@@ -730,21 +778,21 @@ class SynchronizatorManagerTest : TestCase() {
             every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
             // ---> Validate entities data
             everySuspend { synchronizationService.postValidateEntitiesData(any(), any()) } returns (
-                DataResult.Success(entitiesHashesValidation)
-            )
+                    DataResult.Success(entitiesHashesValidation)
+                    )
             // ---> Get entity hashes
             everySuspend { synchronizationService.getEntityHashes(any(), any()) } returns (
-                DataResult.Success(entityIdHash)
-            )
+                    DataResult.Success(entityIdHash)
+                    )
             // ---> Get entity data to restore
             everySuspend { synchronizationService.getDataEntity(any(), any(), any()) } returns (
-                DataResult.Success(listOf(entityData))
-            )
+                    DataResult.Success(listOf(entityData))
+                    )
             // ---> Restore corrupted data
             // --------> Delete corrupted data
             every { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) } returns (
-                DatabaseOperation.Result(true, 1)
-            )
+                    DatabaseOperation.Result(true, 1)
+                    )
             // --------> Insert new data
             every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns (true)
 
@@ -807,14 +855,14 @@ class SynchronizatorManagerTest : TestCase() {
             every { networkValidator.isNetworkAvailable() } returns (true)
             every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (
-                checkpointTimestamp
-            )
+                    checkpointTimestamp
+                    )
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (
-                emptyList()
-            )
+                    emptyList()
+                    )
             everySuspend {
                 synchronizationService.getQueueActions(
-                    checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP,
+                    checkpointTimestamp,
                     emptyList()
                 )
             } returns (DataResult.Success(emptyList()))
@@ -826,16 +874,16 @@ class SynchronizatorManagerTest : TestCase() {
             every { operationDatabaseHelper.queryRecords(any()) } returns (entitiesHashes)
             // ---> Validate entities data
             everySuspend { synchronizationService.postValidateEntitiesData(any(), any()) } returns (
-                DataResult.Success(entitiesHashesValidation)
-            )
+                    DataResult.Success(entitiesHashesValidation)
+                    )
             // ---> Get entity hashes
             everySuspend { synchronizationService.getEntityHashes(any(), any()) } returns (
-                DataResult.Success(entitiesIdHashesRemote)
-            )
+                    DataResult.Success(entitiesIdHashesRemote)
+                    )
             // ---> Get entity data to restore
             everySuspend { synchronizationService.getDataEntity(any(), any(), any()) } returns (
-                DataResult.Success(listOf(entityData))
-            )
+                    DataResult.Success(listOf(entityData))
+                    )
             // ---> Sync missing data
             every { operationDatabaseHelper.insertWithTransaction(any(), any()) } returns (true)
 
@@ -853,7 +901,6 @@ class SynchronizatorManagerTest : TestCase() {
             verifySuspend(exactly(1)) { operationDatabaseHelper.insertWithTransaction(any(), any()) }
         }
 
-
     @Test
     fun `when exists data to sync and there is a checkpoint then synchronize with move actions with update success`() = runBlocking {
 
@@ -867,11 +914,11 @@ class SynchronizatorManagerTest : TestCase() {
         every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (listOf())
         every { operationDatabaseHelper.queryRecords(any()) } returns (
-            responseActions.map { it.data ?: mapOf() }
-        )
+                responseActions.map { it.data ?: mapOf() }
+                )
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                eq(checkpointTimestamp),
                 any()
             )
         } returns (DataResult.Success(responseActions))
@@ -915,18 +962,18 @@ class SynchronizatorManagerTest : TestCase() {
             every { syncControlDatabaseHelper.getEntityLevel("entity") } returns (1)
             every { syncControlDatabaseHelper.getEntitiesRelated("entity") } returns (listOf())
             every { operationDatabaseHelper.deleteRecords(any(), any(), any(), any()) } returns (
-                DatabaseOperation.Result(true, 1)
-            )
+                    DatabaseOperation.Result(true, 1)
+                    )
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (listOf())
             every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Callback>()) } returns false
             every { operationDatabaseHelper.queryRecords(any()) } returns (
-                responseActions.map { it.data ?: mapOf() }
-            )
+                    responseActions.map { it.data ?: mapOf() }
+                    )
             every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
 
             everySuspend {
                 synchronizationService.getQueueActions(
-                    eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                    eq(checkpointTimestamp),
                     any()
                 )
             } returns (DataResult.Success(responseActions))
@@ -963,31 +1010,72 @@ class SynchronizatorManagerTest : TestCase() {
             }
         }
 
-
     @Test
-    fun `when exists actionsSequences already process then do nothing`() = runBlocking {
+    fun `when already processed remote actions process then do nothing and reorder actions`() = runBlocking {
         // Given
-        val responseActions = generateResponseSyncActions(SyncControl.ActionType.INSERT)
+
+        val checkpointAction = SyncControl.Action(
+            id = 1,
+            action = SyncControl.ActionType.INSERT,
+            entity = "entity",
+            status = SyncControl.ActionStatus.COMPLETED,
+            data = mapOf("id" to uuid(), "name" to "checkpoint"),
+            actionedAt = Clock.System.now().toLocalDateTime(TimeZone.UTC),
+            eventId = "event-id-checkpoint"
+        )
+
+        val responseActions = listOf(
+            SyncDTO.Response.SyncAction(
+                sequence = 1001L,
+                action = SyncControl.ActionType.INSERT.name,
+                entity = "entity",
+                data = mapOf("id" to uuid(), "name" to "one"),
+                actionedAt = Clock.System.now().epochSeconds,
+                syncedAt = Clock.System.now().epochSeconds,
+                eventId = "event-id-1001"
+            ),
+            SyncDTO.Response.SyncAction(
+                sequence = 1002L,
+                action = SyncControl.ActionType.INSERT.name,
+                entity = "entity",
+                data = mapOf("id" to uuid(), "name" to "two"),
+                actionedAt = Clock.System.now().epochSeconds,
+                syncedAt = Clock.System.now().epochSeconds,
+                eventId = "event-id-1002"
+            )
+        )
         val checkpointTimestamp = Clock.System.now().toEpochMilliseconds()
-        val existingSequences = responseActions.mapNotNull { it.sequence }
 
         every { networkValidator.isNetworkAvailable() } returns (true)
         every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
         every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (checkpointTimestamp)
+        every { syncControlDatabaseHelper.getLastActionCompleted() }.returns(checkpointAction)
+        every { syncControlDatabaseHelper.getExistsActionEventIds(responseActions.mapNotNull { it.eventId }) }.returns(
+            responseActions.associate { it.eventId!! to true }
+        )
         every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (listOf())
         everySuspend {
             synchronizationService.getQueueActions(
-                eq(checkpointTimestamp - SynchronizatorManager.CHECKPOINT_GAP),
+                any<String>(),
+                eq(emptyList()),
                 any()
             )
-        } returns (DataResult.Success(responseActions))
-
-        every { syncControlDatabaseHelper.getExistsActionSequences(existingSequences) } returns (existingSequences)
+        }.sequentiallyReturns(
+            listOf(
+                DataResult.Success(responseActions),
+                DataResult.Success(emptyList()),
+            )
+        )
+        every {
+            syncControlDatabaseHelper.execute(matches {
+                it.size == 2
+            }, matches {
+                it.size == 2
+            })
+        }
         every { syncControlDatabaseHelper.getWritableEntityNames() } returns (emptyList())
         everySuspend { synchronizationService.postValidateEntitiesData(any(), any()) } returns (DataResult.Success(emptyList()))
-        everySuspend { synchronizationService.getQueueActions(any()) } returns (DataResult.Success(responseActions))
-        every { operationDatabaseHelper.executeOperations(eq(emptyList()), any(), any()) } returns (true)
-        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
+        every { operationDatabaseHelper.executeOperations(emptyList(), any(), any()) } returns (true)
 
         // When
         synchronizatorManager.start { status, isCompleted ->
@@ -998,6 +1086,185 @@ class SynchronizatorManagerTest : TestCase() {
 
         // Then
         delay(50)
+        verify(exactly(0)) {
+            syncControlDatabaseHelper.addSyncTypeStatus(
+                SyncControl.OperationType.CHECKPOINT,
+                any()
+            )
+        }
+        verify(exactly(1))  {
+            syncControlDatabaseHelper.execute(matches {
+                it.size == 2
+            }, matches {
+                it.size == 2
+            })
+        }
+    }
+
+    @Test
+    fun `when exists checkpoint with event id then synchronize using paged queue actions`() = runBlocking {
+        // Given
+        val checkpointAction = SyncControl.Action(
+            id = 1,
+            action = SyncControl.ActionType.INSERT,
+            entity = "entity",
+            status = SyncControl.ActionStatus.COMPLETED,
+            data = mapOf("id" to uuid(), "name" to "checkpoint"),
+            actionedAt = Clock.System.now().toLocalDateTime(TimeZone.UTC),
+            eventId = "event-id-checkpoint"
+        )
+
+        val responseActions = listOf(
+            SyncDTO.Response.SyncAction(
+                sequence = 1001L,
+                action = SyncControl.ActionType.INSERT.name,
+                entity = "entity",
+                data = mapOf("id" to uuid(), "name" to "one"),
+                actionedAt = Clock.System.now().epochSeconds,
+                syncedAt = Clock.System.now().epochSeconds,
+                eventId = "event-id-1001"
+            ),
+            SyncDTO.Response.SyncAction(
+                sequence = 1002L,
+                action = SyncControl.ActionType.INSERT.name,
+                entity = "entity",
+                data = mapOf("id" to uuid(), "name" to "two"),
+                actionedAt = Clock.System.now().epochSeconds,
+                syncedAt = Clock.System.now().epochSeconds,
+                eventId = "event-id-1002"
+            )
+        )
+
+        var pagedCalls = 0
+        everySuspend { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) } calls {
+            pagedCalls += 1
+            when (pagedCalls) {
+                1, 3 -> DataResult.Success(responseActions)
+                else -> DataResult.Success(emptyList())
+            }
+        }
+
+        every { networkValidator.isNetworkAvailable() } returns (true)
+        every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns (checkpointAction)
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
+        every { syncControlDatabaseHelper.getEntityLevel(any()) } returns (0)
+        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
+        every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
+
+        // When
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+            }
+        }
+
+        // Then
+        verifySuspend(exactly(4)) { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) }
+        verifySuspend(exactly(0)) { synchronizationService.getQueueActions(any<Long>(), any()) }
+        verify(exactly(1)) {
+            syncControlDatabaseHelper.addSyncTypeStatus(
+                SyncControl.OperationType.CHECKPOINT,
+                SyncControl.Status.COMPLETED
+            )
+        }
+    }
+
+    @Test
+    fun `when checkpoint does not have event id then synchronize using timestamp checkpoint fallback`() = runBlocking {
+        // Given
+        val checkpointTimestamp = Clock.System.now().toEpochMilliseconds()
+        val checkpointAction = SyncControl.Action(
+            id = 1,
+            action = SyncControl.ActionType.INSERT,
+            entity = "entity",
+            status = SyncControl.ActionStatus.COMPLETED,
+            data = mapOf("id" to uuid(), "name" to "checkpoint"),
+            actionedAt = Clock.System.now().toLocalDateTime(TimeZone.UTC),
+            eventId = null
+        )
+        val responseActions = generateResponseSyncActions(SyncControl.ActionType.INSERT)
+
+        every { networkValidator.isNetworkAvailable() } returns (true)
+        every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns (checkpointAction)
+        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint() } returns (checkpointTimestamp)
+        every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp) } returns (emptyList())
+        every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns (emptyList())
+        every { syncControlDatabaseHelper.getEntityLevel(any()) } returns (0)
+        every { syncControlDatabaseHelper.getLastDatetimeCheckpoint(SyncControl.OperationType.INITIAL_SYNCHRONIZATION) } returns (0L)
+        every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any<Boolean>(), any<Callback>()) } returns (true)
+        everySuspend {
+            synchronizationService.getQueueActions(
+                eq(checkpointTimestamp),
+                any()
+            )
+        } returns DataResult.Success(responseActions)
+
+        // When
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.SUCCESS, status)
+            }
+        }
+
+        // Then
+        verifySuspend(exactly(2)) {
+            synchronizationService.getQueueActions(
+                eq(checkpointTimestamp),
+                any()
+            )
+        }
+        verifySuspend(exactly(0)) { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) }
+    }
+
+    @Test
+    fun `when paged queue actions by event id fails then synchronization status is failed`() = runBlocking {
+        // Given
+        val checkpointAction = SyncControl.Action(
+            id = 1,
+            action = SyncControl.ActionType.INSERT,
+            entity = "entity",
+            status = SyncControl.ActionStatus.COMPLETED,
+            data = mapOf("id" to uuid(), "name" to "checkpoint"),
+            actionedAt = Clock.System.now().toLocalDateTime(TimeZone.UTC),
+            eventId = "event-id-checkpoint"
+        )
+
+        val firstPage = listOf(
+            SyncDTO.Response.SyncAction(
+                sequence = 2001L,
+                action = SyncControl.ActionType.INSERT.name,
+                entity = "entity",
+                data = mapOf("id" to uuid(), "name" to "one"),
+                actionedAt = Clock.System.now().epochSeconds,
+                syncedAt = Clock.System.now().epochSeconds,
+                eventId = "event-id-2001"
+            )
+        )
+
+        var pagedCalls = 0
+        everySuspend { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) } calls {
+            pagedCalls += 1
+            when (pagedCalls) {
+                1 -> DataResult.Success(firstPage)
+                else -> DataResult.Failure(Exception("forced error"))
+            }
+        }
+
+        every { networkValidator.isNetworkAvailable() } returns (true)
+        every { syncControlDatabaseHelper.getPendingActions() } returns (emptyList())
+        every { syncControlDatabaseHelper.getLastActionCompleted() } returns (checkpointAction)
+
+        // When
+        synchronizatorManager.start { status, isCompleted ->
+            if (isCompleted) {
+                Assert.assertEquals(SynchronizatorManager.SynchronizationStatus.FAILED, status)
+            }
+        }
+
+        // Then
+        verifySuspend(exactly(2)) { synchronizationService.getQueueActions(any<String?>(), any<List<String>>(), eq(1000)) }
         verify(exactly(0)) {
             syncControlDatabaseHelper.addSyncTypeStatus(
                 SyncControl.OperationType.CHECKPOINT,
@@ -1041,7 +1308,8 @@ class SynchronizatorManagerTest : TestCase() {
                 entityName,
                 it.data,
                 it.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
-                it.actionedAt.toInstant(TimeZone.UTC).epochSeconds
+                it.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+                "event-id-${uuid()}"
             )
         }
     }

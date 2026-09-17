@@ -120,7 +120,7 @@ class OperationDatabaseHelperTest : TestCase() {
         val uuid = uuid()
         val actions = listOf(
             createInsertAction(uuid, "dog"),
-            createDeleteAction(uuid()),
+            createUpdateAction(uuid(),"abc"),
         )
         var postOperationValidation = false
         // When
@@ -270,8 +270,247 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // Then
         Assert.assertEquals(0, count)
-        Assert.assertFalse(result)
-        Assert.assertFalse(postOperationValidation)
+        Assert.assertTrue(result)
+        Assert.assertTrue(postOperationValidation)
+    }
+
+    @Test
+    fun validateExecuteTransactionsIsSuccessWhenInsertFailsByForeignKeyAndOperationIsSkipped() {
+        // Given
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        driver.createTable(
+            "owners",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT NOT NULL"
+            )
+        )
+
+        driver.createTable(
+            "animals",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "owner_id" to "TEXT NOT NULL",
+                "name" to "TEXT",
+                "species" to "TEXT",
+                "FOREIGN KEY(owner_id)" to "REFERENCES owners(id)"
+            )
+        )
+
+        val existingOwnerId = uuid()
+        val missingOwnerId = uuid()
+        val validAnimalId = uuid()
+
+        driver.insertOrThrow(
+            "owners",
+            mapOf(
+                "id" to existingOwnerId,
+                "name" to "owner1"
+            )
+        )
+
+        val actions = listOf(
+            DatabaseOperation.InsertRecord(
+                "animals",
+                listOf(
+                    SQL.ColumnValue("id", uuid()),
+                    SQL.ColumnValue("owner_id", missingOwnerId),
+                    SQL.ColumnValue("name", "dog"),
+                    SQL.ColumnValue("species", "canine")
+                )
+            ),
+            DatabaseOperation.InsertRecord(
+                "animals",
+                listOf(
+                    SQL.ColumnValue("id", validAnimalId),
+                    SQL.ColumnValue("owner_id", existingOwnerId),
+                    SQL.ColumnValue("name", "cat"),
+                    SQL.ColumnValue("species", "feline")
+                )
+            )
+        )
+        var postOperationValidation = false
+
+        // When
+        val result = databaseHelper.executeOperations(actions) {
+            postOperationValidation = true
+        }
+
+        val count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM animals", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        val validAnimalCount = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM animals WHERE id = '$validAnimalId'", {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        // Then
+        Assert.assertTrue(result)
+        Assert.assertEquals(1, count)
+        Assert.assertEquals(1, validAnimalCount)
+        Assert.assertTrue(postOperationValidation)
+    }
+
+    @Test
+    fun validateExecuteTransactionsIsSuccessWhenUpdateFailsByForeignKeyAndOperationIsSkipped() {
+        // Given
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        driver.createTable(
+            "owners",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT NOT NULL"
+            )
+        )
+
+        driver.createTable(
+            "animals",
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "owner_id" to "TEXT NOT NULL",
+                "name" to "TEXT",
+                "species" to "TEXT",
+                "FOREIGN KEY(owner_id)" to "REFERENCES owners(id)"
+            )
+        )
+
+        val currentOwnerId = uuid()
+        val missingOwnerId = uuid()
+        val animalId = uuid()
+
+        driver.insertOrThrow(
+            "owners",
+            mapOf(
+                "id" to currentOwnerId,
+                "name" to "owner1"
+            )
+        )
+
+        driver.insertOrThrow(
+            "animals",
+            mapOf(
+                "id" to animalId,
+                "owner_id" to currentOwnerId,
+                "name" to "dog",
+                "species" to "canine"
+            )
+        )
+
+        val actions = listOf(
+            DatabaseOperation.UpdateRecord(
+                "animals",
+                listOf(
+                    SQL.ColumnValue("owner_id", missingOwnerId)
+                ),
+                listOf(
+                    SQL.WhereCondition(
+                        SQL.ColumnValue("id", animalId)
+                    )
+                )
+            )
+        )
+        var postOperationValidation = false
+
+        // When
+        val result = databaseHelper.executeOperations(actions) {
+            postOperationValidation = true
+        }
+
+        val ownerResult = driver.executeQuery(
+            null,
+            "SELECT owner_id FROM animals WHERE id = '$animalId'", {
+                QueryResult.Value(it.getString(0))
+            },
+            0
+        ).value
+
+        // Then
+        Assert.assertTrue(result)
+        Assert.assertEquals(currentOwnerId, ownerResult)
+        Assert.assertTrue(postOperationValidation)
+    }
+
+    @Test
+    fun validateExecuteOperationsDeleteFallbackToCascadeWhenForeignKeyConstraintFails() {
+        // Given
+        val parentEntityName = "parent_entity_execute_operations"
+        val childEntityName = "child_entity_execute_operations"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "TEXT PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "TEXT"
+            ),
+            listOf("FOREIGN KEY(parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId = uuid()
+
+        databaseHelper.insertWithTransaction(
+            listOf(
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId),
+                        SQL.ColumnValue("name", "parent")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", uuid()),
+                        SQL.ColumnValue("name", "child"),
+                        SQL.ColumnValue("parent_id", parentId)
+                    )
+                )
+            )
+        )
+
+        var postOperationValidation = false
+
+        // When
+        val result = databaseHelper.executeOperations(
+            listOf(
+                DatabaseOperation.DeleteRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.WhereCondition(
+                            SQL.ColumnValue("id", parentId)
+                        )
+                    )
+                )
+            )
+        ) {
+            postOperationValidation = true
+        }
+
+        // Then
+        Assert.assertTrue(result)
+        Assert.assertTrue(postOperationValidation)
+        Assert.assertEquals(0, getCountFromTable(parentEntityName))
+        Assert.assertEquals(0, getCountFromTable(childEntityName))
     }
 
     @Test
@@ -1064,6 +1303,192 @@ class OperationDatabaseHelperTest : TestCase() {
 
         // Then
         Assert.assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun validateExecuteDeleteOnCascadeWhenConstraintsEnabled() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+        val grandChildEntityName = "grand_child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.createTable(
+            grandChildEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "child_id" to "STRING"
+            ), listOf("FOREIGN KEY (child_id) REFERENCES $childEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId = uuid()
+        val childId = uuid()
+        val grandChildId = uuid()
+
+        databaseHelper.insertWithTransaction(
+            listOf(
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId),
+                        SQL.ColumnValue("name", "parent")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", childId),
+                        SQL.ColumnValue("name", "child"),
+                        SQL.ColumnValue("parent_id", parentId)
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    grandChildEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", grandChildId),
+                        SQL.ColumnValue("name", "grand_child"),
+                        SQL.ColumnValue("child_id", childId)
+                    )
+                )
+            )
+        )
+
+        // When
+        val result = databaseHelper.executeDeleteOnCascade(
+            parentEntityName,
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", parentId)
+                )
+            )
+        )
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(3, result.rowsAffected)
+        assertEquals(0, getCountFromTable(parentEntityName))
+        assertEquals(0, getCountFromTable(childEntityName))
+        assertEquals(0, getCountFromTable(grandChildEntityName))
+    }
+
+    @Test
+    fun validateExecuteDeleteOnCascadeDeleteOnlyRelatedRecords() {
+        // Given
+        val parentEntityName = "parent_entity"
+        val childEntityName = "child_entity"
+
+        driver.createTable(
+            parentEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT"
+            )
+        )
+
+        driver.createTable(
+            childEntityName,
+            mapOf(
+                "id" to "STRING PRIMARY KEY",
+                "name" to "TEXT",
+                "parent_id" to "STRING"
+            ), listOf("FOREIGN KEY (parent_id) REFERENCES $parentEntityName(id)")
+        )
+
+        driver.execute("PRAGMA foreign_keys=ON")
+
+        val parentId1 = uuid()
+        val parentId2 = uuid()
+
+        databaseHelper.insertWithTransaction(
+            listOf(
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId1),
+                        SQL.ColumnValue("name", "parent_1")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    parentEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", parentId2),
+                        SQL.ColumnValue("name", "parent_2")
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", uuid()),
+                        SQL.ColumnValue("name", "child_1"),
+                        SQL.ColumnValue("parent_id", parentId1)
+                    )
+                ),
+                DatabaseOperation.InsertRecord(
+                    childEntityName,
+                    listOf(
+                        SQL.ColumnValue("id", uuid()),
+                        SQL.ColumnValue("name", "child_2"),
+                        SQL.ColumnValue("parent_id", parentId2)
+                    )
+                )
+            )
+        )
+
+        // When
+        val result = databaseHelper.executeDeleteOnCascade(
+            parentEntityName,
+            listOf(
+                SQL.WhereCondition(
+                    SQL.ColumnValue("id", parentId1)
+                )
+            )
+        )
+
+        // Then
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.rowsAffected)
+        assertEquals(1, getCountFromTable(parentEntityName))
+        assertEquals(1, getCountFromTable(childEntityName))
+
+        val parent2Count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $parentEntityName WHERE id = '$parentId2'",
+            {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        val childRelatedToParent2Count = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM $childEntityName WHERE parent_id = '$parentId2'",
+            {
+                QueryResult.Value(it.getRequireInt(0))
+            },
+            0
+        ).value
+
+        assertEquals(1, parent2Count)
+        assertEquals(1, childRelatedToParent2Count)
     }
 
     @Test

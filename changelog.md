@@ -1,5 +1,13 @@
 # Changelog
 
+# v0.23.0
+- Refactor sync implementation using event ids.
+- Added Real time synchronization support.
+- From now the datetime action is stored in milliseconds.
+- Added `BroadcastService` to handle broadcasting authentication requests.
+- Added `postForm` method to `BaseService` to support `application/x-www-form-urlencoded` POST requests.
+- Enhanced `SynchronizationService` to handle multiple chunks of data and emit events for errors.
+
 # v0.22.0
 - Added HorusPreferences with flag `ignoreNetworkStatus` allow ignoring network status checks.
 - Added Offline Mode in preferences.

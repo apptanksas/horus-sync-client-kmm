@@ -3,6 +3,7 @@ package org.apptank.horus.client.control.scheme
 /**
  * Defines the schema and utility functions for the `sync_control_sequence` table.
  */
+@Deprecated("This class is deprecated and will be removed in a future version.")
 internal object QueueActionsSequenceTable {
 
     const val TABLE_NAME = "horus_queue_actions_sequence"
@@ -16,11 +17,11 @@ internal object QueueActionsSequenceTable {
                 "$ATTR_SEQUENCE STRING PRIMARY KEY NOT NULL" +
                 ")"
 
+
     /**
-     * Maps an `OperationType` and `Status` to a `Map` for insertion into the `sync_control` table.
+     * Maps an action sequence number to a `Map` for insertion into the `sync_control_sequence` table.
      *
-     * @param type The type of synchronization operation.
-     * @param status The status of the synchronization.
+     * @param sequence The action sequence number to map.
      * @return A map of column names to values for insertion.
      */
     fun mapToCreate(sequence: Long) = mapOf(

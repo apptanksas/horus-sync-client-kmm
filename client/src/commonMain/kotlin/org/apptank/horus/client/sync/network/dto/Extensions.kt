@@ -113,7 +113,8 @@ internal fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
         action = this.action.name,
         entity = this.entity,
         data = this.data,
-        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds
+        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        eventId = this.eventId
     )
 }
 
@@ -133,7 +134,19 @@ internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
         data = data ?: mapOf(),
         actionedAt = actionedAt?.let {
             Instant.fromEpochSeconds(it).toLocalDateTime(TimeZone.UTC)
-        } ?: throw IllegalArgumentException("DatetimeAction is null")
+        } ?: throw IllegalArgumentException("DatetimeAction is null"),
+        eventId = eventId
+    )
+}
+
+internal fun SyncControl.Action.toDTO(): SyncDTO.Response.SyncAction {
+    return SyncDTO.Response.SyncAction(
+        action = this.action.name,
+        entity = this.entity,
+        data = this.data,
+        actionedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        syncedAt = this.actionedAt.toInstant(TimeZone.UTC).epochSeconds,
+        eventId = this.eventId
     )
 }
 

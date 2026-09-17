@@ -85,7 +85,12 @@ class HorusDatabase(
 
                 execute(EntitiesTable.SQL_CREATE_TABLE)
                 execute(SyncControlTable.SQL_CREATE_TABLE)
-                execute(QueueActionsTable.SQL_CREATE_TABLE)
+                execute(QueueActionsTable.SQL_CREATE_TABLE).also {
+                    runCatching {
+                        execute(QueueActionsTable.SQL_MIGRATION_ADD_COLUMN_EVENT_ID)
+                        execute(QueueActionsTable.SQL_MIGRATION_ADD_UNIQUE_INDEX_EVENT_ID)
+                    }
+                }
                 execute(SyncFileTable.SQL_CREATE_TABLE)
                 execute(EntityAttributesTable.SQL_CREATE_TABLE)
                 execute(DataSharedTable.SQL_CREATE_TABLE)
@@ -209,7 +214,8 @@ class HorusDatabase(
         private fun SqlDriver.entityNameExists(entityName: String): Boolean {
             return executeQuery(
                 null,
-                "SELECT COUNT(*) FROM ${EntitiesTable.TABLE_NAME} WHERE ${EntitiesTable.ATTR_NAME} = '$entityName'", {
+                "SELECT COUNT(*) FROM ${EntitiesTable.TABLE_NAME} WHERE ${EntitiesTable.ATTR_NAME} = '$entityName'",
+                {
                     if (!it.next().value) {
                         return@executeQuery QueryResult.Value(0)
                     }
