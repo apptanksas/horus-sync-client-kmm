@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.23.1
+- Fixed get last action when is empty.
+
 # v0.23.0
 - Refactor sync implementation using event ids.
 - Added Real time synchronization support.
