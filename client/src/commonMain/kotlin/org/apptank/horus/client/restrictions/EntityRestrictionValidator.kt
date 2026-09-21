@@ -21,7 +21,8 @@ import org.apptank.horus.client.extensions.isTrue
 internal class EntityRestrictionValidator(
     private val operationDatabaseHelper: IOperationDatabaseHelper
 ) {
-    private val mutex = mutableMapOf<String, Mutex>()
+    private val entityMutexes = mutableMapOf<String, Mutex>()
+    private val mapMutex = Mutex()
 
     /** Map of restrictions grouped by entity name. */
     private var entityMapRestrictions = mapOf<String, List<EntityRestriction>>()
@@ -34,6 +35,12 @@ internal class EntityRestrictionValidator(
 
     /** Indicates if the validation session is active. */
     private var validationStarted = mutableMapOf<String, Boolean>()
+
+    private suspend fun getEntityMutex(entityName: String): Mutex {
+        return mapMutex.withLock {
+            entityMutexes.getOrPut(entityName) { Mutex() }
+        }
+    }
 
     fun setRestrictions(restrictions: List<EntityRestriction>) {
         entityMapRestrictions = restrictions.groupBy { it.getEntityName() }
@@ -49,20 +56,15 @@ internal class EntityRestrictionValidator(
      * */
     suspend fun startValidation(entityName: String) {
 
-        if (!mutex.containsKey(entityName) || mutex[entityName]?.isLocked?.not().isTrue()) {
-            mutex[entityName] = Mutex()
-        }
-
-        mutex[entityName]?.lock()
+        val entityMutex = getEntityMutex(entityName)
+        entityMutex.lock()
 
         if (validationStarted[entityName] == true) {
+            entityMutex.unlock()
             throw IllegalStateException("Validation has already started.")
         }
 
         validationStarted[entityName] = true
-
-        val entities = entityMapRestrictions.keys.toList()
-        if (entities.isEmpty()) return
 
         val queryBuilder = SimpleQueryBuilder(entityName).where(
             SQL.WhereCondition(
@@ -73,10 +75,12 @@ internal class EntityRestrictionValidator(
             )
         )
         val count = operationDatabaseHelper.countRecords(queryBuilder)
-        initialCountByEntity[entityName] = count
 
-        // Initialize pending counters
-        pendingInsertsByEntity[entityName] = 0
+        mapMutex.withLock {
+            initialCountByEntity[entityName] = count
+            // Initialize pending counters
+            pendingInsertsByEntity[entityName] = 0
+        }
 
     }
 
@@ -91,7 +95,9 @@ internal class EntityRestrictionValidator(
      */
     suspend fun validate(entityName: String, operationType: EntityRestriction.OperationType) {
 
-        if (validationStarted[entityName] != true) {
+        val isStarted = mapMutex.withLock { validationStarted[entityName] == true }
+
+        if (!isStarted) {
             finishValidation(entityName)
             throw IllegalStateException("Validation has not been started.")
         }
@@ -104,8 +110,12 @@ internal class EntityRestrictionValidator(
                     // Only INSERT operations are relevant for max-count rules
                     if (operationType == EntityRestriction.OperationType.INSERT) {
 
-                        val initial = initialCountByEntity[entityName] ?: 0
-                        val pending = pendingInsertsByEntity[entityName] ?: 0
+                        val (initial, pending) = mapMutex.withLock {
+                            val i = initialCountByEntity[entityName] ?: 0
+                            val p = pendingInsertsByEntity[entityName] ?: 0
+                            i to p
+                        }
+
                         val newPending = pending + 1
                         val expectedTotal = initial + newPending
 
@@ -117,7 +127,9 @@ internal class EntityRestrictionValidator(
                         }
 
                         // Confirm the pending increment
-                        pendingInsertsByEntity[entityName] = newPending
+                        mapMutex.withLock {
+                            pendingInsertsByEntity[entityName] = newPending
+                        }
                     }
                 }
             }
@@ -135,15 +147,24 @@ internal class EntityRestrictionValidator(
      */
     suspend fun finishValidation(entityName: String) {
 
-        if (validationStarted[entityName] != true) {
+        val isStarted = mapMutex.withLock {
+            val started = validationStarted[entityName] == true
+            if (started) {
+                validationStarted[entityName] = false
+                pendingInsertsByEntity[entityName] = 0
+                initialCountByEntity[entityName] = 0
+            }
+            started
+        }
+
+        if (!isStarted) {
             throw IllegalStateException("Validation has not been started.")
         }
 
-        validationStarted[entityName] = false
-        pendingInsertsByEntity[entityName] = 0
-        initialCountByEntity[entityName] = 0
-
-        mutex[entityName]?.unlock()
+        val entityMutex = getEntityMutex(entityName)
+        if (entityMutex.isLocked) {
+            entityMutex.unlock()
+        }
     }
 }
 

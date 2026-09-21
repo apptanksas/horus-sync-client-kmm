@@ -125,10 +125,13 @@ internal fun SyncControl.Action.toRequest(): SyncDTO.Request.SyncActionRequest {
  *
  * @throws IllegalArgumentException if the entity or action timestamp is null.
  */
-internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action {
+internal fun SyncDTO.Response.SyncAction.toDomain(): SyncControl.Action? {
+
+    action ?: return null
+
     return SyncControl.Action(
         id = 0,
-        action = SyncControl.ActionType.valueOf(action!!),
+        action = SyncControl.ActionType.valueOf(action),
         entity = entity ?: throw IllegalArgumentException("Entity is null"),
         status = SyncControl.ActionStatus.COMPLETED,
         data = data ?: mapOf(),

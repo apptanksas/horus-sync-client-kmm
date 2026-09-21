@@ -118,7 +118,9 @@ internal class WebSocketSyncEventsSubscriber(
 
                 WebSocketPusherEventName.SYNC_ACTION -> {
                     info("[WebSocketSyncEventsSubscriber] Received Sync Action: ${event.data}")
-                    onActionReceived(decoderJson.decodeFromString<SyncDTO.Response.SyncAction>(event.data).toDomain())
+                    decoderJson.decodeFromString<SyncDTO.Response.SyncAction>(event.data).toDomain()?.let {
+                        onActionReceived(it)
+                    }
                 }
 
                 else -> {

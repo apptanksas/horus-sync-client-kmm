@@ -178,7 +178,7 @@ internal class SynchronizatorManager(
                 if (eventIdsAlreadyExists.isNotEmpty() && actionsWithNoEventId.isEmpty()) {
                     syncControlDatabaseHelper.execute(
                         deleteActions = eventIdsAlreadyExists,
-                        insertActions = resultActions.data.filter { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.map { it.toDomain() }
+                        insertActions = resultActions.data.filter { it.eventId?.let { eventIdsAlreadyExists.contains(it) } ?: false }.mapNotNull { it.toDomain() }
                     )
                 }
 
@@ -241,17 +241,18 @@ internal class SynchronizatorManager(
         if (checkpointLastAction == null) {
             when (val lastAction = synchronizationService.getLastQueueAction()) {
                 is DataResult.Success -> {
-
                     checkpointLastAction = lastAction.data.toDomain()
-                    actions.add(lastAction.data)
+                    checkpointLastAction?.let {
+                        actions.add(lastAction.data)
 
-                    val (_, insertActions, updateActions, deleteActions) = organizeActions(listOf(checkpointLastAction))
-                    val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
+                        val (_, insertActions, updateActions, deleteActions) = organizeActions(listOf(checkpointLastAction))
+                        val operations = mapToInsertOperation(insertActions) + mapToUpdateOperation(updateActions) + mapToDeleteOperation(deleteActions)
 
-                    operationDatabaseHelper.executeOperations(operations) {
-                        syncControlDatabaseHelper.addActionsCompleted(listOf(checkpointLastAction))
+                        operationDatabaseHelper.executeOperations(operations) {
+                            syncControlDatabaseHelper.addActionsCompleted(listOf(checkpointLastAction))
+                        }
+                        HorusClientQueueActionReceivedEventBus.emit(insertActions + updateActions + deleteActions)
                     }
-                    HorusClientQueueActionReceivedEventBus.emit(insertActions + updateActions + deleteActions)
                 }
 
                 else -> {
@@ -305,7 +306,9 @@ internal class SynchronizatorManager(
         val checkpointTimestamp = syncControlDatabaseHelper.getLastDatetimeCheckpoint()
         val lastActions = syncControlDatabaseHelper.getCompletedActionsAfterDatetime(checkpointTimestamp)
 
-        return synchronizationService.getQueueActions(checkpointTimestamp, lastActions.map { it.getActionedAtTimestamp() })
+        return synchronizationService.getQueueActions(
+            checkpointTimestamp, lastActions.map
+            { it.getActionedAtTimestamp() })
     }
 
     /**
@@ -591,7 +594,7 @@ internal class SynchronizatorManager(
             action.sequence?.let { actionSequences.contains(it) } ?: true
         }
 
-        return filterOwnActions(actionsToProcess.map { it.toDomain() }, checkpointDatetime)
+        return filterOwnActions(actionsToProcess.mapNotNull { it.toDomain() }, checkpointDatetime)
     }
 
     private fun classifyNewActionsUsingEventId(actions: DataResult.Success<List<SyncDTO.Response.SyncAction>>): List<SyncControl.Action> {
@@ -600,7 +603,7 @@ internal class SynchronizatorManager(
             .getExistsActionEventIds(actions.data.filter { it.eventId != null }.mapNotNull { it.eventId }.toList())
             .filter { it.value.not() }.map { it.key }
 
-        return actions.data.filter { actionsWithEventIdsNotProcessed.contains(it.eventId) }.map { it.toDomain() }
+        return actions.data.filter { actionsWithEventIdsNotProcessed.contains(it.eventId) }.mapNotNull { it.toDomain() }
     }
 
     /**
