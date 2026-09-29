@@ -23,6 +23,8 @@ import org.apptank.horus.client.extensions.execute
 import org.apptank.horus.client.migration.network.service.IMigrationService
 import org.apptank.horus.client.migration.network.toScheme
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import org.apptank.horus.client.sync.network.dto.SyncDTO
+import org.apptank.horus.client.database.struct.DatabaseOperation
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -340,9 +342,140 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 )
             )
 
+            every { syncControlDatabaseHelper.getLastActionCompleted() } returns null
+            everySuspend { synchronizationService.getLastQueueAction() } returns DataResult.Success(
+                SyncDTO.Response.SyncAction(
+                    action = "INSERT",
+                    entity = "entity",
+                    data = mapOf("id" to "last_id"),
+                    actionedAt = 1000L,
+                    eventId = "last_event"
+                )
+            )
+            every { syncControlDatabaseHelper.addActionsCompleted(any()) } returns Unit
+            every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any(), any()) } returns true
             every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
             every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns emptyList()
-            everySuspend { synchronizationService.getQueueActions(any<Long>()) } returns DataResult.Success(emptyList())
+            everySuspend { synchronizationService.getQueueActions(any<Long?>(), any()) } returns DataResult.Success(emptyList())
+            everySuspend { synchronizationService.getQueueActions(any<String?>(), any(), any()) } returns DataResult.Success(emptyList())
+            every { syncControlDatabaseHelper.getWritableEntityNames() }.returns(emptyList())
+
+            everySuspend { synchronizationService.postQueueActions(any()) } returns (DataResult.Success(Unit))
+            every { syncControlDatabaseHelper.completeActions(any()) } returns (true)
+            every { fileUploadManager.syncFiles(any()) } calls { args ->
+                (args.args[0] as Callback).invoke()
+                InternalEventBus.emit(EventType.SYNC_PUSH_SUCCESS)
+            }
+            every { uploadFileRepository.hasFilesToUpload() } returns (false)
+
+            with(HorusContainer) {
+                setupMigrationService(migrationService)
+                setupNetworkValidator(networkValidator)
+                setupSettings(storageSettings)
+                setupLogger(KotlinLogger())
+                setupSyncControlDatabaseHelper(syncControlDatabaseHelper)
+                setupOperationDatabaseHelper(operationDatabaseHelper)
+                setupRemoteSynchronizatorManager(
+                    PushDataRemoteSynchronizatorManager(
+                        networkValidator,
+                        syncControlDatabaseHelper,
+                        synchronizationService,
+                        uploadFileRepository
+                    )
+                )
+                setupSyncFileUploadedManager(fileUploadManager)
+            }
+
+            every {
+                syncControlDatabaseHelper.getExistsActionEventIds(any())
+            } returns emptyMap()
+
+            everySuspend {
+                synchronizationService.getQueueActions(
+                    any<String>(),
+                    any<List<String>>(),
+                    any<Int>()
+                )
+            } returns DataResult.Success(emptyList())
+
+            everySuspend {
+                synchronizationService.postValidateEntitiesData(any(), any())
+            } returns DataResult.Success(emptyList())
+
+            // When
+            HorusDataFacade.forceSync(onSuccess = {
+                invokedOnSuccess = true
+            }, onFailure = {
+                invokedOnFailure = true
+            })
+
+            // Then
+            var attempts = 0
+            while ((!invokedOnSuccess && !invokedOnFailure || InternalEventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS) > 0) && attempts < 50) {
+                delay(100)
+                attempts++
+            }
+            verify { networkValidator.isNetworkAvailable() }
+            Assert.assertFalse(invokedOnFailure)
+            assert(invokedOnSuccess)
+            Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_FAILED))
+            Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS))
+        }
+
+    @Test
+    fun `when forceSync is invoked and callbackCalled is false then invoke onFailure`() =
+        runBlocking {
+            // Given
+            var invokedOnSuccess = false
+            var invokedOnFailure = false
+
+            HorusAuthentication.setupUserAccessToken(USER_ACCESS_TOKEN)
+            HorusContainer.setupLogger(KotlinLogger())
+
+            every { networkValidator.isNetworkAvailable() } returns (true)
+            everySuspend { migrationService.getMigration() } returns (
+                DataResult.Success(
+                    buildEntitiesSchemeFromJSON(DATA_MIGRATION_WITH_LOOKUP_AND_EDITABLE)
+                )
+            )
+            every {
+                storageSettings.getLongOrNull(ValidateMigrationLocalDatabaseTask.KEY_SCHEMA_VERSION)
+            } returns (1)
+
+            every { storageSettings.getLongOrNull(RetrieveDataSharedTask.KEY_LAST_DATE_DATA_SHARED) } returns (
+                Clock.System.now().epochSeconds - 1)
+
+            every { storageSettings.getLongOrNull(RefreshReadableEntitiesTask.KEY_LAST_DATE_READABLE_ENTITIES) } returns (
+                Clock.System.now().epochSeconds - 1)
+
+            every {
+                syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.HASH_VALIDATION)
+            } returns (true)
+
+            every {
+                syncControlDatabaseHelper.isStatusCompleted(SyncControl.OperationType.INITIAL_SYNCHRONIZATION)
+            } returns (true)
+
+            every {
+                syncControlDatabaseHelper.getPendingActions()
+            } returns emptyList()
+
+            every { syncControlDatabaseHelper.getLastActionCompleted() } returns null
+            everySuspend { synchronizationService.getLastQueueAction() } returns DataResult.Success(
+                SyncDTO.Response.SyncAction(
+                    action = "INSERT",
+                    entity = "entity",
+                    data = mapOf("id" to "last_id"),
+                    actionedAt = 1000L,
+                    eventId = "last_event"
+                )
+            )
+            every { syncControlDatabaseHelper.addActionsCompleted(any()) } returns Unit
+            every { operationDatabaseHelper.executeOperations(any<List<DatabaseOperation>>(), any(), any()) } returns true
+            every { syncControlDatabaseHelper.getCompletedActionsAfterDatetime(any()) } returns emptyList()
+            every { syncControlDatabaseHelper.getExistsActionSequences(any()) } returns emptyList()
+            everySuspend { synchronizationService.getQueueActions(any<Long?>(), any()) } returns DataResult.Success(emptyList())
+            everySuspend { synchronizationService.getQueueActions(any<String?>(), any(), any()) } returns DataResult.Success(emptyList())
             every { syncControlDatabaseHelper.getWritableEntityNames() }.returns(emptyList())
 
             everySuspend { synchronizationService.postQueueActions(any()) } returns (DataResult.Success(Unit))
@@ -350,7 +483,7 @@ class AndroidHorusDataFacadeTest : TestCase() {
             every { fileUploadManager.syncFiles(any()) } calls { args ->
                 (args.args[0] as Callback).invoke()
             }
-            every { uploadFileRepository.hasFilesToUpload() } returns (false)
+            every { uploadFileRepository.hasFilesToUpload() } returns (true)
 
             with(HorusContainer) {
                 setupMigrationService(migrationService)
@@ -400,8 +533,8 @@ class AndroidHorusDataFacadeTest : TestCase() {
                 attempts++
             }
             verify { networkValidator.isNetworkAvailable() }
-            Assert.assertFalse(invokedOnFailure)
-            assert(invokedOnSuccess)
+            Assert.assertTrue(invokedOnFailure)
+            Assert.assertFalse(invokedOnSuccess)
             Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_FAILED))
             Assert.assertEquals(0, InternalEventBus.getCountListeners(EventType.SYNC_PUSH_SUCCESS))
         }

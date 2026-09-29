@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.23.2
+- Fixed force synchronization from Facade when there are no data to sync and callback is not called.
+
 # v0.23.1
 - Fixed get last action when is empty.
 

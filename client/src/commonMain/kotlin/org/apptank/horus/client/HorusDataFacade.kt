@@ -42,7 +42,6 @@ import org.apptank.horus.client.extensions.prepareSQLValueAsString
 import org.apptank.horus.client.extensions.removeIf
 import org.apptank.horus.client.restrictions.EntityRestriction
 import org.apptank.horus.client.sync.manager.ISyncFileUploadedManager
-import org.apptank.horus.client.sync.manager.PushDataRemoteSynchronizatorManager
 import org.apptank.horus.client.sync.manager.SynchronizatorManager
 import org.apptank.horus.client.sync.upload.data.FileData
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
@@ -735,6 +734,7 @@ object HorusDataFacade {
             return
         }
 
+        var callbackCalled = false
         var callbackSyncPushSuccess: CallbackEvent? = null
         var callbackSyncPushFailure: CallbackEvent? = null
         val removeListeners: Callback = {
@@ -751,18 +751,31 @@ object HorusDataFacade {
                 )
             }
         }
-        callbackSyncPushSuccess = { onSuccess?.invoke(); removeListeners.invoke() }
-        callbackSyncPushFailure = { onFailure?.invoke(); removeListeners.invoke() }
+        callbackSyncPushSuccess = {
+            callbackCalled = true
+            onSuccess?.invoke()
+        }
+        callbackSyncPushFailure = {
+            callbackCalled = true
+            onFailure?.invoke()
+        }
 
         with(controlTaskManager) {
+
+            InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
+            InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
+
             setOnCallbackStatusListener {
                 if (it === ControlTaskManager.Status.FAILED) {
                     onFailure?.invoke()
+                    callbackCalled = true
                 }
             }
             setOnCompleted {
-                InternalEventBus.register(EventType.SYNC_PUSH_SUCCESS, callbackSyncPushSuccess)
-                InternalEventBus.register(EventType.SYNC_PUSH_FAILED, callbackSyncPushFailure)
+                if (callbackCalled.not()) {
+                    onFailure?.invoke()
+                }
+                removeListeners.invoke()
             }
 
             syncFileUploadedManager?.syncFiles {
