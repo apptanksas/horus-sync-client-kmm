@@ -39,7 +39,7 @@ class SyncFileUploadedManager(
     // Coroutine scope for the manager
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private var isReady: Boolean = false
-
+    private val queueOnCompletedCallbacks = ArrayDeque<Callback>()
 
     init {
         networkValidator.onNetworkChange {
@@ -78,6 +78,7 @@ class SyncFileUploadedManager(
 
         if (isTakenProcess) {
             warn("[SyncFiles] already in progress")
+            queueOnCompletedCallbacks.add(onCompleted)
             return
         }
 
@@ -85,6 +86,7 @@ class SyncFileUploadedManager(
 
             val job = launch {
                 takeProcess()
+                queueOnCompletedCallbacks.add(onCompleted)
                 uploadFiles { syncFileReferencesInfo { downloadFiles { releaseProcess() } } }
             }
 
@@ -94,7 +96,6 @@ class SyncFileUploadedManager(
                 } ?: info("[SyncFiles] Sync files completed")
                 job.cancel()
                 releaseProcess()
-                onCompleted()
             }
         }
     }
@@ -228,6 +229,7 @@ class SyncFileUploadedManager(
      * Takes the synchronization process.
      */
     private fun takeProcess() {
+        info("[SyncFiles][Process] Taking process")
         isTakenProcess = true
     }
 
@@ -235,7 +237,10 @@ class SyncFileUploadedManager(
      * Releases the synchronization process.
      */
     private fun releaseProcess() {
+        info("[SyncFiles][Process] Releasing process")
         isTakenProcess = false
+        queueOnCompletedCallbacks.forEach { it() }
+        queueOnCompletedCallbacks.clear()
     }
 
     companion object {
