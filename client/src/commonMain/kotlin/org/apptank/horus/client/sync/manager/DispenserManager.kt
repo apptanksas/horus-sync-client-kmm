@@ -101,9 +101,11 @@ internal class DispenserManager(
                     syncManager.start { status, isCompleted ->
                         if (isCompleted) {
                             if (status == SynchronizationStatus.SUCCESS || status == SynchronizationStatus.IDLE) {
-                                pushDataRemoteSynchronizatorManager.tryPushData()
+                                scope.launch {
+                                    pushDataRemoteSynchronizatorManager.tryPushData()
+                                    batchCounter = 0
+                                }
                             }
-                            batchCounter = 0
                         }
                     }
                 }

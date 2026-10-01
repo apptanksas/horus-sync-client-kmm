@@ -1,5 +1,6 @@
 package org.apptank.horus.client.sync.manager
 
+import kotlinx.coroutines.CompletableDeferred
 import org.apptank.horus.client.auth.HorusAuthentication
 import org.apptank.horus.client.base.coFold
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
@@ -20,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.utils.OperationAttempter
 
@@ -57,7 +57,9 @@ internal class PushDataRemoteSynchronizatorManager(
      * This method checks for network availability and initiates synchronization if there are pending actions in the local
      * sync control database. It handles retry logic and error reporting for synchronization operations.
      */
-    fun tryPushData() {
+    suspend fun tryPushData() {
+
+        val deferred = CompletableDeferred<Unit>()
 
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated")
@@ -74,50 +76,49 @@ internal class PushDataRemoteSynchronizatorManager(
             return
         }
 
-        scope.apply {
-            val job = launch {
+        takeProcess()
 
-                takeProcess()
+        try {
 
-                if (uploadFileRepository.hasFilesToUpload()) {
-                    warn("There are files to upload")
-                    return@launch
-                }
-
-                val pendingActions = syncControlDatabaseHelper.getPendingActions()
-
-                if (pendingActions.isEmpty()) {
-                    event.emit(EventType.SYNC_PUSH_SUCCESS)
-                    return@launch
-                }
-
-                OperationAttempter.attempt(maxAttempts) {
-                    synchronizationService.postQueueActions(pendingActions.map { it.toRequest() })
-                }.coFold(
-                    onSuccess = {
-                        updateActionsAsCompleted(pendingActions)
-                    },
-                    onFailure = {
-                        logException("Error trying to sync actions: " + it.message, it)
-                        event.emit(
-                            EventType.SYNC_PUSH_FAILED,
-                            Event(mapOf<String, Any>("exception" to it))
-                        )
-                    })
+            if (uploadFileRepository.hasFilesToUpload()) {
+                warn("There are files to upload")
+                return
             }
 
-            job.invokeOnCompletion {
-                it?.let {
+            val pendingActions = syncControlDatabaseHelper.getPendingActions()
+
+            if (pendingActions.isEmpty()) {
+                event.emit(EventType.SYNC_PUSH_SUCCESS)
+                return
+            }
+
+            OperationAttempter.attempt(maxAttempts) {
+                synchronizationService.postQueueActions(pendingActions.map { it.toRequest() })
+            }.coFold(
+                onSuccess = {
+                    updateActionsAsCompleted(pendingActions)
+                },
+                onFailure = {
                     logException("Error trying to sync actions: " + it.message, it)
                     event.emit(
                         EventType.SYNC_PUSH_FAILED,
                         Event(mapOf<String, Any>("exception" to it))
                     )
-                }
-                job.cancel()
-                releaseProcess()
-            }
+                }, onComplete = {
+                    deferred.complete(Unit)
+                })
+
+        } catch (e: Exception) {
+            logException("Error trying to sync actions: " + e.message, e)
+            event.emit(
+                EventType.SYNC_PUSH_FAILED,
+                Event(mapOf<String, Any>("exception" to e))
+            )
+        } finally {
+            releaseProcess()
         }
+
+        return deferred.await()
     }
 
     /**

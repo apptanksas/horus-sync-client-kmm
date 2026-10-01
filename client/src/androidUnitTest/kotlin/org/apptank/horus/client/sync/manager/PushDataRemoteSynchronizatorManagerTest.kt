@@ -68,7 +68,7 @@ class PushDataRemoteSynchronizatorManagerTest : TestCase() {
     }
 
     @Test
-    fun trySynchronizeDataNotExecuteByNetworkNoAvailable() {
+    fun trySynchronizeDataNotExecuteByNetworkNoAvailable() = runBlocking {
         every { networkValidator.isNetworkAvailable() } returns false
 
         pushDataRemoteSynchronizatorManager.tryPushData()

@@ -64,6 +64,7 @@ internal object ControlTaskManager {
         HorusContainer.getOperationDatabaseHelper(),
         HorusContainer.getSynchronizationService(),
         HorusContainer.getPushDataRemoteSynchronizatorManager(),
+        Dispatchers.IO,
         synchronizeInitialDataTask
     )
 
@@ -121,6 +122,8 @@ internal object ControlTaskManager {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private var isStarted = false
+
     /**
      * Starts the execution of tasks.
      *
@@ -128,11 +131,17 @@ internal object ControlTaskManager {
      */
     fun start(dispatcher: CoroutineDispatcher = Dispatchers.IO) {
 
+        if (isStarted) {
+            return
+        }
+
+        isStarted = true
+
         val syncControlDatabaseHelper = HorusContainer.getSyncControlDatabaseHelper()
 
         if (HorusAuthentication.isNotUserAuthenticated()) {
             warn("User is not authenticated to start the horus task manager")
-            onStatus(Status.FAILED)
+            emitStatus(Status.FAILED)
             return
         }
 
@@ -140,14 +149,17 @@ internal object ControlTaskManager {
             info("Network is not available to start the horus task manager")
             when {
                 syncControlDatabaseHelper.getEntityNames().isEmpty() -> {
-                    onStatus(Status.FAILED)
+                    emitStatus(Status.FAILED)
                     InternalEventBus.emit(
                         EventType.SYNC_FAILED,
                         Event(mutableMapOf("exception" to NetworkException("Network is not available")))
                     )
                 }
 
-                else -> emitEventOnReady()
+                else -> {
+                    isStarted = false
+                    emitEventOnReady()
+                }
             }
             return
         }
@@ -162,7 +174,7 @@ internal object ControlTaskManager {
             job.invokeOnCompletion {
                 if (it != null) {
                     it.printStackTrace()
-                    onStatus(Status.FAILED)
+                    emitStatus(Status.FAILED)
                 }
                 job.cancel()
             }
@@ -179,6 +191,7 @@ internal object ControlTaskManager {
             callback(it)
             if (it == Status.COMPLETED) {
                 onCompleted()
+                isStarted = false
             }
         }
     }
@@ -190,6 +203,20 @@ internal object ControlTaskManager {
      */
     fun setOnCompleted(callback: Callback) {
         onCompleted = callback
+    }
+
+    /**
+     * Returns the number of tasks executed so far.
+     *
+     * @return The task execution counter.
+     */
+    fun getTaskExecutionCounter(): Int {
+        return taskExecutionCounter
+    }
+
+    private fun emitStatus(status: Status) {
+        onStatus(status)
+        isStarted = false
     }
 
     /**
@@ -223,7 +250,7 @@ internal object ControlTaskManager {
         }.getOrElse {
             logException("[ControlTask] Error executing task: ${task::class.simpleName}", it)
             it.printStackTrace()
-            onStatus(Status.FAILED)
+            emitStatus(Status.FAILED)
         }
     }
 
@@ -245,7 +272,7 @@ internal object ControlTaskManager {
      */
     private suspend fun handleTaskResult(nextTask: Task?, taskResult: TaskResult) {
         if (nextTask == null) {
-            onStatus(Status.COMPLETED).also {
+            emitStatus(Status.COMPLETED).also {
                 emitEventOnReady()
             }
             return
@@ -258,7 +285,7 @@ internal object ControlTaskManager {
 
             is TaskResult.Failure -> {
                 logException("[ControlTask] Error executing task", taskResult.error)
-                onStatus(Status.FAILED)
+                emitStatus(Status.FAILED)
                 InternalEventBus.emit(
                     EventType.SYNC_FAILED,
                     Event(mutableMapOf("exception" to taskResult.error))
@@ -275,13 +302,5 @@ internal object ControlTaskManager {
         info("[Synchronization Validation] Horus sync is ready to operation")
     }
 
-    /**
-     * Returns the number of tasks executed so far.
-     *
-     * @return The task execution counter.
-     */
-    fun getTaskExecutionCounter(): Int {
-        return taskExecutionCounter
-    }
 
 }
