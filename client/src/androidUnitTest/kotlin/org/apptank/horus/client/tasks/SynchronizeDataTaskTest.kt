@@ -22,6 +22,7 @@ import dev.mokkery.MockMode
 import dev.mokkery.mock
 import dev.mokkery.verify
 import dev.mokkery.verify.VerifyMode.Companion.exactly
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -51,6 +52,7 @@ class SynchronizeDataTaskTest : TestCase() {
                 synchronizationService,
                 mock<IUploadFileRepository>(MockMode.autofill)
             ),
+            Dispatchers.Unconfined,
             getMockSynchronizeInitialDataTask()
         )
 

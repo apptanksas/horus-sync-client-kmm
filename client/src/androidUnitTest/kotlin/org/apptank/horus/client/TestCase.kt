@@ -23,6 +23,7 @@ import io.matthewnelson.kmp.file.File
 import io.matthewnelson.kmp.file.toFile
 import dev.mokkery.MockMode
 import dev.mokkery.mock
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import org.apptank.horus.client.config.HorusConfig
@@ -206,6 +207,7 @@ abstract class TestCase {
             mock<IOperationDatabaseHelper>(MockMode.autofill),
             mock<ISynchronizationService>(MockMode.autofill),
             getMockPushDataRemoteSynchronizatorManager(),
+            dispatcher = Dispatchers.Unconfined,
             getMockSynchronizeInitialDataTask()
         )
     }

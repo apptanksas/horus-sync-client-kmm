@@ -1,5 +1,13 @@
 package org.apptank.horus.client.tasks
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
 import org.apptank.horus.client.control.helper.IOperationDatabaseHelper
 import org.apptank.horus.client.connectivity.INetworkValidator
@@ -23,8 +31,11 @@ internal class SynchronizeDataTask(
     private val operationDatabaseHelper: IOperationDatabaseHelper,
     private val synchronizationService: ISynchronizationService,
     private val pushDataRemoteSynchronizatorManager: PushDataRemoteSynchronizatorManager,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     dependsOnTask: SynchronizeInitialDataTask
 ) : BaseTask(dependsOnTask) {
+
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     /**
      * Executes the task to synchronize data.
@@ -38,7 +49,7 @@ internal class SynchronizeDataTask(
 
         // Variable to hold the synchronization status.
         var statusResult: SyncStatus = SyncStatus.IN_PROGRESS
-
+        val deferred = CompletableDeferred<TaskResult>()
 
         // Start the synchronization process and update the statusResult based on completion.
         manager.start { status, isCompleted ->
@@ -47,17 +58,27 @@ internal class SynchronizeDataTask(
                 statusResult = status
             }
 
+            // Success
             if (statusResult == SyncStatus.SUCCESS || statusResult == SyncStatus.IDLE) {
-                pushDataRemoteSynchronizatorManager.tryPushData()
+                val job: Job
+                job = scope.launch {
+                    pushDataRemoteSynchronizatorManager.tryPushData()
+                    deferred.complete(TaskResult.success())
+                }
+                job.invokeOnCompletion {
+                    job.cancel()
+                    it?.let {
+                        deferred.complete(TaskResult.failure(Exception("Error synchronizing data")))
+                    }
+                }
+            }
+
+            if (statusResult == SyncStatus.FAILED) {
+                deferred.complete(TaskResult.failure(Exception("Error synchronizing data")))
             }
         }
 
-        // Return success if the synchronization was successful or idle, otherwise return failure.
-        return if (statusResult == SyncStatus.SUCCESS || statusResult == SyncStatus.IDLE) {
-            TaskResult.success()
-        } else {
-            TaskResult.failure(Exception("Error synchronizing data"))
-        }
+        return deferred.await()
     }
 
     /**
