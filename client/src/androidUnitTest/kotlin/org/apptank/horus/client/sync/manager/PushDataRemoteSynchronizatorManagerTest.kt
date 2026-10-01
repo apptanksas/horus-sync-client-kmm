@@ -73,7 +73,7 @@ class PushDataRemoteSynchronizatorManagerTest : TestCase() {
 
         pushDataRemoteSynchronizatorManager.tryPushData()
 
-        verify(exactly(1)) { syncControlDatabaseHelper.getPendingActions() }
+        verify(exactly(0)) { syncControlDatabaseHelper.getPendingActions() }
     }
 
     @Test
