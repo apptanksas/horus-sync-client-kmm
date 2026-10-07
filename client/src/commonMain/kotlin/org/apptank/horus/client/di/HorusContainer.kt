@@ -281,6 +281,7 @@ object HorusContainer {
         if (synchronizationService == null) {
             synchronizationService = SynchronizationService(
                 getConfig(),
+                getSyncControlDatabaseHelper(),
                 httpClient.engine,
                 getConfig().baseUrl,
                 getConfig().customHeaders
