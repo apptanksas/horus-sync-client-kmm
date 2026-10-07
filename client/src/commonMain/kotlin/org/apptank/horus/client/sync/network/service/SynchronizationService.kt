@@ -26,6 +26,8 @@ import okio.use
 import org.apptank.horus.client.base.ClientTypeError
 import org.apptank.horus.client.bus.HorusClientSyncErrorEventBus
 import org.apptank.horus.client.bus.SyncError
+import org.apptank.horus.client.control.helper.ISyncControlDatabaseHelper
+import org.apptank.horus.client.database.SyncControlDatabaseHelper
 import org.apptank.horus.client.extensions.info
 import org.apptank.horus.client.extensions.isTimestampInMillis
 import org.apptank.horus.client.extensions.isTimestampInSeconds
@@ -35,6 +37,8 @@ import org.apptank.horus.client.utils.SystemTime
 /**
  * Implementation of the [ISynchronizationService] using an [HttpClientEngine] and a base URL.
  *
+ * @param config The configuration for the synchronization service.
+ * @param syncControlDatabaseHelper The database helper for managing synchronization control data.
  * @param engine The HTTP client engine to use for making network requests.
  * @param baseUrl The base URL for the API.
  * @param customHeaders Optional custom headers to include in the requests.
@@ -42,6 +46,7 @@ import org.apptank.horus.client.utils.SystemTime
  */
 internal class SynchronizationService(
     private val config: HorusConfig,
+    private val syncControlDatabaseHelper: ISyncControlDatabaseHelper,
     engine: HttpClientEngine,
     baseUrl: String,
     customHeaders: Map<String, String> = emptyMap(),
@@ -158,8 +163,21 @@ internal class SynchronizationService(
      */
     override suspend fun postQueueActions(actions: List<SyncDTO.Request.SyncActionRequest>): DataResult<Unit> {
 
-        val chunksWithTimestamp = actions.filter { it.actionedAt.isTimestampInSeconds() }.sortedBy { it.actionedAt }.chunked(chunkSize)
-        val chunksWithTimestampInMillis = actions.filter { it.actionedAt.isTimestampInMillis() }.sortedBy { it.actionedAt }.chunked(chunkSize)
+        val chunksWithTimestamp = actions.filter { it.actionedAt.isTimestampInSeconds() }
+            .sortedWith(
+                compareBy(
+                    { it.actionedAt },
+                    { syncControlDatabaseHelper.getEntityLevel(it.entity) }
+                )
+            ).chunked(chunkSize)
+
+        val chunksWithTimestampInMillis = actions.filter { it.actionedAt.isTimestampInMillis() }
+            .sortedWith(
+                compareBy(
+                    { it.actionedAt },
+                    { syncControlDatabaseHelper.getEntityLevel(it.entity) }
+                )
+            ).chunked(chunkSize)
 
         (chunksWithTimestamp + chunksWithTimestampInMillis).forEach { chunk ->
 

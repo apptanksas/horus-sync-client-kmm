@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.23.4
+- Fixed push data queue actions order by entity level and actioned at.
+
 # v0.23.3
 - Fixed push data remote synchronizator manager defer response.
 - Fixed actioned_at in time millis in actions when is pushed.
