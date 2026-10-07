@@ -82,12 +82,13 @@ class SyncFileUploadedManager(
             return
         }
 
+        takeProcess()
+        queueOnCompletedCallbacks.add(onCompleted)
+
         scope.apply {
 
             val job = launch {
-                takeProcess()
-                queueOnCompletedCallbacks.add(onCompleted)
-                uploadFiles { syncFileReferencesInfo { downloadFiles { releaseProcess() } } }
+                uploadFiles { syncFileReferencesInfo { downloadFiles { } } }
             }
 
             job.invokeOnCompletion {
@@ -239,8 +240,15 @@ class SyncFileUploadedManager(
     private fun releaseProcess() {
         info("[SyncFiles][Process] Releasing process")
         isTakenProcess = false
-        queueOnCompletedCallbacks.forEach { it() }
+        val callbacks = queueOnCompletedCallbacks.toList()
         queueOnCompletedCallbacks.clear()
+        callbacks.forEach { callback ->
+            try {
+                callback()
+            } catch (e: Throwable) {
+                logException("[SyncFiles] Error in completion callback", e)
+            }
+        }
     }
 
     companion object {

@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.23.5
+- Fixed concurrent modification exception in sync file uploaded manager.
+
 # v0.23.4
 - Fixed push data queue actions order by entity level and actioned at.
 
