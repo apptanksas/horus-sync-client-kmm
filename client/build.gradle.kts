@@ -12,7 +12,7 @@ version = libVersion
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinCocoapods)
+    alias(libs.plugins.kotlinCocoapods) apply false
     alias(libs.plugins.androidLibrary)
     id("kotlin-kapt")
     kotlin("plugin.serialization") version "2.2.21"
@@ -23,7 +23,11 @@ plugins {
 }
 
 
+if (isMacOs) apply(plugin = "org.jetbrains.kotlin.native.cocoapods")
+
 kotlin {
+    jvmToolchain(17)
+    jvm("desktop")
     androidTarget {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -38,7 +42,7 @@ kotlin {
         iosArm64()
         iosSimulatorArm64()
 
-        cocoapods {
+        extensions.configure<org.jetbrains.kotlin.gradle.plugin.cocoapods.CocoapodsExtension>("cocoapods") {
             summary = "Horus is a library data synchronizer between app and remote server"
             homepage = "Link [TBD]"
             version = libVersion
@@ -49,27 +53,14 @@ kotlin {
                 linkerOpts("-lsqlite3")
             }
         }
-    } else {
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-50664
-        // The podspec task fails on Windows if no iOS targets are defined
-        // even if the task is not executed.
-        val dummyTarget = iosArm64("iosArm64")
-        cocoapods {
-            summary = "Dummy summary for Windows"
-            homepage = "Dummy homepage"
-            framework {
-                baseName = "horus"
-            }
-        }
-        // Disable all iOS related tasks
-        tasks.configureEach {
-            if (name.contains("Ios", ignoreCase = true) || name.contains("podspec", ignoreCase = true)) {
-                enabled = false
-            }
-        }
     }
 
     sourceSets {
+        getByName("desktopMain").dependencies {
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.test.sqldelight)
+        }
+        getByName("desktopTest").dependencies { implementation(kotlin("test-junit")) }
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
