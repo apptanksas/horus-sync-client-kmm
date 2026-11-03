@@ -21,6 +21,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apptank.horus.client.sync.upload.repository.IUploadFileRepository
 import org.apptank.horus.client.utils.OperationAttempter
 
@@ -58,6 +60,12 @@ internal class PushDataRemoteSynchronizatorManager(
      * sync control database. It handles retry logic and error reporting for synchronization operations.
      */
     suspend fun tryPushData() {
+        processMutex.withLock {
+            tryPushDataLocked()
+        }
+    }
+
+    private suspend fun tryPushDataLocked() {
 
         val deferred = CompletableDeferred<Unit>()
 
@@ -70,13 +78,6 @@ internal class PushDataRemoteSynchronizatorManager(
             info("No network available")
             return
         }
-
-        if (isTakenProcess) {
-            warn("Process synchronizator already in progress")
-            return
-        }
-
-        takeProcess()
 
         try {
 
@@ -114,8 +115,6 @@ internal class PushDataRemoteSynchronizatorManager(
                 EventType.SYNC_PUSH_FAILED,
                 Event(mapOf<String, Any>("exception" to e))
             )
-        } finally {
-            releaseProcess()
         }
 
         return deferred.await()
@@ -169,17 +168,8 @@ internal class PushDataRemoteSynchronizatorManager(
         return isSuccess
     }
 
-
-    private fun takeProcess() {
-        isTakenProcess = true
-    }
-
-    private fun releaseProcess() {
-        isTakenProcess = false
-    }
-
     companion object {
-        private var isTakenProcess = false
+        private val processMutex = Mutex()
     }
 
 }

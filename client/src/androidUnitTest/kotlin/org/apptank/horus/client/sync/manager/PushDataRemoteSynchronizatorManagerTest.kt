@@ -10,6 +10,7 @@ import org.apptank.horus.client.bus.InternalEventBus
 import org.apptank.horus.client.bus.EventType
 import org.apptank.horus.client.connectivity.INetworkValidator
 import org.apptank.horus.client.sync.network.service.ISynchronizationService
+import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.every
 import dev.mokkery.everySuspend
@@ -20,7 +21,10 @@ import dev.mokkery.verify
 import dev.mokkery.verifySuspend
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -154,5 +158,51 @@ class PushDataRemoteSynchronizatorManagerTest : TestCase() {
         delay(50)
         Assert.assertEquals(1, eventCounter)
         verify(exactly(1)) { networkValidator.isNetworkAvailable() }
+    }
+
+    @Test
+    fun trySynchronizeDataDoesNotSendSamePayloadConcurrently() = runBlocking {
+        val actions = listOf(
+            SyncControl.Action(
+                Random.nextInt(), SyncControl.ActionType.INSERT,
+                "entity", SyncControl.ActionStatus.PENDING,
+                emptyMap(), Clock.System.now().toLocalDateTime(TimeZone.UTC)
+            )
+        )
+        val firstRequestStarted = CompletableDeferred<Unit>()
+        val releaseFirstRequest = CompletableDeferred<Unit>()
+
+        every { networkValidator.isNetworkAvailable() } returns true
+        every { syncControlDatabaseHelper.getPendingActions() } returns actions
+        every { mockUploadFileRepository.hasFilesToUpload() } returns false
+        every { syncControlDatabaseHelper.completeActions(any()) } returns true
+        everySuspend { synchronizationService.postQueueActions(any()) } calls {
+            firstRequestStarted.complete(Unit)
+            releaseFirstRequest.await()
+            DataResult.Success(Unit)
+        }
+
+        val firstManager = pushDataRemoteSynchronizatorManager
+        val secondManager = PushDataRemoteSynchronizatorManager(
+            networkValidator,
+            syncControlDatabaseHelper,
+            synchronizationService,
+            mockUploadFileRepository,
+            eventBus,
+            Dispatchers.Default,
+            0
+        )
+
+        val firstPush = launch { firstManager.tryPushData() }
+        firstRequestStarted.await()
+
+        val secondPush = launch { secondManager.tryPushData() }
+        delay(50)
+
+        verifySuspend(exactly(1)) { synchronizationService.postQueueActions(any()) }
+
+        secondPush.cancelAndJoin()
+        releaseFirstRequest.complete(Unit)
+        firstPush.join()
     }
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+# v0.23.6
+- Fixed concurrent push data remote using mutex.
+
 # v0.23.5
 - Fixed concurrent modification exception in sync file uploaded manager.
 
